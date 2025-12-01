@@ -1,0 +1,115 @@
+@startuml
+actor User #0000FF
+participant "Bash Script" as Bash #008000
+participant "process_bank_config" as ProcessBank #FFA500
+participant "hledger_preprocessor" as Preprocessor #800080
+participant "hledger-flow" as HledgerFlow #008080
+participant "hledger_plot" as HledgerPlot #FF0000
+participant Filesystem #808080
+participant Conda #FFFF00
+participant "Receipt Processor" as ReceiptProcessor #FF00FF
+
+== Initialization ==
+User -[#0000FF]-> Bash: Run script
+Bash -[#008000]-> Filesystem: Check GENERAL_CONFIG_FILEPATH exists
+Filesystem -[#808080]-> Bash: Config file exists
+Bash -[#008000]-> Bash: Validate RANDOMIZE_DATA ("true" or "false")
+Bash -[#008000]-> Filesystem: Clear and create WORKING_DIR
+Filesystem -[#808080]-> Bash: WORKING_DIR ready
+Bash -[#008000]-> Conda: Initialize and activate hledger_preprocessor env
+Conda -[#FFFF00]-> Bash: Environment activated
+Bash -[#008000]-> Bash: Display WORKING_DIR, START_JOURNAL_FILEPATH, GENERAL_CONFIG_FILEPATH
+
+== Configuration Validation ==
+Bash -[#008000]-> ProcessBank: Call process_bank_config(GENERAL_CONFIG_FILEPATH, WORKING_DIR)
+ProcessBank -[#FFA500]-> Filesystem: Verify GENERAL_CONFIG_FILEPATH is YAML
+Filesystem -[#808080]-> ProcessBank: File is valid YAML
+ProcessBank -[#FFA500]-> Filesystem: Check .accounts in YAML
+Filesystem -[#808080]-> ProcessBank: Accounts found
+loop for each account in .accounts
+    ProcessBank -[#FFA500]-> Filesystem: Read account details (csv_filepath, account_holder, bank, account_type)
+    Filesystem -[#808080]-> ProcessBank: Account details
+    ProcessBank -[#FFA500]-> Filesystem: Verify csv_filepath exists
+    Filesystem -[#808080]-> ProcessBank: CSV exists
+    ProcessBank -[#FFA500]-> Preprocessor: Call hledger_preprocessor --config --new-setup
+    Preprocessor -[#800080]-> Filesystem: Process CSV for account_holder/bank/account_type
+    Preprocessor -[#800080]-> ProcessBank: Processed transactions
+end loop
+
+== hledger-flow Import ==
+Bash -[#008000]-> HledgerFlow: Run hledger-flow import
+note right
+    Expected input structure:
+    WORKING_DIR/import/account_holder/bank/account_type
+    - account_holder: e.g., "JohnDoe"
+    - bank: e.g., "ING"
+    - account_type: e.g., "checking"
+    Processes CSVs into all-years.journal
+end note
+HledgerFlow -[#008080]-> Filesystem: Read CSVs from WORKING_DIR/import
+HledgerFlow -[#008080]-> Filesystem: Write to all-years.journal
+Filesystem -[#808080]-> HledgerFlow: Journal updated
+HledgerFlow -[#008080]-> Bash: Import complete
+
+== Include Starting Position ==
+Bash -[#008000]-> Filesystem: Check if START_JOURNAL_FILEPATH included in all-years.journal
+Filesystem -[#808080]-> Bash: Not included
+Bash -[#008000]-> Filesystem: Append "include START_JOURNAL_FILEPATH" to all-years.journal
+Filesystem -[#808080]-> Bash: Journal updated
+
+== Receipt Image to Transaction Conversion ==
+alt Use TUI for Receipt Labeling
+    User -[#0000FF]-> ReceiptProcessor: Run manage_creating_receipt_img_labels_with_tui
+    ReceiptProcessor -[#FF00FF]-> Filesystem: Get receipt images from receipts_path
+    Filesystem -[#808080]-> ReceiptProcessor: List of receipt filepaths
+    ReceiptProcessor -[#FF00FF]-> Preprocessor: Get transactions_per_year (csv_encoding)
+    Preprocessor -[#800080]-> Filesystem: Read CSVs for account_holder/bank/account_type
+    Filesystem -[#808080]-> Preprocessor: CSV data
+    Preprocessor -[#800080]-> ReceiptProcessor: Transactions per year
+    ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Generate account info groups
+    ReceiptProcessor -[#FF00FF]-> User: Prompt for manual receipt labeling via TUI
+    User -[#0000FF]-> ReceiptProcessor: Provide receipt labels
+    ReceiptProcessor -[#FF00FF]-> Filesystem: Save receipt objects
+    Filesystem -[#808080]-> ReceiptProcessor: Receipt objects saved
+else Use AI for Receipt Labeling
+    User -[#0000FF]-> ReceiptProcessor: Run manage_getting_ai_receipt_objects_from_images
+    ReceiptProcessor -[#FF00FF]-> Filesystem: Get receipt images from receipts_path
+    Filesystem -[#808080]-> ReceiptProcessor: List of receipt filepaths
+    ReceiptProcessor -[#FF00FF]-> Preprocessor: Load AI models for receipt parsing
+    Preprocessor -[#800080]-> ReceiptProcessor: AI models loaded
+    ReceiptProcessor -[#FF00FF]-> Filesystem: Process images to receipt objects
+    Filesystem -[#808080]-> ReceiptProcessor: Receipt objects generated
+end alt
+
+== Match Receipts to Transactions/Assets ==
+User -[#0000FF]-> ReceiptProcessor: Run manage_matching_manual_receipt_objs_to_account_transactions
+ReceiptProcessor -[#FF00FF]-> Preprocessor: Get transactions_per_year (csv_encoding)
+Preprocessor -[#800080]-> Filesystem: Read CSVs for account_holder/bank/account_type
+Filesystem -[#808080]-> Preprocessor: CSV data
+Preprocessor -[#800080]-> ReceiptProcessor: Transactions per year
+ReceiptProcessor -[#FF00FF]-> Filesystem: Load existing receipt objects
+Filesystem -[#808080]-> ReceiptProcessor: Receipt objects loaded
+ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Match\n receipts to transactions\n (account_holder\n, bank\n, account_type)
+note left
+    Matches receipt objects to bank transactions or assets (e.g., gold, BTC)
+    based on account_holder, bank, account_type, and transaction details
+end note
+ReceiptProcessor -[#FF00FF]-> Filesystem: Update matched transactions/receipts
+Filesystem -[#808080]-> ReceiptProcessor: Updates saved
+ReceiptProcessor -[#FF00FF]-> Bash: Matching complete
+
+== Plotting or Balance Report ==
+alt RANDOMIZE_DATA == "true"
+    Bash -[#008000]-> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s -r
+    HledgerPlot -[#FF0000]-> Filesystem: Read all-years.journal
+    HledgerPlot -[#FF0000]-> Bash: Plot generated
+else RANDOMIZE_DATA == "false"
+    Bash -[#008000]-> HledgerFlow: Run hledger bal -X EUR -f all-years.journal
+    HledgerFlow -[#008080]-> Filesystem: Read all-years.journal
+    HledgerFlow -[#008080]-> Bash: Balance report generated
+    Bash -[#008000]-> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s
+    HledgerPlot -[#FF0000]-> Filesystem: Read all-years.journal
+    HledgerPlot -[#FF0000]-> Bash: Plot generated
+end alt
+
+@enduml

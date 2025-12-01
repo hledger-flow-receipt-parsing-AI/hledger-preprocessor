@@ -1,0 +1,80 @@
+account_configs:
+  - csv_filename: "some_bank_2024-2025.csv"  # RELATIVE to root_finance_path
+    base_currency: EUR
+    account_holder: some_name
+    bank: some_bank
+    account_type: checking
+    # Python field name and hledger field name.
+    csv_column_mapping: [['the_date', "date"], ['None', ''], ['amount_out_account', 'amount0'], ['transaction_code', ''], ['other_party_name',''],['other_party_account_name',''], ['Unknown',''], ['description','description'],['amount_after_tnx','']]
+    # The transaction date of the bank is often a lot different than the receipt transaction time, so get the latter from the receipt.
+    tnx_date_columns: [['the_date', "date"], ['description','description']]
+  - input_csv_filename:
+    base_currency: EUR
+    account_holder: at
+    bank: wallet
+    csv_column_mapping: None
+    tnx_date_columns: None
+    account_type: physical
+  - input_csv_filename: None
+    base_currency: POUND
+    account_holder: at
+    bank: wallet
+    csv_column_mapping: None
+    tnx_date_columns: None
+    account_type: physical
+  - input_csv_filename: None
+    base_currency: BTC
+    account_holder: at
+    bank: wallet
+    account_type: digital
+    csv_column_mapping: None
+    tnx_date_columns: None
+  - input_csv_filename: None
+    base_currency: GOLD
+    account_holder: at
+    bank: wallet
+    account_type: physical
+    csv_column_mapping: None
+    tnx_date_columns: None
+  - input_csv_filename: None
+    base_currency: SILVER
+    account_holder: at
+    bank: wallet
+    account_type: physical
+    csv_column_mapping: None
+    tnx_date_columns: None
+
+
+
+# TODO: make these paths relative and ensure both Python and Shell load them correctly.
+dir_paths:
+  root_finance_path: "~/finance"
+  working_subdir: "working_dir"
+  receipt_images_input_dir: "receipt_images_input"        # RELATIVE ✅
+  receipt_images_processed_dir: "receipt_images_processed" # RELATIVE ✅
+  receipt_images_dir: "receipt_images"                   # RELATIVE ✅
+  asset_transaction_csvs_dir: "asset_transaction_csvs"   # RELATIVE ✅
+  receipt_labels_dir: "receipt_labels"                   # RELATIVE ✅
+  hledger_plot_dir: "hledger_plots"
+
+  # start_journal_filepath: "~/start_pos/2024_complete.journal"
+file_names:
+  start_journal_filepath: "start_pos/2024_complete.journal"  # RELATIVE ✅
+  root_journal_filename: "all-years.journal"
+  tui_label_filename: "receipt_image_to_obj_label"
+  categories_filename: "categories.yaml"
+  receipt_img:
+    processing_metadata_ext: ".json"
+    rotate: "_rotated"
+    rotate_ext: ".jpg"
+    crop: "_cropped"
+    crop_ext: ".jpg"
+categorisation:
+  quick: false
+csv_encoding: "utf-8"
+# Specification how the matching algorithm links the receipt objects to the transactions from the csv from your (bank) accounts.
+matching_algo:
+  days: 2
+  amount_range: 0
+  days_month_swap: true
+  multiple_receipts_per_transaction: false

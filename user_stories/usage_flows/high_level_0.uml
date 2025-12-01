@@ -1,0 +1,62 @@
+@startuml
+actor User #0000FF
+participant "Bash Script" as Bash #008000
+participant "process_bank_config" as ProcessBank #FFA500
+participant "hledger_preprocessor" as Preprocessor #800080
+participant "hledger-flow" as HledgerFlow #008080
+participant "hledger_plot" as HledgerPlot #FF0000
+participant "Receipt Processor" as ReceiptProcessor #FF00FF
+
+== Initialization ==
+User -[#0000FF]-> Bash: Run script with config
+Bash -[#008000]-> Bash: Validate config and setup environment
+
+== Process Bank Configuration ==
+Bash -[#008000]-> ProcessBank: Process GENERAL_CONFIG_FILEPATH
+ProcessBank -[#FFA500]-> Preprocessor: Process CSVs for accounts
+Preprocessor -[#800080]-> ProcessBank: Transactions processed
+ProcessBank -[#FFA500]-> Bash: Configuration complete
+
+== Import Transactions ==
+Bash -[#008000]-> HledgerFlow: Run hledger-flow import
+HledgerFlow -[#008080]-> Bash: Transactions imported to all-years.journal
+
+== Receipt to Transaction Conversion ==
+User -[#0000FF]-> ReceiptProcessor: Convert receipt images to CSVs
+alt Use TUI
+    ReceiptProcessor -[#FF00FF]-> User: Prompt for manual labeling
+    User -[#0000FF]-> ReceiptProcessor: Provide labels
+else Use AI
+    ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Process images with AI models
+end alt
+ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Generate CSVs from receipt objects
+ReceiptProcessor -[#FF00FF]-> Bash: CSVs ready
+
+== Match Receipts to Transactions/Assets ==
+User -[#0000FF]-> ReceiptProcessor: Match receipts to transactions/assets
+ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Enrich transactions with receipt details (account_holder, bank, account_type)
+note right
+    Matches receipts to bank transactions or assets (e.g., gold, BTC),
+    adding receipt details to transactions
+end note
+ReceiptProcessor -[#FF00FF]-> Bash: Enriched transactions ready
+
+== Re-Preprocess Enriched Transactions ==
+alt Transactions enriched
+    Bash -[#008000]-> Preprocessor: Re-run preprocessing for enriched transactions/CSVs
+    Preprocessor -[#800080]-> HledgerFlow: Update all-years.journal with enriched data
+    HledgerFlow -[#008080]-> Bash: Journal updated
+end alt
+
+== Generate Reports/Plots ==
+alt RANDOMIZE_DATA == "true"
+    Bash -[#008000]-> HledgerPlot: Generate randomized plot
+    HledgerPlot -[#FF0000]-> Bash: Plot generated
+else RANDOMIZE_DATA == "false"
+    Bash -[#008000]-> HledgerFlow: Generate balance report
+    HledgerFlow -[#008080]-> Bash: Balance report generated
+    Bash -[#008000]-> HledgerPlot: Generate plot
+    HledgerPlot -[#FF0000]-> Bash: Plot generated
+end alt
+
+@enduml

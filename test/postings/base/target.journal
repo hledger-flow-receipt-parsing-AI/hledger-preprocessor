@@ -1,0 +1,5 @@
+2024-01-04 groceries
+    assets:bank:checking                        $-10
+    expenses:food:groceries:fruit:bananas         $2
+    expenses:food:groceries:fruit:apples          $3
+    expenses:food:groceries:vegetables:carrots    $5

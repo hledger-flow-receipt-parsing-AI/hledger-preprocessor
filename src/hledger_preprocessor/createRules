@@ -1,0 +1,64 @@
+#!/bin/bash
+# This file calls the Python preprocessing logic for each `.csv` input file.
+RAW_INPUT_DIR="1-in"
+PREPROCESSED_OUTPUT_DIR="2-preprocessed"
+JOURNAL_OUTPUT_DIR="3-journal"
+RELATIVE_HLEDGER_PREPROCESSOR_CONFIG_PATH="../config.yaml"
+ABS_HLEDGER_PREPROCESSOR_CONFIG_PATH="$PWD/$RELATIVE_HLEDGER_PREPROCESSOR_CONFIG_PATH"
+
+
+#$1=The path to the input statement, e.g. import/john/mybank/savings/1-in/2018/123456789_2018-06-30.csv
+INPUT_CSV_FILEPATH=$1
+
+# $3=The name of the bank, e.g. mybank
+BANK_NAME=$2
+
+# $4=The type of the account, e.g. savings
+ACCOUNT_TYPE=$3
+
+# $5=The name of the owner, e.g. john
+ACCOUNT_HOLDER=$4
+
+if [ ! -f "$ABS_HLEDGER_PREPROCESSOR_CONFIG_PATH" ]; then
+  echo "Error: hledger configuration file does not exist at:$ABS_HLEDGER_PREPROCESSOR_CONFIG_PATH." > "$CREATE_RULES_LOGFILENAME"
+  exit 1
+fi
+
+CREATE_RULES_LOGFILENAME="create_rules_output.log"
+
+echo "INPUT_CSV_FILEPATH=$INPUT_CSV_FILEPATH" > "$CREATE_RULES_LOGFILENAME"
+echo "OUTPUT_CSV_FILEPATH=$OUTPUT_CSV_FILEPATH" >> "$CREATE_RULES_LOGFILENAME"
+echo "BANK_NAME=$BANK_NAME" >> "$CREATE_RULES_LOGFILENAME"
+echo "ACCOUNT_TYPE=$ACCOUNT_TYPE" >> "$CREATE_RULES_LOGFILENAME"
+echo "ACCOUNT_HOLDER=$ACCOUNT_HOLDER" >> "$CREATE_RULES_LOGFILENAME"
+echo ""
+
+echo "PWD=$PWD" >> "$CREATE_RULES_LOGFILENAME"
+echo "RAW_INPUT_DIR=$RAW_INPUT_DIR" >> "$CREATE_RULES_LOGFILENAME"
+echo "PREPROCESSED_OUTPUT_DIR=$PREPROCESSED_OUTPUT_DIR" >> "$CREATE_RULES_LOGFILENAME"
+echo "JOURNAL_OUTPUT_DIR=$JOURNAL_OUTPUT_DIR" >> "$CREATE_RULES_LOGFILENAME"
+echo "whichhledger=$(which hledger_preprocessor)" >> "$CREATE_RULES_LOGFILENAME"
+
+
+PREPROCESSED_PATH_TO_DELETE="$PWD/import/$ACCOUNT_HOLDER/$BANK_NAME/$ACCOUNT_TYPE/2-preprocessed"
+echo "PREPROCESSED_PATH_TO_DELETE=$PREPROCESSED_PATH_TO_DELETE" >> "$CREATE_RULES_LOGFILENAME"
+rm -rf "$PREPROCESSED_PATH_TO_DELETE"
+# TODO: assert the dir does not exist.
+JOURNAL_PATH_TO_DELETE="$PWD/import/$ACCOUNT_HOLDER/$BANK_NAME/$ACCOUNT_TYPE/3-journal"
+echo "JOURNAL_PATH_TO_DELETE=$JOURNAL_PATH_TO_DELETE" >> "$CREATE_RULES_LOGFILENAME"
+rm -rf "$JOURNAL_PATH_TO_DELETE"
+# TODO: assert the dir does not exist.
+
+# TODO: include hledger_preprocessor call to create rules.
+# First set up the start structure.
+
+# Then preprocess the csvs.
+
+# Then create the rules.
+# CREATE_RULES_COMMAND="hledger_preprocessor --start-path $PWD --generate-rules --account-holder $ACCOUNT_HOLDER --bank $BANK_NAME --account-type $ACCOUNT_TYPE"
+CREATE_RULES_COMMAND="hledger_preprocessor --config $ABS_HLEDGER_PREPROCESSOR_CONFIG_PATH --generate-rules"
+
+echo "CREATE_RULES_COMMAND=$CREATE_RULES_COMMAND" >> "$CREATE_RULES_LOGFILENAME"
+# Execute the command and append its output to the log file
+$CREATE_RULES_COMMAND >> "$CREATE_RULES_LOGFILENAME"
+echo "Done construct logging." >> "$CREATE_RULES_LOGFILENAME"

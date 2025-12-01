@@ -1,0 +1,51 @@
+#!/bin/bash
+# This file calls the Python preprocessing logic for each `.csv` input file.
+RAW_INPUT_DIR="1-in"
+PREPROCESSED_OUTPUT_DIR="2-preprocessed"
+JOURNAL_OUTPUT_DIR="3-journal"
+RELATIVE_HLEDGER_PREPROCESSOR_CONFIG_PATH="../config.yaml"
+ABS_HLEDGER_PREPROCESSOR_CONFIG_PATH="$PWD/$RELATIVE_HLEDGER_PREPROCESSOR_CONFIG_PATH"
+
+#$1=The path to the input statement, e.g. import/john/mybank/savings/1-in/2018/123456789_2018-06-30.csv
+INPUT_CSV_FILEPATH=$1
+
+# $2=The path to an output file that can be sent to hledger, e.g. import/john/mybank/savings/2-preprocessed/2018/123456789_2018-06-30.csv
+OUTPUT_CSV_FILEPATH=$2
+
+# $3=The name of the bank, e.g. mybank
+BANK_NAME=$3
+
+# $4=The type of the account, e.g. savings
+ACCOUNT_TYPE=$4
+
+# $5=The name of the owner, e.g. john
+ACCOUNT_HOLDER=$5
+
+if [ ! -f "$ABS_HLEDGER_PREPROCESSOR_CONFIG_PATH" ]; then
+  echo "Error: hledger configuration file does not exist at:$ABS_HLEDGER_PREPROCESSOR_CONFIG_PATH." > "$PREPROCESSING_LOGFILENAME"
+  exit 1
+fi
+
+# TODO: ensure this does not generate rules file in advance.
+# PREPROCESS_COMMAND="hledger_preprocessor --csv-filepath $INPUT_CSV_FILEPATH --start-path $PWD --account-holder $ACCOUNT_HOLDER --bank $BANK_NAME --account-type $ACCOUNT_TYPE --pre-processed-output-dir=$PREPROCESSED_OUTPUT_DIR"
+# clear && hledger_preprocessor --config /home/a/finance/config.yaml --preprocess-csvs --pre-processed-output-dir=2-preprocessed
+
+PREPROCESS_COMMAND="hledger_preprocessor --config $ABS_HLEDGER_PREPROCESSOR_CONFIG_PATH --preprocess-csvs --pre-processed-output-dir=$PREPROCESSED_OUTPUT_DIR"
+
+PREPROCESSING_LOGFILENAME="preprocess_output.log"
+
+echo "INPUT_CSV_FILEPATH=$INPUT_CSV_FILEPATH" > "$PREPROCESSING_LOGFILENAME"
+echo "OUTPUT_CSV_FILEPATH=$OUTPUT_CSV_FILEPATH" >> "$PREPROCESSING_LOGFILENAME"
+echo "BANK_NAME=$BANK_NAME" >> "$PREPROCESSING_LOGFILENAME"
+echo "ACCOUNT_TYPE=$ACCOUNT_TYPE" >> "$PREPROCESSING_LOGFILENAME"
+echo "ACCOUNT_HOLDER=$ACCOUNT_HOLDER" >> "$PREPROCESSING_LOGFILENAME"
+
+echo "PWD=$PWD" >> "$PREPROCESSING_LOGFILENAME"
+echo "RAW_INPUT_DIR=$RAW_INPUT_DIR" >> "$PREPROCESSING_LOGFILENAME"
+echo "PREPROCESSED_OUTPUT_DIR=$PREPROCESSED_OUTPUT_DIR" >> "$PREPROCESSING_LOGFILENAME"
+echo "JOURNAL_OUTPUT_DIR=$JOURNAL_OUTPUT_DIR" >> "$PREPROCESSING_LOGFILENAME"
+
+echo "PREPROCESS_COMMAND=$PREPROCESS_COMMAND" >> "$PREPROCESSING_LOGFILENAME"
+
+$PREPROCESS_COMMAND >> "$PREPROCESSING_LOGFILENAME"
+echo "Done preprocess logging." >> "$PREPROCESSING_LOGFILENAME"

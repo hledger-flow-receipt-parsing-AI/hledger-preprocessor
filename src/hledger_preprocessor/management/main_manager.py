@@ -1,0 +1,395 @@
+import os
+import shutil
+from argparse import Namespace
+from typing import Any, Dict, List
+
+from typeguard import typechecked
+
+from hledger_preprocessor.config.AccountConfig import AccountConfig
+from hledger_preprocessor.config.Config import Config
+from hledger_preprocessor.create_start import (
+    export_csv_transactions_per_acount_into_each_year,
+)
+from hledger_preprocessor.csv_outputting.output_non_input_csv_transactions import (
+    output_non_input_csv_transactions,
+)
+from hledger_preprocessor.csv_parsing.csv_to_transactions import (
+    csv_to_transactions,
+    load_csv_transactions_from_file_per_year,
+)
+from hledger_preprocessor.csv_parsing.preprocess_csvs import pre_process_csvs
+from hledger_preprocessor.Currency import (
+    Transactions,
+)
+from hledger_preprocessor.dir_reading_and_writing import (
+    assert_dir_full_hierarchy_exists,
+)
+from hledger_preprocessor.file_reading_and_writing import assert_file_exists
+from hledger_preprocessor.generics.enums import ClassifierType, LogicType
+from hledger_preprocessor.generics.Transaction import Transaction
+from hledger_preprocessor.get_models import get_models
+from hledger_preprocessor.helper import assert_dir_exists, get_images_in_folder
+from hledger_preprocessor.management.get_all_hledger_flow_accounts import (
+    get_all_accounts,
+)
+from hledger_preprocessor.management.helper import (
+    preprocess_asset_csvs,
+)
+from hledger_preprocessor.matching.helper import (
+    prepare_transactions_per_account,
+)
+from hledger_preprocessor.matching.searching.matching import (
+    manage_matching_receipts_to_transactions,
+)
+from hledger_preprocessor.reading_history.load_receipts_from_dir import (
+    load_receipts_from_dir,
+)
+from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
+    collect_account_transactions,
+)
+from hledger_preprocessor.receipts_to_objects.edit_images.crop_image import (
+    crop_images,
+)
+from hledger_preprocessor.receipts_to_objects.edit_images.rotate_all_images import (
+    rotate_images,
+)
+from hledger_preprocessor.receipts_to_objects.make_receipt_labels import (
+    manually_make_receipt_labels,
+)
+from hledger_preprocessor.receipts_to_objects.receipt_image_converter import (
+    receipt_images_to_receipt_objects,
+)
+from hledger_preprocessor.rules.generate_rules_content import (
+    generate_rules_file,
+)
+from hledger_preprocessor.TransactionObjects.AccountTransaction import (
+    AccountTransaction,
+)
+from hledger_preprocessor.TransactionObjects.LabelledTransaction import (
+    LabelledTransaction,
+)
+from hledger_preprocessor.TransactionObjects.Receipt import Receipt
+
+
+# Action 0.
+@typechecked
+def manage_creating_new_setup(
+    *,
+    config: Config,
+) -> None:
+    print("\n\nSTARTING NEW SETUP")
+    for account_config in config.accounts:
+        csv_filepath: str = account_config.get_abs_csv_filepath(
+            dir_paths_config=config.dir_paths
+        )
+
+        transactions_per_year_per_account: Dict[int, List[Transaction]] = (
+            load_csv_transactions_from_file_per_year(
+                abs_csv_filepath=csv_filepath,
+                transactions_type=Transactions.TRIODOS,
+                account_config=account_config,
+                csv_encoding=config.csv_encoding,
+            )
+        )
+
+        export_csv_transactions_per_acount_into_each_year(
+            config=config,
+            account_config=account_config,
+            transaction_years=list(transactions_per_year_per_account.keys()),
+        )
+
+
+# Action 1.
+@typechecked
+def manage_preprocessing_csvs(
+    *,
+    config: Config,
+    quick_categorisation: bool,
+) -> None:
+    if (
+        config.dir_paths.get_path("pre_processed_output_dir", absolute=True)
+        is None
+    ):
+        raise ValueError(
+            "config.dir_paths.get_path('pre_processed_output_dir',"
+            " absolute=True ) should be set with args.pre_processed_output_dir"
+        )
+
+    models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
+        quick_categorisation=quick_categorisation
+    )
+    preprocess_asset_csvs(config=config, models=models)
+
+    transactions_per_year_per_account: Dict[int, List[Transaction]] = {}
+
+    for account_config in config.accounts:
+        print(f"account_config={account_config}")
+        # your code here
+
+        if account_config.has_input_csv():
+            transactions_type: Transactions = Transactions.TRIODOS
+        else:
+            transactions_type: Transactions = Transactions.ASSET
+        abs_csv_filepath: str = account_config.get_abs_csv_filepath(
+            dir_paths_config=config.dir_paths
+        )
+        print(f"abs_csv_filepath={abs_csv_filepath}")
+        if os.path.isfile(path=abs_csv_filepath):
+
+            transactions_per_year_per_account: Dict[int, List[Transaction]] = (
+                csv_to_transactions(
+                    input_csv_filepath=abs_csv_filepath,
+                    transactions_type=transactions_type,
+                    csv_encoding=config.csv_encoding,
+                    account_config=account_config,
+                )
+            )
+
+            # TODO: Throw warning or error if createRules is not included.
+            # TODO: ensure the import directory is created.
+            # TODO: re-enable
+            # assert_dir_full_hierarchy_exists(
+            #     account=account_config.account, working_subdir=config.get_working_subdir_path(assert_exists=False)
+            # )
+            pre_process_csvs(
+                config=config,
+                account_config=account_config,
+                transactions_per_year=transactions_per_year_per_account,
+                ai_models_tnx_classification=models[
+                    ClassifierType.TRANSACTION_CATEGORY
+                ][LogicType.AI],
+                rule_based_models_tnx_classification=models[
+                    ClassifierType.TRANSACTION_CATEGORY
+                ][LogicType.RULE_BASED],
+            )
+            assert_dir_full_hierarchy_exists(
+                config=config,
+                account=account_config.account,
+                working_subdir=config.get_working_subdir_path(
+                    assert_exists=False
+                ),
+            )
+        else:
+            print(f"SKIPPING FOR:{abs_csv_filepath}")
+
+
+@typechecked
+def manage_preprocessing_assets(
+    *,
+    config: Config,
+) -> None:
+    # found_asset_years: List[int] = [2023, 2024, 2025]  # TODO: get from code.
+
+    # Remove asset directory:
+    asset_path: str = (
+        f"{config.dir_paths.root_finance_path}/{config.dir_paths.asset_transaction_csvs_dir}"
+    )
+
+    if os.path.isdir(asset_path):
+        shutil.rmtree(asset_path)
+
+    assert not os.path.exists(asset_path)
+
+    non_input_csv_transactions: Dict[
+        AccountConfig, List[LabelledTransaction]
+    ] = {}
+    for account_config in config.get_account_configs_without_csv():
+        non_input_csv_transactions[account_config] = []
+
+    # for currency in config.include_asset_transactions.currencies:
+    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
+
+    for labelled_receipt in labelled_receipts:
+        # for net_bought_item in labelled_receipt.net_bought_items:
+        all_account_transactions: List[AccountTransaction] = (
+            collect_account_transactions(
+                receipt=labelled_receipt, verbose=False
+            )
+        )
+
+        for receipt_account_transaction in all_account_transactions:
+
+            for account_config in config.get_account_configs_without_csv():
+
+                if (
+                    receipt_account_transaction.account
+                    == account_config.account
+                ):
+                    non_input_csv_transactions[account_config].append(
+                        LabelledTransaction(
+                            account_transaction=receipt_account_transaction,
+                            parent_receipt=labelled_receipt,
+                        )
+                    )
+
+            # TODO: loop over receipt labels and get the transactions from that account respectively.
+
+    output_non_input_csv_transactions(
+        config=config,
+        non_input_csv_transactions=non_input_csv_transactions,
+    )
+    # Create output structure like bank for assets.
+    # export_csv_transactions_per_acount_into_each_year(
+    #     config=config,
+    #     account_config=asset_account_config,
+    #     transaction_years=found_asset_years,
+    # )
+
+
+# Action 2
+@typechecked
+def manage_generating_rules(*, config: Config) -> None:
+
+    for account_config in config.accounts:
+        assert_dir_full_hierarchy_exists(
+            config=config,
+            account=account_config.account,
+            working_subdir=config.get_working_subdir_path(assert_exists=False),
+        )
+        generate_rules_file(
+            config=config,
+            account_config=account_config,
+        )
+
+
+@typechecked
+def manage_creating_receipt_img_labels_with_tui(
+    *, config: Config, verbose: bool
+) -> Dict[str, Receipt]:
+    # Ensure directories exist
+    assert_dir_exists(
+        dirpath=config.dir_paths.get_path(
+            "receipt_images_input_dir", absolute=True
+        )
+    )
+    assert_dir_exists(
+        dirpath=config.dir_paths.get_path("receipt_labels_dir", absolute=True)
+    )
+    os.makedirs(
+        config.dir_paths.get_path("receipt_images_input_dir", absolute=True),
+        exist_ok=True,
+    )
+    os.makedirs(
+        config.dir_paths.get_path(
+            "receipt_images_processed_dir", absolute=True
+        ),
+        exist_ok=True,
+    )
+
+    # Load pre-existing receipts to get addresses.
+    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
+
+    filepath_receipt_object: Dict[str, Receipt] = {}
+
+    raw_receipt_img_filepaths: List[str] = get_images_in_folder(
+        folder_path=config.dir_paths.get_path(
+            "receipt_images_input_dir", absolute=True
+        )
+    )
+
+    # Step 1: Rotate all images
+    rotate_images(
+        raw_receipt_img_filepaths=raw_receipt_img_filepaths, config=config
+    )
+
+    # Step 2: Crop all images
+    crop_images(
+        raw_receipt_img_filepaths=raw_receipt_img_filepaths, config=config
+    )
+
+    receipt_per_raw_img_filepath: Dict[str, Receipt] = (
+        manually_make_receipt_labels(
+            config=config,
+            raw_receipt_img_filepaths=raw_receipt_img_filepaths,
+            hledger_account_infos=get_all_accounts(
+                config=config, transactions_type=Transactions.TRIODOS
+            ),
+            labelled_receipts=labelled_receipts,
+            verbose=verbose,
+        )
+    )
+
+    # Assert receipts exist
+    for (
+        raw_receipt_img_filepath,
+        receipt_obj,
+    ) in receipt_per_raw_img_filepath.items():
+        assert_file_exists(filepath=raw_receipt_img_filepath)
+        if raw_receipt_img_filepath in filepath_receipt_object:
+            raise ValueError(
+                "Error, overwriting a receipt at"
+                f" filepath:{raw_receipt_img_filepath}, it is already"
+                " processed."
+            )
+        filepath_receipt_object[raw_receipt_img_filepath] = receipt_obj
+
+    return filepath_receipt_object
+
+
+@typechecked
+def manage_getting_manual_receipt_labels(
+    *, config: Config, only_get_existing_jsons: bool
+) -> Dict[str, Receipt]:
+    if only_get_existing_jsons:
+        # TODO: don't ask the user to make additional labels, just work with the ones you have.
+        raise NotImplementedError(
+            "Did not write load receipts from file without additional tui call."
+        )
+    else:
+        # return manage_creating_receipt_img_labels_with_tui(
+        #     args=args, csv_encoding=csv_encoding
+        # )
+        return manage_creating_receipt_img_labels_with_tui(
+            config=config, verbose=False
+        )
+
+
+@typechecked
+def manage_matching_manual_receipt_objs_to_account_transactions(
+    *, config: Config, args: Namespace
+) -> None:
+    json_paths_receipt_objs: Dict[str, Receipt] = (
+        manage_getting_manual_receipt_labels(
+            config=config,
+            only_get_existing_jsons=False,
+        )
+    )
+
+    models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
+        quick_categorisation=args.quick_categorisation
+    )
+
+    manage_matching_receipts_to_transactions(
+        config=config,
+        json_paths_receipt_objs=json_paths_receipt_objs,
+        csv_transactions_per_account=prepare_transactions_per_account(
+            config=config, transactions_type=Transactions.TRIODOS
+        ),
+        models=models,
+    )
+    # concatenate_asset_csvs(config=config)
+    print("DONE WITH ALL MATCHING")
+
+
+## Vulture unused. ##
+@typechecked
+def manage_getting_ai_receipt_objects_from_images(
+    *, args: Namespace
+) -> Dict[LogicType, Dict[str, Dict[str, Receipt]]]:
+    if args.pre_processed_output_dir or args.receipts_path:
+        models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
+            quick_categorisation=args.quick_categorisation
+        )
+        if args.receipts_path:
+            receipt_filepaths: List[str] = get_images_in_folder(
+                folder_path=args.receipts_path
+            )
+
+            # Convert receipt images to inferenced labels, if they do not yet exist.
+            return receipt_images_to_receipt_objects(
+                receipt_filepaths=receipt_filepaths,
+                dataset_path=args.dataset_path,
+                ai_models_receipt_parsing=models[
+                    ClassifierType.RECEIPT_IMAGE_TO_OBJ
+                ][LogicType.AI],
+            )

@@ -1,0 +1,24 @@
+# skip the headings line:
+skip 1
+
+# use the first three CSV fields for hledger's transaction date, description and amount:
+fields date, description, amount
+
+# specify the date field's format - not needed here since date is Y/M/D
+# date-format %-d/%-m/%Y
+# date-format %-m/%-d/%Y
+# date-format %Y-%h-%d
+
+# since the CSV amounts have no currency symbol, add one:
+currency $
+
+# set the base account that this CSV file corresponds to
+account1 assets:bank:checking
+
+# the other account will default to expenses:unknown or income:unknown;
+# we can optionally refine it by matching patterns in the CSV record:
+if (TO|FROM) SAVINGS
+  account2 assets:bank:savings
+
+if WHOLE FOODS
+  account2 expenses:food

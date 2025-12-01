@@ -1,0 +1,74 @@
+@startuml
+actor User
+
+participant "Bash Script" as Bash
+participant "process_bank_config" as ProcessBank
+participant "hledger_preprocessor" as Preprocessor
+participant "hledger-flow" as HledgerFlow
+participant "hledger_plot" as HledgerPlot
+participant Filesystem
+participant Conda
+
+== Initialization ==
+User -> Bash: Run script
+Bash -> Filesystem: Check GENERAL_CONFIG_FILEPATH exists
+Filesystem --> Bash: Config file exists
+Bash -> Bash: Validate RANDOMIZE_DATA ("true" or "false")
+Bash -> Filesystem: Clear and create WORKING_DIR
+Filesystem --> Bash: WORKING_DIR ready
+Bash -> Conda: Initialize and activate hledger_preprocessor env
+Conda --> Bash: Environment activated
+Bash -> Bash: Display WORKING_DIR, START_JOURNAL_FILEPATH, GENERAL_CONFIG_FILEPATH
+
+== Configuration Validation ==
+Bash -> ProcessBank: Call process_bank_config(GENERAL_CONFIG_FILEPATH, WORKING_DIR)
+ProcessBank -> Filesystem: Verify GENERAL_CONFIG_FILEPATH is YAML
+Filesystem --> ProcessBank: File is valid YAML
+ProcessBank -> Filesystem: Check .accounts in YAML
+Filesystem --> ProcessBank: Accounts found
+loop for each account in .accounts
+    ProcessBank -> Filesystem: Read account details (csv_filepath, account_holder, bank, account_type)
+    Filesystem --> ProcessBank: Account details
+    ProcessBank -> Filesystem: Verify csv_filepath exists
+    Filesystem --> ProcessBank: CSV exists
+    ProcessBank -> Preprocessor: Call hledger_preprocessor --config --new-setup
+    Preprocessor -> Filesystem: Process CSV for account_holder/bank/account_type
+    Preprocessor --> ProcessBank: Processed transactions
+end loop
+
+== hledger-flow Import ==
+Bash -> HledgerFlow: Run hledger-flow import
+note right
+    Expected input structure:
+    WORKING_DIR/import/account_holder/bank/account_type
+    - account_holder: e.g., "JohnDoe"
+    - bank: e.g., "ING"
+    - account_type: e.g., "checking"
+    Processes CSVs into all-years.journal
+end note
+HledgerFlow -> Filesystem: Read CSVs from WORKING_DIR/import
+HledgerFlow -> Filesystem: Write to all-years.journal
+Filesystem --> HledgerFlow: Journal updated
+HledgerFlow --> Bash: Import complete
+
+== Include Starting Position ==
+Bash -> Filesystem: Check if START_JOURNAL_FILEPATH included in all-years.journal
+Filesystem --> Bash: Not included
+Bash -> Filesystem: Append "include START_JOURNAL_FILEPATH" to all-years.journal
+Filesystem --> Bash: Journal updated
+
+== Plotting or Balance Report ==
+alt RANDOMIZE_DATA == "true"
+    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s -r
+    HledgerPlot -> Filesystem: Read all-years.journal
+    HledgerPlot --> Bash: Plot generated
+else RANDOMIZE_DATA == "false"
+    Bash -> HledgerFlow: Run hledger bal -X EUR -f all-years.journal
+    HledgerFlow -> Filesystem: Read all-years.journal
+    HledgerFlow --> Bash: Balance report generated
+    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s
+    HledgerPlot -> Filesystem: Read all-years.journal
+    HledgerPlot --> Bash: Plot generated
+end alt
+
+@enduml

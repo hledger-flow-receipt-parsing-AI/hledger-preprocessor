@@ -1,0 +1,11 @@
+# some.csv.rules
+
+# skip the header line
+skip
+
+# name the csv fields, and assign some of them as journal entry fields
+fields  date,account1,account2,account3,amount1,amount2,amount3
+
+
+# set the currency
+currency  EUR
