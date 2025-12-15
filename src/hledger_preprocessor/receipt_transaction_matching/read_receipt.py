@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Union
 
 from typeguard import typechecked
 
+from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
@@ -25,6 +26,7 @@ from hledger_preprocessor.TransactionObjects.ShopId import ShopId
 @typechecked
 def read_receipt_from_json(
     *,
+    config: Config,
     label_filepath: str,
     verbose: bool,
     raw_receipt_img_filepath: Optional[str],
@@ -91,13 +93,22 @@ def read_receipt_from_json(
                 f"Did not find the {raw_receipt_img_filepath} in the receipt."
             )
         converted_data["raw_img_filepath"] = raw_receipt_img_filepath
+    if "config" in converted_data.keys():
+        converted_data.pop("config")
+        print(
+            f"WARNING: Popped old config, tied to receipt updated"
+            f" it with new config"
+        )
     return Receipt(
+        config=config,
         # shop_identifier=converted_data["shop_identifier"],
         net_bought_items=convert_to_exchanged_item(
+            the_date=converted_data["the_date"],
             net_items_dict=net_bought_items_dict,
             account_transaction_type="account_transactions",
         ),
         net_returned_items=convert_to_exchanged_item(
+            the_date=converted_data["the_date"],
             net_items_dict=net_returned_items_dict,
             account_transaction_type="account_transactions",  # TODO: convert to ENUM
         ),
@@ -107,7 +118,10 @@ def read_receipt_from_json(
 
 @typechecked
 def convert_to_exchanged_item(
-    *, net_items_dict: Union[None, Dict], account_transaction_type: str
+    *,
+    the_date: datetime,
+    net_items_dict: Union[None, Dict],
+    account_transaction_type: str,
 ) -> Union[None, ExchangedItem]:
     """
     Convert a dictionary to an ExchangedItem, processing account transactions.
@@ -129,12 +143,14 @@ def convert_to_exchanged_item(
 
             if account_dict and isinstance(account_dict, dict):
                 if (
-                    "currency" in account_transaction_dict.keys()
-                    and "base_currency" not in account_dict.keys()
+                    "currency"
+                    in account_transaction_dict.keys()
+                    # and "base_currency" not in account_dict.keys()
                 ):
-                    account_dict["base_currency"] = Currency(
-                        account_transaction_dict["currency"]
-                    )
+                    account_transaction_dict.pop("currency")
+                    # account_dict["base_currency"] = Currency(
+                    #     account_transaction_dict["currency"]
+                    # )
                 if isinstance(account_dict["base_currency"], str):
                     account_dict["base_currency"] = Currency(
                         account_dict["base_currency"]
@@ -147,6 +163,7 @@ def convert_to_exchanged_item(
                     account_dict.pop("asset_category")
 
                 account_transaction_dict["account"] = Account(**account_dict)
+                account_transaction_dict["the_date"] = the_date
             account_transactions.append(
                 AccountTransaction(**account_transaction_dict)
             )

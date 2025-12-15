@@ -18,9 +18,6 @@ from hledger_preprocessor.csv_parsing.csv_to_transactions import (
     load_csv_transactions_from_file_per_year,
 )
 from hledger_preprocessor.csv_parsing.preprocess_csvs import pre_process_csvs
-from hledger_preprocessor.Currency import (
-    Transactions,
-)
 from hledger_preprocessor.dir_reading_and_writing import (
     assert_dir_full_hierarchy_exists,
 )
@@ -29,9 +26,6 @@ from hledger_preprocessor.generics.enums import ClassifierType, LogicType
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.get_models import get_models
 from hledger_preprocessor.helper import assert_dir_exists, get_images_in_folder
-from hledger_preprocessor.management.get_all_hledger_flow_accounts import (
-    get_all_accounts,
-)
 from hledger_preprocessor.management.helper import (
     preprocess_asset_csvs,
 )
@@ -45,7 +39,7 @@ from hledger_preprocessor.reading_history.load_receipts_from_dir import (
     load_receipts_from_dir,
 )
 from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
-    collect_account_transactions,
+    collect_non_csv_transactions,
 )
 from hledger_preprocessor.receipts_to_objects.edit_images.crop_image import (
     crop_images,
@@ -86,7 +80,6 @@ def manage_creating_new_setup(
         transactions_per_year_per_account: Dict[int, List[Transaction]] = (
             load_csv_transactions_from_file_per_year(
                 abs_csv_filepath=csv_filepath,
-                transactions_type=Transactions.TRIODOS,
                 account_config=account_config,
                 csv_encoding=config.csv_encoding,
             )
@@ -124,12 +117,7 @@ def manage_preprocessing_csvs(
 
     for account_config in config.accounts:
         print(f"account_config={account_config}")
-        # your code here
 
-        if account_config.has_input_csv():
-            transactions_type: Transactions = Transactions.TRIODOS
-        else:
-            transactions_type: Transactions = Transactions.ASSET
         abs_csv_filepath: str = account_config.get_abs_csv_filepath(
             dir_paths_config=config.dir_paths
         )
@@ -139,7 +127,6 @@ def manage_preprocessing_csvs(
             transactions_per_year_per_account: Dict[int, List[Transaction]] = (
                 csv_to_transactions(
                     input_csv_filepath=abs_csv_filepath,
-                    transactions_type=transactions_type,
                     csv_encoding=config.csv_encoding,
                     account_config=account_config,
                 )
@@ -202,7 +189,7 @@ def manage_preprocessing_assets(
     for labelled_receipt in labelled_receipts:
         # for net_bought_item in labelled_receipt.net_bought_items:
         all_account_transactions: List[AccountTransaction] = (
-            collect_account_transactions(
+            collect_non_csv_transactions(
                 receipt=labelled_receipt, verbose=False
             )
         )
@@ -217,6 +204,9 @@ def manage_preprocessing_assets(
                 ):
                     non_input_csv_transactions[account_config].append(
                         LabelledTransaction(
+                            account=receipt_account_transaction.account,
+                            the_date=labelled_receipt.the_date,
+                            amount_out_account=receipt_account_transaction.amount_out_account,
                             account_transaction=receipt_account_transaction,
                             parent_receipt=labelled_receipt,
                         )
@@ -228,12 +218,6 @@ def manage_preprocessing_assets(
         config=config,
         non_input_csv_transactions=non_input_csv_transactions,
     )
-    # Create output structure like bank for assets.
-    # export_csv_transactions_per_acount_into_each_year(
-    #     config=config,
-    #     account_config=asset_account_config,
-    #     transaction_years=found_asset_years,
-    # )
 
 
 # Action 2
@@ -301,9 +285,6 @@ def manage_creating_receipt_img_labels_with_tui(
         manually_make_receipt_labels(
             config=config,
             raw_receipt_img_filepaths=raw_receipt_img_filepaths,
-            hledger_account_infos=get_all_accounts(
-                config=config, transactions_type=Transactions.TRIODOS
-            ),
             labelled_receipts=labelled_receipts,
             verbose=verbose,
         )
@@ -363,7 +344,7 @@ def manage_matching_manual_receipt_objs_to_account_transactions(
         config=config,
         json_paths_receipt_objs=json_paths_receipt_objs,
         csv_transactions_per_account=prepare_transactions_per_account(
-            config=config, transactions_type=Transactions.TRIODOS
+            config=config,
         ),
         models=models,
     )

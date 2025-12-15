@@ -9,11 +9,11 @@ from typeguard import typechecked
 
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.TransactionObjects.Account import Account
+from hledger_preprocessor.TransactionObjects.AccountTransaction import (
+    AccountTransaction,
+)
 from hledger_preprocessor.TransactionObjects.Address import Address
 from hledger_preprocessor.TransactionObjects.ShopId import ShopId
-from hledger_preprocessor.TransactionTypes.AssetTransaction import (
-    AssetTransaction,
-)
 
 
 @typechecked
@@ -61,11 +61,11 @@ def read_csv_to_asset_transactions(
     *,
     csv_filepath: str,
     csv_encoding: str = "utf-8",
-) -> List[AssetTransaction]:
+) -> List[AccountTransaction]:
     """
-    Reads transactions from a CSV file and converts them into a list of AssetTransaction objects.
+    Reads transactions from a CSV file and converts them into a list of Transaction objects.
     """
-    transactions: List[AssetTransaction] = []
+    transactions: List[AccountTransaction] = []
 
     if not Path(csv_filepath).exists():
         # raise FileNotFoundError(f'csv_filepath={csv_filepath}')
@@ -91,8 +91,8 @@ def read_csv_to_asset_transactions(
             else:
                 amount0 = float(row["amount"])
 
-            other_party = parse_shop_id(shop_id_str=row["other_party"])
-            parent_receipt_category = row.get("parent_receipt_category", "")
+            # other_party = parse_shop_id(shop_id_str=row["other_party"])
+            row.get("parent_receipt_category", "")
 
             # Handle optional fields
             asset_account: Account = Account(
@@ -117,18 +117,12 @@ def read_csv_to_asset_transactions(
             raw_receipt_img_filepath = (
                 row.get("raw_receipt_img_filepath") or None
             )
-
-            # Create AssetTransaction object
-            transaction = AssetTransaction(
-                account=asset_account,
+            transaction: AccountTransaction = AccountTransaction(
                 the_date=the_date,
-                # currency=currency,
+                account=asset_account,
+                # currency=asset_account.base_currency,
                 amount_out_account=amount0,
-                other_party=other_party,
-                parent_receipt_category=parent_receipt_category,
-                ai_classification=ai_classification,
-                logic_classification=logic_classification,
-                raw_receipt_img_filepath=raw_receipt_img_filepath,
+                # change_returned=0,
             )
             transactions.append(transaction)
 

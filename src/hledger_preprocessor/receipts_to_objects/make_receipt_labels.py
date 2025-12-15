@@ -13,7 +13,7 @@ from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import (
     raw_receipt_img_filepath_to_cropped,
 )
-from hledger_preprocessor.Currency import Currency, Transactions
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.dir_reading_and_writing import (
     find_receipt_folder_path,
 )
@@ -42,7 +42,6 @@ def manually_make_receipt_labels(
     *,
     config: Config,
     raw_receipt_img_filepaths: List[str],
-    hledger_account_infos: set[HledgerFlowAccountInfo],
     labelled_receipts: List[Receipt],
     verbose: bool,
 ) -> Dict[str, Receipt]:
@@ -86,7 +85,7 @@ def manually_make_receipt_labels(
                 cropped_receipt_img_filepath=cropped_receipt_img_filepath,
                 # TODO: determine whether this should be Transactions.Triodos or Transactions.Assets
                 hledger_account_infos=get_all_accounts(
-                    config=config, transactions_type=Transactions.TRIODOS
+                    config=config,
                 ),
                 receipt_nr=receipt_nr,
                 total_nr_of_receipts=len(raw_receipt_img_filepaths),
@@ -100,6 +99,7 @@ def manually_make_receipt_labels(
             print(f"Saved manual label to:\n{label_filepath}")
         else:
             receipt_label: Receipt = read_receipt_from_json(
+                config=config,
                 label_filepath=label_filepath,
                 verbose=verbose,
                 raw_receipt_img_filepath=raw_receipt_img_filepath,
@@ -164,6 +164,8 @@ def export_human_label(*, receipt: "Receipt", label_filepath: str) -> None:
         if isinstance(obj, dict):
             return {key: convert_types(value) for key, value in obj.items()}
         elif isinstance(obj, list):
+            return [convert_types(item) for item in obj]
+        elif isinstance(obj, tuple):
             return [convert_types(item) for item in obj]
         elif isinstance(obj, datetime):
             return obj.isoformat()

@@ -1,21 +1,21 @@
 from copy import deepcopy
 from decimal import Decimal
 from pprint import pprint
-from typing import Dict, List
+from typing import List
 
 from typeguard import typechecked
 
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
-    collect_account_transactions,
+    collect_non_csv_transactions,
 )
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
-from hledger_preprocessor.TransactionTypes.TriodosTransaction import (
-    TriodosTransaction,
-)
 
 
 @typechecked
@@ -49,7 +49,7 @@ def inject_csv_transaction_to_receipt(
 
     # Create an Account object for the bank transaction.
     if float(
-        Decimal(str(original_receipt_account_transaction.amount_paid))
+        Decimal(str(original_receipt_account_transaction.amount_out_account))
         - Decimal(str(original_receipt_account_transaction.change_returned))
         > 0
     ):
@@ -88,14 +88,16 @@ def find_matching_receipt_transaction_and_inject_csv_transaction(
         # Inject the csv_transaction into the receipt transaction.
         has_injected: bool = False
         all_account_transactions: List[AccountTransaction] = (
-            collect_account_transactions(receipt=receipt, verbose=False)
+            collect_non_csv_transactions(receipt=receipt, verbose=False)
         )
         for receipt_account_transaction in all_account_transactions:
             if receipt_account_transaction.__eq__(
                 original_receipt_account_transaction
             ):
-                receipt_account_transaction.original_transaction = (
-                    found_csv_transaction
+                object.__setattr__(
+                    receipt_account_transaction,
+                    "original_transaction",
+                    found_csv_transaction,
                 )
                 has_injected = True
         if not has_injected:
@@ -124,10 +126,10 @@ def receipt_already_contains_csv_transaction(
     *, receipt: Receipt, csv_transaction: Transaction
 ) -> bool:
     # Collect account transactions in receipt.
-    if not isinstance(csv_transaction, TriodosTransaction):
+    if not isinstance(csv_transaction, Transaction):
         raise TypeError(f"Unsupported csv transaction type:{csv_transaction}")
     receipt_transactions: List[AccountTransaction] = (
-        collect_account_transactions(receipt)
+        collect_non_csv_transactions(receipt)
     )
     if not receipt_transactions:
         return False
@@ -135,20 +137,28 @@ def receipt_already_contains_csv_transaction(
     nr_of_matches: int = 0
     for receipt_transaction in receipt_transactions:
         if receipt_transaction.original_transaction:
-
-            if isinstance(receipt_transaction.original_transaction, Dict):
-                csv_transaction_in_receipt: TriodosTransaction = (
-                    TriodosTransaction(
-                        **receipt_transaction.original_transaction
-                    )
+            if not (
+                isinstance(
+                    receipt_transaction.original_transaction,
+                    GenericCsvTransaction,
                 )
-            else:
-                csv_transaction_in_receipt: TriodosTransaction = (
-                    receipt_transaction.original_transaction
+                or isinstance(
+                    receipt_transaction.original_transaction, AccountTransaction
                 )
+            ):
+                raise TypeError(
+                    "Found unexpected"
+                    f" type:{receipt_transaction.original_transaction}"
+                )
+            # if isinstance(receipt_transaction.original_transaction, dict):
+            #     csv_transaction_in_receipt: GenericCsvTransaction = (
+            #         GenericCsvTransaction(
+            #             **receipt_transaction.original_transaction
+            #         )
+            #     )
             if (
                 # receipt_transaction.original_transaction.get_hash()
-                csv_transaction_in_receipt.get_hash()
+                receipt_transaction.original_transaction.get_hash()
                 == csv_transaction.get_hash()
             ):
                 nr_of_matches += 1

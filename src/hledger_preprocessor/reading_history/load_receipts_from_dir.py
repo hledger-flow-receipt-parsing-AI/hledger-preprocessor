@@ -68,8 +68,14 @@ def load_existing_receipt_labels_via_images(
                 receipt_data = json.load(f)
                 if "raw_img_filepath" not in receipt_data.keys():
                     receipt_data["raw_img_filepath"] = raw_receipt_img_filepath
+                if "config" in receipt_data.keys():
+                    receipt_data.pop("config")
+                    print(
+                        f"WARNING: Popped old config, tied to receipt updated"
+                        f" it with new config"
+                    )
                 receipt = Receipt(
-                    **receipt_data
+                    config=config, **receipt_data
                 )  # Assuming Receipt is a dataclass or similar
                 receipt_per_raw_img_filepath[
                     (raw_receipt_img_filepath, label_filepath)
@@ -90,15 +96,15 @@ def load_receipts_from_dir(*, config: Config) -> List[Receipt]:
     """
 
     # Ensure the labels directory exists
-    assert_dir_exists(
-        dirpath=config.dir_paths.get_path("receipt_labels_dir", absolute=True)
+    abs_receipt_dir_path: str = config.dir_paths.get_path(
+        "receipt_labels_dir", absolute=True
     )
+    assert_dir_exists(dirpath=abs_receipt_dir_path)
+    print(f"abs_receipt_dir_path={abs_receipt_dir_path}")
 
     receipts: List[Receipt] = []
     label_files = get_files_in_folder(
-        folder_path=config.dir_paths.get_path(
-            "receipt_labels_dir", absolute=True
-        ),
+        folder_path=abs_receipt_dir_path,
         file_name=config.file_names.tui_label_filename,
         extensions=[".json"],  # Assuming labels are stored as JSON files
     )
@@ -123,7 +129,13 @@ def load_receipts_from_dir(*, config: Config) -> List[Receipt]:
                         receipt_data["raw_img_filepath"] = (
                             raw_receipt_img_filepath
                         )
-                        receipt = Receipt(**receipt_data)
+                        if "config" in receipt_data.keys():
+                            receipt_data.pop("config")
+                            print(
+                                f"WARNING: Popped old config, tied to receipt"
+                                f" updated it with new config"
+                            )
+                        receipt = Receipt(config=config, **receipt_data)
                         found_label = True
 
                         export_human_label(
@@ -132,7 +144,13 @@ def load_receipts_from_dir(*, config: Config) -> List[Receipt]:
                 if not found_label:
                     raise FileNotFoundError(f" did not find:{label_filepath}")
             else:
-                receipt = Receipt(**receipt_data)
+                if "config" in receipt_data.keys():
+                    receipt_data.pop("config")
+                    print(
+                        f"WARNING: Popped old config, tied to receipt updated"
+                        f" it with new config"
+                    )
+                receipt = Receipt(config=config, **receipt_data)
                 receipts.append(receipt)
 
     return receipts

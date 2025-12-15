@@ -18,11 +18,11 @@ from hledger_preprocessor.dir_reading_and_writing import (
 from hledger_preprocessor.rules.generate_rules_content import (
     generate_rules_file,
 )
+from hledger_preprocessor.TransactionObjects.AccountTransaction import (
+    AccountTransaction,
+)
 from hledger_preprocessor.TransactionObjects.LabelledTransaction import (
     LabelledTransaction,
-)
-from hledger_preprocessor.TransactionTypes.AssetTransaction import (
-    AssetTransaction,
 )
 
 
@@ -46,67 +46,69 @@ def output_non_input_csv_transactions(  # TODO: rename the starting info.
     """
 
     for account_config, transactions in non_input_csv_transactions.items():
-        years: set[int] = set()
-        for tnx in transactions:
-            years.add(tnx.parent_receipt.get_year())
-
-        path_to_account_type, transaction_year_paths = (
-            ensure_hledger_flow_dir_structure_is_build(
-                config=config,
-                account_holder=account_config.account.account_holder,
-                bank=account_config.account.bank,
-                account_type=account_config.account.account_type,
-                transaction_years=list(years),
-            )
-        )
-
-        current_path: str = get_script_path()
-        copy_file_to_target_dir(
-            path_to_account_type=path_to_account_type,
-            source_script_path=f"{current_path}/createRules",
-        )
-        copy_file_to_target_dir(
-            path_to_account_type=path_to_account_type,
-            source_script_path=f"{current_path}/preprocess",
-        )
-
-        if account_config.has_input_csv():
-            raise ValueError("Should not have input csv filepath specified")
-        else:
-            csv_output_filepath: str = account_config.get_abs_csv_filepath(
-                dir_paths_config=config.dir_paths
-            )
-
+        if transactions:
+            years: set[int] = set()
             for tnx in transactions:
-                # TODO: Don't rely on asset transaction.
-                asset_tnx: AssetTransaction = AssetTransaction(
-                    account=account_config.account,
-                    the_date=tnx.parent_receipt.the_date,
-                    amount_out_account=tnx.account_transaction.amount_paid
-                    - tnx.account_transaction.change_returned,
-                    other_party=tnx.parent_receipt.shop_identifier,
-                    parent_receipt_category=tnx.parent_receipt.receipt_category,
-                    ai_classification=tnx.parent_receipt.ai_receipt_categorisation,
-                    logic_classification=tnx.parent_receipt.ai_receipt_categorisation,
-                    raw_receipt_img_filepath=tnx.parent_receipt.raw_img_filepath,
+                years.add(tnx.parent_receipt.get_year())
+
+            path_to_account_type, transaction_year_paths = (
+                ensure_hledger_flow_dir_structure_is_build(
+                    config=config,
+                    account_holder=account_config.account.account_holder,
+                    bank=account_config.account.bank,
+                    account_type=account_config.account.account_type,
+                    transaction_years=list(years),
                 )
-                write_asset_transaction_to_csv(
-                    transaction=asset_tnx,
-                    filepath=csv_output_filepath,
+            )
+
+            current_path: str = get_script_path()
+            copy_file_to_target_dir(
+                path_to_account_type=path_to_account_type,
+                source_script_path=f"{current_path}/createRules",
+            )
+            copy_file_to_target_dir(
+                path_to_account_type=path_to_account_type,
+                source_script_path=f"{current_path}/preprocess",
+            )
+
+            if account_config.has_input_csv():
+                raise ValueError("Should not have input csv filepath specified")
+            else:
+                csv_output_filepath: str = account_config.get_abs_csv_filepath(
+                    dir_paths_config=config.dir_paths
                 )
 
-            for some_year_path in transaction_year_paths:
-                copy_file_to_target_dir(
-                    path_to_account_type=f"{some_year_path}",
-                    source_script_path=csv_output_filepath,
-                )
+                for tnx in transactions:
+                    account_txn: AccountTransaction = AccountTransaction(
+                        the_date=tnx.the_date,
+                        account=account_config.account,
+                        # currency=account_config.account.base_currency,
+                        amount_out_account=tnx.account_transaction.amount_out_account,
+                        change_returned=tnx.account_transaction.change_returned,
+                        original_transaction=tnx,
+                    )
 
-        assert_dir_full_hierarchy_exists(
-            config=config,
-            account=account_config.account,
-            working_subdir=config.get_working_subdir_path(assert_exists=False),
-        )
-        generate_rules_file(
-            config=config,
-            account_config=account_config,
-        )
+                    write_asset_transaction_to_csv(
+                        transaction=account_txn,
+                        filepath=csv_output_filepath,
+                        account_config=account_config,
+                    )
+
+                for some_year_path in transaction_year_paths:
+                    copy_file_to_target_dir(
+                        path_to_account_type=f"{some_year_path}",
+                        source_script_path=csv_output_filepath,
+                    )
+
+            assert_dir_full_hierarchy_exists(
+                config=config,
+                account=account_config.account,
+                working_subdir=config.get_working_subdir_path(
+                    assert_exists=False
+                ),
+            )
+            generate_rules_file(
+                config=config,
+                account_config=account_config,
+                # example_transaction=transactions[0],
+            )

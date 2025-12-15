@@ -6,7 +6,12 @@ from typing import Dict, List, Optional
 import iso8601
 from typeguard import typechecked
 
+from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.Currency import Currency
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
+from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
@@ -27,6 +32,7 @@ from hledger_preprocessor.TransactionObjects.TransactedItemType import (
 @typechecked
 @dataclass
 class Receipt:
+    config: Config
     raw_img_filepath: str
     the_date: datetime
     shop_identifier: ShopId
@@ -66,12 +72,12 @@ class Receipt:
         if self.net_bought_items:
             if not isinstance(self.net_bought_items, ExchangedItem):
                 self.net_bought_items: ExchangedItem = convert_exchanged_item(
-                    item=self.net_bought_items
+                    config=self.config, item=self.net_bought_items
                 )
         if self.net_returned_items:
             if not isinstance(self.net_returned_items, ExchangedItem):
                 self.net_returned_items: ExchangedItem = convert_exchanged_item(
-                    item=self.net_returned_items
+                    config=self.config, item=self.net_returned_items
                 )
         if not isinstance(self.shop_identifier, ShopId):
             self.shop_identifier: ShopId = convert_shop_id(
@@ -99,12 +105,12 @@ class Receipt:
         self,
         item_type: TransactedItemType,  # TODO: REMOVE NAME DUPLICATION.
         verbose: bool = False,
-    ) -> List[AccountTransaction]:
+    ) -> List[Transaction]:
         """Collect unique account transactions."""
         exchanged_items: List[ExchangedItem] = self._get_transacted_items(
             item_type=item_type
         )
-        item_transactions: List[AccountTransaction] = []
+        item_transactions: List[Transaction] = []
 
         for exchanged_item in exchanged_items:
 
@@ -116,8 +122,8 @@ class Receipt:
                     )
 
                 for account_transaction in exchanged_item.account_transactions:
-                    if not isinstance(account_transaction, AccountTransaction):
-                        raise TypeError(f"Wrong type:{account_transaction}")
+                    # if not isinstance(account_transaction, AccountTransaction):
+                    #     raise TypeError(f"Wrong type:{account_transaction}")
 
                     item_transactions.append(account_transaction)
 
@@ -139,22 +145,32 @@ class Receipt:
     ) -> Dict[Currency, float]:
         transaction_amounts: Dict[Currency, float] = {}
         for account_transaction in self.get_both_item_types(verbose=False):
-            if account_transaction.currency in transaction_amounts.keys():
-                transaction_amounts[account_transaction.currency] += float(
-                    Decimal(str(account_transaction.amount_paid))
-                    - Decimal(str(account_transaction.change_returned))
+
+            if isinstance(account_transaction, GenericCsvTransaction):
+                amount_out_account: float = float(
+                    Decimal(str(account_transaction.amount_out_account))
                 )
             else:
-                transaction_amounts[account_transaction.currency] = float(
-                    Decimal(str(account_transaction.amount_paid))
+                amount_out_account: float = float(
+                    Decimal(str(account_transaction.amount_out_account))
                     - Decimal(str(account_transaction.change_returned))
                 )
+
+            if (
+                account_transaction.account.base_currency
+                in transaction_amounts.keys()
+            ):
+                transaction_amounts[
+                    account_transaction.account.base_currency
+                ] += amount_out_account
+            else:
+                transaction_amounts[
+                    account_transaction.account.base_currency
+                ] = amount_out_account
         return transaction_amounts
 
     @typechecked
-    def get_both_item_types(
-        self, verbose: bool = True
-    ) -> List[AccountTransaction]:
+    def get_both_item_types(self, verbose: bool = True) -> List[Transaction]:
         """Return a single list of both bought and returned account transactions."""
         bought = self.get_transacted_items(
             item_type=TransactedItemType.BOUGHT,
@@ -211,7 +227,7 @@ def initialize_account_transaction(
     return AccountTransaction(
         account=account,
         currency=currency,
-        amount_paid=transaction["amount_paid"],
+        amount_paid=transaction["amount_out_account"],
         change_returned=transaction["change_returned"],
         original_transaction=original_transaction,
     )

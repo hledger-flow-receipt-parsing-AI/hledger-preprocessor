@@ -1,10 +1,18 @@
+from datetime import datetime
 from typing import List, Union
 
 import iso8601
 from typeguard import typechecked
 
+from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.Currency import Currency
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.TransactionObjects.Account import Account
+from hledger_preprocessor.TransactionObjects.AccountTransaction import (
+    AccountTransaction,
+)
 from hledger_preprocessor.TransactionObjects.ExchangedItem import ExchangedItem
 from hledger_preprocessor.TransactionObjects.initialize_account_transaction import (
     initialize_account_transaction,
@@ -12,7 +20,9 @@ from hledger_preprocessor.TransactionObjects.initialize_account_transaction impo
 
 
 @typechecked
-def convert_exchanged_item(*, item: Union[dict, List[dict]]) -> ExchangedItem:
+def convert_exchanged_item(
+    *, config: Config, item: Union[dict, List[dict]]
+) -> ExchangedItem:
     transactions = []
     merged_item = {}
 
@@ -55,11 +65,18 @@ def convert_exchanged_item(*, item: Union[dict, List[dict]]) -> ExchangedItem:
     else:
         merged_item = item
 
+    # Process the_date
+    the_date: datetime = (
+        iso8601.parse_date(merged_item["the_date"]).replace(tzinfo=None)
+        if isinstance(merged_item["the_date"], str)
+        else merged_item["the_date"].replace(tzinfo=None)
+    )
+
     # Process transactions
     for transaction in merged_item["account_transactions"]:
         account_dict = transaction["account"]
 
-        currency_input = transaction["currency"]
+        currency_input = transaction["account"]["base_currency"]
         if isinstance(currency_input, str):
             try:
                 currency = Currency[currency_input]
@@ -77,10 +94,17 @@ def convert_exchanged_item(*, item: Union[dict, List[dict]]) -> ExchangedItem:
             account_type=account_dict["account_type"],
         )
 
-        transactions.append(
+        some_transaction: Union[AccountTransaction, GenericCsvTransaction] = (
             initialize_account_transaction(
-                transaction=transaction, account=account, currency=currency
+                config=config,
+                transaction=transaction,
+                account=account,
+                currency=currency,
+                the_date=the_date,
             )
+        )
+        transactions.append(
+            some_transaction
             # AccountTransaction(
             #     account=account,
             #     currency=currency,
@@ -88,13 +112,6 @@ def convert_exchanged_item(*, item: Union[dict, List[dict]]) -> ExchangedItem:
             #     change_returned=transaction["change_returned"],
             # )
         )
-
-    # Process the_date
-    the_date = (
-        iso8601.parse_date(merged_item["the_date"]).replace(tzinfo=None)
-        if isinstance(merged_item["the_date"], str)
-        else merged_item["the_date"].replace(tzinfo=None)
-    )
 
     return ExchangedItem(
         quantity=merged_item["quantity"],

@@ -14,13 +14,13 @@ from hledger_preprocessor.csv_parsing.csv_to_transactions import (
 from hledger_preprocessor.csv_parsing.preprocess_csvs import pre_process_csvs
 from hledger_preprocessor.Currency import (
     Currency,
-    Transactions,
 )
 from hledger_preprocessor.dir_reading_and_writing import (
     assert_dir_full_hierarchy_exists,
 )
 from hledger_preprocessor.editing.edit_receipt_tui import tui_select_receipt
 from hledger_preprocessor.generics.enums import ClassifierType, LogicType
+from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.management.get_all_hledger_flow_accounts import (
     get_all_accounts,
 )
@@ -53,7 +53,6 @@ def preprocess_asset_csvs(
                 abs_csv_filepath=asset_account_config.get_abs_csv_filepath(
                     dir_paths_config=config.dir_paths
                 ),
-                transactions_type=Transactions.ASSET,
                 account_config=asset_account_config,
                 csv_encoding=config.csv_encoding,
             )
@@ -138,7 +137,7 @@ def edit_receipt(
         raw_receipt_img_filepath=selected_receipt.raw_img_filepath,
         cropped_receipt_img_filepath=cropped_receipt_img_filepath,
         hledger_account_infos=get_all_accounts(
-            config=config, transactions_type=Transactions.TRIODOS
+            config=config,
         ),
         receipt_nr=0,
         total_nr_of_receipts=1,

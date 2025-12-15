@@ -46,9 +46,9 @@ def get_account_info_groups(
 
     for transaction in transactions:
         account_info = HledgerFlowAccountInfo(
-            account_holder=transaction.account_holder,
-            bank=transaction.bank,
-            account_type=transaction.account_type,
+            account_holder=transaction.account.account_holder,
+            bank=transaction.account.bank,
+            account_type=transaction.account.account_type,
         )
         account_info_groups.append(account_info)
 

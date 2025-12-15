@@ -19,13 +19,11 @@ from hledger_preprocessor.csv_parsing.read_csv_asset_transactions import (
 from hledger_preprocessor.dir_reading_and_writing import (
     ensure_asset_path_is_created,
 )
+from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
-from hledger_preprocessor.TransactionTypes.AssetTransaction import (
-    AssetTransaction,
-)
 
 
 @typechecked
@@ -66,7 +64,7 @@ def export_asset_transaction_to_csv(
         csv_output_filepath: str = account_config.get_abs_csv_filepath(
             dir_paths_config=config.dir_paths
         )
-        csv_asset_transactions: List[AssetTransaction] = (
+        csv_asset_transactions: List[AccountTransaction] = (
             read_csv_to_asset_transactions(
                 csv_filepath=csv_output_filepath,
                 csv_encoding=csv_encoding,
@@ -89,6 +87,7 @@ def export_asset_transaction_to_csv(
         write_asset_transaction_to_csv(
             transaction=classified_transaction,
             filepath=csv_output_filepath,
+            account_config=account_config,
         )
         if not classified_transaction_is_exported(
             asset_transaction=classified_transaction,
@@ -105,7 +104,7 @@ def export_asset_transaction_to_csv(
 
 @typechecked
 def print_transactions(
-    *, csv_asset_transactions: List[AssetTransaction]
+    *, csv_asset_transactions: List[AccountTransaction]
 ) -> None:
     for i, csv_asset_transaction in enumerate(csv_asset_transactions):
         print(f"{i}, hash={csv_asset_transaction.get_hash()}")

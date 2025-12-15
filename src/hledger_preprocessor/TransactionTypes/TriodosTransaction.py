@@ -11,6 +11,9 @@ from typing import Any, Dict, Optional, Union
 import iso8601
 from typeguard import typechecked
 
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
@@ -44,12 +47,7 @@ class TriodosTransaction(Transaction):
         self.bank: str = self.account.bank
         self.account_type: str = self.account.account_type
         self.account_type: str = self.account.account_type
-        self.currency: float = (
-            self.account.base_currency
-        )  # TODO: propagate change amount0 to:amount_out_account
-        ## END TODO: convert to use account object directly.
-
-        # self.currency: Currency = Currency.EUR  # Hardcoded based on bank.
+        self.currency: float = self.account.base_currency
         if not isinstance(self.transaction_code, TransactionCode):
             self.transaction_code: TransactionCode = (
                 TransactionCode.normalize_transaction_code(
@@ -101,6 +99,7 @@ class TriodosTransaction(Transaction):
 
     @typechecked
     def to_hledger_dict(self) -> Dict[str, Union[int, float, str, datetime]]:
+        raise ValueError("SHOULD NOT BE CALLED.")
         base_dict: Dict[str, Union[int, float, str, datetime]] = self.to_dict()
         if "the_date" in base_dict.keys():
             # Create a new dictionary with "date" as the first key
@@ -159,6 +158,7 @@ class TriodosTransaction(Transaction):
             )
 
         account_transaction: AccountTransaction = AccountTransaction(
+            the_date=self.the_date,
             account=account,
             currency=self.currency,
             amount_paid=amount_paid,
@@ -223,3 +223,17 @@ class TriodosTransaction(Transaction):
 
         # Return the hexadecimal representation of the hash
         return hasher.hexdigest()
+
+    @typechecked
+    def to_generalised_csv_transaction(self) -> GenericCsvTransaction:
+
+        return GenericCsvTransaction(
+            account=self.account,
+            the_date=self.the_date,
+            amount_out_account=self.amount_out_account,
+            # amount_in_account=
+            balance_after=self.balance0,
+            description=self.description,
+            other_party_name=self.other_party_name,
+            bic=self.BIC,
+        )

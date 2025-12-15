@@ -42,9 +42,5 @@ class Account:
         return f"{self.account_holder}:{self.bank}:{self.account_type}"
 
     @typechecked
-    def to_string(self) -> str:
-        return f"{self.account_holder}:{self.bank}:{self.account_type}"
-
-    @typechecked
     def to_dict(self) -> Dict[str, str]:
         return to_dict(self)

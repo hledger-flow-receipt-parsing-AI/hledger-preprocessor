@@ -9,7 +9,7 @@ from hledger_preprocessor.matching.manual_actions.helper import (
     convert_into_account_transaction_objects,
 )
 from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
-    collect_account_transactions,
+    collect_non_csv_transactions,
 )
 from hledger_preprocessor.TransactionObjects.AssetType import AssetType
 from hledger_preprocessor.TransactionObjects.Receipt import (
@@ -54,7 +54,7 @@ def inject_csv_transaction_to_receipt(
 
     # Create an Account object for the bank transaction.
     if float(
-        Decimal(str(original_receipt_account_transaction.amount_paid))
+        Decimal(str(original_receipt_account_transaction.amount_out_account))
         - Decimal(str(original_receipt_account_transaction.change_returned))
         > 0
     ):
@@ -71,7 +71,7 @@ def inject_csv_transaction_to_receipt(
         asset_transaction: AccountTransaction = AccountTransaction(
             account=foreign_currency_account,
             currency=original_receipt_account_transaction.currency,  # Infer currency from receipt
-            amount_paid=original_receipt_account_transaction.amount_paid,
+            amount_out_account=original_receipt_account_transaction.amount_out_account,
             change_returned=original_receipt_account_transaction.change_returned,
         )
 
@@ -119,7 +119,7 @@ def receipt_already_contains_csv_transaction(
     if not isinstance(csv_transaction, TriodosTransaction):
         raise TypeError(f"Unsupported csv transaction type:{csv_transaction}")
     receipt_transactions: List[AccountTransaction] = (
-        collect_account_transactions(receipt)
+        collect_non_csv_transactions(receipt)
     )
     if not receipt_transactions:
         return False

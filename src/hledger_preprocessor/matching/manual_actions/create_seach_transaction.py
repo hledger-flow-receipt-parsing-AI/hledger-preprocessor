@@ -41,7 +41,7 @@ def convert_search_transaction_with_csv_currency(
 
     # Calculate the net amount (amount_paid - change_returned)
     net_amount: float = float(
-        Decimal(str(search_receipt_account_transaction.amount_paid))
+        Decimal(str(search_receipt_account_transaction.amount_out_account))
         - Decimal(str(search_receipt_account_transaction.change_returned))
     )
 
@@ -52,7 +52,7 @@ def convert_search_transaction_with_csv_currency(
         raise ValueError("Converted amount paid cannot be negative")
 
     # Update the transaction fields
-    new_transaction.amount_paid = converted_net_amount_from
+    new_transaction.amount_out_account = converted_net_amount_from
     new_transaction.change_returned = 0
     new_transaction.currency = from_currency
 
