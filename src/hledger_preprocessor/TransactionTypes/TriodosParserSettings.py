@@ -11,6 +11,7 @@ class TriodosParserSettings:
             "account_holder",
             "bank",
             "account_type",
+            "account",
             "date",
             "account_nr",
             "amount",

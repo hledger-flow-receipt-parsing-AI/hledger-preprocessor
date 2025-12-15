@@ -31,6 +31,11 @@ class Currency(Enum):
 
     @classmethod
     @typechecked
+    def get_2_digit_rounded(cls) -> List["Currency"]:
+        return cls.get_fiat()
+
+    @classmethod
+    @typechecked
     def get_fiat(cls) -> List["Currency"]:
         return [cls.EUR, cls.USD, cls.POUND]
 
@@ -50,11 +55,6 @@ class DirectAssetPurchases(Enum):
     GOLD = "gold"
     SILVER = "silver"
     # Add other asset categories as needed
-
-
-class Transactions(Enum):
-    TRIODOS = "triodos"
-    ASSET = "asset"
 
 
 # Function to load latest rates from CSV

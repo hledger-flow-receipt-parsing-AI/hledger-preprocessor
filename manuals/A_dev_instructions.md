@@ -22,6 +22,8 @@ sudo apt install rubygems  # For: markdownlint
 pre-commit install
 pre-commit autoupdate
 pre-commit run --all
+sudo snap install go --classic
+go install github.com/charmbracelet/vhs@latest   # or brew install vhs
 ```
 
 ## Publish pip package

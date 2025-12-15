@@ -13,8 +13,9 @@ from hledger_preprocessor.date_extractor import (
     get_date_from_bank_date_or_shop_date_description,
 )
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
-    GenericBankTransaction,
+    GenericCsvTransaction,
 )
+from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
 
 
 @typechecked
@@ -24,7 +25,7 @@ def parse_generic_bank_transaction(
     nr_in_batch: int,
     account_config: AccountConfig,
     csv_column_mapping: CsvColumnMapping,
-) -> GenericBankTransaction:
+) -> GenericCsvTransaction:
     """
     Universal parser based on column mapping config.
     """
@@ -67,8 +68,15 @@ def parse_generic_bank_transaction(
                 field_values[py_field] = float(cleaned) if cleaned else None
             except ValueError:
                 field_values[py_field] = None
+
+        elif py_field == "transaction_code":  # Custom for Tridos:
+            field_values[py_field] = TransactionCode.normalize_transaction_code(
+                transaction_code=value
+            )
         else:
             field_values[py_field] = value or None
+
+    # TODO: throw error if transaction_code is not determined.
 
     # Reconstruct description
     description = (
@@ -88,11 +96,11 @@ def parse_generic_bank_transaction(
 
     # Create dynamic kwargs only with known fields
     known_fields = {
-        f.name for f in fields(GenericBankTransaction) if f.name != "extra"
+        f.name for f in fields(GenericCsvTransaction) if f.name != "extra"
     }
     kwargs = {k: v for k, v in field_values.items() if k in known_fields}
     extra = {k: v for k, v in field_values.items() if k not in known_fields}
 
     kwargs["extra"] = extra
 
-    return GenericBankTransaction(**kwargs)
+    return GenericCsvTransaction(**kwargs)

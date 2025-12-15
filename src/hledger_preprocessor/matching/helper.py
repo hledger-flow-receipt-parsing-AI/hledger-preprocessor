@@ -4,10 +4,6 @@ from decimal import Decimal
 from pprint import pprint
 from typing import Dict, List
 
-from hledger_preprocessor.Currency import (
-    Transactions,
-)
-
 logger = logging.getLogger(__name__)
 from typeguard import typechecked
 
@@ -53,7 +49,7 @@ def get_net_receipt_transactions_per_account(
         search_receipt_account_transaction
     ) in search_receipt_account_transactions:
         net_payed_from_account: float = float(
-            Decimal(str(search_receipt_account_transaction.amount_paid))
+            Decimal(str(search_receipt_account_transaction.amount_out_account))
             - Decimal(str(search_receipt_account_transaction.change_returned))
         )
 
@@ -105,7 +101,7 @@ def get_transactions_in_date_range(
 
 @typechecked
 def prepare_transactions_per_account(
-    config: Config, transactions_type: Transactions
+    config: Config,
 ) -> Dict[AccountConfig, Dict[int, List[Transaction]]]:
     """
     Prepare transactions per account from the configuration.
@@ -122,7 +118,6 @@ def prepare_transactions_per_account(
             abs_csv_filepath=account_config.get_abs_csv_filepath(
                 dir_paths_config=config.dir_paths
             ),
-            transactions_type=transactions_type,
             account_config=account_config,
             csv_encoding=config.csv_encoding,
         )

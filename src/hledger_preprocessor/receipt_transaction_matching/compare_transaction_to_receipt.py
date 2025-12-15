@@ -3,6 +3,9 @@ from typing import List
 
 from typeguard import typechecked
 
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.TransactionObjects.Receipt import (
     AccountTransaction,
     ExchangedItem,
@@ -13,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @typechecked
-def collect_account_transactions(
+def collect_non_csv_transactions(
     receipt: Receipt,
     verbose: bool = False,
 ) -> List[AccountTransaction]:
@@ -33,14 +36,17 @@ def collect_account_transactions(
     )
 
     # Combine items and extract account transactions
-    all_account_transactions = []
+    all_account_transactions: List[AccountTransaction] = []
     for item in bought_items + returned_items:
-        all_account_transactions.extend(item.account_transactions)
-
+        for transaction in item.account_transactions:
+            if isinstance(transaction, AccountTransaction):
+                # all_account_transactions.extend(transaction)
+                all_account_transactions.append(transaction)
+            elif isinstance(transaction, GenericCsvTransaction):
+                pass
+            else:
+                pass
     if not all_account_transactions and verbose:
-        print("No account transactions found in receipt.")
-
-    if not all_account_transactions:
-        raise ValueError("No account transactions found in receipt.")
+        pass
 
     return all_account_transactions

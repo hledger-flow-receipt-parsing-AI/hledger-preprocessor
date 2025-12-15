@@ -7,9 +7,6 @@ from hledger_preprocessor.config.load_config import Config
 from hledger_preprocessor.csv_parsing.csv_to_transactions import (
     load_csv_transactions_from_file_per_year,
 )
-from hledger_preprocessor.Currency import (
-    Transactions,
-)
 from hledger_preprocessor.generics.Transaction import Transaction
 
 
@@ -40,7 +37,7 @@ def get_all_matching_transactions(
     matching_transactions: List[Transaction] = []
     transactions: Dict[AccountConfig, Dict[int, List[Transaction]]] = (
         get_all_transactions(
-            config=config, transactions_type=Transactions.TRIODOS
+            config=config,
         )
     )
     # Loop over them.
@@ -61,7 +58,7 @@ def get_all_matching_transactions(
 
 @typechecked
 def get_all_transactions(
-    config: Config, transactions_type: Transactions
+    config: Config,
 ) -> Dict[AccountConfig, Dict[int, List[Transaction]]]:
     transactions: Dict[AccountConfig, Dict[int, List[Transaction]]] = {}
     # Load all csv_transactions.
@@ -72,7 +69,6 @@ def get_all_transactions(
                 abs_csv_filepath=account_config.get_abs_csv_filepath(
                     dir_paths_config=config.dir_paths
                 ),
-                transactions_type=transactions_type,
                 account_config=account_config,
                 csv_encoding=config.csv_encoding,
             )

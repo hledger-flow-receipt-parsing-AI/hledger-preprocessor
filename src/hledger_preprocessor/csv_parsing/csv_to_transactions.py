@@ -1,15 +1,14 @@
 import csv
-from pprint import pprint
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from typeguard import typechecked
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
+from hledger_preprocessor.csv_parsing.csv_has_header import (
+    has_header0,
+)
 from hledger_preprocessor.csv_transaction_parsing.parse_asset_transaction import (
     parse_asset_transaction,
-)
-from hledger_preprocessor.Currency import (
-    Transactions,
 )
 from hledger_preprocessor.file_reading_and_writing import (
     assert_file_exists,
@@ -17,12 +16,13 @@ from hledger_preprocessor.file_reading_and_writing import (
     detect_file_encoding,
 )
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
-    GenericBankTransaction,
+    GenericCsvTransaction,
 )
 from hledger_preprocessor.generics.parse_generic_tnx_with_csv import (
     parse_generic_bank_transaction,
 )
 from hledger_preprocessor.generics.Transaction import Transaction
+from hledger_preprocessor.TransactionObjects import AccountTransaction
 
 
 # account_config.get_abs_csv_filepath(dir_paths_config=config.dir_paths)
@@ -30,7 +30,6 @@ from hledger_preprocessor.generics.Transaction import Transaction
 def load_csv_transactions_from_file_per_year(
     *,
     abs_csv_filepath: str,
-    transactions_type: Transactions,
     account_config: AccountConfig,
     csv_encoding: str,
 ) -> Dict[int, List[Transaction]]:
@@ -38,7 +37,6 @@ def load_csv_transactions_from_file_per_year(
         transactions_per_year: Dict[int, List[Transaction]] = (
             csv_to_transactions(
                 input_csv_filepath=abs_csv_filepath,
-                transactions_type=transactions_type,
                 csv_encoding=csv_encoding,
                 account_config=account_config,
             )
@@ -51,7 +49,6 @@ def load_csv_transactions_from_file_per_year(
 @typechecked
 def csv_to_transactions(
     input_csv_filepath: str,
-    transactions_type: Transactions,
     csv_encoding: str,
     account_config: AccountConfig,
 ) -> Dict[int, List["Transaction"]]:
@@ -76,7 +73,6 @@ def csv_to_transactions(
 
     total_transactions: List[Transaction] = parse_encoded_input_csv(
         input_csv_filepath=input_csv_filepath,
-        transactions_type=transactions_type,
         account_config=account_config,
     )
 
@@ -100,7 +96,6 @@ def sort_transactions_on_years(
 @typechecked
 def parse_encoded_input_csv(
     input_csv_filepath: str,
-    transactions_type: Transactions,
     account_config: AccountConfig,
 ) -> List[Transaction]:
     updated_encoding = detect_file_encoding(filepath=input_csv_filepath)
@@ -115,7 +110,7 @@ def parse_encoded_input_csv(
 
     transactions = process_transactions(
         rows=rows,
-        transactions_type=transactions_type,
+        input_csv_filepath=input_csv_filepath,
         account_config=account_config,
     )
 
@@ -125,40 +120,39 @@ def parse_encoded_input_csv(
 @typechecked
 def process_transactions(
     rows: List[List[str]],
-    transactions_type: Transactions,
+    input_csv_filepath: str,
     account_config: AccountConfig,
 ) -> List[Transaction]:
-    transactions: List[Transaction] = []
-    for index, row in enumerate(
-        reversed(rows), start=1
-    ):  # Process rows from bottom to top
+    transactions: List[Union[GenericCsvTransaction, AccountTransaction]] = []
 
-        # if transactions_type == Transactions.TRIODOS:
+    all_indices_start_at: int
+    if account_config.has_input_csv():
+
+        if has_header0(csv_file_path=input_csv_filepath):
+
+            all_indices_start_at: int = 1
+        else:
+            all_indices_start_at: int = 0
+    else:
+        all_indices_start_at: int = 1
+
+    for index in range(all_indices_start_at, len(rows)):
         if account_config.has_input_csv():
-            transaction: GenericBankTransaction = (
-                parse_generic_bank_transaction(
-                    row=row,
-                    nr_in_batch=index,
-                    account_config=account_config,
-                    csv_column_mapping=account_config.csv_column_mapping,
-                )
+            transaction: GenericCsvTransaction = parse_generic_bank_transaction(
+                row=rows[index],
+                nr_in_batch=index,
+                account_config=account_config,
+                csv_column_mapping=account_config.csv_column_mapping,
             )
-            pprint(transaction)
-            print(f"-------gen_transaction-----------")
-            # transaction = parse_triodos_transaction(
-            #     row,
-            #     index,
-            #     account_holder=account_config.account.account_holder,
-            #     bank=account_config.account.bank,
-            #     account_type=account_config.account.account_type,
-            # )
             transactions.append(transaction)
         else:
 
-            transaction = parse_asset_transaction(row=row)
+            transaction: AccountTransaction = parse_asset_transaction(
+                row=rows[index]
+            )
             if transaction:
                 transactions.append(transaction)
-
+        index += 1
     return transactions
 
 

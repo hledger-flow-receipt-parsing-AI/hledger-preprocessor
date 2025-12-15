@@ -12,16 +12,14 @@ from hledger_preprocessor.categorisation.rule_based.private_logic import (
     private_credit_classification,
     private_debit_classification,
 )
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.generics.Transaction import Transaction
+from hledger_preprocessor.TransactionObjects import AccountTransaction
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.Posting import (
     TransactionCode,
-)
-from hledger_preprocessor.TransactionTypes.AssetTransaction import (
-    AssetTransaction,
-)
-from hledger_preprocessor.TransactionTypes.TriodosTransaction import (
-    TriodosTransaction,
 )
 
 
@@ -55,7 +53,7 @@ class ExampleRuleBasedModel:
     ) -> Union[str, Category, Account]:
         if transaction is None:
             raise ValueError("Transaction cannot be None.")
-        if isinstance(transaction, TriodosTransaction):
+        if isinstance(transaction, GenericCsvTransaction):
             if (
                 TransactionCode.normalize_transaction_code(
                     transaction_code=transaction.transaction_code
@@ -80,7 +78,7 @@ class ExampleRuleBasedModel:
                 raise ValueError(
                     f"Unknown transaction_code for transaction:{transaction}"
                 )
-        elif isinstance(transaction, AssetTransaction):
+        elif isinstance(transaction, AccountTransaction):
             return transaction.parent_receipt_category
         else:
             raise TypeError(

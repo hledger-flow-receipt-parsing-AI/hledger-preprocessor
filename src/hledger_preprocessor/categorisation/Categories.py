@@ -1,10 +1,12 @@
 # category.py
 from __future__ import annotations
 
-from typing import Any, Iterable, TypeVar
+from typing import Any, Iterable
+
+from typeguard import typechecked
 
 # Generic type for better autocomplete in some editors
-_T = TypeVar("_T")
+# _T = TypeVar("_T")
 
 
 class Category:
@@ -69,7 +71,10 @@ class Category:
     def __truediv__(self, child: str) -> Category:
         return Category((*self._path, child.lower()), self._hierarchy)
 
+    @typechecked
     def __getattr__(self, name: str) -> Category:
+        if name.startswith("__") and name.endswith("__"):
+            raise AttributeError(name)
         return Category((*self._path, name.lower()), self._hierarchy)
 
     def __dir__(self) -> list[str]:
@@ -86,7 +91,14 @@ class CategoryNamespace:
     def __init__(self, hierarchy: dict[str, Any]):
         self._hierarchy = hierarchy
 
+    # def __getattr__(self, name: str) -> Category:
+    #     return Category(name.lower(), self._hierarchy)
+
     def __getattr__(self, name: str) -> Category:
+        # Skip all dunder (magic) attributes – let AttributeError propagate naturally
+        if name.startswith("__") and name.endswith("__"):
+            raise AttributeError(name)
+
         return Category(name.lower(), self._hierarchy)
 
     def __dir__(self) -> list[str]:

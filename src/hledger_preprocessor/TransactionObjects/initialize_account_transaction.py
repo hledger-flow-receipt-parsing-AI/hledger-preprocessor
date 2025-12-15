@@ -1,12 +1,12 @@
-from pprint import pprint
-from typing import Dict
+from datetime import datetime
+from typing import Union
 
 from hledger_preprocessor.config import AccountConfig
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.helper import get_account_config
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
-    GenericBankTransaction,
+    GenericCsvTransaction,
 )
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     Account,
@@ -15,8 +15,13 @@ from hledger_preprocessor.TransactionObjects.AccountTransaction import (
 
 
 def initialize_account_transaction(
-    *, config: Config, transaction: dict, account: Account, currency: Currency
-) -> AccountTransaction:
+    *,
+    config: Config,
+    transaction: dict,
+    account: Account,
+    currency: Currency,
+    the_date: datetime,
+) -> Union[AccountTransaction, GenericCsvTransaction]:
     """
     Initialize an AccountTransaction with an optional TriodosTransaction.
 
@@ -43,46 +48,46 @@ def initialize_account_transaction(
         config=config, account=account
     )
     if account_config.has_input_csv():
-        GenericBankTransaction(**transaction)
 
-    if (
-        "original_transaction" in transaction.keys()
-        and transaction["original_transaction"] is not None
-    ):
-        from hledger_preprocessor.TransactionTypes.TriodosTransaction import (
-            TriodosTransaction,
-        )
+        if "currency" in transaction.keys():
+            transaction.pop("currency")
 
-        tnx_dict: Dict = transaction["original_transaction"]
-        account: Account = Account(
-            account_holder=tnx_dict["account_holder"],
-            bank=tnx_dict["bank"],
-            account_type=tnx_dict["account_type"],
-            base_currency=Currency("EUR"),  # TODO: take from config.
-        )
+        # Extract the date of the transaction — safely
+        if "the_date" in transaction:
+            pass  # already good
+        elif (
+            "original_transaction" in transaction
+            and transaction["original_transaction"] is not None
+            and "the_date" in transaction["original_transaction"]
+        ):
+            transaction["the_date"] = transaction["original_transaction"][
+                "the_date"
+            ]
+        else:
+            transaction["the_date"] = the_date
 
-        pprint(tnx_dict)
-        original_transaction: TriodosTransaction = TriodosTransaction(
-            account=account,
-            nr_in_batch=tnx_dict["nr_in_batch"],
-            the_date=tnx_dict["the_date"],
-            account0=tnx_dict["account0"],
-            # amount0 = float(amount0.replace(',', '.')),
-            amount_out_account=tnx_dict["amount0"],
-            transaction_code=tnx_dict["transaction_code"],
-            other_party_name=tnx_dict["other_party_name"],
-            account1=tnx_dict["account1"],
-            BIC=tnx_dict["BIC"],
-            description=tnx_dict["description"],
-            balance0=tnx_dict["balance0"],
-        )
+        if "original_transaction" in transaction.keys():
+            transaction.pop("original_transaction")
+
+        # TODO: assert account is equal to that of AccountConfig.
+        if not isinstance(transaction["account"], Account):
+            transaction["account"]["base_currency"] = Currency(
+                transaction["account"]["base_currency"]
+            )
+            transaction["account"] = Account(
+                **transaction["account"],
+            )
+        if "change_returned" in transaction.keys():
+            if transaction["change_returned"] == 0:
+                transaction.pop("change_returned")
+        return GenericCsvTransaction(**transaction)
     else:
-        original_transaction = None
 
-    return AccountTransaction(
-        account=account,
-        currency=currency,
-        amount_paid=transaction["amount_paid"],
-        change_returned=transaction["change_returned"],
-        original_transaction=original_transaction,
-    )
+        return AccountTransaction(
+            the_date=the_date,
+            account=account,
+            # currency=currency,
+            amount_out_account=transaction["amount_out_account"],
+            change_returned=transaction["change_returned"],
+            # original_transaction=original_transaction,
+        )

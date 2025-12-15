@@ -45,13 +45,19 @@ def classify_transaction(
         #     }
         # )
         # txn.ai_classification = {ai_model.name: ai_classification}
-        txn.ai_classification = {ai_model.name: "filler"}
+        # txn.ai_classification = {ai_model.name: "filler"}
+        object.__setattr__(txn, "ai_classification", {ai_model.name: "filler"})
 
     for rule_based_model in rule_based_models_tnx_classification:
 
         logic_classification = rule_based_model.classify(
             transaction=txn, category_namespace=category_namespace
         )
-        txn.logic_classification = {rule_based_model.name: logic_classification}
+        # txn.logic_classification = {rule_based_model.name: logic_classification}
+        object.__setattr__(
+            txn,
+            "logic_classification",
+            {rule_based_model.name: logic_classification},
+        )
 
     return txn

@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from typeguard import typechecked
 
 from hledger_preprocessor.Currency import Currency
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
@@ -16,7 +19,7 @@ class ExchangedItem:
     quantity: float
     description: str
     the_date: datetime
-    account_transactions: List[AccountTransaction]
+    account_transactions: List[Union[AccountTransaction, GenericCsvTransaction]]
     tax_per_unit: Optional[float] = None
     group_discount: Optional[float] = None
     category: Optional[str] = None
@@ -31,8 +34,28 @@ class ExchangedItem:
 
         self.payed_for_item_rounded = 0.0
         for transaction in self.account_transactions:
-            net_amount = transaction.amount_paid - transaction.change_returned
-            if transaction.currency in [Currency.EUR, Currency.USD]:
+            if transaction is None:
+                raise ValueError(
+                    "Transaction cannot be None. It was"
+                    f" in:{self.account_transactions}"
+                )
+
+            net_amount: float
+            currency: Currency
+            if isinstance(transaction, GenericCsvTransaction):
+                net_amount = (
+                    transaction.amount_out_account
+                    # - transaction.amount_in_account
+                )
+                currency = transaction.account.base_currency
+            else:
+                net_amount = (
+                    transaction.amount_out_account - transaction.change_returned
+                )
+                currency = transaction.account.base_currency
+
+            # TODO: change to rounding depth per currency, none if not specified.
+            if currency in Currency.get_2_digit_rounded():
                 self.payed_for_item_rounded += round(net_amount, 2)
             elif self.round_amount:
                 try:

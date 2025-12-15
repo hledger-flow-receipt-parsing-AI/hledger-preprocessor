@@ -121,11 +121,11 @@ def handle_no_matches(
                     ai_models_tnx_classification=action_dataset.ai_models_tnx_classification,  #: Dict[str, str],
                     rule_based_models_tnx_classification=action_dataset.rule_based_models_tnx_classification,  #: Dict[str, str]
                 )
-        print(
-            "Skipping"
-            f" {action_dataset.search_receipt_account_transaction} because it's"
-            " csv is not activated in config."
-        )
+        # print(
+        #     "Skipping"
+        #     f" {action_dataset.search_receipt_account_transaction} because it's"
+        #     " csv is not activated in config."
+        # )
 
 
 def try_and_swap_day_month(

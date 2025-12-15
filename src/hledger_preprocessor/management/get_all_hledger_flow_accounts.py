@@ -6,9 +6,7 @@ from hledger_preprocessor.config.load_config import Config
 from hledger_preprocessor.csv_parsing.csv_to_transactions import (
     load_csv_transactions_from_file_per_year,
 )
-from hledger_preprocessor.Currency import (
-    Transactions,
-)
+from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.receipt_transaction_matching.get_bank_data_from_transactions import (
     HledgerFlowAccountInfo,
     get_account_info_groups_from_years,
@@ -17,9 +15,7 @@ from hledger_preprocessor.receipt_transaction_matching.get_bank_data_from_transa
 
 # Action 0.
 @typechecked
-def get_all_accounts(
-    *, config: Config, transactions_type: Transactions
-) -> set[HledgerFlowAccountInfo]:
+def get_all_accounts(*, config: Config) -> set[HledgerFlowAccountInfo]:
 
     all_accounts: set[HledgerFlowAccountInfo] = set()
     # Step 3: Label images and get receipt objects
@@ -30,7 +26,6 @@ def get_all_accounts(
                 abs_csv_filepath=account_config.get_abs_csv_filepath(
                     dir_paths_config=config.dir_paths
                 ),
-                transactions_type=transactions_type,
                 account_config=account_config,
                 csv_encoding=config.csv_encoding,
             )

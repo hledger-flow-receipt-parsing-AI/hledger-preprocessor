@@ -64,6 +64,7 @@ def store_updated_receipt_label(
     )
     assert_file_exists(filepath=label_filepath)
     original_receipt: Receipt = read_receipt_from_json(
+        config=config,
         label_filepath=label_filepath,
         verbose=False,
         raw_receipt_img_filepath=latest_receipt.raw_img_filepath,
@@ -76,7 +77,13 @@ def store_updated_receipt_label(
 
         with open(label_filepath, encoding=config.csv_encoding) as f:
             receipt_data = json.load(f)
-        loaded_receipt: Receipt = Receipt(**receipt_data)
+        if "config" in receipt_data.keys():
+            receipt_data.pop("config")
+            print(
+                f"WARNING: Popped old config, tied to receipt updated it with"
+                f" new config"
+            )
+        loaded_receipt: Receipt = Receipt(config=config, **receipt_data)
 
         if loaded_receipt.__dict__ != latest_receipt.__dict__:
             print(f"\n\nloaded_receipt=")

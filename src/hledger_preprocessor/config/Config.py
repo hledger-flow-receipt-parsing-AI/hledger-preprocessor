@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from typeguard import typechecked
 
@@ -64,20 +64,10 @@ class Config:
                     f"Missing keys in account_config: {sorted(missing)} |"
                     f" config: {account_config_dict}"
                 )
-
-            accounts.append(
-                AccountConfig(
-                    input_csv_filename=account_config_dict[
-                        "input_csv_filename"
-                    ],
-                    csv_column_mapping=CsvColumnMapping(
-                        csv_column_mapping=account_config_dict[
-                            "csv_column_mapping"
-                        ]
-                    ),
-                    account=account_obj,
-                )
+            account_config: AccountConfig = create_account_config_from_yaml(
+                account_config_dict=account_config_dict, account_obj=account_obj
             )
+            accounts.append(account_config)
 
         dir_paths = DirPathsConfig(
             root_finance_path=config_dict["dir_paths"]["root_finance_path"],
@@ -198,3 +188,109 @@ class Config:
             if not account_config.has_input_csv():
                 account_configs_without_csv.append(account_config)
         return account_configs_without_csv
+
+
+def _verify_filename(key: str, value: Any):
+    """Verifies a value is None or a string ending in .csv."""
+    if value is not None and not isinstance(value, str):
+        raise TypeError(
+            f"Invalid type for '{key}': {type(value).__name__}.\n"
+            "Valid types are: None or str."
+        )
+    if isinstance(value, str) and not value.lower().endswith(".csv"):
+        raise ValueError(
+            f"Invalid value for '{key}': {value!r}.\n"
+            "If not null, it must be a string ending in '.csv'."
+        )
+
+
+def _normalize_and_verify_column_mapping(
+    key: str, data: Any
+) -> Optional[Tuple[Tuple[str, str], ...]]:
+    """
+    Verifies and normalizes the csv_column_mapping/tnx_date_columns structure.
+
+    Valid formats:
+    - null/None, '', [], () (all normalize to None)
+    - A list/tuple of 2-element lists/tuples, e.g., [['source', 'target'], ...]
+    Invalid formats:
+    - Any non-empty string (e.g., "None", "SomeText")
+    - dict, or list/tuple of elements that are not 2-element sequences
+    """
+    # Acceptable empty/None representations
+    valid_empty_values = (None, "", [], ())
+
+    # 1. Handle valid "empty" cases
+    if data in valid_empty_values:
+        return None
+
+    # 2. Reject the string "None" or any other non-empty string
+    elif isinstance(data, str):
+        raise TypeError(
+            f"Invalid value for '{key}': {data!r}.\n"
+            "Strings are only valid if they are empty (i.e., '').\n"
+            "Valid formats for 'no mapping' are: null, '', [], or omitted."
+        )
+
+    # 3. Handle list/tuple
+    elif isinstance(data, (list, tuple)):
+        converted_mapping = []
+        try:
+            for i, pair in enumerate(data):
+                # Ensure each element is a sequence of exactly 2 elements
+                if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                    raise ValueError(
+                        f"Pair at index {i} is invalid. Expected 2 elements,"
+                        f" found {len(pair)} in {pair!r}."
+                    )
+
+                # Ensure both elements of the pair are strings
+                if not isinstance(pair[0], str) or not isinstance(pair[1], str):
+                    raise TypeError(
+                        f"Pair at index {i} contains non-string elements:"
+                        f" {pair!r}. Both elements must be strings."
+                    )
+
+                converted_mapping.append(tuple(pair))
+
+            return tuple(converted_mapping)
+
+        except (ValueError, TypeError) as e:
+            raise TypeError(
+                f"Invalid structure for '{key}': {data!r}\nError: {e}\nValid"
+                " structure is a list of two-element string pairs, e.g.:\n "
+                f" {key}: [['source_col', 'target_field'], ['another_source',"
+                " 'another_target']]"
+            )
+
+    # 4. Anything else is invalid
+    else:
+        raise TypeError(
+            f"Invalid type for '{key}': {type(data).__name__}.\n"
+            "Valid types are: None, str (empty only), list, or tuple."
+        )
+
+
+@typechecked
+def create_account_config_from_yaml(
+    account_config_dict: Dict[str, Any], account_obj: Account
+) -> AccountConfig:
+    # --- Input Verification Checks ---
+    _verify_filename(
+        "input_csv_filename", account_config_dict.get("input_csv_filename")
+    )
+
+    # --- Mapping Normalization Checks ---
+    csv_mapping = _normalize_and_verify_column_mapping(
+        "csv_column_mapping", account_config_dict.get("csv_column_mapping")
+    )
+    tnx_date_columns = _normalize_and_verify_column_mapping(
+        "tnx_date_columns", account_config_dict.get("tnx_date_columns")
+    )
+
+    return AccountConfig(
+        input_csv_filename=account_config_dict["input_csv_filename"],
+        csv_column_mapping=CsvColumnMapping(csv_column_mapping=csv_mapping),
+        tnx_date_columns=CsvColumnMapping(csv_column_mapping=tnx_date_columns),
+        account=account_obj,
+    )
