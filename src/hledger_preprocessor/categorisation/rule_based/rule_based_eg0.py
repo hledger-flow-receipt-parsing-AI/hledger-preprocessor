@@ -16,8 +16,10 @@ from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
 from hledger_preprocessor.generics.Transaction import Transaction
-from hledger_preprocessor.TransactionObjects import AccountTransaction
 from hledger_preprocessor.TransactionObjects.Account import Account
+from hledger_preprocessor.TransactionObjects.AccountTransaction import (
+    AccountTransaction,
+)
 from hledger_preprocessor.TransactionObjects.Posting import (
     TransactionCode,
 )
@@ -28,7 +30,9 @@ class ExampleRuleBasedModel:
 
     @typechecked
     def classify(
-        self, transaction: Transaction, category_namespace: CategoryNamespace
+        self,
+        transaction: Transaction,
+        category_namespace: CategoryNamespace,
     ) -> str:
         classification: Union[str, Category, Account] = (
             self._get_classification(
@@ -49,7 +53,9 @@ class ExampleRuleBasedModel:
 
     @typechecked
     def _get_classification(
-        self, transaction: Transaction, category_namespace: CategoryNamespace
+        self,
+        transaction: Transaction,
+        category_namespace: CategoryNamespace,
     ) -> Union[str, Category, Account]:
         if transaction is None:
             raise ValueError("Transaction cannot be None.")
@@ -79,6 +85,7 @@ class ExampleRuleBasedModel:
                     f"Unknown transaction_code for transaction:{transaction}"
                 )
         elif isinstance(transaction, AccountTransaction):
+            # return parent_receipt.receipt_category
             return transaction.parent_receipt_category
         else:
             raise TypeError(

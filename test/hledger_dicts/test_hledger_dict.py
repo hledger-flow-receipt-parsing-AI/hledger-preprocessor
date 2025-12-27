@@ -27,7 +27,7 @@ def sample_transaction(sample_account: Account) -> GenericCsvTransaction:
     return GenericCsvTransaction(
         account=sample_account,
         the_date=date(2025, 1, 15),
-        amount_out_account=-42.50,
+        tendered_amount_out=-42.50,
         # amount_in_account=None,
         balance_after=9857.30,
         description="Coffee shop",
@@ -67,7 +67,7 @@ def test_to_hledger_dict_works_with_valid_mapping(
 ) -> None:
     valid_mapping: CsvColumnMapping = [
         ["the_date", "date"],
-        ["amount_out_account", "amount0"],
+        ["tendered_amount_out", "amount0"],
         ["description", "description"],
         ["other_party_name", "payee"],
     ]

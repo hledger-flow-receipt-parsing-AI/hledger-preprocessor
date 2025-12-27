@@ -3,7 +3,7 @@ from typing import Tuple
 from typeguard import typechecked
 
 from hledger_preprocessor.file_reading_and_writing import load_json_from_file
-from hledger_preprocessor.TransactionObjects import Receipt
+from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 
 # Example usage

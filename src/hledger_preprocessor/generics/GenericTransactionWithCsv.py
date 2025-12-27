@@ -18,7 +18,6 @@ class GenericCsvTransaction(Transaction):
     other_party_account: Optional[str] = None
     transaction_code: Optional[str] = None
     bic: Optional[str] = None
-    change_returned: Optional[float] = 0
 
     @typechecked
     def __post_init__(self):
@@ -37,7 +36,7 @@ class GenericCsvTransaction(Transaction):
             "account": str(self.account),
             # "date": self.the_date.isoformat(),
             "date": self.the_date.strftime("%Y-%m-%d-%H-%M-%S"),
-            "amount_out_account": self.amount_out_account,
+            "tendered_amount_out": self.tendered_amount_out,
             "balance": self.balance_after,
             "description": self.description,
             "payee": self.other_party_name,
@@ -47,7 +46,8 @@ class GenericCsvTransaction(Transaction):
         }
 
     def to_hledger_dict(
-        self, csv_column_mapping: CsvColumnMapping
+        self,
+        csv_column_mapping: CsvColumnMapping,
     ) -> Dict[str, Any]:
         # def to_dict(self, account_config:AccountConfig) -> Dict[str, Any]:
         """
@@ -64,24 +64,26 @@ class GenericCsvTransaction(Transaction):
         for column in csv_column_mapping.csv_column_mapping:
 
             attr_name = column[0]
-            csv_col_name = column[1]
+            hledger_col_name = column[1]
 
             # Skip explicitly empty placeholders
-            if attr_name in ("None", "", None) or csv_col_name == "":
-                result[csv_col_name] = None
+            if attr_name in ("None", "", None) or hledger_col_name == "":
+                result[hledger_col_name] = None
 
             # Special case for the date – we always format the same way
-            if csv_col_name == "date":
+            if hledger_col_name == "date":
                 value = self.the_date.strftime("%Y-%m-%d-%H-%M-%S")
             else:
                 # Dynamically fetch the attribute from self
                 value = getattr(self, attr_name, None)
 
             if value is None:  # also catches empty string, [], etc.
-                result[csv_col_name] = None
+                result[hledger_col_name] = None
 
-            result[csv_col_name] = value
+            result[hledger_col_name] = value
 
+        result["tendered_amount_out"] = self.tendered_amount_out
+        result["change_returned"] = self.change_returned
         # If the mapping produced something, return it
         if result:
             return result
@@ -93,7 +95,7 @@ class GenericCsvTransaction(Transaction):
 
         m = hashlib.sha256()
         m.update(str(self.the_date).encode())
-        m.update(str(self.amount_out_account).encode())
+        m.update(str(self.tendered_amount_out).encode())
         m.update((self.description or "").encode())
         m.update((self.other_party_name or "").encode())
         return int(m.hexdigest()[:16], 16)

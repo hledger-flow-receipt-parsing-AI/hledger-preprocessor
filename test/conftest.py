@@ -84,7 +84,7 @@ def temp_finance_root(tmp_path_factory):
         root / "triodos_2024-2025.csv",
         content=textwrap.dedent(
             """\
-            the_date,amount_out_account,description
+            the_date,tendered_amount_out,description
             2025-01-15,-42.17,Supermarket
             2025-01-20,-12.50,Coffee Shop
         """

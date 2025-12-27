@@ -2,17 +2,24 @@ import csv
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import iso8601
 from typeguard import typechecked
 
+from hledger_preprocessor.config.load_receipt_from_img_filepath import (
+    load_receipt_from_img_filepath,
+)
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
 from hledger_preprocessor.TransactionObjects.Address import Address
+from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
+    ProcessedTransaction,
+)
+from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 from hledger_preprocessor.TransactionObjects.ShopId import ShopId
 
 
@@ -60,17 +67,17 @@ def parse_account(
 def read_csv_to_asset_transactions(
     *,
     csv_filepath: str,
+    labelled_receipts: List[Receipt],
     csv_encoding: str = "utf-8",
-) -> List[AccountTransaction]:
+) -> List[ProcessedTransaction]:
     """
     Reads transactions from a CSV file and converts them into a list of Transaction objects.
     """
-    transactions: List[AccountTransaction] = []
+    transactions: List[ProcessedTransaction] = []
 
     if not Path(csv_filepath).exists():
         # raise FileNotFoundError(f'csv_filepath={csv_filepath}')
         return []
-
     with open(csv_filepath, encoding=csv_encoding, newline="") as infile:
         reader = csv.DictReader(infile)
         for row in reader:
@@ -86,11 +93,6 @@ def read_csv_to_asset_transactions(
 
             currency = Currency(row["currency"])
 
-            if "amount0" in row.keys():
-                amount0 = float(row["amount0"])
-            else:
-                amount0 = float(row["amount"])
-
             # other_party = parse_shop_id(shop_id_str=row["other_party"])
             row.get("parent_receipt_category", "")
 
@@ -100,6 +102,17 @@ def read_csv_to_asset_transactions(
                 account_holder=row["account_holder"],
                 bank=row["bank"],
                 account_type=row["account_type"],
+            )
+
+            tenderded_amount_out: float
+            change_returned: float
+            tenderded_amount_out, change_returned = get_amounts(row=row)
+
+            transaction: AccountTransaction = AccountTransaction(
+                the_date=the_date,
+                account=asset_account,
+                tendered_amount_out=tenderded_amount_out,
+                change_returned=change_returned,
             )
 
             ai_classification = (
@@ -114,19 +127,74 @@ def read_csv_to_asset_transactions(
                 and row["logic_classification"] != "None"
                 else None
             )
-            raw_receipt_img_filepath = (
-                row.get("raw_receipt_img_filepath") or None
+            raw_receipt_img_filepath = row.get("receipt_link") or None
+            # TODO: raise error if no receipt is found for transaction.
+
+            parent_receipt: Union[None, Receipt]
+            if raw_receipt_img_filepath:
+                parent_receipt = load_receipt_from_img_filepath(
+                    raw_img_filepath=raw_receipt_img_filepath,
+                    labelled_receipts=labelled_receipts,
+                )
+            else:
+                parent_receipt = None
+
+            processed_tnx: ProcessedTransaction = ProcessedTransaction(
+                transaction=transaction,
+                parent_receipt=parent_receipt,
+                ai_classifications=ai_classification,
+                logic_classifications=logic_classification,
             )
-            transaction: AccountTransaction = AccountTransaction(
-                the_date=the_date,
-                account=asset_account,
-                # currency=asset_account.base_currency,
-                amount_out_account=amount0,
-                # change_returned=0,
-            )
-            transactions.append(transaction)
+            transactions.append(processed_tnx)
 
     return transactions
+
+
+@typechecked
+def get_amounts(*, row: Dict[str, Any]) -> Tuple[float, float]:
+    tenderded_amount_out: float
+    hledger_amount: float = get_hledger_amount(row=row)
+    if "tendered_amount_out" in row.keys():
+        tenderded_amount_out: float = float(row["tendered_amount_out"])
+        if "change_returned" in row.keys():
+            change_returned: float = float(row["change_returned"])
+            if tenderded_amount_out - change_returned != hledger_amount:
+                raise ValueError(
+                    "The hledger net transaction"
+                    f" amount:{hledger_amount} should equal"
+                    f" tenderded_amount_out:{tenderded_amount_out}-change_returned:{change_returned}={tenderded_amount_out-change_returned}"
+                )
+            else:
+                pass
+        else:
+            if tenderded_amount_out != hledger_amount:
+                raise ValueError(
+                    "The hledger net transaction"
+                    f" amount:{hledger_amount} should equal"
+                    f" tenderded_amount_out:{tenderded_amount_out} if no"
+                    " change_returned is known."
+                )
+            else:
+                change_returned: float = 0
+    else:
+        tenderded_amount_out = hledger_amount
+        if "change_returned" in row.keys():
+            raise KeyError(
+                "Did not expect change_returned withtout tendered amount"
+                " specified."
+            )
+        else:
+            change_returned: float = 0
+    return tenderded_amount_out, change_returned
+
+
+@typechecked
+def get_hledger_amount(*, row: Dict[str, Any]) -> float:
+    if "amount0" in row.keys():
+        amount0 = float(row["amount0"])
+    else:
+        amount0 = float(row["amount"])
+    return amount0
 
 
 @typechecked

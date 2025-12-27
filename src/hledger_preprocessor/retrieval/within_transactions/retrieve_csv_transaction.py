@@ -8,6 +8,7 @@ from hledger_preprocessor.csv_parsing.csv_to_transactions import (
     load_csv_transactions_from_file_per_year,
 )
 from hledger_preprocessor.generics.Transaction import Transaction
+from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 
 @typechecked
@@ -32,12 +33,13 @@ def retrieve_csv_transaction_from_hash(
 
 @typechecked
 def get_all_matching_transactions(
-    config: Config, some_hash: str
+    *, config: Config, labelled_receipts: List[Receipt], some_hash: str
 ) -> List[Transaction]:
     matching_transactions: List[Transaction] = []
     transactions: Dict[AccountConfig, Dict[int, List[Transaction]]] = (
         get_all_transactions(
             config=config,
+            labelled_receipts=labelled_receipts,
         )
     )
     # Loop over them.
@@ -58,7 +60,7 @@ def get_all_matching_transactions(
 
 @typechecked
 def get_all_transactions(
-    config: Config,
+    config: Config, labelled_receipts: List[Receipt]
 ) -> Dict[AccountConfig, Dict[int, List[Transaction]]]:
     transactions: Dict[AccountConfig, Dict[int, List[Transaction]]] = {}
     # Load all csv_transactions.
@@ -66,6 +68,8 @@ def get_all_transactions(
 
         transactions_per_year_per_account: Dict[int, List[Transaction]] = (
             load_csv_transactions_from_file_per_year(
+                config=config,
+                labelled_receipts=labelled_receipts,
                 abs_csv_filepath=account_config.get_abs_csv_filepath(
                     dir_paths_config=config.dir_paths
                 ),

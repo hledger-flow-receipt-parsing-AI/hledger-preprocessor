@@ -125,7 +125,7 @@ class TriodosTransaction(Transaction):
             "account_type": self.account_type,
             "date": self.the_date.strftime("%Y-%m-%d-%H-%M-%S"),
             "account_nr": self.account0,
-            "amount": self.amount_out_account,
+            "amount": self.tendered_amount_out,
             "transaction_code": self.transaction_code.value,
             "other_party": self.other_party_name,
             "other_account": self.account1,
@@ -230,7 +230,7 @@ class TriodosTransaction(Transaction):
         return GenericCsvTransaction(
             account=self.account,
             the_date=self.the_date,
-            amount_out_account=self.amount_out_account,
+            tendered_amount_out=self.tendered_amount_out,
             # amount_in_account=
             balance_after=self.balance0,
             description=self.description,

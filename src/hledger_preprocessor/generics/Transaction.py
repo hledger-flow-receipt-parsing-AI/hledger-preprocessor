@@ -1,20 +1,23 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 from typeguard import typechecked
 
 from hledger_preprocessor.TransactionObjects.Account import Account
 
+if TYPE_CHECKING:
+    from hledger_preprocessor.config.AccountConfig import AccountConfig
 
-# @dataclass
+
 @typechecked
 @dataclass(frozen=True, unsafe_hash=True)
 class Transaction(ABC):
     account: Account
     the_date: datetime
-    amount_out_account: float
+    tendered_amount_out: float
+    change_returned: float
 
     def __post_init__(self):
         if not isinstance(self.account, Account):
@@ -28,7 +31,7 @@ class Transaction(ABC):
 
     @abstractmethod
     def to_hledger_dict(
-        self,
+        self, account_config: Optional["AccountConfig"] = None
     ) -> Dict[str, Union[int, float, str, datetime, None]]: ...
 
     @abstractmethod

@@ -47,6 +47,7 @@ from hledger_preprocessor.matching.manual_actions.widen_date_range import (
 class ActionDataset:
     receipt: Receipt
     account: Account
+    labelled_receipts: List[Receipt]
     search_receipt_account_transaction: AccountTransaction
     config: Config
     csv_transactions_per_account: Dict[

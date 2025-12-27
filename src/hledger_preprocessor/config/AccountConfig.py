@@ -64,8 +64,7 @@ class AccountConfig:
             dummy_account_tnx: AccountTransaction = AccountTransaction(
                 the_date=datetime.now(),
                 account=self.account,
-                currency=self.account.base_currency,
-                amount_out_account=1,  # TODO: don't use this hardcoding.
+                tendered_amount_out=1,  # TODO: don't use this hardcoding.
                 change_returned=0,  # TODO: don't use this hardcoding.
             )
             return (

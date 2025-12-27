@@ -14,10 +14,8 @@ from hledger_preprocessor.csv_outputting.output_non_input_csv_transactions impor
     output_non_input_csv_transactions,
 )
 from hledger_preprocessor.csv_parsing.csv_to_transactions import (
-    csv_to_transactions,
     load_csv_transactions_from_file_per_year,
 )
-from hledger_preprocessor.csv_parsing.preprocess_csvs import pre_process_csvs
 from hledger_preprocessor.dir_reading_and_writing import (
     assert_dir_full_hierarchy_exists,
 )
@@ -28,6 +26,7 @@ from hledger_preprocessor.get_models import get_models
 from hledger_preprocessor.helper import assert_dir_exists, get_images_in_folder
 from hledger_preprocessor.management.helper import (
     preprocess_asset_csvs,
+    preprocess_generic_csvs,
 )
 from hledger_preprocessor.matching.helper import (
     prepare_transactions_per_account,
@@ -59,8 +58,8 @@ from hledger_preprocessor.rules.generate_rules_content import (
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
-from hledger_preprocessor.TransactionObjects.LabelledTransaction import (
-    LabelledTransaction,
+from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
+    ProcessedTransaction,
 )
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
@@ -72,24 +71,30 @@ def manage_creating_new_setup(
     config: Config,
 ) -> None:
     print("\n\nSTARTING NEW SETUP")
+    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
     for account_config in config.accounts:
-        csv_filepath: str = account_config.get_abs_csv_filepath(
+        abs_csv_filepath: str = account_config.get_abs_csv_filepath(
             dir_paths_config=config.dir_paths
         )
 
-        transactions_per_year_per_account: Dict[int, List[Transaction]] = (
-            load_csv_transactions_from_file_per_year(
-                abs_csv_filepath=csv_filepath,
-                account_config=account_config,
-                csv_encoding=config.csv_encoding,
+        if os.path.isfile(abs_csv_filepath):
+            transactions_per_year_per_account: Dict[int, List[Transaction]] = (
+                load_csv_transactions_from_file_per_year(
+                    config=config,
+                    labelled_receipts=labelled_receipts,
+                    abs_csv_filepath=abs_csv_filepath,
+                    account_config=account_config,
+                    csv_encoding=config.csv_encoding,
+                )
             )
-        )
 
-        export_csv_transactions_per_acount_into_each_year(
-            config=config,
-            account_config=account_config,
-            transaction_years=list(transactions_per_year_per_account.keys()),
-        )
+            export_csv_transactions_per_acount_into_each_year(
+                config=config,
+                account_config=account_config,
+                transaction_years=list(
+                    transactions_per_year_per_account.keys()
+                ),
+            )
 
 
 # Action 1.
@@ -108,56 +113,17 @@ def manage_preprocessing_csvs(
             " absolute=True ) should be set with args.pre_processed_output_dir"
         )
 
+    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
     models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
         quick_categorisation=quick_categorisation
     )
-    preprocess_asset_csvs(config=config, models=models)
+    preprocess_asset_csvs(
+        config=config, labelled_receipts=labelled_receipts, models=models
+    )
 
-    transactions_per_year_per_account: Dict[int, List[Transaction]] = {}
-
-    for account_config in config.accounts:
-        print(f"account_config={account_config}")
-
-        abs_csv_filepath: str = account_config.get_abs_csv_filepath(
-            dir_paths_config=config.dir_paths
-        )
-        print(f"abs_csv_filepath={abs_csv_filepath}")
-        if os.path.isfile(path=abs_csv_filepath):
-
-            transactions_per_year_per_account: Dict[int, List[Transaction]] = (
-                csv_to_transactions(
-                    input_csv_filepath=abs_csv_filepath,
-                    csv_encoding=config.csv_encoding,
-                    account_config=account_config,
-                )
-            )
-
-            # TODO: Throw warning or error if createRules is not included.
-            # TODO: ensure the import directory is created.
-            # TODO: re-enable
-            # assert_dir_full_hierarchy_exists(
-            #     account=account_config.account, working_subdir=config.get_working_subdir_path(assert_exists=False)
-            # )
-            pre_process_csvs(
-                config=config,
-                account_config=account_config,
-                transactions_per_year=transactions_per_year_per_account,
-                ai_models_tnx_classification=models[
-                    ClassifierType.TRANSACTION_CATEGORY
-                ][LogicType.AI],
-                rule_based_models_tnx_classification=models[
-                    ClassifierType.TRANSACTION_CATEGORY
-                ][LogicType.RULE_BASED],
-            )
-            assert_dir_full_hierarchy_exists(
-                config=config,
-                account=account_config.account,
-                working_subdir=config.get_working_subdir_path(
-                    assert_exists=False
-                ),
-            )
-        else:
-            print(f"SKIPPING FOR:{abs_csv_filepath}")
+    preprocess_generic_csvs(
+        config=config, labelled_receipts=labelled_receipts, models=models
+    )
 
 
 @typechecked
@@ -178,7 +144,7 @@ def manage_preprocessing_assets(
     assert not os.path.exists(asset_path)
 
     non_input_csv_transactions: Dict[
-        AccountConfig, List[LabelledTransaction]
+        AccountConfig, List[ProcessedTransaction]
     ] = {}
     for account_config in config.get_account_configs_without_csv():
         non_input_csv_transactions[account_config] = []
@@ -203,11 +169,8 @@ def manage_preprocessing_assets(
                     == account_config.account
                 ):
                     non_input_csv_transactions[account_config].append(
-                        LabelledTransaction(
-                            account=receipt_account_transaction.account,
-                            the_date=labelled_receipt.the_date,
-                            amount_out_account=receipt_account_transaction.amount_out_account,
-                            account_transaction=receipt_account_transaction,
+                        ProcessedTransaction(
+                            transaction=receipt_account_transaction,
                             parent_receipt=labelled_receipt,
                         )
                     )
@@ -215,6 +178,7 @@ def manage_preprocessing_assets(
             # TODO: loop over receipt labels and get the transactions from that account respectively.
 
     output_non_input_csv_transactions(
+        labelled_receipts=labelled_receipts,
         config=config,
         non_input_csv_transactions=non_input_csv_transactions,
     )
@@ -339,11 +303,14 @@ def manage_matching_manual_receipt_objs_to_account_transactions(
     models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
         quick_categorisation=args.quick_categorisation
     )
-
+    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
+    print("STARTING MATCHING PROCESS")
     manage_matching_receipts_to_transactions(
         config=config,
+        labelled_receipts=labelled_receipts,
         json_paths_receipt_objs=json_paths_receipt_objs,
         csv_transactions_per_account=prepare_transactions_per_account(
+            labelled_receipts=labelled_receipts,
             config=config,
         ),
         models=models,

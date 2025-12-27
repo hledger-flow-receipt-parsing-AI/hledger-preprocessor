@@ -12,6 +12,7 @@ export RECEIPT_IMAGES_DIR="$FINANCE_DIR/receipt_images"
 export RECEIPT_LABELS_DIR="$FINANCE_DIR/receipt_labels"
 export GENERAL_CONFIG_FILEPATH="$FINANCE_DIR/config.yaml"
 export ABS_ASSET_PATH="$WORKING_DIR/import/assets"
+export ASSET_TRANSACTION_CSVS="$WORKING_DIR/asset_transaction_csvs"
 
 # End of configuration.
 validate_config() {
@@ -60,12 +61,15 @@ clear
 echo "WORKING_DIR=$WORKING_DIR"
 echo "START_JOURNAL_FILEPATH=$START_JOURNAL_FILEPATH"
 echo "GENERAL_CONFIG_FILEPATH=$GENERAL_CONFIG_FILEPATH"
+echo "ASSET_TRANSACTION_CSVS=$ASSET_TRANSACTION_CSVS"
 
 
 
 # Start with an empty working dir such that your flow stays reproducible.
+rm -rf "$ASSET_TRANSACTION_CSVS"
 rm -rf "$WORKING_DIR"
 mkdir -p "$WORKING_DIR"
+
 
 # Validate config and CSVs
 validate_config
@@ -81,7 +85,9 @@ activate_conda
 #             echo "Error: hledger_preprocessor --preprocess-csvs failed."
 #             exit 1
 # }
-
+echo "NEXT PREPROCESS ASSETS COMMAND."
+echo ""
+echo ""
 
 # Preprocess accounts without csvs.
 hledger_preprocessor \
@@ -90,6 +96,11 @@ hledger_preprocessor \
             echo "Error: hledger_preprocessor --preprocess-assets failed."
             exit 1
 }
+
+echo "Running hledger-flow import."
+echo ""
+echo ""
+
 
 # Run hledger-flow to import/process CSVs
 

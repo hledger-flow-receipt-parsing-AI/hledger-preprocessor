@@ -2,6 +2,9 @@ import logging
 from typing import Dict, List, Union
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.matching.ask_user_action import (
     ActionDataset,
@@ -33,10 +36,10 @@ from typeguard import typechecked
 @typechecked
 def handle_receipt_item_transaction_to_csv_matches(
     *,
-    transaction_matches: List[Transaction],
+    transaction_matches: List[GenericCsvTransaction],
     # config: Config,
     csv_transactions_per_account: Dict[
-        AccountConfig, Dict[int, List[Transaction]]
+        AccountConfig, Dict[int, List[GenericCsvTransaction]]
     ],
     actions_value: List[ActionValuePair],
     action_dataset: ActionDataset,
