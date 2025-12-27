@@ -31,6 +31,7 @@ from hledger_preprocessor.generics.Transaction import Transaction
 def match_receipt_items_to_csv_transactions(
     *,
     receipt: Receipt,
+    labelled_receipts: List[Receipt],
     search_receipt_account_transactions: List[AccountTransaction],
     csv_transactions_per_account: Dict[
         AccountConfig, Dict[int, List[Transaction]]
@@ -61,9 +62,11 @@ def match_receipt_items_to_csv_transactions(
     ) in search_receipt_account_transactions:
         actions_value: List[ActionValuePair] = []
         if not search_receipt_account_transaction.original_transaction:
+
             # Initialise action_dataset.
             action_dataset: ActionDataset = ActionDataset(
                 receipt=receipt,
+                labelled_receipts=labelled_receipts,
                 account=search_receipt_account_transaction.account,
                 search_receipt_account_transaction=search_receipt_account_transaction,
                 config=config,

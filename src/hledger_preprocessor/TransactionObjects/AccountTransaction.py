@@ -1,3 +1,4 @@
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 from pprint import pprint
@@ -22,7 +23,6 @@ class AccountTransaction(Transaction):
     # TODO: include date.
     account: Account
     the_date: datetime
-    # currency: Currency
     change_returned: float = 0.0
     original_transaction: Optional[
         # Union["hledger_preprocessor.triodos_logic.TriodosTransaction"]
@@ -31,15 +31,15 @@ class AccountTransaction(Transaction):
 
     def __post_init__(self):
 
-        if self.amount_out_account < 0 and self.change_returned != -0:
+        if self.tendered_amount_out < 0 and self.change_returned != -0:
             pprint(self.__dict__)
             raise ValueError(
-                f"amount_out_account:{self.amount_out_account} cannot be"
+                f"tendered_amount_out:{self.tendered_amount_out} cannot be"
                 f" negative with change_returned:{self.change_returned}"
             )
         if self.change_returned < 0:
             raise ValueError("Change returned cannot be negative")
-        if self.amount_out_account == 0 and self.change_returned == 0:
+        if self.tendered_amount_out == 0 and self.change_returned == 0:
             raise ValueError("Cannot receive AND pay 0.")
         if not isinstance(self.account, Account):
             raise TypeError(
@@ -48,10 +48,10 @@ class AccountTransaction(Transaction):
             )
 
         # Store hledger field mapping values.
-        amount_out_account: float = (
-            self.amount_out_account - self.change_returned
-        )
-        object.__setattr__(self, "amount_out_account", amount_out_account)
+        # tendered_amount_out: float = (
+        #     self.tendered_amount_out - self.change_returned
+        # )
+        # object.__setattr__(self, "tendered_amount_out", tendered_amount_out)
 
         account_holder: str = self.account.account_holder
         object.__setattr__(self, "account_holder", account_holder)
@@ -66,21 +66,27 @@ class AccountTransaction(Transaction):
                 ("bank", "bank"),
                 ("account_type", "account_type"),
                 ("the_date", "date"),
-                ("amount_out_account", "amount0"),
+                ("tendered_amount_out", "amount0"),
             )
         )
         object.__setattr__(self, "csv_column_mapping", csv_column_mapping)
         # ai_classification, logic_classification
 
+    @typechecked
+    def set_parent_receipt_category(self, parent_receipt_category: str) -> None:
+        object.__setattr__(
+            self, "parent_receipt_category", parent_receipt_category
+        )
+
     def is_purchase(self) -> bool:
-        return self.amount_out_account - self.change_returned > 0
+        return self.tendered_amount_out - self.change_returned > 0
 
     def to_string(self) -> str:
         """Return a string representation of the account transaction."""
         return (
             f"{self.account.to_string()}:"
             f"{self.currency.name}:"
-            f"paid={self.amount_out_account:.2f}:"
+            f"paid={self.tendered_amount_out:.2f}:"
             f"returned={self.change_returned:.2f}"
         )
 
@@ -108,28 +114,41 @@ class AccountTransaction(Transaction):
         for column in self.csv_column_mapping.csv_column_mapping:
 
             attr_name = column[0]
-            csv_col_name = column[1]
+            hledger_col_name = column[1]
 
             # Skip explicitly empty placeholders
-            if attr_name in ("None", "", None) or csv_col_name == "":
-                result[csv_col_name] = None
+            if attr_name in ("None", "", None) or hledger_col_name == "":
+                result[hledger_col_name] = None
 
             # Special case for the date – we always format the same way
-            if csv_col_name == "date":
+            if hledger_col_name == "date":
                 value = self.the_date.strftime("%Y-%m-%d-%H-%M-%S")
-            elif csv_col_name == "currency":
+            elif hledger_col_name == "currency":
                 value = self.account.base_currency.value
+            elif hledger_col_name == "amount0":
+                value = self.tendered_amount_out - self.change_returned
             else:
                 # Dynamically fetch the attribute from self
                 value = getattr(self, attr_name, None)
 
             if value is None:  # also catches empty string, [], etc.
-                result[csv_col_name] = None
+                result[hledger_col_name] = None
 
-            result[csv_col_name] = value
-
+            result[hledger_col_name] = value
+        result["tendered_amount_out"] = self.tendered_amount_out
+        result["change_returned"] = self.change_returned
         # If the mapping produced something, return it
         if result:
             return result
         else:
             raise ValueError("Did not create a filled hledger dict.")
+
+    @typechecked
+    def get_hash(self) -> int:
+        m = hashlib.sha256()
+        m.update(str(self.the_date).encode())
+        m.update(str(self.tendered_amount_out).encode())
+        m.update((str(self.change_returned) or "").encode())
+        m.update((str(self.tendered_amount_out) or "").encode())
+        m.update(self.account.to_string().encode())
+        return int(m.hexdigest()[:16], 16)

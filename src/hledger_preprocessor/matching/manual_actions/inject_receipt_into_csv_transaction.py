@@ -54,7 +54,7 @@ def inject_csv_transaction_to_receipt(
 
     # Create an Account object for the bank transaction.
     if float(
-        Decimal(str(original_receipt_account_transaction.amount_out_account))
+        Decimal(str(original_receipt_account_transaction.tendered_amount_out))
         - Decimal(str(original_receipt_account_transaction.change_returned))
         > 0
     ):
@@ -70,8 +70,8 @@ def inject_csv_transaction_to_receipt(
         # Create foreign currency
         asset_transaction: AccountTransaction = AccountTransaction(
             account=foreign_currency_account,
-            currency=original_receipt_account_transaction.currency,  # Infer currency from receipt
-            amount_out_account=original_receipt_account_transaction.amount_out_account,
+            currency=original_receipt_account_transaction.account.base_currency,  # Infer currency from receipt
+            tendered_amount_out=original_receipt_account_transaction.tendered_amount_out,
             change_returned=original_receipt_account_transaction.change_returned,
         )
 

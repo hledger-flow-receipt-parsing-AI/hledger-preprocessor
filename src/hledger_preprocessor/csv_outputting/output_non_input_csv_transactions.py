@@ -18,19 +18,18 @@ from hledger_preprocessor.dir_reading_and_writing import (
 from hledger_preprocessor.rules.generate_rules_content import (
     generate_rules_file,
 )
-from hledger_preprocessor.TransactionObjects.AccountTransaction import (
-    AccountTransaction,
+from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
+    ProcessedTransaction,
 )
-from hledger_preprocessor.TransactionObjects.LabelledTransaction import (
-    LabelledTransaction,
-)
+from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 
 @typechecked
 def output_non_input_csv_transactions(  # TODO: rename the starting info.
     *,
     config: Config,
-    non_input_csv_transactions: Dict[AccountConfig, List[LabelledTransaction]],
+    labelled_receipts: List[Receipt],
+    non_input_csv_transactions: Dict[AccountConfig, List[ProcessedTransaction]],
     # transaction_years: List[int],
 ) -> None:
     """Prompts the user for necessary information to set up the import
@@ -49,6 +48,7 @@ def output_non_input_csv_transactions(  # TODO: rename the starting info.
         if transactions:
             years: set[int] = set()
             for tnx in transactions:
+                # if tnx.tendered_amount_out == float(350):
                 years.add(tnx.parent_receipt.get_year())
 
             path_to_account_type, transaction_year_paths = (
@@ -79,17 +79,22 @@ def output_non_input_csv_transactions(  # TODO: rename the starting info.
                 )
 
                 for tnx in transactions:
-                    account_txn: AccountTransaction = AccountTransaction(
-                        the_date=tnx.the_date,
-                        account=account_config.account,
-                        # currency=account_config.account.base_currency,
-                        amount_out_account=tnx.account_transaction.amount_out_account,
-                        change_returned=tnx.account_transaction.change_returned,
-                        original_transaction=tnx,
-                    )
+                    if not isinstance(tnx, ProcessedTransaction):
+                        raise TypeError(
+                            f"Expected ProcessedTransaction, got:{tnx}"
+                        )
+                    # account_txn: AccountTransaction = AccountTransaction(
+                    #     the_date=tnx.the_date,
+                    #     account=account_config.account,
+                    #     tendered_amount_out=tnx.tendered_amount_out,
+                    #     change_returned=tnx.change_returned,
+                    #     original_transaction=tnx,
+                    # )
 
                     write_asset_transaction_to_csv(
-                        transaction=account_txn,
+                        config=config,
+                        labelled_receipts=labelled_receipts,
+                        transaction=tnx,
                         filepath=csv_output_filepath,
                         account_config=account_config,
                     )

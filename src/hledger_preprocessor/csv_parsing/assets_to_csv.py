@@ -23,6 +23,9 @@ from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
+from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
+    ProcessedTransaction,
+)
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 
@@ -30,6 +33,7 @@ from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 def export_asset_transaction_to_csv(
     *,
     config: Config,
+    labelled_receipts: List[Receipt],
     search_receipt_account_transaction: AccountTransaction,
     parent_receipt: Receipt,
     csv_encoding: str = "utf-8",
@@ -64,10 +68,11 @@ def export_asset_transaction_to_csv(
         csv_output_filepath: str = account_config.get_abs_csv_filepath(
             dir_paths_config=config.dir_paths
         )
-        csv_asset_transactions: List[AccountTransaction] = (
+        csv_asset_transactions: List[ProcessedTransaction] = (
             read_csv_to_asset_transactions(
                 csv_filepath=csv_output_filepath,
                 csv_encoding=csv_encoding,
+                labelled_receipts=labelled_receipts,
             )
         )
 
@@ -85,12 +90,14 @@ def export_asset_transaction_to_csv(
 
         # TODO: determine why all asset transactions are exported instead of only this one.
         write_asset_transaction_to_csv(
+            config=config,
             transaction=classified_transaction,
             filepath=csv_output_filepath,
             account_config=account_config,
         )
         if not classified_transaction_is_exported(
-            asset_transaction=classified_transaction,
+            labelled_receipts=labelled_receipts,
+            processed_transaction=classified_transaction,
             csv_output_filepath=csv_output_filepath,
             csv_encoding=csv_encoding,
         ):

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -9,6 +10,7 @@ from hledger_preprocessor.config.load_config import (
     raw_receipt_img_filepath_to_cropped,
 )
 from hledger_preprocessor.csv_parsing.csv_to_transactions import (
+    csv_to_transactions,
     load_csv_transactions_from_file_per_year,
 )
 from hledger_preprocessor.csv_parsing.preprocess_csvs import pre_process_csvs
@@ -36,50 +38,6 @@ from hledger_preprocessor.receipts_to_objects.make_receipt_labels import (
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 # Action 0.
-
-
-@typechecked
-def preprocess_asset_csvs(
-    *,
-    config: Config,
-    models: Dict[ClassifierType, Dict[LogicType, Any]],
-) -> None:
-
-    # account_configs.extend(config.accounts)
-    for asset_account_config in config.get_account_configs_without_csv():
-        # for asset_account_config in config.asset_accounts:
-        transactions_per_year_per_account: Dict[int, List[Transaction]] = (
-            load_csv_transactions_from_file_per_year(
-                abs_csv_filepath=asset_account_config.get_abs_csv_filepath(
-                    dir_paths_config=config.dir_paths
-                ),
-                account_config=asset_account_config,
-                csv_encoding=config.csv_encoding,
-            )
-        )
-
-        # TODO: Throw warning or error if createRules is not included.
-        # TODO: ensure the import directory is created.
-        # TODO: re-enable
-        # assert_dir_full_hierarchy_exists(
-        #     account=account_config.account, working_subdir=config.get_working_subdir_path(assert_exists=False)
-        # )
-        pre_process_csvs(
-            config=config,
-            account_config=asset_account_config,
-            transactions_per_year=transactions_per_year_per_account,
-            ai_models_tnx_classification=models[
-                ClassifierType.TRANSACTION_CATEGORY
-            ][LogicType.AI],
-            rule_based_models_tnx_classification=models[
-                ClassifierType.TRANSACTION_CATEGORY
-            ][LogicType.RULE_BASED],
-        )
-        assert_dir_full_hierarchy_exists(
-            config=config,
-            account=asset_account_config.account,
-            working_subdir=config.get_working_subdir_path(assert_exists=False),
-        )
 
 
 @typechecked
@@ -147,3 +105,106 @@ def edit_receipt(
 
     # If the modified receipt is not equal to the loaded receipt, export it.
     store_updated_receipt_label(latest_receipt=modified_receipt, config=config)
+
+
+@typechecked
+def preprocess_asset_csvs(
+    *,
+    config: Config,
+    labelled_receipts: List[Receipt],
+    models: Dict[ClassifierType, Dict[LogicType, Any]],
+) -> None:
+
+    # account_configs.extend(config.accounts)
+    for asset_account_config in config.get_account_configs_without_csv():
+        # for asset_account_config in config.asset_accounts:
+        transactions_per_year_per_account: Dict[int, List[Transaction]] = (
+            load_csv_transactions_from_file_per_year(
+                config=config,
+                labelled_receipts=labelled_receipts,
+                abs_csv_filepath=asset_account_config.get_abs_csv_filepath(
+                    dir_paths_config=config.dir_paths
+                ),
+                account_config=asset_account_config,
+                csv_encoding=config.csv_encoding,
+            )
+        )
+
+        # TODO: Throw warning or error if createRules is not included.
+        # TODO: ensure the import directory is created.
+        # TODO: re-enable
+        # assert_dir_full_hierarchy_exists(
+        #     account=account_config.account, working_subdir=config.get_working_subdir_path(assert_exists=False)
+        # )
+        pre_process_csvs(
+            config=config,
+            labelled_receipts=labelled_receipts,
+            account_config=asset_account_config,
+            transactions_per_year=transactions_per_year_per_account,
+            ai_models_tnx_classification=models[
+                ClassifierType.TRANSACTION_CATEGORY
+            ][LogicType.AI],
+            rule_based_models_tnx_classification=models[
+                ClassifierType.TRANSACTION_CATEGORY
+            ][LogicType.RULE_BASED],
+        )
+        assert_dir_full_hierarchy_exists(
+            config=config,
+            account=asset_account_config.account,
+            working_subdir=config.get_working_subdir_path(assert_exists=False),
+        )
+
+
+def preprocess_generic_csvs(
+    *,
+    config: Config,
+    labelled_receipts: List[Receipt],
+    models: Dict[ClassifierType, Dict[LogicType, Any]],
+) -> None:
+    transactions_per_year_per_account: Dict[int, List[Transaction]] = {}
+
+    for account_config in config.accounts:
+
+        abs_csv_filepath: str = account_config.get_abs_csv_filepath(
+            dir_paths_config=config.dir_paths
+        )
+
+        if os.path.isfile(path=abs_csv_filepath):
+
+            transactions_per_year_per_account: Dict[int, List[Transaction]] = (
+                csv_to_transactions(
+                    config=config,
+                    labelled_receipts=labelled_receipts,
+                    input_csv_filepath=abs_csv_filepath,
+                    csv_encoding=config.csv_encoding,
+                    account_config=account_config,
+                )
+            )
+
+            # TODO: Throw warning or error if createRules is not included.
+            # TODO: ensure the import directory is created.
+            # TODO: re-enable
+            # assert_dir_full_hierarchy_exists(
+            #     account=account_config.account, working_subdir=config.get_working_subdir_path(assert_exists=False)
+            # )
+            pre_process_csvs(
+                config=config,
+                labelled_receipts=labelled_receipts,
+                account_config=account_config,
+                transactions_per_year=transactions_per_year_per_account,
+                ai_models_tnx_classification=models[
+                    ClassifierType.TRANSACTION_CATEGORY
+                ][LogicType.AI],
+                rule_based_models_tnx_classification=models[
+                    ClassifierType.TRANSACTION_CATEGORY
+                ][LogicType.RULE_BASED],
+            )
+            assert_dir_full_hierarchy_exists(
+                config=config,
+                account=account_config.account,
+                working_subdir=config.get_working_subdir_path(
+                    assert_exists=False
+                ),
+            )
+        else:
+            print(f"SKIPPING FOR:{abs_csv_filepath}")

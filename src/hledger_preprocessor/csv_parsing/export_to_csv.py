@@ -1,12 +1,14 @@
 import csv
 import os
+from datetime import datetime
 from pathlib import Path
 from pprint import pprint
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 
 from typeguard import typechecked
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
+from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.csv_parsing.check_assets_in_csv_status import (
     classified_transaction_is_exported,
 )
@@ -17,82 +19,75 @@ from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
 from hledger_preprocessor.generics.Transaction import Transaction
-from hledger_preprocessor.TransactionObjects import AccountTransaction
+from hledger_preprocessor.TransactionObjects.AccountTransaction import (
+    AccountTransaction,
+)
+from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
+    ProcessedTransaction,
+)
+from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 
 @typechecked
-def get_hledger_dict(
-    *, transaction: Transaction, account_config: Optional[AccountConfig]
-) -> Dict:
-    if isinstance(transaction, GenericCsvTransaction):
-        if not isinstance(account_config, AccountConfig):
-            raise TypeError(
-                "account_config was not of AccountConfig type. It"
-                f" was:{account_config}"
-            )
-        hledger_tnx_dict: Dict = transaction.to_hledger_dict(
-            csv_column_mapping=account_config.csv_column_mapping
-        )
-    else:
-        hledger_tnx_dict: Dict = transaction.to_hledger_dict()
-    if (
-        list(hledger_tnx_dict.keys())
-        != account_config.get_hledger_csv_column_names()
-    ):
-        raise ValueError(
-            "Should be equal at all times:"
-            f" {list(hledger_tnx_dict.keys())}!={account_config.get_hledger_csv_column_names()}"
-        )
-    return hledger_tnx_dict
-
-
-@typechecked
-def assert_uniform_tnx_types(*, tnx: List[Transaction]) -> None:
-    if not tnx:
+def assert_uniform_tnx_types(
+    *, processed_txns: List[ProcessedTransaction]
+) -> None:
+    if not processed_txns:
         return
-    expected_type = type(tnx[0])
-    for t in tnx:
+    transactions: List[Transaction] = list(
+        map(lambda processed_tnx: processed_tnx.transaction, processed_txns)
+    )
+    expected_type = type(transactions[0])
+    for t in transactions:
         if type(t) is not expected_type:
             raise TypeError(
                 "All transactions must be of the same type. Expected"
-                f" {expected_type}, but found {type(t)} in list {tnx}"
+                f" {expected_type}, but found {type(t)} in list {transactions}"
             )
 
-    transaction = tnx[0]
+    transaction = transactions[0]
     if isinstance(transaction, GenericCsvTransaction):
         return
     elif isinstance(transaction, AccountTransaction):
         return
     else:
         raise TypeError(
-            f"Did not expected tnx of type:{type(transaction)}for {tnx}"
+            f"Did not expected tnx of type:{type(transaction)}for"
+            f" {transactions}"
         )
 
 
 @typechecked
 def write_processed_csv(
     *,
-    transactions: List[Transaction],
+    processed_txns: List[ProcessedTransaction],
     account_config: AccountConfig,
     filepath: str,
 ) -> None:
     # Get fieldnames dynamically from the first object in the list
-    if transactions:
-        assert_uniform_tnx_types(tnx=transactions)
-        hledger_tnx_dicts: List[Dict] = []
-        for txn in transactions:
-            if isinstance(txn, GenericCsvTransaction):
-                hledger_tnx_dict: Dict = get_hledger_dict(
-                    transaction=txn, account_config=account_config
-                )
-            else:
-                hledger_tnx_dict: Dict = get_hledger_dict(
-                    transaction=txn, account_config=None
-                )
-        hledger_tnx_dicts.append(hledger_tnx_dict)
-        assert all(
-            d.keys() == hledger_tnx_dicts[0].keys() for d in hledger_tnx_dicts
-        ), "All hledger dicts must have identical keys!"
+    if processed_txns:
+        assert_uniform_tnx_types(processed_txns=processed_txns)
+        hledger_tnx_dicts: List[
+            Dict[str, Union[int, float, str, datetime, None]]
+        ] = []
+
+        for processed_tnx in processed_txns:
+            hledger_dict: Dict[str, Union[int, float, str, datetime, None]] = (
+                processed_tnx.to_hledger_dict(account_config=account_config)
+            )
+            # if isinstance(processed_tnx.transaction, GenericCsvTransaction):
+            #     hledger_tnx_dict: Dict = get_hledger_dict(
+            #         transaction=processed_tnx.transaction, account_config=account_config
+            #     )
+            # else:
+            #     hledger_tnx_dict: Dict = get_hledger_dict(
+            #         transaction=processed_tnx.transaction, account_config=None
+            #     )
+            hledger_tnx_dicts.append(hledger_dict)
+            assert all(
+                d.keys() == hledger_tnx_dicts[0].keys()
+                for d in hledger_tnx_dicts
+            ), "All hledger dicts must have identical keys!"
 
         with open(filepath, mode="w", encoding="utf-8", newline="") as outfile:
             writer = csv.DictWriter(
@@ -103,13 +98,16 @@ def write_processed_csv(
             writer.writeheader()
 
             # Write each transaction as a row in the CSV
-            for hledger_tnx_dict in hledger_tnx_dicts:
+            for i, hledger_tnx_dict in enumerate(hledger_tnx_dicts):
+                # print(f"writing line:{i}={hledger_tnx_dict}")
                 writer.writerow(hledger_tnx_dict)
 
 
 @typechecked
 def write_asset_transaction_to_csv(
-    transaction: AccountTransaction,
+    config: Config,
+    labelled_receipts: List[Receipt],
+    transaction: ProcessedTransaction,
     filepath: str,
     account_config: AccountConfig,
     csv_encoding: str = "utf-8",  # Added encoding parameter for consistency
@@ -131,9 +129,10 @@ def write_asset_transaction_to_csv(
 
     # Convert transaction to dictionary for comparison and writing
     txn_dict = transaction.to_hledger_dict()
-    print(f"asset txn_dict={txn_dict}")
     if not classified_transaction_is_exported(
-        asset_transaction=transaction,
+        config=config,
+        labelled_receipts=labelled_receipts,
+        processed_transaction=transaction,
         csv_output_filepath=filepath,
         csv_encoding=csv_encoding,
     ):
@@ -159,12 +158,15 @@ def write_asset_transaction_to_csv(
 
         # Assert that the transaction was added
         if not classified_transaction_is_exported(
-            asset_transaction=transaction,
+            config=config,
+            labelled_receipts=labelled_receipts,
+            processed_transaction=transaction,
             csv_output_filepath=filepath,
             csv_encoding=csv_encoding,
         ):
-            csv_asset_transactions: List[AccountTransaction] = (
+            csv_asset_transactions: List[ProcessedTransaction] = (
                 read_csv_to_asset_transactions(
+                    labelled_receipts=labelled_receipts,
                     csv_filepath=filepath,
                     csv_encoding=csv_encoding,
                 )

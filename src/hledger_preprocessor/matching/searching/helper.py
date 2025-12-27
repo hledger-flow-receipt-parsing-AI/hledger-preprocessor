@@ -100,7 +100,8 @@ def filter_transactions_by_amount(
     # TODO: determine when you want to use the search receipt account transaction and when you
     # want to use the original receipt. Specifically, you should try to prevent overwriting the original receipt.
     target_amount = (
-        action_dataset.search_receipt_account_transaction.amount_out_account
+        action_dataset.search_receipt_account_transaction.tendered_amount_out
+        - action_dataset.search_receipt_account_transaction.change_returned
         # if original_receipt_account_transaction is not None
         # else net_payed_amounts[receipt_account]
     )
@@ -110,16 +111,16 @@ def filter_transactions_by_amount(
         print(
             "Searching net receipt tnx"
             f" amount:{target_amount}, evaluating"
-            f" csv_transaction amount:{transaction.amount_out_account},"
+            f" csv_transaction amount:{transaction.tendered_amount_out},"
             f" amount_range={amount_range}, tnx date:{transaction.the_date}"
         )
 
         if is_amount_within_margin(
-            transaction_amount=transaction.amount_out_account,
+            transaction_amount=transaction.tendered_amount_out,
             receipt_amount=target_amount,
             margin=amount_range,
         ):
-            print(f"Transaction MATCH FOUND! {transaction.amount_out_account}")
+            print(f"Transaction MATCH FOUND! {transaction.tendered_amount_out}")
             filtered_transactions.append(transaction)
     return filtered_transactions
 

@@ -77,9 +77,9 @@ def initialize_account_transaction(
             transaction["account"] = Account(
                 **transaction["account"],
             )
-        if "change_returned" in transaction.keys():
-            if transaction["change_returned"] == 0:
-                transaction.pop("change_returned")
+        # if "change_returned" in transaction.keys():
+        # if transaction["change_returned"] == 0:
+        # transaction.pop("change_returned")
         return GenericCsvTransaction(**transaction)
     else:
 
@@ -87,7 +87,7 @@ def initialize_account_transaction(
             the_date=the_date,
             account=account,
             # currency=currency,
-            amount_out_account=transaction["amount_out_account"],
+            tendered_amount_out=transaction["tendered_amount_out"],
             change_returned=transaction["change_returned"],
             # original_transaction=original_transaction,
         )

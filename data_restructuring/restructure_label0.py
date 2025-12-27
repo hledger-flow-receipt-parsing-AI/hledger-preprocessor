@@ -71,10 +71,10 @@ def deep_replace_account(obj: Any) -> Any:
     """
     Recursively walk JSON:
     1. Replace legacy account blocks when possible.
-    2. Rename "amount_paid" → "amount_out_account" everywhere.
+    2. Rename "amount_paid" → "tendered_amount_out" everywhere.
     """
     # First, perform the key renaming (safe to do always)
-    obj = deep_rename_key(obj, "amount_paid", "amount_out_account")
+    obj = deep_rename_key(obj, "amount_paid", "tendered_amount_out")
 
     # Then handle legacy account replacement
     if isinstance(obj, dict):

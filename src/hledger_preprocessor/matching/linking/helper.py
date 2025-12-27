@@ -87,9 +87,11 @@ def store_updated_receipt_label(
 
         if loaded_receipt.__dict__ != latest_receipt.__dict__:
             print(f"\n\nloaded_receipt=")
-            pprint(loaded_receipt)
+            # pprint(loaded_receipt)
+            loaded_receipt.pretty_print_receipt_without_config()
             print(f"latest_receipt=")
-            pprint(latest_receipt)
+            # pprint(latest_receipt)
+            latest_receipt.pretty_print_receipt_without_config()
 
             raise ValueError(
                 "The exported receipt is not the same as the updated receipt. "

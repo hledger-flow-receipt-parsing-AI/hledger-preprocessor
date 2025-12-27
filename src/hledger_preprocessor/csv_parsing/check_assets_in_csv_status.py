@@ -16,10 +16,14 @@ from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
+from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
+    ProcessedTransaction,
+)
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 
-def _transaction_key(tnx: "AccountTransaction") -> tuple[Any, ...]:
+@typechecked
+def _transaction_key(*, tnx: "AccountTransaction") -> tuple[Any, ...]:
     """
     Automatically return a tuple of only the REQUIRED fields
     (those without default or default_factory) of the dataclass.
@@ -34,37 +38,17 @@ def _transaction_key(tnx: "AccountTransaction") -> tuple[Any, ...]:
         for f in fields(tnx)
         if f.default is MISSING and f.default_factory is MISSING
     ]
-
+    # print(f'required_fields={required_fields}')
     # Extract values safely — will raise AttributeError if field missing (shouldn't happen)
     return tuple(getattr(tnx, f.name) for f in required_fields)
 
 
-# def _transaction_key(tnx: "AccountTransaction") -> tuple:
-#     """
-#     Return a tuple of only the fields that define transactional identity.
-#     Adjust this list to match what makes two transactions "the same" in your domain.
-#     """
-
-#     # Exclude fields that are optional or have default values)
-#     return tuple(
-#         getattr(tnx, f.name)
-#         for f in fields(tnx)
-#         if f.default is f.default_factory
-#         and f.default is None  # rough heuristic for "required"
-#         or f.name
-#         in {
-#             "the_date",
-#             "amount",
-#             "currency",
-#             "description",
-#             "account",
-#         }  # force include
-#     )
-
-
+@typechecked
 def classified_transaction_is_exported(
     *,
-    asset_transaction: "AccountTransaction",
+    config: Config,
+    labelled_receipts: List[Receipt],
+    processed_transaction: ProcessedTransaction,
     csv_output_filepath: str,
     csv_encoding: str,
 ) -> bool:
@@ -72,18 +56,23 @@ def classified_transaction_is_exported(
     Returns True if a transaction with the same business key already exists in the CSV.
     Igbles optional/auto-generated fields like id, exported flag, etc.
     """
-    csv_asset_transactions: List["AccountTransaction"] = (
+    csv_asset_transactions: List[ProcessedTransaction] = (
         read_csv_to_asset_transactions(
+            labelled_receipts=labelled_receipts,
             csv_filepath=csv_output_filepath,
             csv_encoding=csv_encoding,
         )
     )
 
-    my_key = _transaction_key(asset_transaction)
+    my_key = _transaction_key(tnx=processed_transaction.transaction)
 
-    for tnx in csv_asset_transactions:
-        if _transaction_key(tnx) == my_key:
-            return True
+    for i, tnx in enumerate(csv_asset_transactions):
+        if _transaction_key(tnx=tnx.transaction) == my_key:
+            if (
+                tnx.parent_receipt.raw_img_filepath
+                == processed_transaction.parent_receipt.raw_img_filepath
+            ):
+                return True
 
     return False
 
@@ -112,14 +101,7 @@ def unclassified_transaction_is_exported(
     csv_output_filepath: str = get_input_csv(
         config=config, account=search_receipt_account_transaction.account
     )
-    # Generate output path
-    # asset_path: str = ensure_asset_path_is_created(config=config)
-    # csv_output_filepath: str = get_asset_csv_output_path(
-    #     asset_path=asset_path,
-    #     account=search_receipt_account_transaction.account,
-    #     year=parent_receipt.the_date.year,
-    #     csv_filename=f"{search_receipt_account_transaction.currency}.csv",
-    # )
+
     classified_transaction: Transaction = get_classified_transaction(
         search_receipt_account_transaction=search_receipt_account_transaction,
         parent_receipt=parent_receipt,
@@ -143,7 +125,7 @@ def get_classified_transaction(
     ai_models_tnx_classification: List,
     rule_based_models_tnx_classification: List,
     category_namespace: CategoryNamespace,
-) -> Transaction:
+) -> ProcessedTransaction:
 
     amount_paid = Decimal(str(search_receipt_account_transaction.amount_paid))
     change_returned = Decimal(
@@ -151,7 +133,7 @@ def get_classified_transaction(
     )
     amount0 = amount_paid - change_returned  # Prevent rounding error in float.
 
-    classified_transaction: Transaction = classify_transaction(
+    classified_transaction: ProcessedTransaction = classify_transaction(
         txn=search_receipt_account_transaction,
         ai_models_tnx_classification=ai_models_tnx_classification,
         rule_based_models_tnx_classification=rule_based_models_tnx_classification,

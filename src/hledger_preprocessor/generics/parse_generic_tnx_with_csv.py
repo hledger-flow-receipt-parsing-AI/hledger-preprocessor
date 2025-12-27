@@ -57,7 +57,7 @@ def parse_generic_bank_transaction(
         elif py_field == "description":
             description_parts.append(value)
         elif py_field in [
-            "amount_out_account",
+            "tendered_amount_out",
             "amount_in_account",
             "balance_after",
             "amount_after_tnx",
@@ -100,7 +100,8 @@ def parse_generic_bank_transaction(
     }
     kwargs = {k: v for k, v in field_values.items() if k in known_fields}
     extra = {k: v for k, v in field_values.items() if k not in known_fields}
-
     kwargs["extra"] = extra
 
+    if "change_returned" not in kwargs.keys():
+        kwargs["change_returned"] = 0
     return GenericCsvTransaction(**kwargs)

@@ -100,7 +100,6 @@ def load_receipts_from_dir(*, config: Config) -> List[Receipt]:
         "receipt_labels_dir", absolute=True
     )
     assert_dir_exists(dirpath=abs_receipt_dir_path)
-    print(f"abs_receipt_dir_path={abs_receipt_dir_path}")
 
     receipts: List[Receipt] = []
     label_files = get_files_in_folder(
@@ -117,7 +116,6 @@ def load_receipts_from_dir(*, config: Config) -> List[Receipt]:
         # input(f'label_filepath={label_filepath}')
         with open(label_filepath, encoding=config.csv_encoding) as f:
             receipt_data = json.load(f)
-
             if "raw_img_filepath" not in receipt_data.keys():
                 found_label: bool = False
                 for (
@@ -152,7 +150,10 @@ def load_receipts_from_dir(*, config: Config) -> List[Receipt]:
                     )
                 receipt = Receipt(config=config, **receipt_data)
                 receipts.append(receipt)
-
+        # if receipt_data["the_date"] == "2024-12-20T20:31:00":
+        #     pprint(receipt)
+        #     # input(f'{receipt_data.keys()}')
+        #     raise ValueError("FOUDN RECEIPT")
     return receipts
 
 

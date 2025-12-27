@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pprint import pprint
@@ -49,7 +50,7 @@ def get_net_receipt_transactions_per_account(
         search_receipt_account_transaction
     ) in search_receipt_account_transactions:
         net_payed_from_account: float = float(
-            Decimal(str(search_receipt_account_transaction.amount_out_account))
+            Decimal(str(search_receipt_account_transaction.tendered_amount_out))
             - Decimal(str(search_receipt_account_transaction.change_returned))
         )
 
@@ -101,7 +102,9 @@ def get_transactions_in_date_range(
 
 @typechecked
 def prepare_transactions_per_account(
+    *,
     config: Config,
+    labelled_receipts: List[Receipt],
 ) -> Dict[AccountConfig, Dict[int, List[Transaction]]]:
     """
     Prepare transactions per account from the configuration.
@@ -114,12 +117,19 @@ def prepare_transactions_per_account(
     """
     transactions_per_account = {}
     for account_config in config.accounts:
-        transactions_per_year = load_csv_transactions_from_file_per_year(
-            abs_csv_filepath=account_config.get_abs_csv_filepath(
-                dir_paths_config=config.dir_paths
-            ),
-            account_config=account_config,
-            csv_encoding=config.csv_encoding,
+
+        abs_csv_filepath: str = account_config.get_abs_csv_filepath(
+            dir_paths_config=config.dir_paths
         )
-        transactions_per_account[account_config] = transactions_per_year
+
+        if os.path.isfile(abs_csv_filepath):
+
+            transactions_per_year = load_csv_transactions_from_file_per_year(
+                config=config,
+                labelled_receipts=labelled_receipts,
+                abs_csv_filepath=abs_csv_filepath,
+                account_config=account_config,
+                csv_encoding=config.csv_encoding,
+            )
+            transactions_per_account[account_config] = transactions_per_year
     return transactions_per_account

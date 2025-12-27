@@ -13,7 +13,7 @@ ColumnNames = Tuple[Tuple[str, str], ...]
 class CsvColumnMapping:
     """Stores the implicit order of CSV columns. with the transaction object attribute values left and the hledger field name right."""
 
-    # Example: [['the_date', "date"], ['None', ''], ['amount_out_account', 'amount0'], ...]
+    # Example: [['the_date', "date"], ['None', ''], ['tendered_amount_out', 'amount0'], ...]
     csv_column_mapping: ColumnNames
 
     @typechecked

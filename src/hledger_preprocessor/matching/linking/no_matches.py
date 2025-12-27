@@ -62,10 +62,6 @@ def handle_no_matches(
         config=action_dataset.config,
         account=action_dataset.search_receipt_account_transaction.account,
     ):
-        # if (
-        #     action_dataset.search_receipt_account_transaction.account.asset_type
-        #     != AssetType.ASSET
-        # ):
 
         updated_action_dataset: ActionDataset = action_dataset
         # First try if a "swap day and month" yields 1 match.
@@ -116,6 +112,7 @@ def handle_no_matches(
             ):
                 export_asset_transaction_to_csv(
                     config=action_dataset.config,
+                    labelled_receipts=labelled_receipts,
                     search_receipt_account_transaction=action_dataset.search_receipt_account_transaction,
                     parent_receipt=action_dataset.receipt,
                     ai_models_tnx_classification=action_dataset.ai_models_tnx_classification,  #: Dict[str, str],

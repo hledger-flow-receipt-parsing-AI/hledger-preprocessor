@@ -26,6 +26,7 @@ from hledger_preprocessor.generics.Transaction import Transaction
 def manage_matching_receipts_to_transactions(
     *,
     config: Config,
+    labelled_receipts: List[Receipt],
     json_paths_receipt_objs: Dict[str, Receipt],
     csv_transactions_per_account: Dict[
         AccountConfig, Dict[int, List[Transaction]]
@@ -57,6 +58,7 @@ def manage_matching_receipts_to_transactions(
 
         match_receipt_items_to_csv_transactions(
             receipt=receipt,
+            labelled_receipts=labelled_receipts,
             search_receipt_account_transactions=receipt.get_both_item_types(),
             csv_transactions_per_account=csv_transactions_per_account,
             config=config,

@@ -2,6 +2,9 @@ import logging
 from typing import Dict, List
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.matching.ask_user_action import (
     ActionDataset,
@@ -45,7 +48,6 @@ def match_receipt_item_transaction_to_csv_transactions(
     """
     # TODO: handle the case where the search transaction is updated. DO THIS!
 
-    # Loop over the accounts for which csv files are available.
     transaction_matches: List[Transaction] = (
         get_receipt_transaction_matches_in_csv_accounts(
             csv_transactions_per_account=csv_transactions_per_account,
@@ -53,9 +55,16 @@ def match_receipt_item_transaction_to_csv_transactions(
         )
     )
 
+    csv_transaction_matches: List[GenericCsvTransaction] = []
+    # Loop over the accounts for which csv files are available.
+    for txn in transaction_matches:
+        if isinstance(txn, GenericCsvTransaction):
+            csv_transaction_matches.append(txn)
+            # raise TypeError(f"Expected GenericCsvTransaction, got:{txn}")
+
     # Till here it works.
     handle_receipt_item_transaction_to_csv_matches(
-        transaction_matches=transaction_matches,
+        transaction_matches=csv_transaction_matches,
         csv_transactions_per_account=csv_transactions_per_account,
         actions_value=actions_value,
         action_dataset=action_dataset,

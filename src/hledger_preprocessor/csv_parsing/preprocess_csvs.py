@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from typeguard import typechecked
 
@@ -14,7 +14,16 @@ from hledger_preprocessor.csv_parsing.export_to_csv import write_processed_csv
 from hledger_preprocessor.dir_reading_and_writing import (
     generate_bank_csv_output_path,
 )
-from hledger_preprocessor.generics.Transaction import Transaction
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
+from hledger_preprocessor.TransactionObjects.AccountTransaction import (
+    AccountTransaction,
+)
+from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
+    ProcessedTransaction,
+)
+from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 
 @typechecked
@@ -22,8 +31,11 @@ def pre_process_csvs(
     *,
     # args: Namespace,
     config: Config,
+    labelled_receipts: List[Receipt],
     account_config: AccountConfig,
-    transactions_per_year: Dict[int, List[Transaction]],
+    transactions_per_year: Dict[
+        int, List[Union[GenericCsvTransaction, AccountTransaction]]
+    ],
     ai_models_tnx_classification: List,
     rule_based_models_tnx_classification: List,
 ) -> None:
@@ -77,15 +89,21 @@ def pre_process_csvs(
             ),
         )
 
-        classified_transactions: List[Transaction] = classify_transactions(
-            transactions=transactions,
-            ai_models_tnx_classification=ai_models_tnx_classification,
-            rule_based_models_tnx_classification=rule_based_models_tnx_classification,
-            category_namespace=config.category_namespace,
+        classified_transactions: List[ProcessedTransaction] = (
+            classify_transactions(
+                transactions=transactions,
+                labelled_receipts=labelled_receipts,
+                ai_models_tnx_classification=ai_models_tnx_classification,
+                rule_based_models_tnx_classification=rule_based_models_tnx_classification,
+                category_namespace=config.category_namespace,
+            )
         )
-        print(f"outputting CSV to:{output_filepath}")
+        print(
+            f"outputting {len(classified_transactions)}transactions for CSV"
+            f" to:{output_filepath}"
+        )
         write_processed_csv(
-            transactions=classified_transactions,
+            processed_txns=classified_transactions,
             account_config=account_config,
             filepath=output_filepath,
         )

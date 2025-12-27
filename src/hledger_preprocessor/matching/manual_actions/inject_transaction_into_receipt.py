@@ -49,7 +49,7 @@ def inject_csv_transaction_to_receipt(
 
     # Create an Account object for the bank transaction.
     if float(
-        Decimal(str(original_receipt_account_transaction.amount_out_account))
+        Decimal(str(original_receipt_account_transaction.tendered_amount_out))
         - Decimal(str(original_receipt_account_transaction.change_returned))
         > 0
     ):
@@ -156,6 +156,9 @@ def receipt_already_contains_csv_transaction(
             #             **receipt_transaction.original_transaction
             #         )
             #     )
+            print(
+                f"receipt_transaction.original_transaction={receipt_transaction.original_transaction}"
+            )
             if (
                 # receipt_transaction.original_transaction.get_hash()
                 receipt_transaction.original_transaction.get_hash()

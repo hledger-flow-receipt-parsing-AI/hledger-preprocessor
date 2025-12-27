@@ -34,6 +34,9 @@ For troubleshooting or more understanding per module/component of your bookkeepi
 - A **posting** is a single transaction in a journal.
 - **Credit** is for currency going out of an account.
 - **Debit** is for currency going into an account.
+- **tendered_amount_out** if you pay 50,- (cash) and get 13.24 change back,
+  `tendered_amount_out=50,-` going out of the account, with a
+  `net_amount_out=tendered_amount_out-change_returned=50-13.24=46.76`.
 
 ## Introduction
 

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
+from pprint import pprint
 from typing import Dict, List, Optional
 
 import iso8601
@@ -147,12 +148,12 @@ class Receipt:
         for account_transaction in self.get_both_item_types(verbose=False):
 
             if isinstance(account_transaction, GenericCsvTransaction):
-                amount_out_account: float = float(
-                    Decimal(str(account_transaction.amount_out_account))
+                tendered_amount_out: float = float(
+                    Decimal(str(account_transaction.tendered_amount_out))
                 )
             else:
-                amount_out_account: float = float(
-                    Decimal(str(account_transaction.amount_out_account))
+                tendered_amount_out: float = float(
+                    Decimal(str(account_transaction.tendered_amount_out))
                     - Decimal(str(account_transaction.change_returned))
                 )
 
@@ -162,11 +163,11 @@ class Receipt:
             ):
                 transaction_amounts[
                     account_transaction.account.base_currency
-                ] += amount_out_account
+                ] += tendered_amount_out
             else:
                 transaction_amounts[
                     account_transaction.account.base_currency
-                ] = amount_out_account
+                ] = tendered_amount_out
         return transaction_amounts
 
     @typechecked
@@ -182,6 +183,10 @@ class Receipt:
         )
 
         return bought + returned
+
+    @typechecked
+    def pretty_print_receipt_without_config(self) -> None:
+        pprint({k: v for k, v in self.__dict__.items() if k != "config"})
 
 
 def initialize_account_transaction(
@@ -227,7 +232,7 @@ def initialize_account_transaction(
     return AccountTransaction(
         account=account,
         currency=currency,
-        amount_paid=transaction["amount_out_account"],
+        amount_paid=transaction["tendered_amount_out"],
         change_returned=transaction["change_returned"],
         original_transaction=original_transaction,
     )

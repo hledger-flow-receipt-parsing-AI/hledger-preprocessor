@@ -7,7 +7,6 @@ from typeguard import typechecked
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
 from hledger_preprocessor.config.load_config import Config
-from hledger_preprocessor.csv_parsing.csv_has_header import has_header0
 from hledger_preprocessor.dir_reading_and_writing import (
     assert_dir_exists,
     assert_dir_full_hierarchy_exists,
@@ -37,15 +36,19 @@ class RulesContentCreator:
             " it does not have a header row, skip 0 rows.\n"
         )
         if self.account_config.has_input_csv():
-            if has_header0(
-                csv_file_path=self.account_config.input_csv_filename
-            ):
-                content += "skip 1\n\n"
-            else:
-                content += "skip 0\n\n"
+            # TODO: resolve, the input csv may or may not contain a header but the 2-preprocessed csv file does not.
+            # if has_header0(
+            #     csv_file_path=self.account_config.get_abs_csv_filepath(
+            #         dir_paths_config=self.config.dir_paths
+            #     )
+            # ):
+            #     content += "skip 1\n\n"
+            # else:
+            #     content += "skip 0\n\n"
+            content += "skip 1\n\n"
         else:
             content += (  # Assumes no input transactions don't have header.
-                "skip 0\n\n"
+                "skip 1\n\n"
             )
 
         # Write fields

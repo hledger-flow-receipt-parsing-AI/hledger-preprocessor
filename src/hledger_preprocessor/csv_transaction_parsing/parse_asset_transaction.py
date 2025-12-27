@@ -19,7 +19,7 @@ def parse_asset_transaction(
     *, row: List[str]
 ) -> Union[None, AccountTransaction]:
     # Unpack the row into variables
-
+    print(f"row={row}")
     (
         date_string,
         account_holder,
@@ -83,7 +83,7 @@ def parse_asset_transaction(
             ),
             account=asset_account,
             currency=asset_account.base_currency,
-            amount_out_account=amount0,
+            tendered_amount_out=amount0,
             # change_returned=0,
             other_party=other_party,
             # asset_account=asset_account,
