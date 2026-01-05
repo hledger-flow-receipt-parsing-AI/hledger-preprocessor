@@ -34,7 +34,7 @@ def parse_triodos_transaction(
     (
         date_string,
         account0,
-        amount0,
+        amount,
         transaction_code,
         other_party_name,
         account1,
@@ -57,8 +57,8 @@ def parse_triodos_transaction(
         nr_in_batch=nr_in_batch,
         the_date=best_date,
         account0=account0,
-        # amount0 = float(amount0.replace(',', '.')),
-        tendered_amount_out=float(amount0.replace(".", "").replace(",", ".")),
+        # amount = float(amount.replace(',', '.')),
+        tendered_amount_out=float(amount.replace(".", "").replace(",", ".")),
         transaction_code=TransactionCode.normalize_transaction_code(
             transaction_code=transaction_code
         ),

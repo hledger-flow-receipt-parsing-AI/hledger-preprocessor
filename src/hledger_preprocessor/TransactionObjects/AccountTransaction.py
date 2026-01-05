@@ -28,6 +28,7 @@ class AccountTransaction(Transaction):
         # Union["hledger_preprocessor.triodos_logic.TriodosTransaction"]
         Union["TriodosTransaction"]
     ] = None
+    parent_receipt_category: Optional[str] = None
 
     def __post_init__(self):
 
@@ -45,6 +46,11 @@ class AccountTransaction(Transaction):
             raise TypeError(
                 "The account was not of type:Account, but of"
                 f" type:{type(self.account)}"
+            )
+        if not isinstance(self.the_date, datetime):
+            raise TypeError(
+                "Expected date time to be of type datetime,"
+                f" got:{self.the_date}"
             )
 
         # Store hledger field mapping values.
@@ -66,7 +72,7 @@ class AccountTransaction(Transaction):
                 ("bank", "bank"),
                 ("account_type", "account_type"),
                 ("the_date", "date"),
-                ("tendered_amount_out", "amount0"),
+                ("tendered_amount_out", "amount"),
             )
         )
         object.__setattr__(self, "csv_column_mapping", csv_column_mapping)
@@ -89,12 +95,6 @@ class AccountTransaction(Transaction):
             f"paid={self.tendered_amount_out:.2f}:"
             f"returned={self.change_returned:.2f}"
         )
-
-    @typechecked
-    def get_hledger_field_names(
-        self,
-    ):
-        return
 
     def to_hledger_dict(
         self,
@@ -125,20 +125,23 @@ class AccountTransaction(Transaction):
                 value = self.the_date.strftime("%Y-%m-%d-%H-%M-%S")
             elif hledger_col_name == "currency":
                 value = self.account.base_currency.value
-            elif hledger_col_name == "amount0":
+            elif hledger_col_name == "amount":
                 value = self.tendered_amount_out - self.change_returned
-            else:
+            elif attr_name != None and attr_name != "None":
                 # Dynamically fetch the attribute from self
-                value = getattr(self, attr_name, None)
+                value = getattr(self, attr_name)
+            else:
+                pass
 
             if value is None:  # also catches empty string, [], etc.
                 result[hledger_col_name] = None
 
             result[hledger_col_name] = value
-        result["tendered_amount_out"] = self.tendered_amount_out
-        result["change_returned"] = self.change_returned
         # If the mapping produced something, return it
         if result:
+
+            result["tendered_amount_out"] = self.tendered_amount_out
+            result["change_returned"] = self.change_returned
             return result
         else:
             raise ValueError("Did not create a filled hledger dict.")
@@ -146,9 +149,21 @@ class AccountTransaction(Transaction):
     @typechecked
     def get_hash(self) -> int:
         m = hashlib.sha256()
-        m.update(str(self.the_date).encode())
-        m.update(str(self.tendered_amount_out).encode())
-        m.update((str(self.change_returned) or "").encode())
-        m.update((str(self.tendered_amount_out) or "").encode())
         m.update(self.account.to_string().encode())
+
+        # 1. Date: canonical ISO format (always the same string)
+        m.update(self.the_date.isoformat().encode("utf-8"))
+
+        # 2. Monetary amounts: fixed 2 decimal places for consistency
+        m.update(f"{self.tendered_amount_out:.2f}".encode())
+        m.update(f"{self.change_returned:.2f}".encode())
+
+        # 3. Optional strings: handle None safely and consistently
+        description = self.description or ""
+        other_party_name = self.other_party_name or ""
+
+        m.update(description.encode("utf-8"))
+        m.update(other_party_name.encode("utf-8"))
+
+        # Return first 8 bytes (64 bits) as integer — sufficient for hashing/deduplication
         return int(m.hexdigest()[:16], 16)

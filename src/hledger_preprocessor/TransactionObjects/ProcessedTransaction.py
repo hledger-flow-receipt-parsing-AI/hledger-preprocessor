@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
@@ -20,9 +20,12 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, unsafe_hash=True)
 class ProcessedTransaction:
     transaction: Transaction
+    ai_classifications: Dict[str, str]
+    logic_classifications: Dict[str, str]
     parent_receipt: Optional["Receipt"] = None
-    ai_classifications: Dict[str, str] = field(default_factory=dict)
-    logic_classifications: Dict[str, str] = field(default_factory=dict)
+
+    # ai_classifications: Dict[str, str] = field(default_factory=dict)
+    # logic_classifications: Dict[str, str] = field(default_factory=dict)
 
     def to_hledger_dict(
         self, account_config: Optional[AccountConfig] = None
@@ -44,31 +47,9 @@ class ProcessedTransaction:
         # Inject enrichment data into the dictionary
         if self.parent_receipt:
             data["receipt_link"] = self.parent_receipt.raw_img_filepath
+        # data["ai_classifications"] = self.ai_classifications
+        # data["logic_classifications"] = self.logic_classifications
 
         data.update(self.logic_classifications)
         data.update(self.ai_classifications)
         return data
-
-    def with_receipt(self, *, receipt: "Receipt") -> "ProcessedTransaction":
-        return replace(self, receipt=receipt)
-
-    def with_ai_classifications(
-        self, *, ai: Dict[str, str]
-    ) -> "ProcessedTransaction":
-        return replace(self, ai_classifications=ai)
-
-    def with_logic_classifications(
-        self, *, logic: Dict[str, str]
-    ) -> "ProcessedTransaction":
-        return replace(self, logic_classifications=logic)
-
-    # def to_hledger_dict(
-    #     self,
-    # ) -> Dict[str, Union[int, float, str, datetime, None]]:
-    #     data = self.transaction.to_hledger_dict()
-    #     if self.parent_receipt:
-    #         data["receipt_link"] = self.parent_receipt.raw_img_filepath
-    #         # getattr(
-    #         # self.parent_receipt, "file_path", str(self.parent_receipt.raw_img_filepath)
-    #         # )
-    #     return {**data, **self.logic_classifications, **self.ai_classifications}

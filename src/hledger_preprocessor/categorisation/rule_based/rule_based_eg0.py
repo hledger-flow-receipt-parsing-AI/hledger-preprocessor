@@ -40,7 +40,9 @@ class ExampleRuleBasedModel:
             )
         )
         if isinstance(classification, Account):
-            return classification.to_string()
+            return (  # TODO: add rule to append:"withdrawl" to asset transaction
+                f"{classification.to_string()}:withdrawl"
+            )
         if isinstance(classification, Category):
             return classification._str
         if isinstance(classification, str):

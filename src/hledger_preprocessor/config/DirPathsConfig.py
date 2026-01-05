@@ -14,9 +14,16 @@ class DirPathsConfig:
     pre_processed_output_dir: str | None = None
 
     def get_path(self, path_name: str, absolute: bool = True) -> str:
-        relative_path = getattr(self, path_name)
+
+        if path_name == "asset_transaction_csvs_dir":
+            relative_path: str = (
+                f"{self.working_subdir}/{self.asset_transaction_csvs_dir}"
+            )
+        else:
+            relative_path = getattr(self, path_name)
         if not relative_path:
             raise ValueError(f"Path name not found: {path_name}")
+
         if absolute:
             return os.path.abspath(
                 os.path.join(self.root_finance_path, relative_path)

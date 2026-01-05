@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from typeguard import typechecked
 
@@ -26,6 +26,7 @@ def classify_transactions(
     ai_models_tnx_classification,
     rule_based_models_tnx_classification,
     category_namespace: CategoryNamespace,
+    parent_receipt: Optional["Receipt"] = None,
 ) -> List[ProcessedTransaction]:
     processed_txns: List[ProcessedTransaction] = []
     for txn in transactions:
@@ -45,6 +46,7 @@ def classify_transactions(
             ai_models_tnx_classification=ai_models_tnx_classification,
             rule_based_models_tnx_classification=rule_based_models_tnx_classification,
             category_namespace=category_namespace,
+            parent_receipt=parent_receipt,
         )
         processed_txns.append(processed_txn)
     return processed_txns
@@ -57,6 +59,7 @@ def classify_transaction(
     ai_models_tnx_classification,
     rule_based_models_tnx_classification,
     category_namespace: CategoryNamespace,
+    parent_receipt: Optional["Receipt"] = None,
 ) -> ProcessedTransaction:
     ai_classifications: Dict[str, str] = {}
     for ai_model in ai_models_tnx_classification:
@@ -67,7 +70,7 @@ def classify_transaction(
         #         "account_type": txn.account_type,
         #         "date": txn.the_date.strftime("%Y-%m-%d-%H-%M-%S"),
         #         "account_nr": txn.account0,
-        #         "amount": txn.amount0,
+        #         "amount": txn.amount,
         #         "transaction_code": txn.transaction_code,
         #         "other_account": txn.account1,
         #         "other_party": txn.other_party_name,
@@ -101,6 +104,6 @@ def classify_transaction(
         transaction=txn,
         ai_classifications=ai_classifications,
         logic_classifications=logic_classifications,
-        # parent_receipt=labelled_receipt,
+        parent_receipt=parent_receipt,
     )
     return processed_tnx

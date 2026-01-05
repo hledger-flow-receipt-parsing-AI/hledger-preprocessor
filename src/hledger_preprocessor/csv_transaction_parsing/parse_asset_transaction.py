@@ -26,7 +26,7 @@ def parse_asset_transaction(
         bank,
         account_type,
         currency,
-        amount0,
+        amount,
         transaction_code,
         other_party_json,
         asset_account_json,
@@ -56,11 +56,11 @@ def parse_asset_transaction(
             # asset_category=asset_account_dict["asset_category"],
         )
 
-        # Parse amount0 as float
+        # Parse amount as float
         try:
-            float(amount0)
+            float(amount)
         except ValueError:
-            raise ValueError(f"Invalid amount format: {amount0}")
+            raise ValueError(f"Invalid amount format: {amount}")
 
         # Parse classifications
         ai_class = (
@@ -83,8 +83,8 @@ def parse_asset_transaction(
             ),
             account=asset_account,
             currency=asset_account.base_currency,
-            tendered_amount_out=amount0,
-            # change_returned=0,
+            tendered_amount_out=amount,
+            # change_returned=0, # TODO: reenable?
             other_party=other_party,
             # asset_account=asset_account,
             parent_receipt_category=parent_receipt_category,

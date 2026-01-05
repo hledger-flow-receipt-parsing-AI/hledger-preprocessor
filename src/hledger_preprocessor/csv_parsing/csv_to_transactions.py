@@ -74,7 +74,7 @@ def csv_to_transactions(
     Returns:
         Dict[int, List[Transaction]]: Transactions sorted by year
     """
-
+    # if os.path.isfile(input_csv_filepath):
     assert_file_exists(filepath=input_csv_filepath)
 
     convert_input_csv_encoding(
@@ -93,6 +93,8 @@ def csv_to_transactions(
     )
 
     return transactions_per_year
+    # else:
+    #     return {}
 
 
 @typechecked

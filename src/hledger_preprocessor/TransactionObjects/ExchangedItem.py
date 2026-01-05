@@ -45,7 +45,7 @@ class ExchangedItem:
             if isinstance(transaction, GenericCsvTransaction):
                 net_amount = (
                     transaction.tendered_amount_out
-                    # - transaction.amount_in_account
+                    # - transaction.amount_in_account # TODO: re-enable.
                 )
                 currency = transaction.account.base_currency
             else:

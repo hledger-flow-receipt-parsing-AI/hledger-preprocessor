@@ -13,11 +13,11 @@ from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 @typechecked
 def retrieve_csv_transaction_from_hash(
-    *, config: Config, some_hash: str
+    *, config: Config, some_hash: int, labelled_receipts: List[Receipt]
 ) -> Transaction:
 
     matching_transactions: List[Transaction] = get_all_matching_transactions(
-        config=config, some_hash=some_hash
+        config=config, some_hash=some_hash, labelled_receipts=labelled_receipts
     )
     print(f"some_hash={some_hash}")
     input(f"matching_transactions={matching_transactions[0]}")
@@ -33,7 +33,7 @@ def retrieve_csv_transaction_from_hash(
 
 @typechecked
 def get_all_matching_transactions(
-    *, config: Config, labelled_receipts: List[Receipt], some_hash: str
+    *, config: Config, labelled_receipts: List[Receipt], some_hash: int
 ) -> List[Transaction]:
     matching_transactions: List[Transaction] = []
     transactions: Dict[AccountConfig, Dict[int, List[Transaction]]] = (

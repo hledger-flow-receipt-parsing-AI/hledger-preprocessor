@@ -4,6 +4,7 @@ from typing import Union
 from hledger_preprocessor.config import AccountConfig
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.helper import get_account_config
+from hledger_preprocessor.csv_parsing.helper import read_date
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
@@ -12,6 +13,7 @@ from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     Account,
     AccountTransaction,
 )
+from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
 
 
 def initialize_account_transaction(
@@ -21,6 +23,7 @@ def initialize_account_transaction(
     account: Account,
     currency: Currency,
     the_date: datetime,
+    recursion_depth: int,
 ) -> Union[AccountTransaction, GenericCsvTransaction]:
     """
     Initialize an AccountTransaction with an optional TriodosTransaction.
@@ -47,6 +50,7 @@ def initialize_account_transaction(
     account_config: AccountConfig = get_account_config(
         config=config, account=account
     )
+
     if account_config.has_input_csv():
 
         if "currency" in transaction.keys():
@@ -63,11 +67,28 @@ def initialize_account_transaction(
             transaction["the_date"] = transaction["original_transaction"][
                 "the_date"
             ]
+
         else:
             transaction["the_date"] = the_date
+        if isinstance(transaction["the_date"], str):
+            transaction["the_date"] = read_date(
+                the_date_str=transaction["the_date"]
+            )
 
         if "original_transaction" in transaction.keys():
-            transaction.pop("original_transaction")
+            if recursion_depth < 1:
+                transaction["original_transaction"] = (
+                    initialize_account_transaction(
+                        config=config,
+                        transaction=transaction,
+                        account=account,
+                        currency=currency,
+                        the_date=the_date,
+                        recursion_depth=1,
+                    )
+                )
+            else:
+                transaction.pop("original_transaction")
 
         # TODO: assert account is equal to that of AccountConfig.
         if not isinstance(transaction["account"], Account):
@@ -77,17 +98,37 @@ def initialize_account_transaction(
             transaction["account"] = Account(
                 **transaction["account"],
             )
-        # if "change_returned" in transaction.keys():
-        # if transaction["change_returned"] == 0:
-        # transaction.pop("change_returned")
+        if (
+            "transaction_code" in transaction.keys()
+            and transaction["transaction_code"]
+            and not isinstance(transaction["transaction_code"], TransactionCode)
+        ):
+
+            transaction["transaction_code"] = TransactionCode(
+                transaction["transaction_code"]
+            )
         return GenericCsvTransaction(**transaction)
     else:
 
-        return AccountTransaction(
-            the_date=the_date,
-            account=account,
-            # currency=currency,
-            tendered_amount_out=transaction["tendered_amount_out"],
-            change_returned=transaction["change_returned"],
-            # original_transaction=original_transaction,
-        )
+        transaction["the_date"] = the_date
+        transaction["account"] = account
+        if "currency" in transaction.keys():
+            transaction.pop("currency")
+
+        if "original_transaction" in transaction.keys():
+            if recursion_depth < 1:
+                transaction["original_transaction"] = (
+                    initialize_account_transaction(
+                        config=config,
+                        transaction=transaction,
+                        account=account,
+                        currency=currency,
+                        the_date=the_date,
+                        recursion_depth=1,
+                    )
+                )
+            else:
+                transaction.pop("original_transaction")
+        account_txn: AccountTransaction = AccountTransaction(**transaction)
+
+        return account_txn

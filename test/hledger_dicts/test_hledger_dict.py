@@ -32,7 +32,7 @@ def sample_transaction(sample_account: Account) -> GenericCsvTransaction:
         balance_after=9857.30,
         description="Coffee shop",
         other_party_name="Brewed Awakening",
-        other_party_account="NL12INHO0001234567",
+        other_party_account_name="NL12INHO0001234567",
         transaction_code="TRF",
         bic="INGBNL2A",
         extra={"raw_reference": "123456789"},
@@ -67,7 +67,7 @@ def test_to_hledger_dict_works_with_valid_mapping(
 ) -> None:
     valid_mapping: CsvColumnMapping = [
         ["the_date", "date"],
-        ["tendered_amount_out", "amount0"],
+        ["tendered_amount_out", "amount"],
         ["description", "description"],
         ["other_party_name", "payee"],
     ]
@@ -76,7 +76,7 @@ def test_to_hledger_dict_works_with_valid_mapping(
 
     expected = {
         "date": "2025-01-15-00-00-00",
-        "amount0": -42.50,
+        "amount": -42.50,
         "description": "Coffee shop",
         "payee": "Brewed Awakening",
     }

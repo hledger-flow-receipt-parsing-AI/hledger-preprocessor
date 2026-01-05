@@ -1,10 +1,10 @@
 import os
 import shutil
-from argparse import Namespace
 from typing import Any, Dict, List
 
 from typeguard import typechecked
 
+from hledger_preprocessor.categorisation.categoriser import classify_transaction
 from hledger_preprocessor.config.AccountConfig import AccountConfig
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.create_start import (
@@ -22,7 +22,6 @@ from hledger_preprocessor.dir_reading_and_writing import (
 from hledger_preprocessor.file_reading_and_writing import assert_file_exists
 from hledger_preprocessor.generics.enums import ClassifierType, LogicType
 from hledger_preprocessor.generics.Transaction import Transaction
-from hledger_preprocessor.get_models import get_models
 from hledger_preprocessor.helper import assert_dir_exists, get_images_in_folder
 from hledger_preprocessor.management.helper import (
     preprocess_asset_csvs,
@@ -33,9 +32,6 @@ from hledger_preprocessor.matching.helper import (
 )
 from hledger_preprocessor.matching.searching.matching import (
     manage_matching_receipts_to_transactions,
-)
-from hledger_preprocessor.reading_history.load_receipts_from_dir import (
-    load_receipts_from_dir,
 )
 from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
     collect_non_csv_transactions,
@@ -48,9 +44,6 @@ from hledger_preprocessor.receipts_to_objects.edit_images.rotate_all_images impo
 )
 from hledger_preprocessor.receipts_to_objects.make_receipt_labels import (
     manually_make_receipt_labels,
-)
-from hledger_preprocessor.receipts_to_objects.receipt_image_converter import (
-    receipt_images_to_receipt_objects,
 )
 from hledger_preprocessor.rules.generate_rules_content import (
     generate_rules_file,
@@ -67,11 +60,10 @@ from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 # Action 0.
 @typechecked
 def manage_creating_new_setup(
-    *,
-    config: Config,
+    *, config: Config, labelled_receipts: List[Receipt]
 ) -> None:
     print("\n\nSTARTING NEW SETUP")
-    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
+
     for account_config in config.accounts:
         abs_csv_filepath: str = account_config.get_abs_csv_filepath(
             dir_paths_config=config.dir_paths
@@ -102,7 +94,8 @@ def manage_creating_new_setup(
 def manage_preprocessing_csvs(
     *,
     config: Config,
-    quick_categorisation: bool,
+    models: Dict[ClassifierType, Dict[LogicType, Any]],
+    labelled_receipts: List[Receipt],
 ) -> None:
     if (
         config.dir_paths.get_path("pre_processed_output_dir", absolute=True)
@@ -113,10 +106,6 @@ def manage_preprocessing_csvs(
             " absolute=True ) should be set with args.pre_processed_output_dir"
         )
 
-    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
-    models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
-        quick_categorisation=quick_categorisation
-    )
     preprocess_asset_csvs(
         config=config, labelled_receipts=labelled_receipts, models=models
     )
@@ -130,12 +119,14 @@ def manage_preprocessing_csvs(
 def manage_preprocessing_assets(
     *,
     config: Config,
+    models: Dict[ClassifierType, Dict[LogicType, Any]],
+    labelled_receipts: List[Receipt],
 ) -> None:
     # found_asset_years: List[int] = [2023, 2024, 2025]  # TODO: get from code.
 
     # Remove asset directory:
-    asset_path: str = (
-        f"{config.dir_paths.root_finance_path}/{config.dir_paths.asset_transaction_csvs_dir}"
+    asset_path: str = config.dir_paths.get_path(
+        path_name="asset_transaction_csvs_dir", absolute=True
     )
 
     if os.path.isdir(asset_path):
@@ -149,30 +140,42 @@ def manage_preprocessing_assets(
     for account_config in config.get_account_configs_without_csv():
         non_input_csv_transactions[account_config] = []
 
-    # for currency in config.include_asset_transactions.currencies:
-    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
-
+    # relevant_transactions:Dict[Receipt,List[Transaction]]={}
     for labelled_receipt in labelled_receipts:
         # for net_bought_item in labelled_receipt.net_bought_items:
         all_account_transactions: List[AccountTransaction] = (
-            collect_non_csv_transactions(
-                receipt=labelled_receipt, verbose=False
-            )
+            collect_non_csv_transactions(receipt=labelled_receipt)
         )
 
         for receipt_account_transaction in all_account_transactions:
 
             for account_config in config.get_account_configs_without_csv():
-
                 if (
                     receipt_account_transaction.account
                     == account_config.account
                 ):
+                    receipt_account_transaction.set_parent_receipt_category(
+                        parent_receipt_category=labelled_receipt.receipt_category
+                    )
+
+                    classified_txn: ProcessedTransaction = classify_transaction(
+                        txn=receipt_account_transaction,
+                        ai_models_tnx_classification=models[
+                            ClassifierType.TRANSACTION_CATEGORY
+                        ][LogicType.AI],
+                        rule_based_models_tnx_classification=models[
+                            ClassifierType.TRANSACTION_CATEGORY
+                        ][LogicType.RULE_BASED],
+                        category_namespace=config.category_namespace,
+                        parent_receipt=labelled_receipt,
+                    )
+
                     non_input_csv_transactions[account_config].append(
-                        ProcessedTransaction(
-                            transaction=receipt_account_transaction,
-                            parent_receipt=labelled_receipt,
-                        )
+                        classified_txn
+                        # ProcessedTransaction(
+                        #     transaction=receipt_account_transaction,
+                        #     parent_receipt=labelled_receipt,
+                        # )
                     )
 
             # TODO: loop over receipt labels and get the transactions from that account respectively.
@@ -202,7 +205,7 @@ def manage_generating_rules(*, config: Config) -> None:
 
 @typechecked
 def manage_creating_receipt_img_labels_with_tui(
-    *, config: Config, verbose: bool
+    *, config: Config, labelled_receipts: List[Receipt], verbose: bool
 ) -> Dict[str, Receipt]:
     # Ensure directories exist
     assert_dir_exists(
@@ -223,9 +226,6 @@ def manage_creating_receipt_img_labels_with_tui(
         ),
         exist_ok=True,
     )
-
-    # Load pre-existing receipts to get addresses.
-    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
 
     filepath_receipt_object: Dict[str, Receipt] = {}
 
@@ -273,7 +273,10 @@ def manage_creating_receipt_img_labels_with_tui(
 
 @typechecked
 def manage_getting_manual_receipt_labels(
-    *, config: Config, only_get_existing_jsons: bool
+    *,
+    config: Config,
+    only_get_existing_jsons: bool,
+    labelled_receipts: List[Receipt],
 ) -> Dict[str, Receipt]:
     if only_get_existing_jsons:
         # TODO: don't ask the user to make additional labels, just work with the ones you have.
@@ -285,25 +288,27 @@ def manage_getting_manual_receipt_labels(
         #     args=args, csv_encoding=csv_encoding
         # )
         return manage_creating_receipt_img_labels_with_tui(
-            config=config, verbose=False
+            config=config,
+            verbose=False,
+            labelled_receipts=labelled_receipts,
         )
 
 
 @typechecked
 def manage_matching_manual_receipt_objs_to_account_transactions(
-    *, config: Config, args: Namespace
+    *,
+    config: Config,
+    models: Dict[ClassifierType, Dict[LogicType, Any]],
+    labelled_receipts: List[Receipt],
 ) -> None:
     json_paths_receipt_objs: Dict[str, Receipt] = (
         manage_getting_manual_receipt_labels(
             config=config,
+            labelled_receipts=labelled_receipts,
             only_get_existing_jsons=False,
         )
     )
 
-    models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
-        quick_categorisation=args.quick_categorisation
-    )
-    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
     print("STARTING MATCHING PROCESS")
     manage_matching_receipts_to_transactions(
         config=config,
@@ -317,27 +322,3 @@ def manage_matching_manual_receipt_objs_to_account_transactions(
     )
     # concatenate_asset_csvs(config=config)
     print("DONE WITH ALL MATCHING")
-
-
-## Vulture unused. ##
-@typechecked
-def manage_getting_ai_receipt_objects_from_images(
-    *, args: Namespace
-) -> Dict[LogicType, Dict[str, Dict[str, Receipt]]]:
-    if args.pre_processed_output_dir or args.receipts_path:
-        models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
-            quick_categorisation=args.quick_categorisation
-        )
-        if args.receipts_path:
-            receipt_filepaths: List[str] = get_images_in_folder(
-                folder_path=args.receipts_path
-            )
-
-            # Convert receipt images to inferenced labels, if they do not yet exist.
-            return receipt_images_to_receipt_objects(
-                receipt_filepaths=receipt_filepaths,
-                dataset_path=args.dataset_path,
-                ai_models_receipt_parsing=models[
-                    ClassifierType.RECEIPT_IMAGE_TO_OBJ
-                ][LogicType.AI],
-            )

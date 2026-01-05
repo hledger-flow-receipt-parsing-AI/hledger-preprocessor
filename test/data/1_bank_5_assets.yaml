@@ -5,7 +5,7 @@ account_configs:
     account_type: checking
     input_csv_filename: "triodos_2024-2025.csv"  # RELATIVE to root_finance_path
     # Python field name and hledger field name.
-    csv_column_mapping: [['the_date', "date"], ['None', ''], ['tendered_amount_out', 'amount0'], ['transaction_code', ''], ['other_party_name',''],['other_party_account_name',''], ['Unknown',''], ['description','description'],['amount_after_tnx','']]
+    csv_column_mapping: [['the_date', "date"], ['None', ''], ['tendered_amount_out', 'amount'], ['transaction_code', ''], ['other_party_name',''],['other_party_account_name',''], ['Unknown',''], ['description','description'],['amount_after_tnx','']]
     # The transaction date of the bank is often a lot different than the receipt transaction time, so get the latter from the receipt.
     tnx_date_columns: [['the_date', "date"], ['description','description']]
   - input_csv_filename:

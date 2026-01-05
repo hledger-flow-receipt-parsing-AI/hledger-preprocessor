@@ -101,26 +101,11 @@ def convert_exchanged_item(
                 account=account,
                 currency=currency,
                 the_date=the_date,
+                recursion_depth=0,
             )
         )
-        # if "change_returned" in transaction.keys():
-        #     if (
-        #         transaction["tendered_amount_out"] == 350
-        #         or transaction["change_returned"] == 350
-        #     ):
-        #         print(f"CONVERTING item:{item}")
-        #         input(f"some_transaction={some_transaction}")
-        #         input("DONE")
 
-        transactions.append(
-            some_transaction
-            # AccountTransaction(
-            #     account=account,
-            #     currency=currency,
-            #     amount_paid=transaction["amount_paid"],
-            #     change_returned=transaction["change_returned"],
-            # )
-        )
+        transactions.append(some_transaction)
 
     return ExchangedItem(
         quantity=merged_item["quantity"],

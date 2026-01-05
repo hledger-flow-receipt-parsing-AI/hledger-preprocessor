@@ -217,8 +217,9 @@ def export_human_label(*, receipt: "Receipt", label_filepath: str) -> None:
                         "Expected str for account in AccountTransaction after"
                         " conversion."
                     )
-
-    pprint(receipt_dict)
+    printing_receipt: Dict = copy.deepcopy(receipt_dict)
+    printing_receipt.pop("config")
+    pprint(printing_receipt)
     input(f"EXPORTING to:\n{label_filepath}")
     # Note: This pauses execution; consider removing in production
     with open(label_filepath, "w") as f:

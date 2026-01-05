@@ -91,7 +91,8 @@ def prompt_user_for_no_matches(
             raw_receipt_img_filepath=action_dataset.receipt.raw_img_filepath,
             cropped_receipt_img_filepath=cropped_receipt_img_filepath,
             hledger_account_infos=get_all_accounts(
-                config=action_dataset.config
+                config=action_dataset.config,
+                labelled_receipts=action_dataset.labelled_receipts,
             ),
             receipt_nr=0,
             total_nr_of_receipts=1,

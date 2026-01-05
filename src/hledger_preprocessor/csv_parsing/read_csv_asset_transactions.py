@@ -1,15 +1,14 @@
 import csv
 import json
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import iso8601
 from typeguard import typechecked
 
 from hledger_preprocessor.config.load_receipt_from_img_filepath import (
     load_receipt_from_img_filepath,
 )
+from hledger_preprocessor.csv_parsing.helper import read_date
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
@@ -190,26 +189,8 @@ def get_amounts(*, row: Dict[str, Any]) -> Tuple[float, float]:
 
 @typechecked
 def get_hledger_amount(*, row: Dict[str, Any]) -> float:
-    if "amount0" in row.keys():
-        amount0 = float(row["amount0"])
+    if "amount" in row.keys():
+        amount = float(row["amount"])
     else:
-        amount0 = float(row["amount"])
-    return amount0
-
-
-@typechecked
-def read_date(*, the_date_str: str) -> datetime:
-    if not the_date_str or the_date_str == "None":
-        raise ValueError(f"Invalid or missing the_date str")
-    try:
-        # Try new format: YYYY-MM-DD-HH-MM-SS
-        the_date = datetime.strptime(the_date_str, "%Y-%m-%d-%H-%M-%S").replace(
-            tzinfo=None
-        )
-    except ValueError:
-        try:
-            # Fallback for legacy ISO 8601 or YYYY-MM-DD
-            the_date = iso8601.parse_date(the_date_str).replace(tzinfo=None)
-        except iso8601.ParseError:
-            raise ValueError(f"Failed to parse the_date {the_date_str}")
-    return the_date
+        raise ValueError(f"row={row}")
+    return amount

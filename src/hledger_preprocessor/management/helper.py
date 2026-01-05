@@ -73,10 +73,7 @@ def concatenate_asset_csvs(*, config: Config) -> None:
 
 
 @typechecked
-def edit_receipt(
-    *,
-    config: Config,
-) -> None:
+def edit_receipt(*, config: Config, labelled_receipts: List[Receipt]) -> None:
 
     # List receipts that can be found.
     labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
@@ -96,6 +93,7 @@ def edit_receipt(
         cropped_receipt_img_filepath=cropped_receipt_img_filepath,
         hledger_account_infos=get_all_accounts(
             config=config,
+            labelled_receipts=labelled_receipts,
         ),
         receipt_nr=0,
         total_nr_of_receipts=1,

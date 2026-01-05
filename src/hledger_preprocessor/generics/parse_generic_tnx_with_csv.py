@@ -76,6 +76,28 @@ def parse_generic_bank_transaction(
         else:
             field_values[py_field] = value or None
 
+        if "amount_in_account" in field_values.keys():
+            raise ValueError(
+                f"Error, unexpected key:amount_in_account in {row}"
+            )
+    if "transaction_code" in field_values.keys():
+        if field_values["transaction_code"] == TransactionCode.CREDIT:
+            # if field_values["tendered_amount_out"] >= 0:
+            #     raise ValueError(
+            #         "Did not expect transaction code with negative amount"
+            #         " transferred."
+            #     )
+            if (
+                "change_returned" in field_values.keys()
+                and field_values["change_returned"] != 0
+            ):
+                raise ValueError(
+                    "Did not expact transaction code with negative amount"
+                    " transferred."
+                )
+            field_values["tendered_amount_out"] = -field_values[
+                "tendered_amount_out"
+            ]
     # TODO: throw error if transaction_code is not determined.
 
     # Reconstruct description

@@ -9,7 +9,7 @@ process_accounts() {
 
     # read -p "0bank_or_asset=$bank_or_asset"
     echo "$json_stream" | jq -c '.[]' | while IFS= read -r account; do
-        echo "account=$account"
+        echo "processing account: $account"
         local input_csv_filename base_currency account_holder bank_or_wallet account_type
 
         input_csv_filename=$(echo "$account" | jq -r '.input_csv_filename // empty')

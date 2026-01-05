@@ -62,7 +62,6 @@ def match_receipt_item_transaction_to_csv_transactions(
             csv_transaction_matches.append(txn)
             # raise TypeError(f"Expected GenericCsvTransaction, got:{txn}")
 
-    # Till here it works.
     handle_receipt_item_transaction_to_csv_matches(
         transaction_matches=csv_transaction_matches,
         csv_transactions_per_account=csv_transactions_per_account,
