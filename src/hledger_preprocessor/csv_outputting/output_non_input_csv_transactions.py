@@ -49,7 +49,8 @@ def output_non_input_csv_transactions(  # TODO: rename the starting info.
             years: set[int] = set()
             for tnx in transactions:
                 # if tnx.tendered_amount_out == float(350):
-                years.add(tnx.parent_receipt.get_year())
+                # years.add(tnx.parent_receipt.get_year())
+                years.add(int(tnx.transaction.the_date.strftime("%Y")))
 
             path_to_account_type, transaction_year_paths = (
                 ensure_hledger_flow_dir_structure_is_build(
@@ -83,13 +84,6 @@ def output_non_input_csv_transactions(  # TODO: rename the starting info.
                         raise TypeError(
                             f"Expected ProcessedTransaction, got:{tnx}"
                         )
-                    # account_txn: AccountTransaction = AccountTransaction(
-                    #     the_date=tnx.the_date,
-                    #     account=account_config.account,
-                    #     tendered_amount_out=tnx.tendered_amount_out,
-                    #     change_returned=tnx.change_returned,
-                    #     original_transaction=tnx,
-                    # )
 
                     write_asset_transaction_to_csv(
                         config=config,

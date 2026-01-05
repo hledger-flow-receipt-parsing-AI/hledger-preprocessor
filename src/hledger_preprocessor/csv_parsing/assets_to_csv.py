@@ -1,5 +1,5 @@
 from pprint import pprint
-from typing import List
+from typing import List, Union
 
 from typeguard import typechecked
 
@@ -76,11 +76,14 @@ def export_asset_transaction_to_csv(
             )
         )
 
-        classified_transaction: Transaction = get_classified_transaction(
-            search_receipt_account_transaction=search_receipt_account_transaction,
-            parent_receipt=parent_receipt,
-            ai_models_tnx_classification=ai_models_tnx_classification,
-            rule_based_models_tnx_classification=rule_based_models_tnx_classification,
+        classified_transaction: Union[ProcessedTransaction, Transaction] = (
+            get_classified_transaction(
+                search_receipt_account_transaction=search_receipt_account_transaction,
+                parent_receipt=parent_receipt,
+                ai_models_tnx_classification=ai_models_tnx_classification,
+                rule_based_models_tnx_classification=rule_based_models_tnx_classification,
+                category_namespace=config.category_namespace,
+            )
         )
 
         if classified_transaction not in csv_asset_transactions:
@@ -91,6 +94,7 @@ def export_asset_transaction_to_csv(
         # TODO: determine why all asset transactions are exported instead of only this one.
         write_asset_transaction_to_csv(
             config=config,
+            labelled_receipts=labelled_receipts,
             transaction=classified_transaction,
             filepath=csv_output_filepath,
             account_config=account_config,

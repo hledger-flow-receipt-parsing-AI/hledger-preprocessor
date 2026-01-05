@@ -1,17 +1,16 @@
 from dataclasses import MISSING, fields
-from decimal import Decimal
 from typing import Any, List
 
 from typeguard import typechecked
 
 from hledger_preprocessor.categorisation.Categories import CategoryNamespace
 from hledger_preprocessor.categorisation.categoriser import classify_transaction
+from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.helper import get_input_csv, has_input_csv
-from hledger_preprocessor.config.load_config import Config
 from hledger_preprocessor.csv_parsing.read_csv_asset_transactions import (
     read_csv_to_asset_transactions,
 )
-from hledger_preprocessor.generics.Transaction import Transaction
+from hledger_preprocessor.matching.ask_user_action import ActionDataset
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
@@ -20,6 +19,15 @@ from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
     ProcessedTransaction,
 )
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
+
+
+@typechecked
+def unclassified_transaction_can_be_exported(
+    *,
+    config: Config,
+    account: Account,
+):
+    return has_input_csv(config=config, account=account)
 
 
 @typechecked
@@ -46,7 +54,7 @@ def _transaction_key(*, tnx: "AccountTransaction") -> tuple[Any, ...]:
 @typechecked
 def classified_transaction_is_exported(
     *,
-    config: Config,
+    # config: Config,
     labelled_receipts: List[Receipt],
     processed_transaction: ProcessedTransaction,
     csv_output_filepath: str,
@@ -78,40 +86,35 @@ def classified_transaction_is_exported(
 
 
 @typechecked
-def unclassified_transaction_can_be_exported(
-    *,
-    config: Config,
-    account: Account,
-):
-    return has_input_csv(config=config, account=account)
-
-
-@typechecked
 def unclassified_transaction_is_exported(
     *,
-    config: Config,
-    search_receipt_account_transaction: AccountTransaction,
-    parent_receipt: Receipt,
+    action_dataset: ActionDataset,
+    # config: Config,`
+    # search_receipt_account_transaction: AccountTransaction,
+    # parent_receipt: Receipt,
     csv_encoding: str = "utf-8",
-    ai_models_tnx_classification: List,
-    rule_based_models_tnx_classification: List,
-    category_namespace: CategoryNamespace,
+    # ai_models_tnx_classification: List,
+    # rule_based_models_tnx_classification: List,
+    # category_namespace: CategoryNamespace,`
 ) -> bool:
 
     csv_output_filepath: str = get_input_csv(
-        config=config, account=search_receipt_account_transaction.account
+        config=action_dataset.config,
+        account=action_dataset.search_receipt_account_transaction.account,
     )
 
-    classified_transaction: Transaction = get_classified_transaction(
-        search_receipt_account_transaction=search_receipt_account_transaction,
-        parent_receipt=parent_receipt,
-        ai_models_tnx_classification=ai_models_tnx_classification,
-        rule_based_models_tnx_classification=rule_based_models_tnx_classification,
-        category_namespace=category_namespace,
+    classified_transaction: ProcessedTransaction = get_classified_transaction(
+        search_receipt_account_transaction=action_dataset.search_receipt_account_transaction,
+        parent_receipt=action_dataset.receipt,
+        ai_models_tnx_classification=action_dataset.ai_models_tnx_classification,
+        rule_based_models_tnx_classification=action_dataset.rule_based_models_tnx_classification,
+        category_namespace=action_dataset.config.category_namespace,
     )
 
     return classified_transaction_is_exported(
-        asset_transaction=classified_transaction,
+        # config=action_dataset.config,
+        labelled_receipts=action_dataset.labelled_receipts,
+        processed_transaction=classified_transaction,
         csv_output_filepath=csv_output_filepath,
         csv_encoding=csv_encoding,
     )
@@ -127,13 +130,18 @@ def get_classified_transaction(
     category_namespace: CategoryNamespace,
 ) -> ProcessedTransaction:
 
-    amount_paid = Decimal(str(search_receipt_account_transaction.amount_paid))
-    change_returned = Decimal(
-        str(search_receipt_account_transaction.change_returned)
-    )
-    amount0 = amount_paid - change_returned  # Prevent rounding error in float.
-
+    # tendered_amount_out = Decimal(str(search_receipt_account_transaction.tendered_amount_out))
+    # change_returned = Decimal(
+    #     str(search_receipt_account_transaction.change_returned)
+    # )
+    # net_amount_out = tendered_amount_out - change_returned  # Prevent rounding error in float.
+    if search_receipt_account_transaction.parent_receipt_category is None:
+        search_receipt_account_transaction.set_parent_receipt_category(
+            parent_receipt_category=parent_receipt.receipt_category
+        )
+    # TODO: remove or use it.
     classified_transaction: ProcessedTransaction = classify_transaction(
+        parent_receipt=parent_receipt,
         txn=search_receipt_account_transaction,
         ai_models_tnx_classification=ai_models_tnx_classification,
         rule_based_models_tnx_classification=rule_based_models_tnx_classification,

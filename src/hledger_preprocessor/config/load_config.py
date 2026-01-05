@@ -128,26 +128,26 @@ def verify_config(*, config: dict[str, Any]) -> dict[str, Any]:
     return config
 
 
-@typechecked
-def load_config(
-    *,
-    config_path: str,
-    pre_processed_output_dir: Union[None, str],
-    verbose: Optional[bool] = False,
-) -> Config:
-    assert_file_exists(filepath=config_path)
-    with open(config_path) as file:
-        config_dict = yaml.safe_load(file)
-    verified_config = verify_config(config=config_dict)
-    if pre_processed_output_dir is not None:
-        verified_config["dir_paths"][
-            "pre_processed_output_dir"
-        ] = pre_processed_output_dir
+# @typechecked
+# def load_config(
+#     *,
+#     config_path: str,
+#     pre_processed_output_dir: Union[None, str],
+#     verbose: Optional[bool] = False,
+# ) -> Config:
+#     assert_file_exists(filepath=config_path)
+#     with open(config_path) as file:
+#         config_dict = yaml.safe_load(file)
+#     verified_config = verify_config(config=config_dict)
+#     if pre_processed_output_dir is not None:
+#         verified_config["dir_paths"][
+#             "pre_processed_output_dir"
+#         ] = pre_processed_output_dir
 
-    config = Config.from_dict(config_dict=verified_config)
-    if verbose:
-        print(f"✅ ABS_ASSET_PATH exported: {os.environ.get('ABS_ASSET_PATH')}")
-    return config
+#     config = Config.from_dict(config_dict=verified_config)
+#     if verbose:
+#         print(f"✅ ABS_ASSET_PATH exported: {os.environ.get('ABS_ASSET_PATH')}")
+#     return config
 
 
 @typechecked

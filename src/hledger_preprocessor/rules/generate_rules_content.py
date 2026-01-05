@@ -15,7 +15,6 @@ from hledger_preprocessor.file_reading_and_writing import (
     assert_file_exists,
     write_to_file,
 )
-from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
 from hledger_preprocessor.TransactionObjects.Receipt import Account
 
 
@@ -54,12 +53,13 @@ class RulesContentCreator:
         # Write fields
         content += (
             "fields"
-            f" {', '.join(self.account_config.get_hledger_csv_column_names())}\n\n"
+            f" {', '.join(self.account_config.get_hledger_csv_column_names())},ExampleRuleBasedModel,ExampleAIModel\n\n"
         )
 
         # Write currency
         content += (
-            f"currency {self.account_config.account.base_currency.value}\n"
+            # f"currency {self.account_config.account.base_currency.value}\n"
+            f"currency %currency\n"
         )
         # content += f"date-format %Y-%m-%d\n"
         content += f"date-format %Y-%m-%d-%H-%M-%S\n"
@@ -67,33 +67,35 @@ class RulesContentCreator:
         # Write status
         content += f"status {self.status}\n\n"
 
-        content += f"""if %transaction_code {TransactionCode.DEBIT.value}
+        # amount stands for net amount out of account. If it is positive, it is an expense.
+        content += f"""if %amount ^[1-9]
 description %description
- account1 expenses:%logic_classification
+ account1 expenses:%ExampleRuleBasedModel
  account2 assets:%account_holder:%bank:%account_type
 # end\n\n"""
 
         for account_config in self.config.accounts:
             if not account_config.has_input_csv():
                 account = account_config.account
-                content += f"""if %transaction_code {TransactionCode.DEBIT.value}
-& %logic_classification {account.to_string()}
- account1 assets:%logic_classification
+                content += f"""if %amount ^[1-9]
+& %ExampleRuleBasedModel {account.to_string()}
+ account1 assets:%ExampleRuleBasedModel
  account2 assets:%account_holder:%bank:%account_type
 # end\n\n"""
 
-        # Credit rule
-        content += f"""if %transaction_code {TransactionCode.CREDIT.value}
+        # amount stands for net amount out of account. If it is negative, it is income.
+        content += f"""if %amount ^-
 description %description
- account1 assets:%account_holder:%bank:%account_type
- account2 income:%logic_classification
+ account1 income:%ExampleRuleBasedModel
+ account2 assets:%account_holder:%bank:%account_type
+
 # end\n\n"""
 
         for account_config in self.config.accounts:
             if not account_config.has_input_csv():
                 account = account_config.account
-                content += f"""if %transaction_code {TransactionCode.CREDIT.value}
-& %logic_classification {account.to_string()}
+                content += f"""if %amount ^-
+& %ExampleRuleBasedModel {account.to_string()}
  account1 equity:clearing
  account2 assets:%account_holder:%bank:%account_type
 # end\n\n"""
@@ -131,9 +133,12 @@ def generate_rules_file(
         account=account,
         working_subdir=config.get_working_subdir_path(assert_exists=False),
     )
+    # if account_config.has_input_csv():
     rules_filename: str = f"{account.bank}-{account.account_type}.rules"
     rules_filepath = f"{account_type_path}/{rules_filename}"
-
+    # else:
+    # rules_filename: str = f"{account.base_currency}.rules" # TODO: include account holder bank name and account type?
+    # rules_filepath = f"{account_type_path}/{rules_filename}"
     write_to_file(
         content=triodosRules.create_rulecontent(),
         filepath=rules_filepath,

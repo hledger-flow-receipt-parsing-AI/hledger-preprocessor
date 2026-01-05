@@ -7,6 +7,9 @@ from typeguard import typechecked
 
 from hledger_preprocessor.config.CsvColumnMapping import CsvColumnMapping
 from hledger_preprocessor.config.DirPathsConfig import DirPathsConfig
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
@@ -53,13 +56,28 @@ class AccountConfig:
                 return f"{dir_paths_config.root_finance_path}/{self.input_csv_filename}"
             return self.input_csv_filename
         else:
-            return f"{dir_paths_config.root_finance_path}/{dir_paths_config.asset_transaction_csvs_dir}/{self.account.account_holder}/{self.account.bank}/{self.account.account_type}/{self.account.base_currency}.csv"
+            asset_path: str = dir_paths_config.get_path(
+                path_name="asset_transaction_csvs_dir", absolute=True
+            )
+            return f"{asset_path}/{self.account.account_holder}/{self.account.bank}/{self.account.account_type}/{self.account.base_currency}.csv"
+            # return f"{dir_paths_config.root_finance_path}/{dir_paths_config.asset_transaction_csvs_dir}/{self.account.account_holder}/{self.account.bank}/{self.account.account_type}/{self.account.base_currency}.csv"
 
     @typechecked
     def get_hledger_csv_column_names(self) -> List[str]:
 
         if self.has_input_csv():
-            return self.csv_column_mapping.get_hledger_csv_column_names()
+            dummy_csv_tnx: GenericCsvTransaction = GenericCsvTransaction(
+                the_date=datetime.now(),
+                account=self.account,
+                tendered_amount_out=1,  # TODO: don't use this hardcoding.
+                change_returned=0,  # TODO: don't use this hardcoding.
+            )
+            return list(
+                dummy_csv_tnx.to_hledger_dict(
+                    csv_column_mapping=self.csv_column_mapping
+                ).keys()
+            )
+            # return self.csv_column_mapping.get_hledger_csv_column_names()
         else:
             dummy_account_tnx: AccountTransaction = AccountTransaction(
                 the_date=datetime.now(),
@@ -67,6 +85,7 @@ class AccountConfig:
                 tendered_amount_out=1,  # TODO: don't use this hardcoding.
                 change_returned=0,  # TODO: don't use this hardcoding.
             )
-            return (
-                dummy_account_tnx.csv_column_mapping.get_hledger_csv_column_names()
-            )
+            return list(dummy_account_tnx.to_hledger_dict().keys())
+            # return (
+            #     dummy_account_tnx.csv_column_mapping.get_hledger_csv_column_names()
+            # )

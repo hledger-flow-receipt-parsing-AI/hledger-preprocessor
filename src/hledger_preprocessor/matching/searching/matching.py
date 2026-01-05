@@ -55,7 +55,6 @@ def manage_matching_receipts_to_transactions(
     )
 
     for img_label_filepath, receipt in json_paths_receipt_objs.items():
-
         match_receipt_items_to_csv_transactions(
             receipt=receipt,
             labelled_receipts=labelled_receipts,

@@ -2,6 +2,7 @@ import logging
 from typing import Dict, List, Union
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
+from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
@@ -49,12 +50,14 @@ def handle_receipt_item_transaction_to_csv_matches(
     receipt_account: Account = (
         action_dataset.search_receipt_account_transaction.account
     )
+
     if len(transaction_matches) == 1:
         found_csv_transaction: Transaction = transaction_matches[0]
 
         # Check if the receipt needs to be updated.
         updated_receipt: Union[None, Receipt] = (
             handle_alternate_currency_withdrawl(
+                config=action_dataset.config,
                 actions_value=actions_value,
                 original_receipt_account_transaction=action_dataset.original_receipt_account_transaction,
                 found_csv_transaction=found_csv_transaction,
@@ -101,6 +104,7 @@ def handle_receipt_item_transaction_to_csv_matches(
 @typechecked
 def handle_alternate_currency_withdrawl(
     *,
+    config: Config,
     actions_value: List[ActionValuePair],
     original_receipt_account_transaction: Union[None, AccountTransaction],
     found_csv_transaction: Transaction,
@@ -124,6 +128,7 @@ def handle_alternate_currency_withdrawl(
             )
         # Inject the receipt foreign currency transactions.
         return inject_csv_transaction_to_receipt(
+            config=config,
             original_receipt_account_transaction=original_receipt_account_transaction,
             found_csv_transaction=found_csv_transaction,
             receipt=receipt,

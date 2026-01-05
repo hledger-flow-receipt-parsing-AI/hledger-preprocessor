@@ -145,12 +145,12 @@ class TriodosTransaction(Transaction):
             account_type=self.account_type,
         )
 
-        if self.amount0 > 0:
-            amount_paid: float = self.amount0
+        if self.amount > 0:
+            amount_paid: float = self.amount
             change_returned: float = 0
-        elif self.amount0 < 0:
+        elif self.amount < 0:
             amount_paid: float = 0
-            change_returned: float = abs(self.amount0)
+            change_returned: float = abs(self.amount)
         else:
             raise ValueError(
                 "Cannot have a Triodos Transaction with a transacted value of"

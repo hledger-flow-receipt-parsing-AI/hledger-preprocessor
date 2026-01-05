@@ -74,7 +74,7 @@ def deep_replace_account(obj: Any) -> Any:
     2. Rename "amount_paid" → "tendered_amount_out" everywhere.
     """
     # First, perform the key renaming (safe to do always)
-    obj = deep_rename_key(obj, "amount_paid", "tendered_amount_out")
+    obj = deep_rename_key(obj, "amount0", "amount")
 
     # Then handle legacy account replacement
     if isinstance(obj, dict):

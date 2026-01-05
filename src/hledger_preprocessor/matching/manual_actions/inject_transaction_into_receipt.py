@@ -1,26 +1,32 @@
 from copy import deepcopy
 from decimal import Decimal
 from pprint import pprint
-from typing import List
+from typing import List, Tuple
 
 from typeguard import typechecked
 
+from hledger_preprocessor.config import AccountConfig
+from hledger_preprocessor.config.Config import Config
+from hledger_preprocessor.config.helper import get_account_config
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
 from hledger_preprocessor.generics.Transaction import Transaction
+from hledger_preprocessor.matching.linking.helper import has_diff_and_print
 from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
     collect_non_csv_transactions,
 )
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
+from hledger_preprocessor.TransactionObjects.ExchangedItem import ExchangedItem
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 
 @typechecked
 def inject_csv_transaction_to_receipt(
     *,
+    config: Config,
     original_receipt_account_transaction: AccountTransaction,
     found_csv_transaction: Transaction,
     receipt: Receipt,
@@ -57,6 +63,7 @@ def inject_csv_transaction_to_receipt(
         # This assumes that the updated transaction contains the the original csv_bank account and the amount payed (and 0 change returned) in the currency of that original csv bank account.
         new_receipt: Receipt = (
             find_matching_receipt_transaction_and_inject_csv_transaction(
+                config=config,
                 receipt=new_receipt,
                 original_receipt_account_transaction=original_receipt_account_transaction,
                 found_csv_transaction=found_csv_transaction,
@@ -72,8 +79,97 @@ def inject_csv_transaction_to_receipt(
 
 
 @typechecked
+def should_convert_faulty_account_transaction(
+    *,
+    config: Config,
+    receipt_tnx: AccountTransaction,
+    csv_tnx: GenericCsvTransaction,
+) -> bool:
+    if isinstance(receipt_tnx, AccountTransaction) and isinstance(
+        csv_tnx, GenericCsvTransaction
+    ):
+        account_config: AccountConfig = get_account_config(
+            config=config, account=receipt_tnx.account
+        )
+        if account_config.has_input_csv():
+            return True
+    return False
+
+
+@typechecked
+def convert_tnx_type_if_needed(
+    *,
+    config: Config,
+    receipt: Receipt,
+    csv_tnx: GenericCsvTransaction,
+    receipt_account_transaction: Transaction,
+) -> Tuple[bool, Receipt]:
+    has_replaced: bool = False
+    if isinstance(receipt_account_transaction, AccountTransaction):
+
+        copied_receipt: Receipt = deepcopy(receipt)
+
+        # Use the structure from get_all_transactions_from_receipt to find and replace the reference
+        bought_items = (
+            [receipt.net_bought_items]
+            if isinstance(receipt.net_bought_items, ExchangedItem)
+            else receipt.net_bought_items if receipt.net_bought_items else []
+        )
+        returned_items = (
+            [receipt.net_returned_items]
+            if isinstance(receipt.net_returned_items, ExchangedItem)
+            else (
+                receipt.net_returned_items if receipt.net_returned_items else []
+            )
+        )
+        for item in bought_items + returned_items:
+            for i, receipt_tnx in enumerate(item.account_transactions):
+
+                if Transaction.get_hash(receipt_tnx) == Transaction.get_hash(
+                    csv_tnx
+                ):
+                    if should_convert_faulty_account_transaction(
+                        config=config,
+                        receipt_tnx=receipt_tnx,
+                        csv_tnx=csv_tnx,
+                    ):
+                        item.account_transactions[i] = csv_tnx
+                        has_replaced = True
+                    else:
+                        raise SystemError("SHOULD CONVERT BUT DID NOT")
+
+        if not has_replaced:
+            raise ValueError(f"Should have replaced transaction.")
+
+        if receipt.net_bought_items and not has_diff_and_print(
+            dict1=copied_receipt.net_bought_items.__dict__,
+            dict2=receipt.net_bought_items.__dict__,
+            name1="original_receipt",
+            name2="receipt_with_tnx_replaced",
+            ignore_keys_none=None,
+            ignore_empty_dict_keys=None,
+        ):
+            raise ValueError("Did not find receipt diff after changing tnx.")
+
+        if receipt.net_returned_items and not has_diff_and_print(
+            dict1=copied_receipt.net_returned_items.__dict__,
+            dict2=receipt.net_returned_items.__dict__,
+            name1="original_receipt",
+            name2="receipt_with_tnx_replaced",
+            ignore_keys_none=None,
+            ignore_empty_dict_keys=None,
+        ):
+            raise ValueError("Did not find receipt diff after changing tnx.")
+        print()
+        return has_replaced, receipt
+    else:
+        return has_replaced, receipt
+
+
+@typechecked
 def find_matching_receipt_transaction_and_inject_csv_transaction(
     *,
+    config: Config,
     receipt: Receipt,
     original_receipt_account_transaction: AccountTransaction,
     found_csv_transaction: Transaction,
@@ -88,12 +184,24 @@ def find_matching_receipt_transaction_and_inject_csv_transaction(
         # Inject the csv_transaction into the receipt transaction.
         has_injected: bool = False
         all_account_transactions: List[AccountTransaction] = (
-            collect_non_csv_transactions(receipt=receipt, verbose=False)
+            collect_non_csv_transactions(receipt=receipt)
         )
         for receipt_account_transaction in all_account_transactions:
-            if receipt_account_transaction.__eq__(
-                original_receipt_account_transaction
-            ):
+            # TODO: determine if replacement should be preserved or not.
+            # has_converted, new_receipt = convert_tnx_type_if_needed(
+            #     config=config,
+            #     receipt=receipt,
+            #     csv_tnx=found_csv_transaction,
+            #     receipt_account_transaction=receipt_account_transaction,
+            # )
+            # if has_converted:
+            #     return new_receipt
+            if Transaction.get_hash(
+                receipt_account_transaction
+            ) == Transaction.get_hash(original_receipt_account_transaction):
+                # if receipt_account_transaction.__eq__(
+                #     original_receipt_account_transaction
+                # ):
                 object.__setattr__(
                     receipt_account_transaction,
                     "original_transaction",
@@ -165,6 +273,11 @@ def receipt_already_contains_csv_transaction(
                 == csv_transaction.get_hash()
             ):
                 nr_of_matches += 1
+        else:
+            print(
+                f"WARNING: No original for: {type(receipt_transaction)} with"
+                f" value:\n{receipt_transaction}"
+            )
     if nr_of_matches == 1:
         return True
     elif nr_of_matches > 1:

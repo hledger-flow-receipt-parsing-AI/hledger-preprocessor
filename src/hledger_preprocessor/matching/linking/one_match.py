@@ -1,6 +1,9 @@
 import logging
 from pprint import pprint
 
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.matching.ask_user_action import ActionDataset
 from hledger_preprocessor.matching.linking.helper import (
@@ -9,9 +12,6 @@ from hledger_preprocessor.matching.linking.helper import (
 from hledger_preprocessor.matching.manual_actions.inject_transaction_into_receipt import (
     inject_csv_transaction_to_receipt,
     receipt_already_contains_csv_transaction,
-)
-from hledger_preprocessor.retrieval.within_transactions.retrieve_csv_transaction import (
-    retrieve_csv_transaction_from_hash,
 )
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
@@ -40,6 +40,41 @@ def auto_link_receipt(
         account: Account information.
         result: Dictionary to store matching results.
     """
+    if isinstance(
+        original_receipt_account_transaction, GenericCsvTransaction
+    ) or isinstance(found_csv_transaction, GenericCsvTransaction):
+        if found_csv_transaction.tendered_amount_out == 29.23:
+            print("found_csv_transaction=")
+            pprint(found_csv_transaction)
+            pprint(type(found_csv_transaction))
+
+            print("original_receipt_account_transaction")
+            pprint(original_receipt_account_transaction)
+            pprint(type(original_receipt_account_transaction))
+
+            # Usage in your if-block
+            if (
+                isinstance(
+                    original_receipt_account_transaction, AccountTransaction
+                )
+                and isinstance(found_csv_transaction, GenericCsvTransaction)
+                and base_transaction_fields_equal(
+                    original_receipt_account_transaction, found_csv_transaction
+                )
+            ):
+                print("SAME BASE TNSX")
+                # Transactions match on core fields
+                # Now additionally check if accountConfig is the same
+                if (
+                    original_receipt_account_transaction.account
+                    == found_csv_transaction.account
+                ):  # adjust attribute name as needed
+                    # Full match
+                    print("SAME ACCOUNT CONFIGS")
+        print(
+            "WARNING: GenericCsv Transaction found in first"
+            f" tnx:{found_csv_transaction}"
+        )
 
     # Assert the csv_transaction is not yet in the AccountTransaction.
     if receipt_already_contains_csv_transaction(
@@ -50,6 +85,7 @@ def auto_link_receipt(
         )
 
     updated_receipt: Receipt = inject_csv_transaction_to_receipt(
+        config=action_dataset.config,
         original_receipt_account_transaction=original_receipt_account_transaction,
         found_csv_transaction=found_csv_transaction,
         receipt=action_dataset.receipt,
@@ -64,16 +100,17 @@ def auto_link_receipt(
     if not receipt_already_contains_csv_transaction(
         receipt=updated_receipt, csv_transaction=found_csv_transaction
     ):
-
-        pprint(updated_receipt)
+        updated_receipt.pretty_print_receipt_without_config()
         raise ValueError(
             "Link was not properly made, csv_transaction is not yet in receipt."
         )
 
     # Load the csv_transaction from file and assert it is the same one as the incoming one.
-    retrieve_csv_transaction_from_hash(
-        config=action_dataset.config, some_hash=found_csv_transaction.get_hash()
-    )
+    # retrieve_csv_transaction_from_hash(
+    #     config=action_dataset.config,
+    #     some_hash=found_csv_transaction.get_hash(),
+    #     labelled_receipts=action_dataset.labelled_receipts,
+    # )
 
     # TODO: Assert the csv_transaction is not yet in the AccountTransaction.
 
@@ -102,3 +139,20 @@ def auto_link_receipt(
 
     # I. Write a function that returns that CSV transaction based on the info stored in the receipt transaction.
     # II. Write a function that returns that receipt transaction based on the receipt_raw_input_img in the csv_transaction, (by within the receipt, looking at the transactions and finding the hash that matches the hash of the csv_transaction.)
+
+
+@typechecked
+def base_transaction_fields_equal(t1: Transaction, t2: Transaction) -> bool:
+    """
+    Check if the core Transaction fields (from the base class) are identical.
+    Ignores subclass-specific fields.
+    """
+    # Get the exact fields defined directly on the base Transaction class
+    base_fields = (
+        Transaction.__dataclass_fields__.keys()
+    )  # e.g., 'account', 'the_date', 'tendered_amount_out', 'change_returned'
+
+    for field in base_fields:
+        if getattr(t1, field) != getattr(t2, field):
+            return False
+    return True

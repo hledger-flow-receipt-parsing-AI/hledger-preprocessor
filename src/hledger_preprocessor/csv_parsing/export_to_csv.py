@@ -75,14 +75,7 @@ def write_processed_csv(
             hledger_dict: Dict[str, Union[int, float, str, datetime, None]] = (
                 processed_tnx.to_hledger_dict(account_config=account_config)
             )
-            # if isinstance(processed_tnx.transaction, GenericCsvTransaction):
-            #     hledger_tnx_dict: Dict = get_hledger_dict(
-            #         transaction=processed_tnx.transaction, account_config=account_config
-            #     )
-            # else:
-            #     hledger_tnx_dict: Dict = get_hledger_dict(
-            #         transaction=processed_tnx.transaction, account_config=None
-            #     )
+
             hledger_tnx_dicts.append(hledger_dict)
             assert all(
                 d.keys() == hledger_tnx_dicts[0].keys()
@@ -130,7 +123,7 @@ def write_asset_transaction_to_csv(
     # Convert transaction to dictionary for comparison and writing
     txn_dict = transaction.to_hledger_dict()
     if not classified_transaction_is_exported(
-        config=config,
+        # config=config,
         labelled_receipts=labelled_receipts,
         processed_transaction=transaction,
         csv_output_filepath=filepath,
@@ -158,7 +151,7 @@ def write_asset_transaction_to_csv(
 
         # Assert that the transaction was added
         if not classified_transaction_is_exported(
-            config=config,
+            # config=config,
             labelled_receipts=labelled_receipts,
             processed_transaction=transaction,
             csv_output_filepath=filepath,
