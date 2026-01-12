@@ -3,50 +3,59 @@ account_configs:
     account_holder: at
     bank: triodos
     account_type: checking
-    input_csv_filename: "triodos_2024-2025.csv"  # RELATIVE to root_finance_path
+    input_csv_filename: "triodos_2024-2025.csv" # RELATIVE to root_finance_path
     # Python field name and hledger field name.
-    csv_column_mapping: [['the_date', "date"], ['None', ''], ['tendered_amount_out', 'amount'], ['transaction_code', ''], ['other_party_name',''],['other_party_account_name',''], ['Unknown',''], ['description','description'],['amount_after_tnx','']]
+    csv_column_mapping: [
+        ["the_date", "date"],
+        ["", ""], # own account nr.
+        ["tendered_amount_out", "amount"],
+        ["transaction_code", ""],
+        ["other_party_name", ""],
+        ["other_party_account_name", ""],
+        ["", ""], # Payment abreviation code. E.g. BA
+        ["description", "description"],
+        ["", ""], # Balance in account after tnx
+      ] # skipped amount_after_tnx
     # The transaction date of the bank is often a lot different than the receipt transaction time, so get the latter from the receipt.
-    tnx_date_columns: [['the_date', "date"], ['description','description']]
+    tnx_date_columns: [["the_date", "date"], ["description", "description"]]
   - input_csv_filename:
     base_currency: EUR
     account_holder: at
     bank: wallet
-    csv_column_mapping: None
-    tnx_date_columns: None
+    csv_column_mapping: null
+    tnx_date_columns: null
     account_type: physical
-  - input_csv_filename: None
+  - input_csv_filename: null
     base_currency: POUND
     account_holder: at
     bank: wallet
-    csv_column_mapping: None
-    tnx_date_columns: None
+    csv_column_mapping: null
+    tnx_date_columns: null
     account_type: physical
-  - input_csv_filename: None
+  - input_csv_filename: null
     base_currency: BTC
     account_holder: at
     bank: wallet
     account_type: digital
-    csv_column_mapping: None
-    tnx_date_columns: None
-  - input_csv_filename: None
+    csv_column_mapping: null
+    tnx_date_columns: null
+  - input_csv_filename: null
     base_currency: GOLD
     account_holder: at
     bank: wallet
     account_type: physical
-    csv_column_mapping: None
-    tnx_date_columns: None
-  - input_csv_filename: None
+    csv_column_mapping: null
+    tnx_date_columns: null
+  - input_csv_filename: null
     base_currency: SILVER
     account_holder: at
     bank: wallet
     account_type: physical
-    csv_column_mapping: None
-    tnx_date_columns: None
-
+    csv_column_mapping: null
+    tnx_date_columns: null
 
 dir_paths:
-  root_finance_path: "/tmp/placeholder_root"   # will be replaced by fixture
+  root_finance_path: "/tmp/placeholder_root" # will be replaced by fixture
   working_subdir: "test_working_dir"
   receipt_images_input_dir: "receipt_images_input"
   receipt_images_processed_dir: "receipt_images_processed"
