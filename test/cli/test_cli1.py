@@ -3,8 +3,14 @@ import subprocess
 import sys
 from os import path
 from pathlib import Path
+from test.conftest_helper import (  # Make sure you import pytest
+    seed_receipts_into_root,
+)
 
-import pytest  # Make sure you import pytest
+import pytest
+
+from hledger_preprocessor.config.Config import Config
+from hledger_preprocessor.config.load_config import load_config
 
 # tests/test_cli_integration.py
 
@@ -31,6 +37,22 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     config_path = temp_finance_root["config_path"]
     print(f"Config path for demo recording: {config_path}")
     assert path.isfile(config_path)
+
+    # 3. Specify multiple source files to "inject" into the test environment
+    source_files = [
+        Path(
+            "data/edit_receipt/single_cash_payment/receipt_image_to_obj_label.json"
+        ),
+    ]
+    for f in source_files:
+        if not f.exists():
+            pytest.fail(f"Required test data missing: {f}")
+
+    config: Config = load_config(
+        config_path=str(config_path),
+        pre_processed_output_dir=None,
+    )
+    seed_receipts_into_root(config=config, source_json_paths=source_files)
 
     # 4. Define the path to your bash script
     # Assuming your recorder script is named 'demo-recorder.sh' and is in your project root
