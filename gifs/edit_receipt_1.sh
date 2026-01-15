@@ -59,13 +59,40 @@ conda_base = os.popen("conda info --base").read().strip()
 # Build the command
 cmd = f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && conda activate hledger_preprocessor && hledger_preprocessor --config {config_path} --edit-receipt'"
 
-# Spawn with a PTY
-child = pexpect.spawn(cmd, encoding='utf-8', timeout=30)
+# Spawn with a PTY - set dimensions for urwid
+child = pexpect.spawn(cmd, encoding='utf-8', timeout=60, dimensions=(32, 120))
 child.logfile = sys.stdout
 
-# Wait for TUI to render, then send Enter
-time.sleep(2)
-child.send('\r')
+# Wait for the receipt list TUI to render by looking for the header text
+try:
+    child.expect('Receipts List', timeout=10)
+except pexpect.TIMEOUT:
+    print("ERROR: TUI did not render in time")
+    child.terminate()
+    sys.exit(1)
+
+# Give TUI a moment to fully render after header appears
+time.sleep(1)
+
+# Navigate down to second receipt (arrow down)
+child.send('\x1b[B')  # Down arrow escape sequence
+time.sleep(0.5)
+
+# Activate the button with space (urwid buttons respond to space)
+child.send(' ')
+
+# Wait for the edit receipt TUI to load and show the "Can you see" prompt
+try:
+    child.expect('Can you see', timeout=30)
+    time.sleep(1)
+    # Press Enter to confirm we can see the image
+    child.send('\r')
+    time.sleep(2)
+except pexpect.TIMEOUT:
+    pass  # Continue even if prompt doesn't appear
+
+# Send 'q' to quit the edit TUI
+child.send('q')
 
 # Wait for the process to complete
 try:
