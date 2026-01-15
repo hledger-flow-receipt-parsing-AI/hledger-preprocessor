@@ -1,0 +1,45 @@
+{
+  "ai_receipt_categorisation": null,
+  "net_bought_items": {
+    "account_transactions": [
+      {
+        "account": {
+          "account_holder": "at",
+          "account_type": "physical",
+          "bank": "wallet",
+          "base_currency": "EUR"
+        },
+        "change_returned": 5.50,
+        "currency": "EUR",
+        "tendered_amount_out": 20.0
+      }
+    ],
+    "category": null,
+    "description": "repairs:bike",
+    "group_discount": 0,
+    "quantity": 1,
+    "round_amount": null,
+    "tax_per_unit": 0,
+    "the_date": "2025-06-15T14:30:00",
+    "unit_price": null
+  },
+  "net_returned_items": null,
+  "raw_img_filepath": "/home/a/finance/receipt_images_input/bike_repair.jpg",
+  "receipt_category": "repairs:bike",
+  "receipt_owner_address": null,
+  "shop_identifier": {
+    "address": {
+      "city": "Amsterdam",
+      "country": "Netherlands",
+      "house_nr": "42",
+      "street": "Fietsstraat",
+      "zipcode": "1234AB"
+    },
+    "name": "BikeShop",
+    "shop_account_nr": null
+  },
+  "subtotal": null,
+  "the_date": "2025-06-15T14:30:00",
+  "total_tax": 2.55,
+  "transaction_hash": null
+}

@@ -43,6 +43,9 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
         Path(
             "data/edit_receipt/single_cash_payment/receipt_image_to_obj_label.json"
         ),
+        Path(
+            "data/edit_receipt/second_receipt/receipt_image_to_obj_label.json"
+        ),
     ]
     for f in source_files:
         if not f.exists():

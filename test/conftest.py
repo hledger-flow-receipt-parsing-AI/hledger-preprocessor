@@ -80,13 +80,15 @@ def temp_finance_root(tmp_path_factory):
     # 3. Create mandatory files (the ones verify_config checks)
     # ------------------------------------------------------------------
     # Triodos CSV – the only account that has a real CSV
+    # Must have 9 columns matching csv_column_mapping in 1_bank_5_assets.yaml:
+    # the_date, own_account_nr, tendered_amount_out, transaction_code,
+    # other_party_name, other_party_account_name, payment_code, description, balance
     create_dummy_file(
         root / "triodos_2024-2025.csv",
         content=textwrap.dedent(
             """\
-            the_date,tendered_amount_out,description
-            2025-01-15,-42.17,Supermarket
-            2025-01-20,-12.50,Coffee Shop
+            15-01-2025,NL123,-42.17,debit,Supermarket,NL456,IC,Groceries purchase,1000.00
+            20-01-2025,NL123,-12.50,debit,Coffee Shop,NL789,IC,Coffee and snacks,987.50
         """
         ),
     )
@@ -109,6 +111,15 @@ def temp_finance_root(tmp_path_factory):
         create_dummy_file(
             receipt_dir / name, content=""
         )  # empty file is enough
+
+    # Asset CSV files for wallet accounts (needed by get_all_accounts in edit_receipt)
+    # Path structure: test_working_dir/asset_transaction_csvs/{account_holder}/{bank}/{account_type}/Currency.{currency}.csv
+    asset_csv_base = root / "test_working_dir" / "asset_transaction_csvs" / "at" / "wallet"
+    for account_type, currency in [("physical", "EUR"), ("physical", "POUND"), ("physical", "GOLD"), ("physical", "SILVER"), ("digital", "BTC")]:
+        create_dummy_file(
+            asset_csv_base / account_type / f"Currency.{currency}.csv",
+            content=""  # empty CSV is sufficient
+        )
 
     # ------------------------------------------------------------------
     # 4. Yield everything a test might need
