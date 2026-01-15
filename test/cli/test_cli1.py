@@ -1,4 +1,5 @@
 # tests/test_cli_integration.py
+import os
 import subprocess
 import sys
 from os import path
@@ -87,12 +88,16 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
 
     try:
         # Note: Set CWD to the project root so the script's relative paths work (demo.cast, demo.gif)
+        # Set TERM so tput works for colors in the bash script
+        env = os.environ.copy()
+        env["TERM"] = "xterm-256color"
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=60,  # Increase timeout for recording
+            timeout=120,  # Increase timeout for recording
             check=True,  # Raise an exception if the bash script fails
+            env=env,
         )
         print("--- Bash Script STDOUT ---")
         print(result.stdout)
