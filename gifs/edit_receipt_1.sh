@@ -72,14 +72,23 @@ except pexpect.TIMEOUT:
     sys.exit(1)
 
 # Give TUI a moment to fully render after header appears
-time.sleep(1)
+time.sleep(1.5)
 
-# Navigate down to second receipt (arrow down)
+# Navigate DOWN to the second receipt to show the selection/highlighting moving
 child.send('\x1b[B')  # Down arrow escape sequence
 time.sleep(0.5)
 
-# Activate the button with space (urwid buttons respond to space)
+# Force read any pending output - this helps flush the PTY buffer
+try:
+    output = child.read_nonblocking(size=10000, timeout=0.5)
+except:
+    pass
+
+time.sleep(1.5)  # Pause so user can see the highlight on second receipt
+
+# Now select the second receipt (repairs:bike) with space
 child.send(' ')
+time.sleep(0.5)
 
 # Wait for the edit receipt TUI to load and show the "Can you see" prompt
 try:
@@ -90,28 +99,42 @@ try:
 except pexpect.TIMEOUT:
     pass  # Continue even if prompt doesn't appear
 
-# Wait for the edit receipt TUI to fully render
+# Wait for the edit receipt TUI to fully render with all fields
 try:
     child.expect('Bookkeeping expense category', timeout=10)
-    time.sleep(1)
+    time.sleep(1.5)  # Let TUI fully render
 except pexpect.TIMEOUT:
     pass
 
-# The cursor starts at the date field (year digit "2")
-# Press Enter to move to the bookkeeping expense category field
+# The cursor starts at the date field
+# Press Enter to move from date field to bookkeeping expense category field
 child.send('\r')
 time.sleep(1)
 
-# Now we're in the bookkeeping category field - demonstrate typing
-# Type a few characters to show the category selection
-child.send('gro')  # Start typing "groceries"
-time.sleep(1)
-
-# Show the autocomplete/selection by pressing down arrow
-child.send('\x1b[B')  # Down arrow
+# Now we're in the bookkeeping category field which shows "repairs:bike"
+# First, go to the END of the current text using End key
+child.send('\x1b[F')  # End key escape sequence
 time.sleep(0.5)
 
-# Press Enter to select the category
+# Alternative: use Ctrl+E which often goes to end of line in text fields
+child.send('\x05')  # Ctrl+E
+time.sleep(0.5)
+
+# Now backspace to delete "repairs:bike" (12 characters)
+for i in range(12):
+    child.send('\x7f')  # Backspace character
+    time.sleep(0.08)  # Small delay between each backspace for visibility
+
+time.sleep(0.5)
+
+# Now type the new category: "groceries:ekoplaza"
+for char in "groceries:ekoplaza":
+    child.send(char)
+    time.sleep(0.1)  # Small delay between each character for visibility
+
+time.sleep(1)
+
+# Press Enter to confirm the category change
 child.send('\r')
 time.sleep(1)
 
