@@ -147,30 +147,30 @@ except:
 
 # Now backspace 12 characters to delete "repairs:bike"
 # Use DEL (0x7f) which is the actual backspace key
+# Flush after each backspace so deletion is visible frame-by-frame
 for i in range(12):
     child.send('\x7f')  # DEL - backspace
-    time.sleep(0.08)
+    time.sleep(0.1)
+    # Flush to show each deletion as separate frame
+    try:
+        output = child.read_nonblocking(size=10000, timeout=0.1)
+    except:
+        pass
 
-# Force read to show the deletion
-try:
-    output = child.read_nonblocking(size=10000, timeout=0.3)
-except:
-    pass
-
-time.sleep(0.5)
+time.sleep(0.3)
 
 # Now type the new category: "groceries:ekoplaza"
+# Flush after each character so typing is visible frame-by-frame
 for char in "groceries:ekoplaza":
     child.send(char)
-    time.sleep(0.06)
+    time.sleep(0.1)
+    # Flush to show each character as separate frame
+    try:
+        output = child.read_nonblocking(size=10000, timeout=0.1)
+    except:
+        pass
 
-# Force read to show the typing progress
-try:
-    output = child.read_nonblocking(size=10000, timeout=0.3)
-except:
-    pass
-
-time.sleep(0.8)
+time.sleep(0.5)
 
 # Send 'q' to quit the edit TUI
 child.send('q')
