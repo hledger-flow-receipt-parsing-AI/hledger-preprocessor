@@ -124,6 +124,11 @@ try:
 except pexpect.TIMEOUT:
     pass  # Continue even if prompt doesn't appear
 
+# Show the cursor for the edit receipt TUI (user needs to see where they're typing)
+# Also set cursor color to white for better visibility in the GIF
+print('\x1b[?25h', end='', flush=True)  # Show cursor
+print('\x1b]12;white\x07', end='', flush=True)  # Set cursor color to white
+
 # Wait for the full receipt TUI to render - wait for "Select Shop Address"
 # which appears after the recursive reload completes
 try:
@@ -249,7 +254,7 @@ time.sleep(0.5)
 
 # Wait for the process to complete
 try:
-    child.expect(pexpect.EOF, timeout=30)
+    child.expect(pexpect.EOF, timeout=3)
 except pexpect.TIMEOUT:
     child.terminate()
 
