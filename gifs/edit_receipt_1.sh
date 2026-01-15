@@ -96,50 +96,81 @@ time.sleep(0.1)
 # Wait for the edit receipt TUI to load and show the "Can you see" prompt
 try:
     child.expect('Can you see', timeout=30)
-    time.sleep(1)
+    time.sleep(0.5)
     # Press Enter to confirm we can see the image
     child.send('\r')
 except pexpect.TIMEOUT:
     pass  # Continue even if prompt doesn't appear
 
-# Wait for the edit receipt TUI to fully render with all fields
+# Wait for the full receipt TUI to render - wait for "Select Shop Address"
+# which appears after the recursive reload completes
 try:
-    child.expect('Bookkeeping expense category', timeout=10)
-    time.sleep(1.5)  # Let TUI fully render
+    child.expect('Select Shop Address', timeout=15)
+    time.sleep(0.5)  # Let TUI fully render
 except pexpect.TIMEOUT:
     pass
 
-# The cursor starts at the date field
-# Press Enter to move from date field to bookkeeping expense category field
+# Force read to flush buffer
+try:
+    output = child.read_nonblocking(size=10000, timeout=0.3)
+except:
+    pass
+
+time.sleep(0.8)  # Show the full receipt briefly
+
+# The cursor starts at the date field (line 3)
+# Press Enter once to go to the Bookkeeping expense category field (line 5)
 child.send('\r')
-time.sleep(1)
+time.sleep(0.3)
+
+# Force read to flush and show we're now in category field
+try:
+    output = child.read_nonblocking(size=10000, timeout=0.3)
+except:
+    pass
+
+time.sleep(0.5)
 
 # Now we're in the bookkeeping category field which shows "repairs:bike"
-# First, go to the END of the current text using End key
-child.send('\x1b[F')  # End key escape sequence
-time.sleep(0.5)
+# The cursor is at the START of the field after pressing Enter
+# First go to END of field using End key, then backspace to delete
 
-# Alternative: use Ctrl+E which often goes to end of line in text fields
-child.send('\x05')  # Ctrl+E
-time.sleep(0.5)
+# Go to end of field - try End key sequence
+child.send('\x1b[4~')  # End key (alternate sequence)
+time.sleep(0.2)
 
-# Now backspace to delete "repairs:bike" (12 characters)
+# Force read
+try:
+    output = child.read_nonblocking(size=10000, timeout=0.2)
+except:
+    pass
+
+# Now backspace 12 characters to delete "repairs:bike"
+# Use DEL (0x7f) which is the actual backspace key
 for i in range(12):
-    child.send('\x7f')  # Backspace character
-    time.sleep(0.08)  # Small delay between each backspace for visibility
+    child.send('\x7f')  # DEL - backspace
+    time.sleep(0.08)
+
+# Force read to show the deletion
+try:
+    output = child.read_nonblocking(size=10000, timeout=0.3)
+except:
+    pass
 
 time.sleep(0.5)
 
 # Now type the new category: "groceries:ekoplaza"
 for char in "groceries:ekoplaza":
     child.send(char)
-    time.sleep(0.1)  # Small delay between each character for visibility
+    time.sleep(0.06)
 
-time.sleep(1)
+# Force read to show the typing progress
+try:
+    output = child.read_nonblocking(size=10000, timeout=0.3)
+except:
+    pass
 
-# Press Enter to confirm the category change
-child.send('\r')
-time.sleep(1)
+time.sleep(0.8)
 
 # Send 'q' to quit the edit TUI
 child.send('q')
@@ -225,9 +256,16 @@ content = content.replace(r'\u001b[A', '')  # Up arrow
 content = content.replace(r'\u001b[C', '')  # Right arrow
 content = content.replace(r'\u001b[D', '')  # Left arrow
 content = content.replace(r'\u001b[F', '')  # End key
+content = content.replace(r'\u001b[Z', '')  # Shift+Tab
 
-# Remove Ctrl+E echo
+# Remove Ctrl+E and Ctrl+K echo
 content = content.replace(r'\u0005', '')
+content = content.replace(r'\u000b', '')  # Ctrl+K
+
+# Remove backspace echo (DEL character and Ctrl+H)
+content = content.replace(r'\u007f', '')
+content = content.replace(r'\b', '')
+content = content.replace(r'\u0008', '')
 
 # Remove empty output entries that result from the above removals
 # Match lines like: [timestamp, "o", ""]
@@ -236,6 +274,9 @@ content = re.sub(r'\n\[\d+\.\d+, "o", ""\]', '', content)
 # Remove single space echo entries: [timestamp, "o", " "]
 # These cause a blink when space is pressed to select
 content = re.sub(r'\n\[\d+\.\d+, "o", " "\]', '', content)
+
+# Remove carriage return echo entries: [timestamp, "o", "\r"]
+content = re.sub(r'\n\[\d+\.\d+, "o", "\\\\r"\]', '', content)
 
 with open(cast_file, 'w') as f:
     f.write(content)
