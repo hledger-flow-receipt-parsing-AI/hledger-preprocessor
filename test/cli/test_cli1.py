@@ -104,11 +104,8 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
         print(e.stderr, file=sys.stderr)
         pytest.fail("Asciinema/GIF recording failed inside the test.")
 
-    # 7. Final assertions (check if the files were created)
-    # These will be created in the monkeypatch.chdir directory (project root),
-    # which is not ideal for testing cleanup, but matches the script's intent.
-    # For a cleaner test, you'd modify the bash script to accept an output directory as well.
-    output_gif = Path("./demo.gif")
+    # 7. Final assertions (check if the files were created in the gifs directory)
+    output_gif = Path("../gifs/demo.gif")
     assert output_gif.exists() and output_gif.is_file()
 
     # If you want to move the GIF to your artifacts directory for later viewing:

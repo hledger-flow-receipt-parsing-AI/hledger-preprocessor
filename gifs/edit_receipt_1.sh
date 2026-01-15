@@ -13,8 +13,13 @@ set -euo pipefail
 # ------------------------- Configuration Variables ---------------------------
 # NEW: Read CONFIG_FILEPATH from the first command-line argument
 CONFIG_FILEPATH="${1:?Error: Missing config file path argument.}"
-OUTPUT_CAST="demo.cast"
-OUTPUT_GIF="demo.gif"
+export CONFIG_FILEPATH
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+OUTPUT_CAST="${SCRIPT_DIR}/demo.cast"
+OUTPUT_GIF="${SCRIPT_DIR}/demo.gif"
 HLEDGER_CMD="hledger_preprocessor --config ${CONFIG_FILEPATH} --edit-receipt"
 
 
@@ -39,7 +44,43 @@ THEME="solarized-dark"
 
 # Full command (with proper conda activation)
 HLEDGER_CMD="hledger_preprocessor --config ${CONFIG_FILEPATH} --edit-receipt"
-WRAPPED_CMD="bash -c 'source \$(conda info --base)/etc/profile.d/conda.sh && conda activate hledger_preprocessor && exec ${HLEDGER_CMD}'"
+
+# Create a Python pexpect script to automate the TUI interaction
+AUTOMATION_SCRIPT=$(mktemp --suffix=.py)
+cat > "$AUTOMATION_SCRIPT" << 'PYTHON_EOF'
+import pexpect
+import sys
+import os
+import time
+
+config_path = os.environ.get("CONFIG_FILEPATH")
+conda_base = os.popen("conda info --base").read().strip()
+
+# Build the command
+cmd = f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && conda activate hledger_preprocessor && hledger_preprocessor --config {config_path} --edit-receipt'"
+
+# Spawn with a PTY
+child = pexpect.spawn(cmd, encoding='utf-8', timeout=30)
+child.logfile = sys.stdout
+
+# Wait for TUI to render, then send Enter
+time.sleep(2)
+child.send('\r')
+
+# Wait for the process to complete
+try:
+    child.expect(pexpect.EOF, timeout=30)
+except pexpect.TIMEOUT:
+    child.terminate()
+PYTHON_EOF
+
+WRAPPED_CMD="python $AUTOMATION_SCRIPT"
+
+# Cleanup function
+cleanup() {
+    rm -f "$AUTOMATION_SCRIPT" 2>/dev/null || true
+}
+trap cleanup EXIT
 
 # ----------------------------- Functions ------------------------------------
 log()    { echo -e "${BOLD}${GREEN}[+]${RESET} $*" ; }
