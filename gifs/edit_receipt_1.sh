@@ -207,20 +207,40 @@ fi
 log "Removing cursor show sequences from recording..."
 CAST_FILE="$OUTPUT_CAST" python3 << 'PYEOF'
 import os
+import re
 
 cast_file = os.environ['CAST_FILE']
 
 with open(cast_file, 'r') as f:
     content = f.read()
 
-# Only remove cursor show sequences: \u001b[?25h
-# Keep position sequences - they are needed for proper screen layout!
+# Remove cursor show sequences: \u001b[?25h
 content = content.replace(r'\u001b[?25h', '')
+
+# Remove arrow key echo sequences that show as visible cursor movement
+# Down arrow: \u001b[B, Up arrow: \u001b[A, Right: \u001b[C, Left: \u001b[D
+# End key: \u001b[F, Home: \u001b[H (but not \u001b[H alone which is cursor home)
+content = content.replace(r'\u001b[B', '')  # Down arrow
+content = content.replace(r'\u001b[A', '')  # Up arrow
+content = content.replace(r'\u001b[C', '')  # Right arrow
+content = content.replace(r'\u001b[D', '')  # Left arrow
+content = content.replace(r'\u001b[F', '')  # End key
+
+# Remove Ctrl+E echo
+content = content.replace(r'\u0005', '')
+
+# Remove empty output entries that result from the above removals
+# Match lines like: [timestamp, "o", ""]
+content = re.sub(r'\n\[\d+\.\d+, "o", ""\]', '', content)
+
+# Remove single space echo entries: [timestamp, "o", " "]
+# These cause a blink when space is pressed to select
+content = re.sub(r'\n\[\d+\.\d+, "o", " "\]', '', content)
 
 with open(cast_file, 'w') as f:
     f.write(content)
 
-print("Cursor show sequences removed")
+print("Cursor and arrow sequences removed")
 PYEOF
 
 # ----------------------------- GIF Conversion -------------------------------
