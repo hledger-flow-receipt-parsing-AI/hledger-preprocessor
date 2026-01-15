@@ -63,6 +63,9 @@ cmd = f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && conda activate hl
 child = pexpect.spawn(cmd, encoding='utf-8', timeout=60, dimensions=(32, 120))
 child.logfile = sys.stdout
 
+# Hide the terminal cursor so only the TUI selector/highlighting is visible
+print('\x1b[?25l', end='', flush=True)
+
 # Wait for the receipt list TUI to render by looking for the header text
 try:
     child.expect('Receipts List', timeout=10)
@@ -146,6 +149,9 @@ try:
     child.expect(pexpect.EOF, timeout=30)
 except pexpect.TIMEOUT:
     child.terminate()
+
+# Restore the terminal cursor
+print('\x1b[?25h', end='', flush=True)
 PYTHON_EOF
 
 WRAPPED_CMD="python $AUTOMATION_SCRIPT"
@@ -194,6 +200,12 @@ else
     error "asciinema recording failed!"
     exit 1
 fi
+
+# ----------------------------- Post-process cast file ------------------------
+# Remove cursor show sequences (\e[?25h) so only the TUI selector is visible
+# Keep cursor hide sequences (\e[?25l)
+log "Removing cursor show sequences from recording..."
+sed -i 's/\\u001b\[?25h//g; s/\\u001b\[3;3H//g; s/\\u001b\[5;3H//g' "$OUTPUT_CAST"
 
 # ----------------------------- GIF Conversion -------------------------------
 header "Converting to GIF using agg..."
