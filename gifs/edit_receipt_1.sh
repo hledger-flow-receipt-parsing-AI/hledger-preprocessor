@@ -75,23 +75,23 @@ except pexpect.TIMEOUT:
     sys.exit(1)
 
 # Give TUI a moment to fully render after header appears
-time.sleep(1.5)
+time.sleep(0.15)
 
 # Navigate DOWN to the second receipt to show the selection/highlighting moving
 child.send('\x1b[B')  # Down arrow escape sequence
-time.sleep(0.5)
+time.sleep(0.1)
 
 # Force read any pending output - this helps flush the PTY buffer
 try:
-    output = child.read_nonblocking(size=10000, timeout=0.5)
+    output = child.read_nonblocking(size=10000, timeout=0.15)
 except:
     pass
 
-time.sleep(1.5)  # Pause so user can see the highlight on second receipt
+time.sleep(0.4)  # Pause so user can see the highlight on second receipt
 
 # Now select the second receipt (repairs:bike) with space
 child.send(' ')
-time.sleep(0.5)
+time.sleep(0.1)
 
 # Wait for the edit receipt TUI to load and show the "Can you see" prompt
 try:
