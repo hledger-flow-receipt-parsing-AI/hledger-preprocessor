@@ -87,9 +87,33 @@ try:
     time.sleep(1)
     # Press Enter to confirm we can see the image
     child.send('\r')
-    time.sleep(2)
 except pexpect.TIMEOUT:
     pass  # Continue even if prompt doesn't appear
+
+# Wait for the edit receipt TUI to fully render
+try:
+    child.expect('Bookkeeping expense category', timeout=10)
+    time.sleep(1)
+except pexpect.TIMEOUT:
+    pass
+
+# The cursor starts at the date field (year digit "2")
+# Press Enter to move to the bookkeeping expense category field
+child.send('\r')
+time.sleep(1)
+
+# Now we're in the bookkeeping category field - demonstrate typing
+# Type a few characters to show the category selection
+child.send('gro')  # Start typing "groceries"
+time.sleep(1)
+
+# Show the autocomplete/selection by pressing down arrow
+child.send('\x1b[B')  # Down arrow
+time.sleep(0.5)
+
+# Press Enter to select the category
+child.send('\r')
+time.sleep(1)
 
 # Send 'q' to quit the edit TUI
 child.send('q')
