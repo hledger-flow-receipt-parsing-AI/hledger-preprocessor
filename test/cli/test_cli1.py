@@ -58,6 +58,20 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     )
     seed_receipts_into_root(config=config, source_json_paths=source_files)
 
+    # Get the path to the seeded receipt (second receipt = receipt_1)
+    labels_dir = Path(config.dir_paths.get_path("receipt_labels_dir", absolute=True))
+    seeded_receipt_path = labels_dir / "receipt_1" / "receipt_image_to_obj_label.json"
+
+    # Print the receipt BEFORE the test
+    print("\n" + "="*60)
+    print("RECEIPT BEFORE TEST:")
+    print("="*60)
+    import json
+    before_data = json.loads(seeded_receipt_path.read_text())
+    print(f"  description: {before_data['net_bought_items']['description']}")
+    print(f"  receipt_category: {before_data['receipt_category']}")
+    print("="*60 + "\n")
+
     # 4. Define the path to your bash script
     # Assuming your recorder script is named 'demo-recorder.sh' and is in your project root
 
@@ -115,6 +129,29 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     # 7. Final assertions (check if the files were created in the gifs directory)
     output_gif = Path("../gifs/demo.gif")
     assert output_gif.exists() and output_gif.is_file()
+
+    # Print the receipt AFTER the test
+    print("\n" + "="*60)
+    print("RECEIPT AFTER TEST:")
+    print("="*60)
+    after_data = json.loads(seeded_receipt_path.read_text())
+    print(f"  description: {after_data['net_bought_items']['description']}")
+    print(f"  receipt_category: {after_data['receipt_category']}")
+    print("="*60)
+
+    # Show diff
+    print("\n" + "="*60)
+    print("DIFF:")
+    print("="*60)
+    if before_data['net_bought_items']['description'] != after_data['net_bought_items']['description']:
+        print(f"  description: {before_data['net_bought_items']['description']} -> {after_data['net_bought_items']['description']}")
+    else:
+        print("  description: NO CHANGE")
+    if before_data['receipt_category'] != after_data['receipt_category']:
+        print(f"  receipt_category: {before_data['receipt_category']} -> {after_data['receipt_category']}")
+    else:
+        print("  receipt_category: NO CHANGE")
+    print("="*60 + "\n")
 
     # If you want to move the GIF to your artifacts directory for later viewing:
     # artifact_dir = Path("/path/to/artifacts")

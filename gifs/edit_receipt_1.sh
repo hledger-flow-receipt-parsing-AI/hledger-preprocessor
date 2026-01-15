@@ -172,8 +172,47 @@ for char in "groceries:ekoplaza":
 
 time.sleep(0.5)
 
-# Send 'q' to quit the edit TUI
-child.send('q')
+# Navigate through remaining fields using Down arrow (NOT Enter)
+# Enter on some fields triggers reconfiguration, Down just moves focus
+# Fields after category: bank, currency, amount, change, add_account,
+# shop_address, shop_name, street, house_nr, zipcode, city, country,
+# subtotal, tax, done = 15 fields total
+for i in range(15):
+    child.send('\x1b[B')  # Down arrow
+    time.sleep(0.05)
+    # Flush buffer
+    try:
+        output = child.read_nonblocking(size=10000, timeout=0.05)
+    except:
+        pass
+
+time.sleep(0.3)
+
+# Force read to flush buffer
+try:
+    output = child.read_nonblocking(size=10000, timeout=0.3)
+except:
+    pass
+
+# Now we should be at "Done with receipt?" prompt
+# Wait for it
+try:
+    child.expect('Done with receipt', timeout=5)
+except pexpect.TIMEOUT:
+    pass
+
+time.sleep(0.3)
+
+# Force read to flush buffer
+try:
+    output = child.read_nonblocking(size=10000, timeout=0.3)
+except:
+    pass
+
+# "Done with receipt" has only one choice: "yes" which is pre-selected
+# Press Enter to confirm and save (this triggers terminator=True)
+child.send('\r')
+time.sleep(0.5)
 
 # Wait for the process to complete
 try:
