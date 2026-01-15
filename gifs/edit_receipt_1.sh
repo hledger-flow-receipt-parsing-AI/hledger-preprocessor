@@ -203,9 +203,25 @@ fi
 
 # ----------------------------- Post-process cast file ------------------------
 # Remove cursor show sequences (\e[?25h) so only the TUI selector is visible
-# Keep cursor hide sequences (\e[?25l)
+# Keep cursor hide sequences (\e[?25l) and position sequences (needed for layout)
 log "Removing cursor show sequences from recording..."
-sed -i 's/\\u001b\[?25h//g; s/\\u001b\[3;3H//g; s/\\u001b\[5;3H//g' "$OUTPUT_CAST"
+CAST_FILE="$OUTPUT_CAST" python3 << 'PYEOF'
+import os
+
+cast_file = os.environ['CAST_FILE']
+
+with open(cast_file, 'r') as f:
+    content = f.read()
+
+# Only remove cursor show sequences: \u001b[?25h
+# Keep position sequences - they are needed for proper screen layout!
+content = content.replace(r'\u001b[?25h', '')
+
+with open(cast_file, 'w') as f:
+    f.write(content)
+
+print("Cursor show sequences removed")
+PYEOF
 
 # ----------------------------- GIF Conversion -------------------------------
 header "Converting to GIF using agg..."
