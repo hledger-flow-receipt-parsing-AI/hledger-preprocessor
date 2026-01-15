@@ -1,4 +1,5 @@
 # tests/test_cli_integration.py
+import json
 import os
 import subprocess
 import sys
@@ -58,15 +59,29 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     )
     seed_receipts_into_root(config=config, source_json_paths=source_files)
 
-    # Get the path to the seeded receipt (second receipt = receipt_1)
+    # Get the path to the seeded receipt (second receipt - bike_repair)
+    # Receipts are now stored in hash-based folders, so we need to find the correct one
     labels_dir = Path(config.dir_paths.get_path("receipt_labels_dir", absolute=True))
-    seeded_receipt_path = labels_dir / "receipt_1" / "receipt_image_to_obj_label.json"
+
+    # Find the receipt folder that contains the bike_repair receipt (second receipt)
+    # by looking for the label file with "repairs:bike" in it
+    seeded_receipt_path = None
+    for subdir in labels_dir.iterdir():
+        if subdir.is_dir():
+            label_file = subdir / "receipt_image_to_obj_label.json"
+            if label_file.exists():
+                data = json.loads(label_file.read_text())
+                if data.get("receipt_category") == "repairs:bike":
+                    seeded_receipt_path = label_file
+                    break
+
+    if seeded_receipt_path is None:
+        pytest.fail("Could not find the seeded bike_repair receipt")
 
     # Print the receipt BEFORE the test
     print("\n" + "="*60)
     print("RECEIPT BEFORE TEST:")
     print("="*60)
-    import json
     before_data = json.loads(seeded_receipt_path.read_text())
     print(f"  description: {before_data['net_bought_items']['description']}")
     print(f"  receipt_category: {before_data['receipt_category']}")

@@ -52,9 +52,31 @@ import pexpect
 import sys
 import os
 import time
+import json
+import glob
 
 config_path = os.environ.get("CONFIG_FILEPATH")
 conda_base = os.popen("conda info --base").read().strip()
+
+# Load config to find receipt labels directory
+import yaml
+with open(config_path) as f:
+    config_data = yaml.safe_load(f)
+root_path = config_data.get('dir_paths', {}).get('root_finance_path', '')
+labels_dir = os.path.join(root_path, config_data.get('dir_paths', {}).get('receipt_labels_dir', 'receipt_labels'))
+
+# Find the bike_repair receipt (the one we'll edit) and store its "before" category
+before_category = None
+receipt_label_path = None
+for subdir in os.listdir(labels_dir):
+    label_file = os.path.join(labels_dir, subdir, 'receipt_image_to_obj_label.json')
+    if os.path.isfile(label_file):
+        with open(label_file) as f:
+            data = json.load(f)
+        if data.get('receipt_category') == 'repairs:bike':
+            before_category = data.get('receipt_category')
+            receipt_label_path = label_file
+            break
 
 # Build the command
 cmd = f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && conda activate hledger_preprocessor && hledger_preprocessor --config {config_path} --edit-receipt'"
@@ -214,6 +236,17 @@ except:
 child.send('\r')
 time.sleep(0.5)
 
+# Wait for "EXPORTING to:" prompt from export_human_label function
+try:
+    child.expect('EXPORTING to:', timeout=10)
+    time.sleep(0.3)
+    # Press Enter to confirm export
+    child.send('\r')
+except pexpect.TIMEOUT:
+    pass
+
+time.sleep(0.5)
+
 # Wait for the process to complete
 try:
     child.expect(pexpect.EOF, timeout=30)
@@ -222,6 +255,28 @@ except pexpect.TIMEOUT:
 
 # Restore the terminal cursor
 print('\x1b[?25h', end='', flush=True)
+
+# Show a summary of what changed
+time.sleep(0.3)
+
+# Read the "after" value from the saved receipt file
+after_category = None
+if receipt_label_path and os.path.isfile(receipt_label_path):
+    with open(receipt_label_path) as f:
+        after_data = json.load(f)
+    after_category = after_data.get('receipt_category')
+
+print("\n")
+print("\033[1;32m" + "="*60 + "\033[0m")
+print("\033[1;32m  ✓ Receipt successfully updated!\033[0m")
+print("\033[1;32m" + "="*60 + "\033[0m")
+print()
+print("  \033[1mCategory changed:\033[0m")
+print(f"    \033[31mBefore:\033[0m {before_category}")
+print(f"    \033[32mAfter:\033[0m  {after_category}")
+print()
+print("\033[1;32m" + "="*60 + "\033[0m")
+time.sleep(2)  # Pause so viewer can read the summary
 PYTHON_EOF
 
 WRAPPED_CMD="python $AUTOMATION_SCRIPT"
