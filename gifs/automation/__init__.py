@@ -3,6 +3,7 @@
 from .core import Colors, Cursor, Screen, load_config_yaml
 from .display import show_before_state, show_after_state, show_command, show_success
 from .tui_navigator import TuiNavigator, Keys
+from .key_display import KeyOverlay, show_key
 from .cast_postprocess import postprocess_cast_file
 
 __all__ = [
@@ -16,5 +17,7 @@ __all__ = [
     "show_success",
     "TuiNavigator",
     "Keys",
+    "KeyOverlay",
+    "show_key",
     "postprocess_cast_file",
 ]
