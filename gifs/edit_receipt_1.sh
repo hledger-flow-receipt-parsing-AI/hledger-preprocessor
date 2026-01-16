@@ -28,7 +28,7 @@ RESET="$(tput sgr0)"
 
 # ------------------------- Recording Settings --------------------------------
 RECORDER_TITLE="hledger-preprocessor receipt matcher"
-ROWS=50
+ROWS=38
 COLS=120
 IDLE_TIME_LIMIT=2
 FONT_SIZE=18
