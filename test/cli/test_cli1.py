@@ -1,4 +1,6 @@
 # tests/test_cli_integration.py
+import json
+import os
 import subprocess
 import sys
 from os import path
@@ -30,8 +32,9 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     Sets up the temporary finance root and then runs the asciinema/GIF
     generation script, ensuring all paths are temporary and correct.
     """
-    # 1. Ensure CWD is correct for relative paths in the bash script (e.g., demo.gif)
-    monkeypatch.chdir(Path(__file__).parent.parent)
+    # 1. Ensure CWD is the project root for Python module imports (gifs.automation)
+    project_root = Path(__file__).parent.parent.parent
+    monkeypatch.chdir(project_root)
 
     # 2. Get the path to the config file created by the fixture
     config_path = temp_finance_root["config_path"]
@@ -39,10 +42,12 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     assert path.isfile(config_path)
 
     # 3. Specify multiple source files to "inject" into the test environment
+    test_data_dir = Path(__file__).parent.parent / "data"
     source_files = [
-        Path(
-            "data/edit_receipt/single_cash_payment/receipt_image_to_obj_label.json"
-        ),
+        test_data_dir
+        / "edit_receipt/single_cash_payment/receipt_image_to_obj_label.json",
+        test_data_dir
+        / "edit_receipt/second_receipt/receipt_image_to_obj_label.json",
     ]
     for f in source_files:
         if not f.exists():
@@ -54,15 +59,43 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     )
     seed_receipts_into_root(config=config, source_json_paths=source_files)
 
-    # 4. Define the path to your bash script
-    # Assuming your recorder script is named 'demo-recorder.sh' and is in your project root
+    # Get the path to the seeded receipt (second receipt - bike_repair)
+    # Receipts are now stored in hash-based folders, so we need to find the correct one
+    labels_dir = Path(
+        config.dir_paths.get_path("receipt_labels_dir", absolute=True)
+    )
 
-    bash_script_path = Path("../gifs/edit_receipt_1.sh")
+    # Find the receipt folder that contains the bike_repair receipt (second receipt)
+    # by looking for the label file with "repairs:bike" in it
+    seeded_receipt_path = None
+    for subdir in labels_dir.iterdir():
+        if subdir.is_dir():
+            label_file = subdir / "receipt_image_to_obj_label.json"
+            if label_file.exists():
+                data = json.loads(label_file.read_text())
+                if data.get("receipt_category") == "repairs:bike":
+                    seeded_receipt_path = label_file
+                    break
+
+    if seeded_receipt_path is None:
+        pytest.fail("Could not find the seeded bike_repair receipt")
+
+    # Print the receipt BEFORE the test
+    print("\n" + "=" * 60)
+    print("RECEIPT BEFORE TEST:")
+    print("=" * 60)
+    before_data = json.loads(seeded_receipt_path.read_text())
+    print(f"  description: {before_data['net_bought_items']['description']}")
+    print(f"  receipt_category: {before_data['receipt_category']}")
+    print("=" * 60 + "\n")
+
+    # 4. Define the path to your bash script (relative to project root)
+    bash_script_path = Path("gifs/edit_receipt_1.sh")
 
     if not bash_script_path.exists():
         pytest.skip(f"Demo recorder script not found at {bash_script_path}")
     else:
-        print("found file")
+        print(f"Found script: {bash_script_path}")
 
     # 5. Build the command to run the bash script, passing the temporary config path
     cmd = [
@@ -84,12 +117,16 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
 
     try:
         # Note: Set CWD to the project root so the script's relative paths work (demo.cast, demo.gif)
+        # Set TERM so tput works for colors in the bash script
+        env = os.environ.copy()
+        env["TERM"] = "xterm-256color"
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=60,  # Increase timeout for recording
+            timeout=120,  # Increase timeout for recording
             check=True,  # Raise an exception if the bash script fails
+            env=env,
         )
         print("--- Bash Script STDOUT ---")
         print(result.stdout)
@@ -104,12 +141,42 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
         print(e.stderr, file=sys.stderr)
         pytest.fail("Asciinema/GIF recording failed inside the test.")
 
-    # 7. Final assertions (check if the files were created)
-    # These will be created in the monkeypatch.chdir directory (project root),
-    # which is not ideal for testing cleanup, but matches the script's intent.
-    # For a cleaner test, you'd modify the bash script to accept an output directory as well.
-    output_gif = Path("./demo.gif")
+    # 7. Final assertions (check if the files were created in the gifs directory)
+    output_gif = Path("gifs/demo.gif")
     assert output_gif.exists() and output_gif.is_file()
+
+    # Print the receipt AFTER the test
+    print("\n" + "=" * 60)
+    print("RECEIPT AFTER TEST:")
+    print("=" * 60)
+    after_data = json.loads(seeded_receipt_path.read_text())
+    print(f"  description: {after_data['net_bought_items']['description']}")
+    print(f"  receipt_category: {after_data['receipt_category']}")
+    print("=" * 60)
+
+    # Show diff
+    print("\n" + "=" * 60)
+    print("DIFF:")
+    print("=" * 60)
+    if (
+        before_data["net_bought_items"]["description"]
+        != after_data["net_bought_items"]["description"]
+    ):
+        print(
+            "  description:"
+            f" {before_data['net_bought_items']['description']} ->"
+            f" {after_data['net_bought_items']['description']}"
+        )
+    else:
+        print("  description: NO CHANGE")
+    if before_data["receipt_category"] != after_data["receipt_category"]:
+        print(
+            f"  receipt_category: {before_data['receipt_category']} ->"
+            f" {after_data['receipt_category']}"
+        )
+    else:
+        print("  receipt_category: NO CHANGE")
+    print("=" * 60 + "\n")
 
     # If you want to move the GIF to your artifacts directory for later viewing:
     # artifact_dir = Path("/path/to/artifacts")
