@@ -28,10 +28,10 @@ RESET="$(tput sgr0)"
 
 # ------------------------- Recording Settings --------------------------------
 RECORDER_TITLE="hledger-preprocessor receipt matcher"
-ROWS=38
+ROWS=40
 COLS=120
 IDLE_TIME_LIMIT=2
-FONT_SIZE=18
+FONT_SIZE=20
 # Retro amber-on-black theme (background, foreground, then 8 ANSI colors)
 # Colors: black, red, green, yellow, blue, magenta, cyan, white - all in amber/orange tones
 THEME="0a0a0a,ffb000,1a1a1a,cc4400,ff8800,ffb000,ff6600,cc6600,ffcc00,ffdd88"
@@ -91,7 +91,9 @@ fi
 echo
 if asciinema-agg "$OUTPUT_CAST" "$OUTPUT_GIF" \
     --theme "$THEME" \
-    --font-size "$FONT_SIZE"; then
+    --font-size "$FONT_SIZE" \
+    --renderer resvg \
+    --line-height 1.2; then
     log "GIF created successfully: ${BOLD}${OUTPUT_GIF}${RESET}"
     echo
     echo "   Just add this to your README.md:"
@@ -103,10 +105,10 @@ else
     exit 1
 fi
 
-# Optional: Optimize with gifsicle if available
+# Optional: Optimize with gifsicle if available (lossless only for crisp text)
 if command -v gifsicle >/dev/null 2>&1; then
-    log "Optimizing GIF with gifsicle..."
-    gifsicle -O3 --lossy=80 -o "${OUTPUT_GIF}.tmp" "$OUTPUT_GIF" && mv "${OUTPUT_GIF}.tmp" "$OUTPUT_GIF"
+    log "Optimizing GIF with gifsicle (lossless)..."
+    gifsicle -O3 -o "${OUTPUT_GIF}.tmp" "$OUTPUT_GIF" && mv "${OUTPUT_GIF}.tmp" "$OUTPUT_GIF"
     log "Optimized! Size: $(du -h "$OUTPUT_GIF" | cut -f1)"
 fi
 
