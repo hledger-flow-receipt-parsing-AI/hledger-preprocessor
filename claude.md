@@ -9,7 +9,6 @@ conda activate hledger_preprocessor
 ```
 
 There are several run commands. ./start.sh runs it all from start to finish, and that ends in a plot that can be seen from the browser at localhost:8050
-./start.sh
 
 ## Config
 
@@ -17,11 +16,9 @@ look at the example config and load_config.py to see how that works, everyting s
 
 You can check that output to determine if your changes still allow succesfull compilation/running.
 
-## Tests
-
 ## Readmes
 
-Some of the readmes contain outdated information. We will cleanup later.
+Some of the manuals/\*.md files contain outdated information. We will cleanup later.
 
 ## Context
 
@@ -39,3 +36,10 @@ Look at manuals/TESTING.md and test/e2e/test_gif_generation.py as examples of th
 conda activate hledger_preprocessor
 python -m pytest
 ```
+
+Currently the test_gif_generation for --edit-receipt works completely. And we are working to make an end-to-end test for the ./start.sh functionality.
+
+## Developing
+
+Always check if your changes work.
+Never just look at whether the tests passes, always also check whether the cli output does not contain any errors.
