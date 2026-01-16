@@ -4,7 +4,7 @@ import subprocess
 import time
 from typing import Optional
 
-from .core import Colors, Screen
+from ..core import Colors, Screen
 
 
 def show_before_state(

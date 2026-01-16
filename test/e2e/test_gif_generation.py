@@ -1,23 +1,17 @@
-# tests/test_cli_integration.py
+"""E2E tests for GIF generation workflow."""
+
 import json
 import os
 import subprocess
 import sys
 from os import path
 from pathlib import Path
-from test.conftest_helper import (  # Make sure you import pytest
-    seed_receipts_into_root,
-)
+from test.helpers import seed_receipts_into_root
 
 import pytest
 
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import load_config
-
-# tests/test_cli_integration.py
-
-
-# ... (imports for Config, load_config) ...
 
 # Assuming 'temp_finance_root' is a fixture that:
 # 1. Creates a temporary root directory (e.g., using tmp_path).
@@ -42,12 +36,10 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     assert path.isfile(config_path)
 
     # 3. Specify multiple source files to "inject" into the test environment
-    test_data_dir = Path(__file__).parent.parent / "data"
+    fixtures_dir = Path(__file__).parent.parent / "fixtures" / "receipts"
     source_files = [
-        test_data_dir
-        / "edit_receipt/single_cash_payment/receipt_image_to_obj_label.json",
-        test_data_dir
-        / "edit_receipt/second_receipt/receipt_image_to_obj_label.json",
+        fixtures_dir / "groceries_ekoplaza.json",
+        fixtures_dir / "repairs_bike.json",
     ]
     for f in source_files:
         if not f.exists():
@@ -70,12 +62,15 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     seeded_receipt_path = None
     for subdir in labels_dir.iterdir():
         if subdir.is_dir():
-            label_file = subdir / "receipt_image_to_obj_label.json"
-            if label_file.exists():
-                data = json.loads(label_file.read_text())
-                if data.get("receipt_category") == "repairs:bike":
-                    seeded_receipt_path = label_file
-                    break
+            # Look for any JSON file in the subdirectory
+            for label_file in subdir.glob("*.json"):
+                if label_file.exists():
+                    data = json.loads(label_file.read_text())
+                    if data.get("receipt_category") == "repairs:bike":
+                        seeded_receipt_path = label_file
+                        break
+            if seeded_receipt_path:
+                break
 
     if seeded_receipt_path is None:
         pytest.fail("Could not find the seeded bike_repair receipt")
