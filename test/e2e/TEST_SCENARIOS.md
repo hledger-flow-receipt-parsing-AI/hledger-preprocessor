@@ -18,10 +18,10 @@ This document tracks the desired test scenarios for `./start.sh` and related fun
 |---|----------|-----------|-----|--------|
 | 1.1 | Full pipeline runs without errors | `test_start_sh.py` | `start_sh_full_pipeline/` | [ ] |
 | 1.2 | `all-years.journal` created and valid | `test_start_sh.py` | - | [ ] |
-| 1.3 | `asset_transaction_csvs/` populated | `test_start_sh.py` | - | [ ] |
-| 1.4 | SVG plots generated in `hledger_plots/` | `test_start_sh.py` | - | [ ] |
-| 1.5 | Dash app starts on localhost:8050 | `test_dash_app.py` | - | [ ] |
-| 1.6 | Dash app period dropdown works | `test_dash_app.py` | - | [ ] |
+| 1.3 | `asset_transaction_csvs/` populated | `test_start_sh.py` | - | [x] |
+| 1.4 | SVG plots generated in `hledger_plots/` | `test_start_sh.py` | - | [x] |
+| 1.5 | Dash app starts on localhost:8050 | `test_start_sh.py` | - | [x] |
+| 1.6 | Dash app period dropdown works | `test_start_sh.py` | - | [x] |
 
 ---
 
@@ -43,9 +43,9 @@ This document tracks the desired test scenarios for `./start.sh` and related fun
 
 | # | Scenario | Test File | Gif | Status |
 |---|----------|-----------|-----|--------|
-| 3.1 | hledger-flow import creates journal structure | `test_hledger_flow_import.py` | `hledger_flow_import/` | [ ] |
-| 3.2 | Import directory structure correct | `test_hledger_flow_import.py` | - | [ ] |
-| 3.3 | Journal files pass `hledger check` | `test_hledger_flow_import.py` | - | [ ] |
+| 3.1 | hledger-flow import creates journal structure | `test_start_sh.py` | `hledger_flow_import/` | [x] |
+| 3.2 | Import directory structure correct | `test_start_sh.py` | - | [x] |
+| 3.3 | Journal files pass `hledger check` | `test_start_sh.py` | - | [x] |
 
 ---
 
