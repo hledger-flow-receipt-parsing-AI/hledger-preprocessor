@@ -4,7 +4,7 @@ Hi Claude,
 
 go into this directory, activate conda with:
 
-```
+```sh
 conda activate hledger_preprocessor
 ```
 
@@ -16,6 +16,9 @@ There are several run commands. ./start.sh runs it all from start to finish, and
 look at the example config and load_config.py to see how that works, everyting should be recreated the same if run ./start.sh from the same csv input(s).
 
 You can check that output to determine if your changes still allow succesfull compilation/running.
+
+## Tests
+
 
 ## Readmes
 
@@ -30,9 +33,9 @@ This is the python module that orchestrates bookkeeping data preprocessing and l
 - Be consise and accurate in the text you write.
 
 ## testing:
-
-The current testing command is:
+Look at manuals/TESTING.md and test/e2e/test_gif_generation.py as examples of the test structure to follow.
 
 ```sh
-clear && python -m pytest -k test_cli1 -W ignore
+conda activate hledger_preprocessor
+python -m pytest
 ```
