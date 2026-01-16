@@ -15,7 +15,7 @@ to pre-processes and categorise bank `.csv` files and receipts so that
 ## Demos (auto-generated from integration tests)
 
 0. TUI to quickly enter receipts:
-   ![hledger-preprocessor demo](gifs/demo.gif)
+   ![hledger-preprocessor demo](gifs/edit_receipt/output/edit_receipt.gif)
 1. Algorithmic matching of bank .csv statements to receipt transactions:
 
 \<TODO: add gif>
