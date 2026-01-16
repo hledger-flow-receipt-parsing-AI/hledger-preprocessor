@@ -28,12 +28,22 @@ log()    { echo -e "${BOLD}${GREEN}[+]${RESET} $*" ; }
 warn()   { echo -e "${BOLD}${YELLOW}[!]${RESET} $*" ; }
 error()  { echo -e "${BOLD}${RED}[✗]${RESET} $*" ; }
 header() { echo -e "${PURPLE}${BOLD}=== $1 ===${RESET}" ; }
-debug()  { [[ "${DEBUG:-0}" == "1" ]] && echo -e "${CYAN}[D]${RESET} $*" ; }
+debug()  { [[ "${DEBUG:-0}" == "1" ]] && echo -e "${CYAN}[D]${RESET} $*" || true ; }
+
+# ================================ Config File ================================
+# Path to gif_config.yaml (set after SCRIPTS_DIR is determined)
+GIF_CONFIG_FILE=""
+
+# Helper to query config using Python
+query_config() {
+    python -m gifs.automation.gif_config "$@"
+}
 
 # ================================ Themes =====================================
 # Format: "name:theme_value"
 # Built-in themes: asciinema, dracula, monokai, solarized-dark, solarized-light
 # Custom themes: comma-separated hex colors (bg,fg,black,red,green,yellow,blue,magenta,cyan,white)
+# These are the fallback defaults; config file overrides them
 declare -a DEFAULT_THEMES=(
     "dracula:dracula"
     "monokai:monokai"
@@ -46,10 +56,19 @@ declare -a DEFAULT_THEMES=(
 )
 
 # ================================ Defaults ===================================
+# These can be overridden by gif_config.yaml
 DEFAULT_ROWS=50
 DEFAULT_COLS=120
 DEFAULT_IDLE_TIME_LIMIT=2
 DEFAULT_FONT_SIZE=20
+DEFAULT_LINE_HEIGHT=1.2
+
+# Config-driven settings (populated by load_gif_config)
+GENERATE_THEMED_GIFS="true"
+GENERATE_SHOWCASE="true"
+CONFIG_DEFAULT_THEME="dracula"
+OUTPUT_OPTIMIZE="true"
+OUTPUT_CLEAN_BEFORE_GENERATE="true"
 
 # ================================ Global State ===============================
 # These are set by init_demo and used throughout
@@ -64,6 +83,85 @@ PROJECT_ROOT=""
 
 # Array to track generated GIFs (populated by generate_themed_gifs)
 declare -a GENERATED_GIFS=()
+
+# ================================ Config Loading =============================
+
+load_gif_config() {
+    # Load configuration from gif_config.yaml
+    # Usage: load_gif_config [demo_name]
+    # If demo_name is provided, also loads demo-specific settings
+
+    local demo_name="${1:-}"
+
+    if [[ ! -f "$GIF_CONFIG_FILE" ]]; then
+        debug "No gif_config.yaml found, using defaults"
+        return 0
+    fi
+
+    log "Loading config from gif_config.yaml..."
+
+    # Ensure PYTHONPATH includes project root for module imports
+    export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
+
+    # Load global rendering settings
+    DEFAULT_FONT_SIZE=$(query_config -c "$GIF_CONFIG_FILE" "rendering.font_size" 2>/dev/null || echo "$DEFAULT_FONT_SIZE")
+    DEFAULT_LINE_HEIGHT=$(query_config -c "$GIF_CONFIG_FILE" "rendering.line_height" 2>/dev/null || echo "$DEFAULT_LINE_HEIGHT")
+    DEFAULT_ROWS=$(query_config -c "$GIF_CONFIG_FILE" "rendering.terminal.rows" 2>/dev/null || echo "$DEFAULT_ROWS")
+    DEFAULT_COLS=$(query_config -c "$GIF_CONFIG_FILE" "rendering.terminal.cols" 2>/dev/null || echo "$DEFAULT_COLS")
+    DEFAULT_IDLE_TIME_LIMIT=$(query_config -c "$GIF_CONFIG_FILE" "rendering.idle_time_limit" 2>/dev/null || echo "$DEFAULT_IDLE_TIME_LIMIT")
+
+    # Load theme settings
+    GENERATE_THEMED_GIFS=$(query_config -c "$GIF_CONFIG_FILE" "themes.generate_themed_gifs" 2>/dev/null || echo "true")
+    GENERATE_SHOWCASE=$(query_config -c "$GIF_CONFIG_FILE" "themes.generate_showcase" 2>/dev/null || echo "true")
+    CONFIG_DEFAULT_THEME=$(query_config -c "$GIF_CONFIG_FILE" "themes.default_theme" 2>/dev/null || echo "dracula")
+
+    # Load output settings
+    OUTPUT_OPTIMIZE=$(query_config -c "$GIF_CONFIG_FILE" "output.optimize" 2>/dev/null || echo "true")
+    OUTPUT_CLEAN_BEFORE_GENERATE=$(query_config -c "$GIF_CONFIG_FILE" "output.clean_before_generate" 2>/dev/null || echo "true")
+
+    # Load themes array from config
+    local themes_array
+    themes_array=$(query_config -c "$GIF_CONFIG_FILE" --themes-array 2>/dev/null || echo "")
+    if [[ -n "$themes_array" && "$themes_array" != "()" ]]; then
+        eval "DEFAULT_THEMES=$themes_array"
+        debug "Loaded ${#DEFAULT_THEMES[@]} themes from config"
+    fi
+
+    # Load demo-specific settings if demo_name provided
+    if [[ -n "$demo_name" ]]; then
+        local demo_rows demo_cols
+        demo_rows=$(query_config -c "$GIF_CONFIG_FILE" --demo-rows "$demo_name" 2>/dev/null || echo "")
+        demo_cols=$(query_config -c "$GIF_CONFIG_FILE" --demo-cols "$demo_name" 2>/dev/null || echo "")
+
+        if [[ -n "$demo_rows" ]]; then
+            DEFAULT_ROWS="$demo_rows"
+            debug "Using demo-specific rows: $DEFAULT_ROWS"
+        fi
+        if [[ -n "$demo_cols" ]]; then
+            DEFAULT_COLS="$demo_cols"
+            debug "Using demo-specific cols: $DEFAULT_COLS"
+        fi
+    fi
+
+    debug "Config: font_size=$DEFAULT_FONT_SIZE, rows=$DEFAULT_ROWS, cols=$DEFAULT_COLS"
+    debug "Config: generate_themed=$GENERATE_THEMED_GIFS, showcase=$GENERATE_SHOWCASE"
+}
+
+is_demo_enabled() {
+    # Check if a demo is enabled in config
+    # Usage: is_demo_enabled <demo_name>
+    # Returns 0 (true) if enabled, 1 (false) if disabled
+
+    local demo_name="$1"
+
+    if [[ ! -f "$GIF_CONFIG_FILE" ]]; then
+        return 0  # Enabled by default if no config
+    fi
+
+    local enabled
+    enabled=$(query_config -c "$GIF_CONFIG_FILE" --demo-enabled "$demo_name" 2>/dev/null || echo "true")
+    [[ "$enabled" == "true" ]]
+}
 
 # ================================ Pre-flight Checks ==========================
 
@@ -141,12 +239,24 @@ init_demo() {
     OUTPUT_GIF="${OUTPUT_DIR}/${demo_name}.gif"
     SHOWCASE_GIF="${OUTPUT_DIR}/${demo_name}_showcase.gif"
 
+    # Set config file path
+    GIF_CONFIG_FILE="${PROJECT_ROOT}/gifs/gif_config.yaml"
+
     # Ensure directories exist
     mkdir -p "$OUTPUT_DIR" "$RECORDINGS_DIR"
 
     # Run preflight checks
     header "hledger-preprocessor: ${demo_name} demo"
     run_preflight_checks
+
+    # Load configuration (including demo-specific settings)
+    load_gif_config "$demo_name"
+
+    # Check if this demo is enabled
+    if ! is_demo_enabled "$demo_name"; then
+        warn "Demo '${demo_name}' is disabled in gif_config.yaml"
+        exit 0
+    fi
 
     log "Demo: ${DEMO_NAME}"
     log "Config: ${CONFIG_FILEPATH}"
@@ -201,18 +311,30 @@ postprocess_cast() {
 # ================================ GIF Generation =============================
 
 generate_themed_gifs() {
-    # Generate GIFs for all themes
-    # Usage: generate_themed_gifs [font_size]
+    # Generate GIFs for all themes (or single theme based on config)
+    # Usage: generate_themed_gifs [font_size] [line_height]
 
     local font_size="${1:-$DEFAULT_FONT_SIZE}"
-
-    header "Generating themed GIFs (${#DEFAULT_THEMES[@]} themes)..."
+    local line_height="${2:-$DEFAULT_LINE_HEIGHT}"
 
     # Reset generated GIFs array
     GENERATED_GIFS=()
 
-    # Remove old themed GIFs
-    rm -f "${OUTPUT_DIR}/${DEMO_NAME}_"*.gif
+    # Clean old GIFs if configured
+    if [[ "$OUTPUT_CLEAN_BEFORE_GENERATE" == "true" ]]; then
+        rm -f "${OUTPUT_DIR}/${DEMO_NAME}_"*.gif
+    fi
+
+    # Check if we should generate all themed GIFs or just one
+    if [[ "$GENERATE_THEMED_GIFS" != "true" ]]; then
+        # Generate only the default theme
+        log "Generating single GIF (themed GIFs disabled)..."
+        generate_single_gif "$CONFIG_DEFAULT_THEME" "$font_size" "$line_height"
+        GENERATED_GIFS+=("$OUTPUT_GIF")
+        return 0
+    fi
+
+    header "Generating themed GIFs (${#DEFAULT_THEMES[@]} themes)..."
 
     for theme_entry in "${DEFAULT_THEMES[@]}"; do
         local theme_name="${theme_entry%%:*}"
@@ -225,7 +347,7 @@ generate_themed_gifs() {
             --theme "$theme_value" \
             --font-size "$font_size" \
             --renderer resvg \
-            --line-height 1.2 2>/dev/null; then
+            --line-height "$line_height" 2>/dev/null; then
             GENERATED_GIFS+=("$output_file")
             debug "    → ${output_file}"
         else
@@ -238,10 +360,11 @@ generate_themed_gifs() {
 
 generate_single_gif() {
     # Generate a single GIF with a specific theme
-    # Usage: generate_single_gif [theme_name] [font_size]
+    # Usage: generate_single_gif [theme_name] [font_size] [line_height]
 
-    local theme_name="${1:-dracula}"
+    local theme_name="${1:-$CONFIG_DEFAULT_THEME}"
     local font_size="${2:-$DEFAULT_FONT_SIZE}"
+    local line_height="${3:-$DEFAULT_LINE_HEIGHT}"
     local theme_value=""
 
     # Find theme value
@@ -263,7 +386,7 @@ generate_single_gif() {
         --theme "$theme_value" \
         --font-size "$font_size" \
         --renderer resvg \
-        --line-height 1.2; then
+        --line-height "$line_height"; then
         log "  → ${OUTPUT_GIF}"
         return 0
     else
@@ -278,9 +401,21 @@ create_showcase() {
     # Combine all themed GIFs into a showcase
     # Usage: create_showcase
 
+    # Skip if showcase generation is disabled
+    if [[ "$GENERATE_SHOWCASE" != "true" ]]; then
+        debug "Showcase generation disabled in config"
+        return 0
+    fi
+
     if [[ ${#GENERATED_GIFS[@]} -eq 0 ]]; then
         warn "No GIFs to combine into showcase"
         return 1
+    fi
+
+    # Need at least 2 GIFs for a meaningful showcase
+    if [[ ${#GENERATED_GIFS[@]} -lt 2 ]]; then
+        debug "Only one GIF generated, skipping showcase"
+        return 0
     fi
 
     header "Creating showcase..."
@@ -308,6 +443,12 @@ set_default_gif() {
 optimize_gif() {
     # Optimize a GIF using gifsicle (lossless)
     # Usage: optimize_gif [gif_file]
+
+    # Skip if optimization is disabled
+    if [[ "$OUTPUT_OPTIMIZE" != "true" ]]; then
+        debug "GIF optimization disabled in config"
+        return 0
+    fi
 
     local gif_file="${1:-$OUTPUT_GIF}"
 
