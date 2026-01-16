@@ -60,3 +60,7 @@ disable=[
 minversion = 5.0
 # Sets the path where test files are located (Speeds up Test Discovery)
 testpaths = ["test"]
+# Custom markers
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
