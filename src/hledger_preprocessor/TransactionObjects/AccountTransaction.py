@@ -142,6 +142,9 @@ class AccountTransaction(Transaction):
 
             result["tendered_amount_out"] = self.tendered_amount_out
             result["change_returned"] = self.change_returned
+            # Include parent_receipt_category as description for re-classification
+            if self.parent_receipt_category:
+                result["description"] = self.parent_receipt_category
             return result
         else:
             raise ValueError("Did not create a filled hledger dict.")
