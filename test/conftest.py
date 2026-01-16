@@ -135,6 +135,60 @@ def temp_finance_root(tmp_path_factory):
         )
 
     # ------------------------------------------------------------------
+    # 5. Create hledger-flow import directory structure
+    # ------------------------------------------------------------------
+    # hledger-flow expects: import/{account_holder}/{bank}/{account_type}/
+    # with subdirectories: 1-in/, 2-csv/, 3-journal/
+    working_dir = root / "test_working_dir"
+
+    # Triodos bank account import structure
+    triodos_import = working_dir / "import" / "at" / "triodos" / "checking"
+    for subdir in ["1-in", "2-csv", "3-journal"]:
+        (triodos_import / subdir).mkdir(parents=True, exist_ok=True)
+
+    # Create rules file for triodos (hledger-flow needs this)
+    create_dummy_file(
+        triodos_import / "triodos.rules",
+        content=textwrap.dedent(
+            """\
+            # hledger CSV import rules for triodos
+            skip 0
+            fields date, _, amount, _, payee, _, _, description, _
+            date-format %d-%m-%Y
+            currency EUR
+            account1 Assets:Checking:Triodos
+        """
+        ),
+    )
+
+    # Wallet account import structures (for each wallet type)
+    wallet_accounts = [
+        ("physical", "EUR"),
+        ("physical", "POUND"),
+        ("physical", "GOLD"),
+        ("physical", "SILVER"),
+        ("digital", "BTC"),
+    ]
+    for account_type, currency in wallet_accounts:
+        wallet_import = working_dir / "import" / "at" / "wallet" / account_type
+        for subdir in ["1-in", "2-csv", "3-journal"]:
+            (wallet_import / subdir).mkdir(parents=True, exist_ok=True)
+        # Create rules file for wallet
+        create_dummy_file(
+            wallet_import / f"{currency.lower()}.rules",
+            content=textwrap.dedent(
+                f"""\
+                # hledger CSV import rules for {currency} wallet
+                skip 0
+                fields date, amount, description
+                date-format %Y-%m-%d
+                currency {currency}
+                account1 Assets:Wallet:{account_type.title()}:{currency}
+            """
+            ),
+        )
+
+    # ------------------------------------------------------------------
     # 4. Yield everything a test might need
     # ------------------------------------------------------------------
     yield {
