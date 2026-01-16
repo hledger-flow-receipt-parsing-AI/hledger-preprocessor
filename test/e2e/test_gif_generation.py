@@ -85,7 +85,7 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     print("=" * 60 + "\n")
 
     # 4. Define the path to your bash script (relative to project root)
-    bash_script_path = Path("gifs/edit_receipt_1.sh")
+    bash_script_path = Path("gifs/edit_receipt/generate.sh")
 
     if not bash_script_path.exists():
         pytest.skip(f"Demo recorder script not found at {bash_script_path}")
@@ -137,7 +137,7 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
         pytest.fail("Asciinema/GIF recording failed inside the test.")
 
     # 7. Final assertions (check if the files were created in the gifs directory)
-    output_gif = Path("gifs/demo.gif")
+    output_gif = Path("gifs/edit_receipt/output/edit_receipt.gif")
     assert output_gif.exists() and output_gif.is_file()
 
     # Print the receipt AFTER the test

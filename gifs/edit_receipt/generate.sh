@@ -13,10 +13,14 @@ export CONFIG_FILEPATH
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-OUTPUT_CAST="${SCRIPT_DIR}/demo.cast"
-OUTPUT_GIF="${SCRIPT_DIR}/demo.gif"
+# Output directories
+OUTPUT_DIR="${SCRIPT_DIR}/output"
+RECORDINGS_DIR="${SCRIPT_DIR}/recordings"
+
+OUTPUT_CAST="${RECORDINGS_DIR}/edit_receipt.cast"
+OUTPUT_GIF="${OUTPUT_DIR}/edit_receipt.gif"
 
 # ----------------------------- Colors ---------------------------------------
 RED="$(tput setaf 1)"
@@ -76,7 +80,7 @@ fi
 log "Using config: ${CONFIG_FILEPATH}"
 
 # Remove old files
-rm -f "$OUTPUT_CAST" "$OUTPUT_GIF" "${SCRIPT_DIR}"/demo_*.gif
+rm -f "$OUTPUT_CAST" "$OUTPUT_GIF" "${OUTPUT_DIR}"/edit_receipt_*.gif "${OUTPUT_DIR}"/edit_receipt_showcase.gif
 
 # ----------------------------- Recording ------------------------------------
 header "Starting asciinema recording..."
@@ -118,7 +122,7 @@ for theme_entry in "${THEMES[@]}"; do
     theme_name="${theme_entry%%:*}"
     theme_value="${theme_entry#*:}"
 
-    output_file="${SCRIPT_DIR}/demo_${theme_name}.gif"
+    output_file="${OUTPUT_DIR}/edit_receipt_${theme_name}.gif"
 
     log "Generating ${theme_name} theme..."
 
@@ -141,7 +145,7 @@ log "Generated ${#GENERATED_GIFS[@]} theme variants"
 header "Creating combined theme showcase..."
 
 # Combine all GIFs into one showcase (each theme plays once, then loops)
-SHOWCASE_GIF="${SCRIPT_DIR}/demo_showcase.gif"
+SHOWCASE_GIF="${OUTPUT_DIR}/edit_receipt_showcase.gif"
 log "Combining all themes into showcase..."
 
 # Use gifsicle to concatenate GIFs
@@ -150,9 +154,9 @@ gifsicle --merge "${GENERATED_GIFS[@]}" -o "$SHOWCASE_GIF"
 log "Showcase GIF created: ${BOLD}${SHOWCASE_GIF}${RESET}"
 log "Showcase size: $(du -h "$SHOWCASE_GIF" | cut -f1)"
 
-# Also copy the first theme as the default demo.gif
+# Also copy the first theme as the default edit_receipt.gif
 cp "${GENERATED_GIFS[0]}" "$OUTPUT_GIF"
-log "Default demo.gif set to: $(basename "${GENERATED_GIFS[0]}")"
+log "Default edit_receipt.gif set to: $(basename "${GENERATED_GIFS[0]}")"
 
 echo
 header "Summary"
@@ -162,15 +166,15 @@ for gif in "${GENERATED_GIFS[@]}"; do
     echo "   - $(basename "$gif") ($(du -h "$gif" | cut -f1))"
 done
 echo
-if [[ -f "${SCRIPT_DIR}/demo_showcase.gif" ]]; then
-    log "Showcase (all themes): demo_showcase.gif ($(du -h "${SCRIPT_DIR}/demo_showcase.gif" | cut -f1))"
+if [[ -f "$SHOWCASE_GIF" ]]; then
+    log "Showcase (all themes): $(basename "$SHOWCASE_GIF") ($(du -h "$SHOWCASE_GIF" | cut -f1))"
 fi
-log "Default: demo.gif"
+log "Default: $(basename "$OUTPUT_GIF")"
 echo
 echo "   Add to your README.md:"
 echo
-echo "   ![hledger-preprocessor demo](gifs/demo.gif)"
-echo "   ![hledger-preprocessor themes](gifs/demo_showcase.gif)"
+echo "   ![hledger-preprocessor edit receipt demo](gifs/edit_receipt/output/edit_receipt.gif)"
+echo "   ![hledger-preprocessor edit receipt themes](gifs/edit_receipt/output/edit_receipt_showcase.gif)"
 echo
 
 # Optimize with gifsicle (lossless only for crisp text)
