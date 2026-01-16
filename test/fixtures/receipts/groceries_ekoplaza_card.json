@@ -1,0 +1,45 @@
+{
+  "ai_receipt_categorisation": null,
+  "net_bought_items": {
+    "account_transactions": [
+      {
+        "account": {
+          "account_holder": "at",
+          "account_type": "checking",
+          "bank": "triodos",
+          "base_currency": "EUR"
+        },
+        "change_returned": 0,
+        "currency": "EUR",
+        "tendered_amount_out": 42.17
+      }
+    ],
+    "category": null,
+    "description": "groceries:ekoplaza",
+    "group_discount": 0,
+    "quantity": 1,
+    "round_amount": null,
+    "tax_per_unit": 0,
+    "the_date": "2025-01-15T10:30:00",
+    "unit_price": null
+  },
+  "net_returned_items": null,
+  "raw_img_filepath": "/home/a/finance/receipt_images_input/example_card.jpg",
+  "receipt_category": "groceries:ekoplaza",
+  "receipt_owner_address": null,
+  "shop_identifier": {
+    "address": {
+      "city": "Timboektoe",
+      "country": "Belgie",
+      "house_nr": "89",
+      "street": "Groenerstraat",
+      "zipcode": "7898BA"
+    },
+    "name": "Ekoplaza",
+    "shop_account_nr": null
+  },
+  "subtotal": null,
+  "the_date": "2025-01-15T10:30:00",
+  "total_tax": 7.35,
+  "transaction_hash": null
+}

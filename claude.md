@@ -43,3 +43,11 @@ Currently the test_gif_generation for --edit-receipt works completely. And we ar
 
 Always check if your changes work.
 Never just look at whether the tests passes, always also check whether the cli output does not contain any errors.
+
+
+
+## Start.sh
+
+for this test create a config that does not have pound enabled. 
+1 input csv file is required, for example, one of a bank, and that should be the only account in the config that has a csv. if the receipt contains a card transaction of the account of that csv, then that csv of the bank should contain that transaction of the receipt.
+

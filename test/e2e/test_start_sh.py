@@ -952,8 +952,12 @@ class TestStartShScript:
         This test:
         1. Sets up a proper test environment matching start.sh expectations
         2. Runs ./start.sh with test configuration
-        3. Captures and analyzes CLI output for errors
+        3. Captures and analyzes CLI output for errors (including stderr)
         4. Verifies expected output files are created
+
+        Uses simplified config with only:
+        - 1 bank account (triodos) with CSV input
+        - 1 wallet account (EUR physical) for cash transactions
         """
         import re
 
@@ -971,8 +975,10 @@ class TestStartShScript:
         )
 
         fixtures_dir = Path(__file__).parent.parent / "fixtures" / "receipts"
+        # Use receipt with cash transaction (EUR wallet) so --preprocess-assets
+        # creates a CSV for the wallet account
         source_files: List[Path] = [
-            fixtures_dir / "groceries_ekoplaza.json",
+            fixtures_dir / "groceries_ekoplaza.json",  # cash transaction
         ]
         for f in source_files:
             if not f.exists():
@@ -1011,6 +1017,10 @@ class TestStartShScript:
         # We'll create a test wrapper script that sources our env vars
         # NOTE: We skip the interactive TUI parts (--link-receipts-to-transactions)
         # since they require user interaction and can't be automated
+        #
+        # This simplified config only has:
+        # - 1 bank account (triodos) with CSV input
+        # - 1 wallet account (EUR physical) for cash transactions
         test_script = f"""#!/bin/bash
 set -e
 
@@ -1066,27 +1076,14 @@ echo "GENERAL_CONFIG_FILEPATH=$GENERAL_CONFIG_FILEPATH"
 rm -rf "$WORKING_DIR"
 mkdir -p "$WORKING_DIR"
 
-# Recreate the hledger-flow import directory structure that the pipeline needs
-# This is normally created by the fixture but we just wiped it
+# Recreate the hledger-flow import directory structure
+# Only for accounts in the simplified config: triodos bank + EUR wallet
 mkdir -p "$WORKING_DIR/import/at/triodos/checking/1-in"
 mkdir -p "$WORKING_DIR/import/at/triodos/checking/2-csv"
 mkdir -p "$WORKING_DIR/import/at/triodos/checking/3-journal"
 mkdir -p "$WORKING_DIR/import/at/wallet/physical/1-in"
 mkdir -p "$WORKING_DIR/import/at/wallet/physical/2-csv"
 mkdir -p "$WORKING_DIR/import/at/wallet/physical/3-journal"
-mkdir -p "$WORKING_DIR/import/at/wallet/digital/1-in"
-mkdir -p "$WORKING_DIR/import/at/wallet/digital/2-csv"
-mkdir -p "$WORKING_DIR/import/at/wallet/digital/3-journal"
-
-# Create asset CSV files that hledger_preprocessor expects
-# These need at least a header row to be valid
-mkdir -p "$WORKING_DIR/asset_transaction_csvs/at/wallet/physical"
-mkdir -p "$WORKING_DIR/asset_transaction_csvs/at/wallet/digital"
-echo "date,amount,description" > "$WORKING_DIR/asset_transaction_csvs/at/wallet/physical/Currency.EUR.csv"
-echo "date,amount,description" > "$WORKING_DIR/asset_transaction_csvs/at/wallet/physical/Currency.POUND.csv"
-echo "date,amount,description" > "$WORKING_DIR/asset_transaction_csvs/at/wallet/physical/Currency.GOLD.csv"
-echo "date,amount,description" > "$WORKING_DIR/asset_transaction_csvs/at/wallet/physical/Currency.SILVER.csv"
-echo "date,amount,description" > "$WORKING_DIR/asset_transaction_csvs/at/wallet/digital/Currency.BTC.csv"
 
 # Create basic rules files for hledger-flow
 cat > "$WORKING_DIR/import/at/triodos/checking/triodos.rules" << 'RULES'
@@ -1115,13 +1112,21 @@ validate_config
 echo "NEXT PREPROCESS ASSETS COMMAND."
 echo ""
 
-# Preprocess accounts without csvs
+# Preprocess accounts without csvs (EUR wallet from receipts)
 hledger_preprocessor \\
     --config "$GENERAL_CONFIG_FILEPATH" \\
     --preprocess-assets || {{
     echo "Error: hledger_preprocessor --preprocess-assets failed."
     exit 1
 }}
+
+# Copy config.yaml to locations where preprocess/createRules scripts expect it
+# These scripts use "../config.yaml" relative to their account type directory
+# So for import/at/wallet/physical/, it needs import/at/wallet/config.yaml
+mkdir -p "$WORKING_DIR/import/at/wallet"
+cp "$GENERAL_CONFIG_FILEPATH" "$WORKING_DIR/import/at/wallet/config.yaml"
+mkdir -p "$WORKING_DIR/import/at/triodos"
+cp "$GENERAL_CONFIG_FILEPATH" "$WORKING_DIR/import/at/triodos/config.yaml"
 
 echo "Running hledger-flow import."
 echo ""
@@ -1181,9 +1186,7 @@ echo "start.sh completed successfully!"
                 print("\n--- start.sh STDERR ---", file=sys.stderr)
                 print(stderr, file=sys.stderr)
 
-            # Check for error patterns in STDOUT only
-            # Stderr may contain noise from TensorFlow, CUDA, and other libraries
-            # that don't indicate actual failures in our script
+            # Check for error patterns in STDOUT
             error_patterns = [
                 r"Error:",
                 r"error:",
@@ -1209,6 +1212,43 @@ echo "start.sh completed successfully!"
                     ):
                         continue  # CUDA warnings
                     errors_found.append(match.strip())
+
+            # Check stderr for Python exceptions/tracebacks
+            # This catches errors from preprocess/createRules scripts called by hledger-flow
+            # Filter out known non-error patterns (TensorFlow/CUDA warnings)
+            stderr_error_patterns = [
+                r"Traceback \(most recent call last\):",
+                r"FileNotFoundError:",
+                r"ValueError:",
+                r"KeyError:",
+                r"AttributeError:",
+                r"TypeError:",
+                r"ImportError:",
+                r"ModuleNotFoundError:",
+            ]
+            for pattern in stderr_error_patterns:
+                if re.search(pattern, stderr):
+                    # Extract context around the error
+                    lines = stderr.split("\n")
+                    for i, line in enumerate(lines):
+                        if re.search(pattern, line):
+                            # Skip TensorFlow/CUDA warnings that look like errors
+                            context_start = max(0, i - 2)
+                            context_end = min(len(lines), i + 10)
+                            context = "\n".join(lines[context_start:context_end])
+
+                            # Filter out TensorFlow/CUDA warnings
+                            if any(skip in context for skip in [
+                                "Unable to register cuFFT",
+                                "Unable to register cuDNN",
+                                "Unable to register cuBLAS",
+                                "cuda_fft.cc",
+                                "cuda_dnn.cc",
+                                "cuda_blas.cc",
+                            ]):
+                                continue
+
+                            errors_found.append(f"STDERR: {context}")
 
             if result.returncode != 0:
                 print(
