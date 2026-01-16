@@ -65,9 +65,16 @@ with open(config_path) as f:
 root_path = config_data.get('dir_paths', {}).get('root_finance_path', '')
 labels_dir = os.path.join(root_path, config_data.get('dir_paths', {}).get('receipt_labels_dir', 'receipt_labels'))
 
-# Find the bike_repair receipt (the one we'll edit) and store its "before" category
+# Find the bike_repair receipt (the one we'll edit) and save a copy as "before"
+import shutil
+import tempfile
+
 before_category = None
 receipt_label_path = None
+temp_dir = tempfile.mkdtemp()
+before_file = os.path.join(temp_dir, 'before_edit_receipt.json')
+after_file = os.path.join(temp_dir, 'after_edit_receipt.json')
+
 for subdir in os.listdir(labels_dir):
     label_file = os.path.join(labels_dir, subdir, 'receipt_image_to_obj_label.json')
     if os.path.isfile(label_file):
@@ -76,10 +83,39 @@ for subdir in os.listdir(labels_dir):
         if data.get('receipt_category') == 'repairs:bike':
             before_category = data.get('receipt_category')
             receipt_label_path = label_file
+            # Save a copy of the original file
+            shutil.copy(label_file, before_file)
             break
+
+# Show the "before" state - file exists, after doesn't yet
+import subprocess
+
+print("\033[1;33m" + "="*70 + "\033[0m")
+print("\033[1;33m  Before editing receipt:\033[0m")
+print("\033[1;33m" + "="*70 + "\033[0m")
+print()
+print(f"\033[1;34m$ jq '.receipt_category' before_edit_receipt.json\033[0m")
+result = subprocess.run(['jq', '.receipt_category', before_file], capture_output=True, text=True)
+print(f"\033[33m{result.stdout.strip()}\033[0m")
+print()
+print(f"\033[1;34m$ jq '.receipt_category' after_edit_receipt.json\033[0m")
+print("\033[90m(file does not exist yet)\033[0m")
+print()
+print("\033[1;33m" + "="*70 + "\033[0m")
+time.sleep(3)  # Pause so viewer can read
+
+# Clear screen before starting the TUI
+print('\x1b[2J\x1b[H', end='', flush=True)
+time.sleep(0.2)
 
 # Build the command
 cmd = f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && conda activate hledger_preprocessor && hledger_preprocessor --config {config_path} --edit-receipt'"
+
+# Show the command that will be run
+print(f"\033[1;34m$ conda activate hledger_preprocessor\033[0m")
+print(f"\033[1;34m$ hledger_preprocessor --config {config_path} --edit-receipt\033[0m")
+print()
+time.sleep(2)
 
 # Spawn with a PTY - set dimensions for urwid
 child = pexpect.spawn(cmd, encoding='utf-8', timeout=60, dimensions=(32, 120))
@@ -224,7 +260,7 @@ except:
 # Now we should be at "Done with receipt?" prompt
 # Wait for it
 try:
-    child.expect('Done with receipt', timeout=5)
+    child.expect('Done with receipt', timeout=1)
 except pexpect.TIMEOUT:
     pass
 
@@ -244,7 +280,7 @@ time.sleep(0.5)
 # Wait for "EXPORTING to:" prompt from export_human_label function
 try:
     child.expect('EXPORTING to:', timeout=10)
-    time.sleep(0.3)
+    time.sleep(2)
     # Press Enter to confirm export
     child.send('\r')
 except pexpect.TIMEOUT:
@@ -254,34 +290,46 @@ time.sleep(0.5)
 
 # Wait for the process to complete
 try:
-    child.expect(pexpect.EOF, timeout=3)
+    child.expect(pexpect.EOF, timeout=1)
 except pexpect.TIMEOUT:
     child.terminate()
 
 # Restore the terminal cursor
 print('\x1b[?25h', end='', flush=True)
 
-# Show a summary of what changed
+# Copy the updated receipt to the "after" file
 time.sleep(0.3)
-
-# Read the "after" value from the saved receipt file
-after_category = None
 if receipt_label_path and os.path.isfile(receipt_label_path):
-    with open(receipt_label_path) as f:
-        after_data = json.load(f)
-    after_category = after_data.get('receipt_category')
+    shutil.copy(receipt_label_path, after_file)
 
-print("\n")
-print("\033[1;32m" + "="*60 + "\033[0m")
+# Clear screen and show the actual file diff
+import subprocess
+
+print('\x1b[2J\x1b[H', end='', flush=True)  # Clear screen and move cursor to top
+time.sleep(0.2)
+
+print("\033[1;32m" + "="*70 + "\033[0m")
 print("\033[1;32m  ✓ Receipt successfully updated!\033[0m")
-print("\033[1;32m" + "="*60 + "\033[0m")
+print("\033[1;32m" + "="*70 + "\033[0m")
 print()
-print("  \033[1mCategory changed:\033[0m")
-print(f"    \033[31mBefore:\033[0m {before_category}")
-print(f"    \033[32mAfter:\033[0m  {after_category}")
+
+# Extract just the receipt_category value using jq
+print("\033[1mActual file changes:\033[0m")
 print()
-print("\033[1;32m" + "="*60 + "\033[0m")
-time.sleep(2)  # Pause so viewer can read the summary
+print(f"\033[1;34m$ jq '.receipt_category' before_edit_receipt.json\033[0m")
+result = subprocess.run(['jq', '.receipt_category', before_file], capture_output=True, text=True)
+print(f"\033[31m{result.stdout.strip()}\033[0m")
+print()
+print(f"\033[1;34m$ jq '.receipt_category' after_edit_receipt.json\033[0m")
+result = subprocess.run(['jq', '.receipt_category', after_file], capture_output=True, text=True)
+print(f"\033[32m{result.stdout.strip()}\033[0m")
+print()
+print("\033[1;32m" + "="*70 + "\033[0m")
+
+# Cleanup temp files
+shutil.rmtree(temp_dir, ignore_errors=True)
+
+time.sleep(3)  # Pause so viewer can read the summary
 PYTHON_EOF
 
 WRAPPED_CMD="python $AUTOMATION_SCRIPT"
