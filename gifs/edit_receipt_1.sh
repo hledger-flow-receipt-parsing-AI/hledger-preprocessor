@@ -125,9 +125,9 @@ except pexpect.TIMEOUT:
     pass  # Continue even if prompt doesn't appear
 
 # Show the cursor for the edit receipt TUI (user needs to see where they're typing)
-# Also set cursor color to white for better visibility in the GIF
+# Use a blinking block cursor (DECSCUSR 1) for better visibility in the GIF
 print('\x1b[?25h', end='', flush=True)  # Show cursor
-print('\x1b]12;white\x07', end='', flush=True)  # Set cursor color to white
+print('\x1b[1 q', end='', flush=True)  # Set cursor to blinking block style
 
 # Wait for the full receipt TUI to render - wait for "Select Shop Address"
 # which appears after the recursive reload completes
@@ -344,8 +344,8 @@ cast_file = os.environ['CAST_FILE']
 with open(cast_file, 'r') as f:
     content = f.read()
 
-# Remove cursor show sequences: \u001b[?25h
-content = content.replace(r'\u001b[?25h', '')
+# NOTE: We no longer remove cursor show sequences (\u001b[?25h) because
+# we want the cursor visible during the edit receipt TUI for better UX
 
 # Remove arrow key echo sequences that show as visible cursor movement
 # Down arrow: \u001b[B, Up arrow: \u001b[A, Right: \u001b[C, Left: \u001b[D
