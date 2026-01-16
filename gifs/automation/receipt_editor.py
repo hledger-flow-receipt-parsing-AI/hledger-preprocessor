@@ -10,6 +10,7 @@ from typing import Optional, Tuple
 
 from .core import Colors, Cursor, Screen, get_conda_base, get_labels_dir, load_config_yaml
 from .display import show_after_state, show_before_state, show_command
+from .key_display import show_key
 from .tui_navigator import Keys, TuiNavigator
 
 
@@ -83,6 +84,10 @@ def run_edit_receipt_demo(
     command_display = f"hledger_preprocessor --config {config_path} --edit-receipt"
     show_command(command_display, conda_env="hledger_preprocessor")
 
+    # Show Enter key being pressed to "run" the command
+    show_key("\r", rows=50, cols=120)
+    time.sleep(0.5)
+
     # Build the actual command
     cmd = (
         f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && "
@@ -111,8 +116,8 @@ def run_edit_receipt_demo(
         nav.flush_output()
         time.sleep(0.4)
 
-        # Select the receipt
-        nav.press_space(pause=0.1)
+        # Select the receipt with Enter
+        nav.press_enter(pause=0.1)
 
         # Wait for "Can you see" prompt
         if nav.wait_for("Can you see", timeout=30, silent=True):
@@ -172,13 +177,18 @@ def run_edit_receipt_demo(
             nav.terminate()
 
     finally:
-        # Always restore cursor
+        # Always restore cursor and clear key overlay
         Cursor.show()
+        nav.clear_key_display()
 
     # Copy the updated receipt to "after" file
     time.sleep(0.3)
     if receipt_label_path and os.path.isfile(receipt_label_path):
         shutil.copy(receipt_label_path, after_file)
+
+    # Clear screen before showing final state (prevents key overlay artifacts)
+    Screen.clear()
+    time.sleep(0.2)
 
     # Show the "after" state
     show_after_state(before_file, after_file)

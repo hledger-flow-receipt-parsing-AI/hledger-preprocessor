@@ -7,7 +7,7 @@ from typing import Optional
 from .core import Colors
 
 
-# Human-readable names for key sequences
+# Human-readable names for key sequences (using ASCII for consistent width)
 KEY_NAMES = {
     # Basic keys
     "\r": "Enter",
@@ -16,11 +16,11 @@ KEY_NAMES = {
     " ": "Space",
     "\x1b": "Esc",
 
-    # Arrow keys
-    "\x1b[A": "↑",
-    "\x1b[B": "↓",
-    "\x1b[C": "→",
-    "\x1b[D": "←",
+    # Arrow keys - use ASCII instead of Unicode for consistent display width
+    "\x1b[A": "Up",
+    "\x1b[B": "Down",
+    "\x1b[C": "Right",
+    "\x1b[D": "Left",
 
     # Navigation
     "\x1b[H": "Home",
@@ -29,12 +29,15 @@ KEY_NAMES = {
     "\x1b[6~": "PgDn",
 
     # Editing
-    "\x7f": "Backspace",
-    "\x1b[3~": "Delete",
+    "\x7f": "Bksp",
+    "\x1b[3~": "Del",
 
     # Shift combinations
     "\x1b[Z": "Shift+Tab",
 }
+
+# Fixed width for the key display area to prevent box size changes
+FIXED_DISPLAY_WIDTH = 12
 
 
 class KeyOverlay:
@@ -82,7 +85,6 @@ class KeyOverlay:
         self.bg_color = bg_color
         self.fg_color = fg_color
         self.enabled = enabled
-        self._last_display_len = 0
 
     def _get_key_name(self, key: str) -> str:
         """
@@ -118,11 +120,11 @@ class KeyOverlay:
 
     def _save_cursor(self) -> str:
         """Generate ANSI sequence to save cursor position."""
-        return "\x1b[s"
+        return "\x1b7"
 
     def _restore_cursor(self) -> str:
         """Generate ANSI sequence to restore cursor position."""
-        return "\x1b[u"
+        return "\x1b8"
 
     def show_key(self, key: str, flush: bool = True) -> None:
         """
@@ -137,27 +139,24 @@ class KeyOverlay:
 
         key_name = self._get_key_name(key)
 
-        # Format: "[ ↓ ]" or "[ Enter ]"
-        display_text = f" {key_name} "
-        display_len = len(display_text)
+        # Center the key name within fixed width
+        display_text = key_name.center(FIXED_DISPLAY_WIDTH)
 
         # Calculate position (bottom-right corner)
         display_row = self.rows - self.padding_bottom
-        display_col = self.cols - display_len - self.padding_right
+        display_col = self.cols - FIXED_DISPLAY_WIDTH - self.padding_right
 
-        # Clear previous display if it was longer
-        clear_text = ""
-        if self._last_display_len > display_len:
-            clear_col = self.cols - self._last_display_len - self.padding_right
-            clear_text = (
-                self._move_to_position(display_row, clear_col) +
-                " " * self._last_display_len
-            )
-
-        # Build the output sequence
+        # Build the output sequence:
+        # 1. Save cursor position
+        # 2. Move to display position
+        # 3. Clear the area first (with reset to prevent color bleed)
+        # 4. Print the key with styling
+        # 5. Restore cursor position
         output = (
             self._save_cursor() +
-            clear_text +
+            self._move_to_position(display_row, display_col) +
+            Colors.RESET +
+            " " * FIXED_DISPLAY_WIDTH +
             self._move_to_position(display_row, display_col) +
             f"{self.bg_color}{self.fg_color}{display_text}{Colors.RESET}" +
             self._restore_cursor()
@@ -167,8 +166,6 @@ class KeyOverlay:
         sys.stdout.write(output)
         if flush:
             sys.stdout.flush()
-
-        self._last_display_len = display_len
 
         # Optional auto-clear after duration
         if self.display_duration > 0:
@@ -182,24 +179,20 @@ class KeyOverlay:
         Args:
             flush: Whether to flush stdout immediately
         """
-        if self._last_display_len == 0:
-            return
-
         display_row = self.rows - self.padding_bottom
-        display_col = self.cols - self._last_display_len - self.padding_right
+        display_col = self.cols - FIXED_DISPLAY_WIDTH - self.padding_right
 
         output = (
             self._save_cursor() +
             self._move_to_position(display_row, display_col) +
-            " " * self._last_display_len +
+            Colors.RESET +
+            " " * FIXED_DISPLAY_WIDTH +
             self._restore_cursor()
         )
 
         sys.stdout.write(output)
         if flush:
             sys.stdout.flush()
-
-        self._last_display_len = 0
 
     def enable(self) -> None:
         """Enable key display."""
