@@ -1,10 +1,10 @@
-"""Tests whether the script correctly handles multiline arguments and verifies
-directory structure."""
+"""Tests whether hledger is able to import the csv files with multiple postings."""
 
 import subprocess
 import tempfile
 import unittest
-from test.helping.generate_random_transactions import (
+from test.helpers import (
+    assert_hledger_available,
     generate_random_transaction_with_n_postings,
 )
 from typing import List
@@ -15,8 +15,6 @@ from hledger_preprocessor.file_reading_and_writing import write_to_file
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
-
-from .helping.helper import assert_hledger_available
 
 # from hledger_preprocessor.parser_logic_structure import Transaction
 

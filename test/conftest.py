@@ -25,7 +25,12 @@ def temp_finance_root(tmp_path_factory):
     # ------------------------------------------------------------------
     # 1. Load the template config and replace the placeholder path
     # ------------------------------------------------------------------
-    template_path = Path(__file__).parent / "data" / "1_bank_5_assets.yaml"
+    template_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "config_templates"
+        / "1_bank_5_assets.yaml"
+    )
     config_raw = template_path.read_text()
     config_dict = yaml.safe_load(config_raw)
 

@@ -1,15 +1,25 @@
+"""Test data seeders for populating test environments with realistic data."""
+
 from pathlib import Path
 from pprint import pprint
 from typing import Any, Dict, List
 
 from typeguard import typechecked
 
-from hledger_preprocessor.config.Config import Config  # your main Config class
+from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.dir_reading_and_writing import get_receipt_folder_name
 
 
 def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
-    """Create a realistic-looking receipt image from JSON data."""
+    """Create a realistic-looking receipt image from JSON data.
+
+    Args:
+        data: Receipt JSON data containing shop, items, and transaction info.
+        receipt_index: Index used to vary the receipt appearance slightly.
+
+    Returns:
+        A PIL Image object representing a thermal receipt.
+    """
     from PIL import Image, ImageDraw, ImageFont
 
     # Receipt dimensions (typical thermal receipt proportions)
@@ -209,6 +219,15 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
 def seed_receipts_into_root(
     *, config: Config, source_json_paths: List[Path]
 ) -> None:
+    """Seed receipt data into a test environment.
+
+    Creates realistic receipt images from JSON data and places them
+    in the appropriate directories according to the config.
+
+    Args:
+        config: The Config object containing directory paths.
+        source_json_paths: List of paths to JSON files containing receipt data.
+    """
     import json
 
     labels_dir = Path(
@@ -253,7 +272,8 @@ def seed_receipts_into_root(
         )
         receipt_subdir = labels_dir / receipt_folder_name
         receipt_subdir.mkdir(parents=True, exist_ok=True)
-        dest_path = receipt_subdir / src_path.name
+        # Save as receipt_image_to_obj_label.json - the filename expected by hledger_preprocessor
+        dest_path = receipt_subdir / "receipt_image_to_obj_label.json"
         dest_path.write_text(json.dumps(data))
         print(f"wrote:")
         pprint(data)

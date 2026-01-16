@@ -34,15 +34,19 @@ def find_receipt_by_category(
     Returns:
         Tuple of (receipt_label_path, category_value) or (None, None) if not found
     """
+    import glob
+
     for subdir in os.listdir(labels_dir):
-        label_file = os.path.join(
-            labels_dir, subdir, "receipt_image_to_obj_label.json"
-        )
-        if os.path.isfile(label_file):
-            with open(label_file) as f:
-                data = json.load(f)
-            if data.get("receipt_category") == category:
-                return label_file, data.get("receipt_category")
+        subdir_path = os.path.join(labels_dir, subdir)
+        if not os.path.isdir(subdir_path):
+            continue
+        # Look for any JSON file in the subdirectory
+        for label_file in glob.glob(os.path.join(subdir_path, "*.json")):
+            if os.path.isfile(label_file):
+                with open(label_file) as f:
+                    data = json.load(f)
+                if data.get("receipt_category") == category:
+                    return label_file, data.get("receipt_category")
     return None, None
 
 
