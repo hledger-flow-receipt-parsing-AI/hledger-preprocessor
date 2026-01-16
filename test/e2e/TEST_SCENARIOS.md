@@ -31,8 +31,8 @@ This document tracks the desired test scenarios for `./start.sh` and related fun
 
 | # | Scenario | Test File | Gif | Status |
 |---|----------|-----------|-----|--------|
-| 2.1 | Preprocess assets creates CSV directory | `test_preprocess_assets.py` | `preprocess_assets/` | [ ] |
-| 2.2 | Asset CSVs contain correct transaction format | `test_preprocess_assets.py` | - | [ ] |
+| 2.1 | Preprocess assets creates CSV directory | `test_start_sh.py` | `preprocess_assets/` | [x] |
+| 2.2 | Asset CSVs contain correct transaction format | `test_start_sh.py` | - | [x] |
 | 2.3 | `.rules` files generated for asset accounts | `test_preprocess_assets.py` | - | [ ] |
 
 ---
