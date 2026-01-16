@@ -75,49 +75,7 @@ fi
 
 # ----------------------------- Post-process cast file ------------------------
 log "Post-processing cast file..."
-CAST_FILE="$OUTPUT_CAST" python3 << 'PYEOF'
-import os
-import re
-
-cast_file = os.environ['CAST_FILE']
-
-with open(cast_file, 'r') as f:
-    content = f.read()
-
-# NOTE: We no longer remove cursor show sequences (\u001b[?25h) because
-# we want the cursor visible during the edit receipt TUI for better UX
-
-# Remove arrow key echo sequences that show as visible cursor movement
-content = content.replace(r'\u001b[B', '')  # Down arrow
-content = content.replace(r'\u001b[A', '')  # Up arrow
-content = content.replace(r'\u001b[C', '')  # Right arrow
-content = content.replace(r'\u001b[D', '')  # Left arrow
-content = content.replace(r'\u001b[F', '')  # End key
-content = content.replace(r'\u001b[Z', '')  # Shift+Tab
-
-# Remove Ctrl+E and Ctrl+K echo
-content = content.replace(r'\u0005', '')
-content = content.replace(r'\u000b', '')  # Ctrl+K
-
-# Remove backspace echo (DEL character and Ctrl+H)
-content = content.replace(r'\u007f', '')
-content = content.replace(r'\b', '')
-content = content.replace(r'\u0008', '')
-
-# Remove empty output entries that result from the above removals
-content = re.sub(r'\n\[\d+\.\d+, "o", ""\]', '', content)
-
-# Remove single space echo entries
-content = re.sub(r'\n\[\d+\.\d+, "o", " "\]', '', content)
-
-# Remove carriage return echo entries
-content = re.sub(r'\n\[\d+\.\d+, "o", "\\\\r"\]', '', content)
-
-with open(cast_file, 'w') as f:
-    f.write(content)
-
-print("Post-processing complete")
-PYEOF
+CAST_FILE="$OUTPUT_CAST" python -m gifs.automation.cast_postprocess
 
 # ----------------------------- GIF Conversion -------------------------------
 header "Converting to GIF using agg..."
