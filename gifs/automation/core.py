@@ -1,7 +1,6 @@
 """Core utilities for GIF automation - colors, cursor control, screen manipulation."""
 
 import os
-import sys
 from typing import Any, Dict
 
 import yaml
@@ -79,7 +78,9 @@ class Screen:
         print(cls.CLEAR_AND_HOME, end="", flush=True)
 
     @classmethod
-    def print_separator(cls, char: str = "=", width: int = 70, color: str = "") -> None:
+    def print_separator(
+        cls, char: str = "=", width: int = 70, color: str = ""
+    ) -> None:
         """Print a separator line."""
         line = char * width
         if color:

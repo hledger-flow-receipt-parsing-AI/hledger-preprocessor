@@ -8,7 +8,14 @@ import tempfile
 import time
 from typing import Optional, Tuple
 
-from .core import Colors, Cursor, Screen, get_conda_base, get_labels_dir, load_config_yaml
+from .core import (
+    Colors,
+    Cursor,
+    Screen,
+    get_conda_base,
+    get_labels_dir,
+    load_config_yaml,
+)
 from .display import show_after_state, show_before_state, show_command
 from .key_display import show_key
 from .tui_navigator import Keys, TuiNavigator
@@ -28,7 +35,9 @@ def find_receipt_by_category(
         Tuple of (receipt_label_path, category_value) or (None, None) if not found
     """
     for subdir in os.listdir(labels_dir):
-        label_file = os.path.join(labels_dir, subdir, "receipt_image_to_obj_label.json")
+        label_file = os.path.join(
+            labels_dir, subdir, "receipt_image_to_obj_label.json"
+        )
         if os.path.isfile(label_file):
             with open(label_file) as f:
                 data = json.load(f)
@@ -63,7 +72,10 @@ def run_edit_receipt_demo(
     )
 
     if receipt_label_path is None:
-        print(f"{Colors.BOLD_RED}Error: Could not find receipt with category '{source_category}'{Colors.RESET}")
+        print(
+            f"{Colors.BOLD_RED}Error: Could not find receipt with category"
+            f" '{source_category}'{Colors.RESET}"
+        )
         return
 
     # Create temp files for before/after comparison
@@ -81,7 +93,9 @@ def run_edit_receipt_demo(
     Screen.clear()
     time.sleep(0.2)
 
-    command_display = f"hledger_preprocessor --config {config_path} --edit-receipt"
+    command_display = (
+        f"hledger_preprocessor --config {config_path} --edit-receipt"
+    )
     show_command(command_display, conda_env="hledger_preprocessor")
 
     # Show Enter key being pressed to "run" the command
@@ -91,7 +105,7 @@ def run_edit_receipt_demo(
     # Build the actual command
     cmd = (
         f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && "
-        f"conda activate hledger_preprocessor && "
+        "conda activate hledger_preprocessor && "
         f"hledger_preprocessor --config {config_path} --edit-receipt'"
     )
 
@@ -106,7 +120,10 @@ def run_edit_receipt_demo(
 
         # Wait for receipt list TUI
         if not nav.wait_for("Receipts List", timeout=10, silent=True):
-            print(f"{Colors.BOLD_RED}Error: TUI did not render in time{Colors.RESET}")
+            print(
+                f"{Colors.BOLD_RED}Error: TUI did not render in"
+                f" time{Colors.RESET}"
+            )
             return
 
         time.sleep(0.15)
@@ -201,7 +218,10 @@ def main() -> None:
     """Main entry point when run as a script."""
     config_path = os.environ.get("CONFIG_FILEPATH")
     if not config_path:
-        print(f"{Colors.BOLD_RED}Error: CONFIG_FILEPATH environment variable not set{Colors.RESET}")
+        print(
+            f"{Colors.BOLD_RED}Error: CONFIG_FILEPATH environment variable not"
+            f" set{Colors.RESET}"
+        )
         return
 
     run_edit_receipt_demo(config_path)

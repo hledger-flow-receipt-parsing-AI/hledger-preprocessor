@@ -6,7 +6,6 @@ from typing import Optional
 
 from .core import Colors
 
-
 # Human-readable names for key sequences (using ASCII for consistent width)
 KEY_NAMES = {
     # Basic keys
@@ -15,23 +14,19 @@ KEY_NAMES = {
     "\t": "Tab",
     " ": "Space",
     "\x1b": "Esc",
-
     # Arrow keys - use ASCII instead of Unicode for consistent display width
     "\x1b[A": "Up",
     "\x1b[B": "Down",
     "\x1b[C": "Right",
     "\x1b[D": "Left",
-
     # Navigation
     "\x1b[H": "Home",
     "\x1b[4~": "End",
     "\x1b[5~": "PgUp",
     "\x1b[6~": "PgDn",
-
     # Editing
     "\x7f": "Bksp",
     "\x1b[3~": "Del",
-
     # Shift combinations
     "\x1b[Z": "Shift+Tab",
 }

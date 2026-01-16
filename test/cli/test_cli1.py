@@ -44,8 +44,10 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     # 3. Specify multiple source files to "inject" into the test environment
     test_data_dir = Path(__file__).parent.parent / "data"
     source_files = [
-        test_data_dir / "edit_receipt/single_cash_payment/receipt_image_to_obj_label.json",
-        test_data_dir / "edit_receipt/second_receipt/receipt_image_to_obj_label.json",
+        test_data_dir
+        / "edit_receipt/single_cash_payment/receipt_image_to_obj_label.json",
+        test_data_dir
+        / "edit_receipt/second_receipt/receipt_image_to_obj_label.json",
     ]
     for f in source_files:
         if not f.exists():
@@ -59,7 +61,9 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
 
     # Get the path to the seeded receipt (second receipt - bike_repair)
     # Receipts are now stored in hash-based folders, so we need to find the correct one
-    labels_dir = Path(config.dir_paths.get_path("receipt_labels_dir", absolute=True))
+    labels_dir = Path(
+        config.dir_paths.get_path("receipt_labels_dir", absolute=True)
+    )
 
     # Find the receipt folder that contains the bike_repair receipt (second receipt)
     # by looking for the label file with "repairs:bike" in it
@@ -77,13 +81,13 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
         pytest.fail("Could not find the seeded bike_repair receipt")
 
     # Print the receipt BEFORE the test
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("RECEIPT BEFORE TEST:")
-    print("="*60)
+    print("=" * 60)
     before_data = json.loads(seeded_receipt_path.read_text())
     print(f"  description: {before_data['net_bought_items']['description']}")
     print(f"  receipt_category: {before_data['receipt_category']}")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     # 4. Define the path to your bash script (relative to project root)
     bash_script_path = Path("gifs/edit_receipt_1.sh")
@@ -142,27 +146,37 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     assert output_gif.exists() and output_gif.is_file()
 
     # Print the receipt AFTER the test
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("RECEIPT AFTER TEST:")
-    print("="*60)
+    print("=" * 60)
     after_data = json.loads(seeded_receipt_path.read_text())
     print(f"  description: {after_data['net_bought_items']['description']}")
     print(f"  receipt_category: {after_data['receipt_category']}")
-    print("="*60)
+    print("=" * 60)
 
     # Show diff
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("DIFF:")
-    print("="*60)
-    if before_data['net_bought_items']['description'] != after_data['net_bought_items']['description']:
-        print(f"  description: {before_data['net_bought_items']['description']} -> {after_data['net_bought_items']['description']}")
+    print("=" * 60)
+    if (
+        before_data["net_bought_items"]["description"]
+        != after_data["net_bought_items"]["description"]
+    ):
+        print(
+            "  description:"
+            f" {before_data['net_bought_items']['description']} ->"
+            f" {after_data['net_bought_items']['description']}"
+        )
     else:
         print("  description: NO CHANGE")
-    if before_data['receipt_category'] != after_data['receipt_category']:
-        print(f"  receipt_category: {before_data['receipt_category']} -> {after_data['receipt_category']}")
+    if before_data["receipt_category"] != after_data["receipt_category"]:
+        print(
+            f"  receipt_category: {before_data['receipt_category']} ->"
+            f" {after_data['receipt_category']}"
+        )
     else:
         print("  receipt_category: NO CHANGE")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     # If you want to move the GIF to your artifacts directory for later viewing:
     # artifact_dir = Path("/path/to/artifacts")

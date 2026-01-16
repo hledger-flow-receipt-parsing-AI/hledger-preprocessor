@@ -20,7 +20,10 @@ def show_before_state(
     print()
 
     # Show before file value
-    print(f"{Colors.BOLD_BLUE}$ jq '{jq_field}' before_edit_receipt.json{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_BLUE}$ jq '{jq_field}'"
+        f" before_edit_receipt.json{Colors.RESET}"
+    )
     result = subprocess.run(
         ["jq", jq_field, before_file], capture_output=True, text=True
     )
@@ -28,7 +31,10 @@ def show_before_state(
     print()
 
     # Show after file doesn't exist
-    print(f"{Colors.BOLD_BLUE}$ jq '{jq_field}' after_edit_receipt.json{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_BLUE}$ jq '{jq_field}'"
+        f" after_edit_receipt.json{Colors.RESET}"
+    )
     print(f"{Colors.GRAY}(file does not exist yet){Colors.RESET}")
     print()
 
@@ -47,7 +53,10 @@ def show_after_state(
     time.sleep(0.2)
 
     print(f"{Colors.BOLD_GREEN}{'='*70}{Colors.RESET}")
-    print(f"{Colors.BOLD_GREEN}  \u2713 Receipt successfully updated!{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_GREEN}  \u2713 Receipt successfully"
+        f" updated!{Colors.RESET}"
+    )
     print(f"{Colors.BOLD_GREEN}{'='*70}{Colors.RESET}")
     print()
 
@@ -55,7 +64,10 @@ def show_after_state(
     print()
 
     # Show before value
-    print(f"{Colors.BOLD_BLUE}$ jq '{jq_field}' before_edit_receipt.json{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_BLUE}$ jq '{jq_field}'"
+        f" before_edit_receipt.json{Colors.RESET}"
+    )
     result = subprocess.run(
         ["jq", jq_field, before_file], capture_output=True, text=True
     )
@@ -63,7 +75,10 @@ def show_after_state(
     print()
 
     # Show after value
-    print(f"{Colors.BOLD_BLUE}$ jq '{jq_field}' after_edit_receipt.json{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_BLUE}$ jq '{jq_field}'"
+        f" after_edit_receipt.json{Colors.RESET}"
+    )
     result = subprocess.run(
         ["jq", jq_field, after_file], capture_output=True, text=True
     )
