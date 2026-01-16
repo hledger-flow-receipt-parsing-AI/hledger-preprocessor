@@ -92,9 +92,6 @@ def read_csv_to_asset_transactions(
 
             currency = Currency(row["currency"])
 
-            # other_party = parse_shop_id(shop_id_str=row["other_party"])
-            row.get("parent_receipt_category", "")
-
             # Handle optional fields
             asset_account: Account = Account(
                 base_currency=currency,
@@ -107,11 +104,15 @@ def read_csv_to_asset_transactions(
             change_returned: float
             tenderded_amount_out, change_returned = get_amounts(row=row)
 
+            # Get parent_receipt_category from description field (if present)
+            parent_receipt_category = row.get("description") or row.get("parent_receipt_category")
+
             transaction: AccountTransaction = AccountTransaction(
                 the_date=the_date,
                 account=asset_account,
                 tendered_amount_out=tenderded_amount_out,
                 change_returned=change_returned,
+                parent_receipt_category=parent_receipt_category,
             )
 
             ai_classification = (

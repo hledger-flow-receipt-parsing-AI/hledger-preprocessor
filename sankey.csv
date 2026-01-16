@@ -1,0 +1,4 @@
+source,target,value
+BALANCE-LINE,expenses,14.5
+expenses,expenses:groceries,14.5
+expenses:groceries,expenses:groceries:ekoplaza,14.5

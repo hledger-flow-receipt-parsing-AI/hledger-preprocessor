@@ -1,0 +1,112 @@
+# =============================================================================
+# GIF Generation Configuration
+# =============================================================================
+# This file controls which GIFs are generated and their rendering parameters.
+#
+# Usage:
+#   ./gifs/<demo_name>/generate.sh <hledger_config_path>
+#
+# The generator will read this config to determine:
+#   - Which demos to regenerate
+#   - Whether to generate themed variants
+#   - Font size, dimensions, and other rendering options
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Global Rendering Settings
+# -----------------------------------------------------------------------------
+rendering:
+  # Font size in points (default: 20)
+  font_size: 20
+
+  # Line height multiplier (default: 1.2)
+  line_height: 1.2
+
+  # Terminal dimensions (can be overridden per-demo)
+  terminal:
+    rows: 50
+    cols: 120
+
+  # Idle time limit in seconds (pause compression during recording)
+  idle_time_limit: 2
+
+# -----------------------------------------------------------------------------
+# Theme Configuration
+# -----------------------------------------------------------------------------
+themes:
+  # Generate all themed variants (true) or just a single default (false)
+  generate_themed_gifs: false
+
+  # Generate showcase GIF combining all themes (only if generate_themed_gifs is true)
+  generate_showcase: false
+
+  # Default theme to use when generate_themed_gifs is false
+  # Must match a name from the themes list below
+  default_theme: dracula
+
+  # Available themes
+  # Format: name: theme_value
+  # - Built-in themes: dracula, monokai, solarized-dark, solarized-light, asciinema
+  # - Custom themes: comma-separated hex colors (bg,fg,black,red,green,yellow,blue,magenta,cyan,white)
+  available:
+    # Built-in themes
+    dracula: dracula
+    monokai: monokai
+    solarized-dark: solarized-dark
+    solarized-light: solarized-light
+
+    # Custom retro themes
+    amber: "0a0a0a,ffb000,1a1a1a,cc4400,ff8800,ffb000,ff6600,cc6600,ffcc00,ffdd88"
+    green-phosphor: "0a0a0a,33ff33,1a1a1a,00cc00,33ff33,66ff66,00aa00,009900,99ff99,ccffcc"
+    cyan-cool: "0a0f14,00ffff,0a1a1f,ff6666,66ffcc,ffff66,6699ff,ff66ff,00ffff,ffffff"
+    matrix: "000000,00ff00,0a0a0a,ff0000,00ff00,ffff00,0066ff,ff00ff,00ffff,ffffff"
+
+  # Themes to generate (subset of available themes)
+  # Comment out or remove themes you don't want to generate
+  # If empty, all available themes will be generated
+  enabled:
+    - dracula
+    - monokai
+    - solarized-dark
+    - solarized-light
+    - amber
+    - green-phosphor
+    - cyan-cool
+    - matrix
+
+# -----------------------------------------------------------------------------
+# Demo Configuration
+# -----------------------------------------------------------------------------
+# Each demo can be enabled/disabled and have custom settings
+demos:
+  # Edit receipt TUI demo
+  edit_receipt:
+    enabled: true
+    # Override terminal dimensions for this demo (optional)
+    # terminal:
+    #   rows: 50
+    #   cols: 120
+
+  # Start.sh full pipeline demo
+  start_sh_pipeline:
+    enabled: true
+    terminal:
+      rows: 40
+      cols: 120
+
+  # Add more demos here as they are created
+  # new_demo_name:
+  #   enabled: false
+  #   terminal:
+  #     rows: 50
+  #     cols: 120
+
+# -----------------------------------------------------------------------------
+# Output Settings
+# -----------------------------------------------------------------------------
+output:
+  # Optimize GIFs with gifsicle -O3 (lossless compression)
+  optimize: true
+
+  # Clean up old GIFs before generating new ones
+  clean_before_generate: true
