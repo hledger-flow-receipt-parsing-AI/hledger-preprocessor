@@ -13,13 +13,13 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from test.helpers import seed_receipts_into_root
 from typing import Any, Dict, List
 
 import pytest
 
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import load_config
-from test.helpers import seed_receipts_into_root
 
 
 class TestPreprocessAssetsPhase:
@@ -40,7 +40,7 @@ class TestPreprocessAssetsPhase:
         - Preprocess assets creates CSV directory
         """
         config_path = temp_finance_root["config_path"]
-        root = temp_finance_root["root"]
+        temp_finance_root["root"]
 
         # Change to project root for module imports
         project_root = Path(__file__).parent.parent.parent
@@ -62,7 +62,9 @@ class TestPreprocessAssetsPhase:
                 pytest.skip(f"Required test data missing: {f}")
 
         seed_receipts_into_root(config=config, source_json_paths=source_files)
-        print(f"\n✓ Seeded {len(source_files)} receipt(s) into test environment")
+        print(
+            f"\n✓ Seeded {len(source_files)} receipt(s) into test environment"
+        )
 
         # Get the working directory path from config
         working_dir = Path(
@@ -113,9 +115,9 @@ class TestPreprocessAssetsPhase:
 
         # Verify asset_transaction_csvs directory was created
         asset_csv_dir = working_dir / "asset_transaction_csvs"
-        assert asset_csv_dir.exists(), (
-            f"asset_transaction_csvs directory not created at {asset_csv_dir}"
-        )
+        assert (
+            asset_csv_dir.exists()
+        ), f"asset_transaction_csvs directory not created at {asset_csv_dir}"
         print(f"\n✓ asset_transaction_csvs directory exists: {asset_csv_dir}")
 
     def test_preprocess_assets_creates_expected_structure(
@@ -195,9 +197,9 @@ class TestPreprocessAssetsPhase:
         # Verify CSV files exist for the EUR physical wallet account
         # The groceries_ekoplaza.json has a EUR cash transaction
         eur_csv_pattern = list(asset_csv_dir.rglob("*.csv"))
-        assert len(eur_csv_pattern) > 0, (
-            f"No CSV files created in {asset_csv_dir}"
-        )
+        assert (
+            len(eur_csv_pattern) > 0
+        ), f"No CSV files created in {asset_csv_dir}"
         print(f"\n✓ Found {len(eur_csv_pattern)} CSV file(s)")
 
 
@@ -299,26 +301,26 @@ class TestDashAppLaunch:
                         print(f"  Waiting for Dash app... ({attempt}s)")
                     continue
 
-            assert dash_started, (
-                f"Dash app did not start within {max_wait_seconds} seconds"
-            )
+            assert (
+                dash_started
+            ), f"Dash app did not start within {max_wait_seconds} seconds"
 
             # Verify the dashboard contains expected content
             response = requests.get("http://localhost:8050")
-            assert response.status_code == 200, (
-                f"Unexpected status code: {response.status_code}"
-            )
+            assert (
+                response.status_code == 200
+            ), f"Unexpected status code: {response.status_code}"
 
             # Check for Dash app structure
             # Dash apps are SPAs - the initial HTML contains a React entry point
             # and the actual content is rendered by JavaScript
             html_content = response.text
-            assert "react-entry-point" in html_content, (
-                "Dash app HTML doesn't contain React entry point"
-            )
-            assert "DashRenderer" in html_content, (
-                "Dash app HTML doesn't contain DashRenderer"
-            )
+            assert (
+                "react-entry-point" in html_content
+            ), "Dash app HTML doesn't contain React entry point"
+            assert (
+                "DashRenderer" in html_content
+            ), "Dash app HTML doesn't contain DashRenderer"
             print("✓ Dashboard HTML contains Dash app structure")
 
             # Verify the Dash layout API endpoint works
@@ -326,17 +328,17 @@ class TestDashAppLaunch:
             layout_response = requests.get(
                 "http://localhost:8050/_dash-layout", timeout=5
             )
-            assert layout_response.status_code == 200, (
-                f"Layout endpoint returned {layout_response.status_code}"
-            )
+            assert (
+                layout_response.status_code == 200
+            ), f"Layout endpoint returned {layout_response.status_code}"
 
             layout_data = layout_response.text
-            assert "Financial Insights Dashboard" in layout_data, (
-                "Dashboard layout doesn't contain expected title"
-            )
-            assert "period-dropdown" in layout_data, (
-                "Dashboard layout doesn't contain period dropdown"
-            )
+            assert (
+                "Financial Insights Dashboard" in layout_data
+            ), "Dashboard layout doesn't contain expected title"
+            assert (
+                "period-dropdown" in layout_data
+            ), "Dashboard layout doesn't contain period dropdown"
             print("✓ Dashboard layout contains expected elements")
 
         finally:
@@ -414,28 +416,28 @@ class TestDashAppLaunch:
             layout_response = requests.get(
                 "http://localhost:8050/_dash-layout", timeout=5
             )
-            assert layout_response.status_code == 200, (
-                f"Layout endpoint returned {layout_response.status_code}"
-            )
+            assert (
+                layout_response.status_code == 200
+            ), f"Layout endpoint returned {layout_response.status_code}"
             layout_data = layout_response.text
 
             # Check for dropdown element in the layout
-            assert "period-dropdown" in layout_data, (
-                "Period dropdown not found in dashboard layout"
-            )
+            assert (
+                "period-dropdown" in layout_data
+            ), "Period dropdown not found in dashboard layout"
             print("✓ Period dropdown element found")
 
             # Check for "All Time" option (default value)
-            assert "All Time" in layout_data or "all_time" in layout_data, (
-                "All Time option not found in dashboard"
-            )
+            assert (
+                "All Time" in layout_data or "all_time" in layout_data
+            ), "All Time option not found in dashboard"
             print("✓ All Time option available")
 
             # Verify the dropdown has month options from our journal
             # Our test journal has transactions in Jan and Feb 2025
-            assert "Jan" in layout_data or "2025" in layout_data, (
-                "Expected month/year options not found in dropdown"
-            )
+            assert (
+                "Jan" in layout_data or "2025" in layout_data
+            ), "Expected month/year options not found in dropdown"
             print("✓ Period options include expected months")
 
         finally:
@@ -493,7 +495,7 @@ class TestPlotGeneration:
         This tests scenario 1.4 from TEST_SCENARIOS.md.
         """
         config_path = temp_finance_root["config_path"]
-        root = temp_finance_root["root"]
+        temp_finance_root["root"]
 
         project_root = Path(__file__).parent.parent.parent
         monkeypatch.chdir(project_root)
@@ -577,7 +579,9 @@ class TestPlotGeneration:
         # Check for expected plot types (sankey plots)
         svg_names = [svg.parent.name for svg in svg_files]
         expected_types = ["income_expenses_sankey", "all_balances_sankey"]
-        found_types = [t for t in expected_types if any(t in n for n in svg_names)]
+        found_types = [
+            t for t in expected_types if any(t in n for n in svg_names)
+        ]
         print(f"\n✓ Found plot types: {found_types}")
 
     def test_svg_plots_contain_valid_content(
@@ -591,7 +595,7 @@ class TestPlotGeneration:
         This verifies the SVG files are properly formatted.
         """
         config_path = temp_finance_root["config_path"]
-        root = temp_finance_root["root"]
+        temp_finance_root["root"]
 
         project_root = Path(__file__).parent.parent.parent
         monkeypatch.chdir(project_root)
@@ -679,7 +683,9 @@ class TestHledgerFlowImport:
         │               └── testbank-checking.rules
         """
         # Create directory structure
-        account_dir = tmp_path / "import" / "testowner" / "testbank" / "checking"
+        account_dir = (
+            tmp_path / "import" / "testowner" / "testbank" / "checking"
+        )
         input_dir = account_dir / "1-in" / "2025"
         input_dir.mkdir(parents=True, exist_ok=True)
 
@@ -766,25 +772,25 @@ description %description
 
         # Verify all-years.journal was created at root level
         root_journal = root / "all-years.journal"
-        assert root_journal.exists(), (
-            f"all-years.journal not created at {root_journal}"
-        )
+        assert (
+            root_journal.exists()
+        ), f"all-years.journal not created at {root_journal}"
         print(f"✓ all-years.journal exists at root: {root_journal}")
 
         # Verify journal files were created in 3-journal directory
         journal_dir = (
             hledger_flow_structure["account_dir"] / "3-journal" / "2025"
         )
-        assert journal_dir.exists(), (
-            f"3-journal/2025 directory not created at {journal_dir}"
-        )
+        assert (
+            journal_dir.exists()
+        ), f"3-journal/2025 directory not created at {journal_dir}"
         print(f"✓ 3-journal/2025 directory exists: {journal_dir}")
 
         # Check for journal files
         journal_files = list(journal_dir.glob("*.journal"))
-        assert len(journal_files) > 0, (
-            f"No journal files created in {journal_dir}"
-        )
+        assert (
+            len(journal_files) > 0
+        ), f"No journal files created in {journal_dir}"
         print(f"✓ Found {len(journal_files)} journal file(s)")
 
         # List the created structure for debugging
@@ -843,7 +849,9 @@ description %description
 
         for include_file in include_files:
             if include_file.exists():
-                print(f"✓ Include file exists: {include_file.relative_to(root)}")
+                print(
+                    f"✓ Include file exists: {include_file.relative_to(root)}"
+                )
 
     def test_journal_files_pass_hledger_check(
         self,
@@ -922,3 +930,100 @@ description %description
 
         except subprocess.CalledProcessError as e:
             pytest.fail(f"hledger balance failed: {e.stderr}")
+
+
+class TestStartShGifGeneration:
+    """Test GIF generation for start.sh pipeline (Issue #142, scenario 1.1).
+
+    This test verifies that the complete GIF generation workflow works,
+    including recording the demo and generating the output GIF.
+    """
+
+    def test_generate_start_sh_pipeline_gif(
+        self,
+        temp_finance_root: Dict[str, Any],
+        monkeypatch,
+    ):
+        """Test that the start.sh pipeline GIF generation works.
+
+        This tests scenario 1.1 from TEST_SCENARIOS.md:
+        - Full pipeline runs without errors
+        - GIF is generated
+        """
+        config_path = temp_finance_root["config_path"]
+
+        # Change to project root for module imports
+        project_root = Path(__file__).parent.parent.parent
+        monkeypatch.chdir(project_root)
+
+        # Seed receipt data for the demo
+        config: Config = load_config(
+            config_path=str(config_path),
+            pre_processed_output_dir=None,
+        )
+
+        fixtures_dir = Path(__file__).parent.parent / "fixtures" / "receipts"
+        source_files: List[Path] = [
+            fixtures_dir / "groceries_ekoplaza.json",
+        ]
+        for f in source_files:
+            if not f.exists():
+                pytest.skip(f"Required test data missing: {f}")
+
+        seed_receipts_into_root(config=config, source_json_paths=source_files)
+        print(
+            f"\n✓ Seeded {len(source_files)} receipt(s) into test environment"
+        )
+
+        # Define the path to the bash script
+        bash_script_path = Path("gifs/start_sh_pipeline/generate.sh")
+
+        if not bash_script_path.exists():
+            pytest.skip(f"Demo recorder script not found at {bash_script_path}")
+
+        # Build the command to run the bash script
+        cmd = [
+            "bash",
+            str(bash_script_path),
+            str(config_path),
+        ]
+
+        print(f'\n--- Running: {" ".join(cmd)} ---')
+
+        env = os.environ.copy()
+        env["TERM"] = "xterm-256color"
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=180,  # GIF generation can take time
+                check=True,
+                env=env,
+            )
+            print("--- GIF Generation STDOUT ---")
+            print(result.stdout)
+            if result.stderr:
+                print("--- GIF Generation STDERR ---", file=sys.stderr)
+                print(result.stderr, file=sys.stderr)
+
+        except subprocess.CalledProcessError as e:
+            print(f"GIF generation failed with return code {e.returncode}")
+            print("--- FAILED STDOUT ---")
+            print(e.stdout)
+            print("--- FAILED STDERR ---", file=sys.stderr)
+            print(e.stderr, file=sys.stderr)
+            pytest.fail("Start.sh pipeline GIF generation failed")
+
+        # Verify the GIF was created
+        output_gif = Path("gifs/start_sh_pipeline/output/start_sh_pipeline.gif")
+        assert (
+            output_gif.exists() and output_gif.is_file()
+        ), f"Output GIF not created at {output_gif}"
+        print(f"\n✓ GIF generated: {output_gif}")
+
+        # Verify GIF file size is reasonable (not empty)
+        gif_size = output_gif.stat().st_size
+        assert gif_size > 1000, f"GIF file appears too small: {gif_size} bytes"
+        print(f"✓ GIF size: {gif_size} bytes")
