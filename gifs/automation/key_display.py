@@ -52,7 +52,7 @@ class KeyOverlay:
 
     def __init__(
         self,
-        rows: int = 32,
+        rows: int = 50,
         cols: int = 120,
         display_duration: float = 0.0,
         padding_right: int = 2,
@@ -214,7 +214,7 @@ class KeyOverlay:
 _default_overlay: Optional[KeyOverlay] = None
 
 
-def get_default_overlay(rows: int = 32, cols: int = 120) -> KeyOverlay:
+def get_default_overlay(rows: int = 50, cols: int = 120) -> KeyOverlay:
     """
     Get or create the default KeyOverlay instance.
 
@@ -231,7 +231,7 @@ def get_default_overlay(rows: int = 32, cols: int = 120) -> KeyOverlay:
     return _default_overlay
 
 
-def show_key(key: str, rows: int = 32, cols: int = 120) -> None:
+def show_key(key: str, rows: int = 50, cols: int = 120) -> None:
     """
     Convenience function to show a key using the default overlay.
 

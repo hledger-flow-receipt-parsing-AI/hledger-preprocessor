@@ -90,8 +90,8 @@ def run_edit_receipt_demo(
         f"hledger_preprocessor --config {config_path} --edit-receipt'"
     )
 
-    # Create the TUI navigator
-    nav = TuiNavigator(cmd, dimensions=(32, 120), timeout=60)
+    # Create the TUI navigator (50 rows to show all form fields without scrolling)
+    nav = TuiNavigator(cmd, dimensions=(50, 120), timeout=60)
 
     try:
         nav.spawn()
@@ -147,8 +147,8 @@ def run_edit_receipt_demo(
         nav.type_text(new_description, char_pause=0.1)
         time.sleep(0.5)
 
-        # Navigate through remaining fields (15 down presses)
-        nav.press_down(times=15, pause=0.05)
+        # Navigate through remaining fields (15 down presses, slower for visibility)
+        nav.press_down(times=15, pause=0.3)
         time.sleep(0.3)
         nav.flush_output()
 
