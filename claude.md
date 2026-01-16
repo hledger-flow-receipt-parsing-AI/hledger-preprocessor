@@ -19,7 +19,6 @@ You can check that output to determine if your changes still allow succesfull co
 
 ## Tests
 
-
 ## Readmes
 
 Some of the readmes contain outdated information. We will cleanup later.
@@ -33,6 +32,7 @@ This is the python module that orchestrates bookkeeping data preprocessing and l
 - Be consise and accurate in the text you write.
 
 ## testing:
+
 Look at manuals/TESTING.md and test/e2e/test_gif_generation.py as examples of the test structure to follow.
 
 ```sh
