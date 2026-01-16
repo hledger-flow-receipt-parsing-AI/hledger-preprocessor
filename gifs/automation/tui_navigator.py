@@ -6,6 +6,8 @@ from typing import Optional
 
 import pexpect
 
+from .key_display import KeyOverlay
+
 
 class Keys:
     """Key escape sequences for terminal input."""
@@ -44,6 +46,7 @@ class TuiNavigator:
         dimensions: tuple = (32, 120),
         timeout: int = 60,
         log_to_stdout: bool = True,
+        show_keys: bool = True,
     ):
         """
         Initialize the TUI navigator.
@@ -53,12 +56,18 @@ class TuiNavigator:
             dimensions: Terminal dimensions (rows, cols)
             timeout: Default timeout for expect operations
             log_to_stdout: Whether to log child output to stdout
+            show_keys: Whether to display pressed keys in bottom-right corner
         """
         self.command = command
         self.dimensions = dimensions
         self.timeout = timeout
         self.child: Optional[pexpect.spawn] = None
         self.log_to_stdout = log_to_stdout
+        self.show_keys = show_keys
+        self._key_overlay: Optional[KeyOverlay] = None
+        if show_keys:
+            rows, cols = dimensions
+            self._key_overlay = KeyOverlay(rows=rows, cols=cols)
 
     def spawn(self) -> "TuiNavigator":
         """Spawn the child process."""
@@ -110,6 +119,10 @@ class TuiNavigator:
         """
         if self.child is None:
             raise RuntimeError("Child process not spawned. Call spawn() first.")
+
+        # Display the key in bottom-right corner
+        if self._key_overlay is not None:
+            self._key_overlay.show_key(text)
 
         self.child.send(text)
         if pause > 0:
@@ -208,11 +221,38 @@ class TuiNavigator:
         if self.child is not None:
             self.child.terminate()
 
+    def enable_key_display(self) -> "TuiNavigator":
+        """Enable the key overlay display."""
+        if self._key_overlay is not None:
+            self._key_overlay.enable()
+        return self
+
+    def disable_key_display(self) -> "TuiNavigator":
+        """Disable the key overlay display."""
+        if self._key_overlay is not None:
+            self._key_overlay.disable()
+        return self
+
+    def clear_key_display(self) -> "TuiNavigator":
+        """Clear the current key display."""
+        if self._key_overlay is not None:
+            self._key_overlay.clear()
+        return self
+
+    @property
+    def key_overlay(self) -> Optional[KeyOverlay]:
+        """Get the key overlay instance for direct manipulation."""
+        return self._key_overlay
+
     def __enter__(self) -> "TuiNavigator":
         """Context manager entry."""
         return self.spawn()
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Context manager exit - ensure process is terminated."""
+        """Context manager exit - ensure process is terminated and key display cleared."""
+        # Clear key display
+        if self._key_overlay is not None:
+            self._key_overlay.clear()
+        # Terminate child process
         if self.child is not None and self.child.isalive():
             self.child.terminate()
