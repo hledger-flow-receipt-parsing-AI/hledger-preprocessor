@@ -44,13 +44,8 @@ class KeyOverlay:
     """
     Displays pressed keys in the bottom-right corner of the terminal.
 
-    Uses ANSI escape sequences to:
-    1. Save current cursor position
-    2. Move to bottom-right corner
-    3. Print the key name with styling
-    4. Restore cursor position
-
-    This allows the key display to appear without disrupting the main TUI.
+    Uses ANSI escape sequences to position text without disrupting the main TUI.
+    Uses DEC save/restore cursor (DECSC/DECRC) which is more widely supported.
     """
 
     def __init__(
@@ -60,7 +55,7 @@ class KeyOverlay:
         display_duration: float = 0.0,
         padding_right: int = 2,
         padding_bottom: int = 1,
-        bg_color: str = Colors.GRAY,
+        bg_color: str = "",
         fg_color: str = Colors.BOLD_WHITE,
         enabled: bool = True,
     ):
@@ -73,7 +68,7 @@ class KeyOverlay:
             display_duration: How long to show the key (0 = don't clear automatically)
             padding_right: Padding from right edge
             padding_bottom: Padding from bottom edge
-            bg_color: Background color for the key display
+            bg_color: Background color for the key display (empty = no background)
             fg_color: Foreground color for the key text
             enabled: Whether to display keys (can be toggled)
         """
@@ -114,18 +109,6 @@ class KeyOverlay:
 
         return repr(key)
 
-    def _move_to_position(self, row: int, col: int) -> str:
-        """Generate ANSI sequence to move cursor to position (1-indexed)."""
-        return f"\x1b[{row};{col}H"
-
-    def _save_cursor(self) -> str:
-        """Generate ANSI sequence to save cursor position."""
-        return "\x1b7"
-
-    def _restore_cursor(self) -> str:
-        """Generate ANSI sequence to restore cursor position."""
-        return "\x1b8"
-
     def show_key(self, key: str, flush: bool = True) -> None:
         """
         Display a key in the bottom-right corner.
@@ -139,27 +122,25 @@ class KeyOverlay:
 
         key_name = self._get_key_name(key)
 
-        # Center the key name within fixed width
-        display_text = key_name.center(FIXED_DISPLAY_WIDTH)
+        # Format with brackets for visibility: [ Enter ]
+        display_text = f"[ {key_name.center(FIXED_DISPLAY_WIDTH - 4)} ]"
 
         # Calculate position (bottom-right corner)
         display_row = self.rows - self.padding_bottom
         display_col = self.cols - FIXED_DISPLAY_WIDTH - self.padding_right
 
-        # Build the output sequence:
-        # 1. Save cursor position
-        # 2. Move to display position
-        # 3. Clear the area first (with reset to prevent color bleed)
-        # 4. Print the key with styling
-        # 5. Restore cursor position
+        # Build output using DEC save/restore sequences (more widely supported):
+        # \x1b7 = Save cursor position (DECSC)
+        # \x1b[{row};{col}H = Move cursor to position
+        # \x1b8 = Restore cursor position (DECRC)
         output = (
-            self._save_cursor() +
-            self._move_to_position(display_row, display_col) +
-            Colors.RESET +
-            " " * FIXED_DISPLAY_WIDTH +
-            self._move_to_position(display_row, display_col) +
-            f"{self.bg_color}{self.fg_color}{display_text}{Colors.RESET}" +
-            self._restore_cursor()
+            f"\x1b7"  # Save cursor (DEC)
+            f"\x1b[{display_row};{display_col}H"  # Move to position
+            f"{Colors.RESET}"  # Reset any previous styling
+            f"{' ' * FIXED_DISPLAY_WIDTH}"  # Clear the area
+            f"\x1b[{display_row};{display_col}H"  # Move back to position
+            f"{self.bg_color}{self.fg_color}{display_text}{Colors.RESET}"  # Print styled text
+            f"\x1b8"  # Restore cursor (DEC)
         )
 
         # Write to stdout
@@ -183,11 +164,11 @@ class KeyOverlay:
         display_col = self.cols - FIXED_DISPLAY_WIDTH - self.padding_right
 
         output = (
-            self._save_cursor() +
-            self._move_to_position(display_row, display_col) +
-            Colors.RESET +
-            " " * FIXED_DISPLAY_WIDTH +
-            self._restore_cursor()
+            f"\x1b7"  # Save cursor (DEC)
+            f"\x1b[{display_row};{display_col}H"  # Move to position
+            f"{Colors.RESET}"  # Reset styling
+            f"{' ' * FIXED_DISPLAY_WIDTH}"  # Clear with spaces
+            f"\x1b8"  # Restore cursor (DEC)
         )
 
         sys.stdout.write(output)
