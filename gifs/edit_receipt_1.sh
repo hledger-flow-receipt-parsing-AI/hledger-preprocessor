@@ -32,7 +32,9 @@ ROWS=38
 COLS=120
 IDLE_TIME_LIMIT=2
 FONT_SIZE=18
-THEME="solarized-dark"
+# Retro amber-on-black theme (background, foreground, then 8 ANSI colors)
+# Colors: black, red, green, yellow, blue, magenta, cyan, white - all in amber/orange tones
+THEME="0a0a0a,ffb000,1a1a1a,cc4400,ff8800,ffb000,ff6600,cc6600,ffcc00,ffdd88"
 
 # ----------------------------- Functions ------------------------------------
 log()    { echo -e "${BOLD}${GREEN}[+]${RESET} $*" ; }
