@@ -3,7 +3,7 @@
 
 import os
 import re
-from typing import List, Optional
+from typing import List
 
 
 def remove_sequences(content: str, sequences: List[str]) -> str:
@@ -40,7 +40,7 @@ def postprocess_cast_file(cast_file_path: str) -> None:
     Args:
         cast_file_path: Path to the .cast file to process
     """
-    with open(cast_file_path, "r") as f:
+    with open(cast_file_path) as f:
         content = f.read()
 
     # Sequences to remove

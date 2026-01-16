@@ -25,7 +25,7 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
         font_bold = ImageFont.truetype(
             "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 14
         )
-    except (OSError, IOError):
+    except OSError:
         font = ImageFont.load_default()
         font_bold = font
 
@@ -55,19 +55,31 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
 
     # Draw store header (centered)
     draw.text(
-        (width // 2, y), shop_name.upper(), fill="black", font=font_bold, anchor="mt"
+        (width // 2, y),
+        shop_name.upper(),
+        fill="black",
+        font=font_bold,
+        anchor="mt",
     )
     y += line_height + 5
 
     # Draw address
     if street and house_nr:
         draw.text(
-            (width // 2, y), f"{street} {house_nr}", fill="black", font=font, anchor="mt"
+            (width // 2, y),
+            f"{street} {house_nr}",
+            fill="black",
+            font=font,
+            anchor="mt",
         )
         y += line_height
     if zipcode and city:
         draw.text(
-            (width // 2, y), f"{zipcode} {city}", fill="black", font=font, anchor="mt"
+            (width // 2, y),
+            f"{zipcode} {city}",
+            fill="black",
+            font=font,
+            anchor="mt",
         )
         y += line_height
 
@@ -95,7 +107,11 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
     draw.text((20, y), item_name, fill="black", font=font)
     if total > 0:
         draw.text(
-            (width - 20, y), f"EUR {total:.2f}", fill="black", font=font, anchor="rt"
+            (width - 20, y),
+            f"EUR {total:.2f}",
+            fill="black",
+            font=font,
+            anchor="rt",
         )
     y += line_height + 10
 
@@ -158,7 +174,11 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
     if change > 0:
         draw.text((20, y), "CHANGE", fill="black", font=font)
         draw.text(
-            (width - 20, y), f"EUR {change:.2f}", fill="black", font=font, anchor="rt"
+            (width - 20, y),
+            f"EUR {change:.2f}",
+            fill="black",
+            font=font,
+            anchor="rt",
         )
         y += line_height + 10
 
@@ -167,11 +187,19 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
     draw.line([(20, y), (width - 20, y)], fill="black", width=1)
     y += 15
     draw.text(
-        (width // 2, y), "Thank you for shopping!", fill="black", font=font, anchor="mt"
+        (width // 2, y),
+        "Thank you for shopping!",
+        fill="black",
+        font=font,
+        anchor="mt",
     )
     y += line_height
     draw.text(
-        (width // 2, y), "Please keep this receipt", fill="black", font=font, anchor="mt"
+        (width // 2, y),
+        "Please keep this receipt",
+        fill="black",
+        font=font,
+        anchor="mt",
     )
 
     return img
@@ -213,7 +241,9 @@ def seed_receipts_into_root(
         cropped_filename = f"{img_stem}_cropped.jpg"
         cropped_path = processed_dir / cropped_filename
         # Use same image for cropped version (slightly different to get unique hash)
-        img_cropped = _create_receipt_image(data, i + 100)  # Different index for unique hash
+        img_cropped = _create_receipt_image(
+            data, i + 100
+        )  # Different index for unique hash
         img_cropped.save(cropped_path, "JPEG")
 
         # Use the hash-based folder name that the code expects

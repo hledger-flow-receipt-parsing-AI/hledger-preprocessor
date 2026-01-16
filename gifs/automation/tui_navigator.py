@@ -182,7 +182,9 @@ class TuiNavigator:
         """Press Tab key."""
         return self.send(Keys.TAB, pause)
 
-    def press_backspace(self, times: int = 1, pause: float = 0.1) -> "TuiNavigator":
+    def press_backspace(
+        self, times: int = 1, pause: float = 0.1
+    ) -> "TuiNavigator":
         """Press Backspace key multiple times."""
         for _ in range(times):
             self.send(Keys.BACKSPACE, pause)

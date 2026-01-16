@@ -114,11 +114,19 @@ def temp_finance_root(tmp_path_factory):
 
     # Asset CSV files for wallet accounts (needed by get_all_accounts in edit_receipt)
     # Path structure: test_working_dir/asset_transaction_csvs/{account_holder}/{bank}/{account_type}/Currency.{currency}.csv
-    asset_csv_base = root / "test_working_dir" / "asset_transaction_csvs" / "at" / "wallet"
-    for account_type, currency in [("physical", "EUR"), ("physical", "POUND"), ("physical", "GOLD"), ("physical", "SILVER"), ("digital", "BTC")]:
+    asset_csv_base = (
+        root / "test_working_dir" / "asset_transaction_csvs" / "at" / "wallet"
+    )
+    for account_type, currency in [
+        ("physical", "EUR"),
+        ("physical", "POUND"),
+        ("physical", "GOLD"),
+        ("physical", "SILVER"),
+        ("digital", "BTC"),
+    ]:
         create_dummy_file(
             asset_csv_base / account_type / f"Currency.{currency}.csv",
-            content=""  # empty CSV is sufficient
+            content="",  # empty CSV is sufficient
         )
 
     # ------------------------------------------------------------------

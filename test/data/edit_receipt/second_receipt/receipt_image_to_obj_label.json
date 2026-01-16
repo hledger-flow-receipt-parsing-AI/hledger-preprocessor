@@ -9,7 +9,7 @@
           "bank": "wallet",
           "base_currency": "EUR"
         },
-        "change_returned": 5.50,
+        "change_returned": 5.5,
         "currency": "EUR",
         "tendered_amount_out": 20.0
       }

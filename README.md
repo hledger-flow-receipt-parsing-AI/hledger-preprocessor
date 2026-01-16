@@ -12,6 +12,42 @@ to pre-processes and categorise bank `.csv` files and receipts so that
 \<TODO: insert randomized hledger plot with treemap>
 \<TODO: insert randomized hledger plot with sankey>
 
+## Demos (auto-generated from integration tests)
+
+0. TUI to quickly enter receipts:
+   ![hledger-preprocessor demo](gifs/demo.gif)
+1. Algorithmic matching of bank .csv statements to receipt transactions:
+
+\<TODO: add gif>
+
+2. Manual labelling of bank csv transaction using customisable logic:
+
+\<TODO: add gif>
+
+3. Using hledger-plot to automatically visualise your financial position using interactive Treemap and/or Sankey plot:
+
+\<TODO: add gif>
+
+4. Using hledger-plot to automatically visualise your financial in- and out- flows using interactive Treemap and/or Sankey plot:
+
+\<TODO: add gif>
+
+5. Include performance metrics of various self-hosted AIs:
+
+\<TODO: add performance metrics various ai modules>
+
+6.a AI for: bank `.csv` transaction-> categorisation (e.g. groceries:wholefoods, repairs:bike etc.)
+
+\<TODO: add gif>
+
+6.b AI for: receipt image -> structured text (e.g. a json/dictionary with the time, shop, bought items, total, taxes etc.)
+
+\<TODO: add gif>
+
+6.c AI for: receipt image -> categorisation (e.g. groceries, repairs etc.)
+
+\<TODO: add gif>
+
 ## Getting Started
 
 This is a HELPER-MODULE for `hledger-flow`.
