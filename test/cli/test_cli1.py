@@ -32,8 +32,9 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     Sets up the temporary finance root and then runs the asciinema/GIF
     generation script, ensuring all paths are temporary and correct.
     """
-    # 1. Ensure CWD is correct for relative paths in the bash script (e.g., demo.gif)
-    monkeypatch.chdir(Path(__file__).parent.parent)
+    # 1. Ensure CWD is the project root for Python module imports (gifs.automation)
+    project_root = Path(__file__).parent.parent.parent
+    monkeypatch.chdir(project_root)
 
     # 2. Get the path to the config file created by the fixture
     config_path = temp_finance_root["config_path"]
@@ -41,13 +42,10 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     assert path.isfile(config_path)
 
     # 3. Specify multiple source files to "inject" into the test environment
+    test_data_dir = Path(__file__).parent.parent / "data"
     source_files = [
-        Path(
-            "data/edit_receipt/single_cash_payment/receipt_image_to_obj_label.json"
-        ),
-        Path(
-            "data/edit_receipt/second_receipt/receipt_image_to_obj_label.json"
-        ),
+        test_data_dir / "edit_receipt/single_cash_payment/receipt_image_to_obj_label.json",
+        test_data_dir / "edit_receipt/second_receipt/receipt_image_to_obj_label.json",
     ]
     for f in source_files:
         if not f.exists():
@@ -87,15 +85,13 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
     print(f"  receipt_category: {before_data['receipt_category']}")
     print("="*60 + "\n")
 
-    # 4. Define the path to your bash script
-    # Assuming your recorder script is named 'demo-recorder.sh' and is in your project root
-
-    bash_script_path = Path("../gifs/edit_receipt_1.sh")
+    # 4. Define the path to your bash script (relative to project root)
+    bash_script_path = Path("gifs/edit_receipt_1.sh")
 
     if not bash_script_path.exists():
         pytest.skip(f"Demo recorder script not found at {bash_script_path}")
     else:
-        print("found file")
+        print(f"Found script: {bash_script_path}")
 
     # 5. Build the command to run the bash script, passing the temporary config path
     cmd = [
@@ -142,7 +138,7 @@ def test_generate_demo_gif(temp_finance_root, monkeypatch, tmp_path):
         pytest.fail("Asciinema/GIF recording failed inside the test.")
 
     # 7. Final assertions (check if the files were created in the gifs directory)
-    output_gif = Path("../gifs/demo.gif")
+    output_gif = Path("gifs/demo.gif")
     assert output_gif.exists() and output_gif.is_file()
 
     # Print the receipt AFTER the test

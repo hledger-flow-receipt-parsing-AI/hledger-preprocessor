@@ -7,21 +7,16 @@
 
 set -euo pipefail
 
-#!/usr/bin/env bash
-# ... (all your existing code up to Configuration Variables) ...
-
 # ------------------------- Configuration Variables ---------------------------
-# NEW: Read CONFIG_FILEPATH from the first command-line argument
 CONFIG_FILEPATH="${1:?Error: Missing config file path argument.}"
 export CONFIG_FILEPATH
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 OUTPUT_CAST="${SCRIPT_DIR}/demo.cast"
 OUTPUT_GIF="${SCRIPT_DIR}/demo.gif"
-HLEDGER_CMD="hledger_preprocessor --config ${CONFIG_FILEPATH} --edit-receipt"
-
 
 # ----------------------------- Colors ---------------------------------------
 RED="$(tput setaf 1)"
@@ -31,314 +26,13 @@ ORANGE="$(tput setaf 3)"
 BOLD="$(tput bold)"
 RESET="$(tput sgr0)"
 
-# ------------------------- Configuration Variables ---------------------------
-
-
+# ------------------------- Recording Settings --------------------------------
 RECORDER_TITLE="hledger-preprocessor receipt matcher"
-
 ROWS=32
 COLS=120
 IDLE_TIME_LIMIT=2
 FONT_SIZE=18
 THEME="solarized-dark"
-
-# Full command (with proper conda activation)
-HLEDGER_CMD="hledger_preprocessor --config ${CONFIG_FILEPATH} --edit-receipt"
-
-# Create a Python pexpect script to automate the TUI interaction
-AUTOMATION_SCRIPT=$(mktemp --suffix=.py)
-cat > "$AUTOMATION_SCRIPT" << 'PYTHON_EOF'
-import pexpect
-import sys
-import os
-import time
-import json
-import glob
-
-config_path = os.environ.get("CONFIG_FILEPATH")
-conda_base = os.popen("conda info --base").read().strip()
-
-# Load config to find receipt labels directory
-import yaml
-with open(config_path) as f:
-    config_data = yaml.safe_load(f)
-root_path = config_data.get('dir_paths', {}).get('root_finance_path', '')
-labels_dir = os.path.join(root_path, config_data.get('dir_paths', {}).get('receipt_labels_dir', 'receipt_labels'))
-
-# Find the bike_repair receipt (the one we'll edit) and save a copy as "before"
-import shutil
-import tempfile
-
-before_category = None
-receipt_label_path = None
-temp_dir = tempfile.mkdtemp()
-before_file = os.path.join(temp_dir, 'before_edit_receipt.json')
-after_file = os.path.join(temp_dir, 'after_edit_receipt.json')
-
-for subdir in os.listdir(labels_dir):
-    label_file = os.path.join(labels_dir, subdir, 'receipt_image_to_obj_label.json')
-    if os.path.isfile(label_file):
-        with open(label_file) as f:
-            data = json.load(f)
-        if data.get('receipt_category') == 'repairs:bike':
-            before_category = data.get('receipt_category')
-            receipt_label_path = label_file
-            # Save a copy of the original file
-            shutil.copy(label_file, before_file)
-            break
-
-# Show the "before" state - file exists, after doesn't yet
-import subprocess
-
-print("\033[1;33m" + "="*70 + "\033[0m")
-print("\033[1;33m  Before editing receipt:\033[0m")
-print("\033[1;33m" + "="*70 + "\033[0m")
-print()
-print(f"\033[1;34m$ jq '.receipt_category' before_edit_receipt.json\033[0m")
-result = subprocess.run(['jq', '.receipt_category', before_file], capture_output=True, text=True)
-print(f"\033[33m{result.stdout.strip()}\033[0m")
-print()
-print(f"\033[1;34m$ jq '.receipt_category' after_edit_receipt.json\033[0m")
-print("\033[90m(file does not exist yet)\033[0m")
-print()
-print("\033[1;33m" + "="*70 + "\033[0m")
-time.sleep(3)  # Pause so viewer can read
-
-# Clear screen before starting the TUI
-print('\x1b[2J\x1b[H', end='', flush=True)
-time.sleep(0.2)
-
-# Build the command
-cmd = f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && conda activate hledger_preprocessor && hledger_preprocessor --config {config_path} --edit-receipt'"
-
-# Show the command that will be run
-print(f"\033[1;34m$ conda activate hledger_preprocessor\033[0m")
-print(f"\033[1;34m$ hledger_preprocessor --config {config_path} --edit-receipt\033[0m")
-print()
-time.sleep(2)
-
-# Spawn with a PTY - set dimensions for urwid
-child = pexpect.spawn(cmd, encoding='utf-8', timeout=60, dimensions=(32, 120))
-child.logfile = sys.stdout
-
-# Hide the terminal cursor so only the TUI selector/highlighting is visible
-print('\x1b[?25l', end='', flush=True)
-
-# Wait for the receipt list TUI to render by looking for the header text
-try:
-    child.expect('Receipts List', timeout=10)
-except pexpect.TIMEOUT:
-    print("ERROR: TUI did not render in time")
-    child.terminate()
-    sys.exit(1)
-
-# Give TUI a moment to fully render after header appears
-time.sleep(0.15)
-
-# Navigate DOWN to the second receipt to show the selection/highlighting moving
-child.send('\x1b[B')  # Down arrow escape sequence
-time.sleep(0.1)
-
-# Force read any pending output - this helps flush the PTY buffer
-try:
-    output = child.read_nonblocking(size=10000, timeout=0.15)
-except:
-    pass
-
-time.sleep(0.4)  # Pause so user can see the highlight on second receipt
-
-# Now select the second receipt (repairs:bike) with space
-child.send(' ')
-time.sleep(0.1)
-
-# Wait for the edit receipt TUI to load and show the "Can you see" prompt
-try:
-    child.expect('Can you see', timeout=30)
-    time.sleep(0.5)
-    # Press Enter to confirm we can see the image
-    child.send('\r')
-except pexpect.TIMEOUT:
-    pass  # Continue even if prompt doesn't appear
-
-# Show the cursor for the edit receipt TUI (user needs to see where they're typing)
-# Use a blinking block cursor (DECSCUSR 1) for better visibility in the GIF
-print('\x1b[?25h', end='', flush=True)  # Show cursor
-print('\x1b[1 q', end='', flush=True)  # Set cursor to blinking block style
-
-# Wait for the full receipt TUI to render - wait for "Select Shop Address"
-# which appears after the recursive reload completes
-try:
-    child.expect('Select Shop Address', timeout=15)
-    time.sleep(0.5)  # Let TUI fully render
-except pexpect.TIMEOUT:
-    pass
-
-# Force read to flush buffer
-try:
-    output = child.read_nonblocking(size=10000, timeout=0.3)
-except:
-    pass
-
-time.sleep(0.8)  # Show the full receipt briefly
-
-# The cursor starts at the date field (line 3)
-# Press Enter once to go to the Bookkeeping expense category field (line 5)
-child.send('\r')
-time.sleep(0.3)
-
-# Force read to flush and show we're now in category field
-try:
-    output = child.read_nonblocking(size=10000, timeout=0.3)
-except:
-    pass
-
-time.sleep(0.5)
-
-# Now we're in the bookkeeping category field which shows "repairs:bike"
-# The cursor is at the START of the field after pressing Enter
-# First go to END of field using End key, then backspace to delete
-
-# Go to end of field - try End key sequence
-child.send('\x1b[4~')  # End key (alternate sequence)
-time.sleep(0.2)
-
-# Force read
-try:
-    output = child.read_nonblocking(size=10000, timeout=0.2)
-except:
-    pass
-
-# Now backspace 12 characters to delete "repairs:bike"
-# Use DEL (0x7f) which is the actual backspace key
-# Flush after each backspace so deletion is visible frame-by-frame
-for i in range(12):
-    child.send('\x7f')  # DEL - backspace
-    time.sleep(0.1)
-    # Flush to show each deletion as separate frame
-    try:
-        output = child.read_nonblocking(size=10000, timeout=0.1)
-    except:
-        pass
-
-time.sleep(0.3)
-
-# Now type the new category: "groceries:ekoplaza"
-# Flush after each character so typing is visible frame-by-frame
-for char in "groceries:ekoplaza":
-    child.send(char)
-    time.sleep(0.1)
-    # Flush to show each character as separate frame
-    try:
-        output = child.read_nonblocking(size=10000, timeout=0.1)
-    except:
-        pass
-
-time.sleep(0.5)
-
-# Navigate through remaining fields using Down arrow (NOT Enter)
-# Enter on some fields triggers reconfiguration, Down just moves focus
-# Fields after category: bank, currency, amount, change, add_account,
-# shop_address, shop_name, street, house_nr, zipcode, city, country,
-# subtotal, tax, done = 15 fields total
-for i in range(15):
-    child.send('\x1b[B')  # Down arrow
-    time.sleep(0.05)
-    # Flush buffer
-    try:
-        output = child.read_nonblocking(size=10000, timeout=0.05)
-    except:
-        pass
-
-time.sleep(0.3)
-
-# Force read to flush buffer
-try:
-    output = child.read_nonblocking(size=10000, timeout=0.3)
-except:
-    pass
-
-# Now we should be at "Done with receipt?" prompt
-# Wait for it
-try:
-    child.expect('Done with receipt', timeout=1)
-except pexpect.TIMEOUT:
-    pass
-
-time.sleep(0.3)
-
-# Force read to flush buffer
-try:
-    output = child.read_nonblocking(size=10000, timeout=0.3)
-except:
-    pass
-
-# "Done with receipt" has only one choice: "yes" which is pre-selected
-# Press Enter to confirm and save (this triggers terminator=True)
-child.send('\r')
-time.sleep(0.5)
-
-# Wait for "EXPORTING to:" prompt from export_human_label function
-try:
-    child.expect('EXPORTING to:', timeout=10)
-    time.sleep(2)
-    # Press Enter to confirm export
-    child.send('\r')
-except pexpect.TIMEOUT:
-    pass
-
-time.sleep(0.5)
-
-# Wait for the process to complete
-try:
-    child.expect(pexpect.EOF, timeout=1)
-except pexpect.TIMEOUT:
-    child.terminate()
-
-# Restore the terminal cursor
-print('\x1b[?25h', end='', flush=True)
-
-# Copy the updated receipt to the "after" file
-time.sleep(0.3)
-if receipt_label_path and os.path.isfile(receipt_label_path):
-    shutil.copy(receipt_label_path, after_file)
-
-# Clear screen and show the actual file diff
-import subprocess
-
-print('\x1b[2J\x1b[H', end='', flush=True)  # Clear screen and move cursor to top
-time.sleep(0.2)
-
-print("\033[1;32m" + "="*70 + "\033[0m")
-print("\033[1;32m  ✓ Receipt successfully updated!\033[0m")
-print("\033[1;32m" + "="*70 + "\033[0m")
-print()
-
-# Extract just the receipt_category value using jq
-print("\033[1mActual file changes:\033[0m")
-print()
-print(f"\033[1;34m$ jq '.receipt_category' before_edit_receipt.json\033[0m")
-result = subprocess.run(['jq', '.receipt_category', before_file], capture_output=True, text=True)
-print(f"\033[31m{result.stdout.strip()}\033[0m")
-print()
-print(f"\033[1;34m$ jq '.receipt_category' after_edit_receipt.json\033[0m")
-result = subprocess.run(['jq', '.receipt_category', after_file], capture_output=True, text=True)
-print(f"\033[32m{result.stdout.strip()}\033[0m")
-print()
-print("\033[1;32m" + "="*70 + "\033[0m")
-
-# Cleanup temp files
-shutil.rmtree(temp_dir, ignore_errors=True)
-
-time.sleep(3)  # Pause so viewer can read the summary
-PYTHON_EOF
-
-WRAPPED_CMD="python $AUTOMATION_SCRIPT"
-
-# Cleanup function
-cleanup() {
-    rm -f "$AUTOMATION_SCRIPT" 2>/dev/null || true
-}
-trap cleanup EXIT
 
 # ----------------------------- Functions ------------------------------------
 log()    { echo -e "${BOLD}${GREEN}[+]${RESET} $*" ; }
@@ -357,21 +51,21 @@ if [[ "$(python -c 'import sys; print(sys.executable)' 2>/dev/null || echo '')" 
 fi
 
 log "Using config: ${CONFIG_FILEPATH}"
-log "Command to record:"
-log "${HLEDGER_CMD}"
 
 # Remove old files
 rm -f "$OUTPUT_CAST" "$OUTPUT_GIF"
 
 # ----------------------------- Recording ------------------------------------
-header "Starting 18-second asciinema recording..."
+header "Starting asciinema recording..."
 
+# Run the Python automation module via asciinema
 if asciinema rec "$OUTPUT_CAST" \
-    --command="$WRAPPED_CMD" \
+    --command="python -m gifs.automation.receipt_editor" \
     --title "$RECORDER_TITLE" \
     --idle-time-limit="$IDLE_TIME_LIMIT" \
     --rows "$ROWS" \
     --cols "$COLS" \
+    --env="CONFIG_FILEPATH,PYTHONPATH" \
     -y -q; then
     log "Recording completed successfully → ${OUTPUT_CAST}"
 else
@@ -380,9 +74,7 @@ else
 fi
 
 # ----------------------------- Post-process cast file ------------------------
-# Remove cursor show sequences (\e[?25h) so only the TUI selector is visible
-# Keep cursor hide sequences (\e[?25l) and position sequences (needed for layout)
-log "Removing cursor show sequences from recording..."
+log "Post-processing cast file..."
 CAST_FILE="$OUTPUT_CAST" python3 << 'PYEOF'
 import os
 import re
@@ -396,8 +88,6 @@ with open(cast_file, 'r') as f:
 # we want the cursor visible during the edit receipt TUI for better UX
 
 # Remove arrow key echo sequences that show as visible cursor movement
-# Down arrow: \u001b[B, Up arrow: \u001b[A, Right: \u001b[C, Left: \u001b[D
-# End key: \u001b[F, Home: \u001b[H (but not \u001b[H alone which is cursor home)
 content = content.replace(r'\u001b[B', '')  # Down arrow
 content = content.replace(r'\u001b[A', '')  # Up arrow
 content = content.replace(r'\u001b[C', '')  # Right arrow
@@ -415,26 +105,24 @@ content = content.replace(r'\b', '')
 content = content.replace(r'\u0008', '')
 
 # Remove empty output entries that result from the above removals
-# Match lines like: [timestamp, "o", ""]
 content = re.sub(r'\n\[\d+\.\d+, "o", ""\]', '', content)
 
-# Remove single space echo entries: [timestamp, "o", " "]
-# These cause a blink when space is pressed to select
+# Remove single space echo entries
 content = re.sub(r'\n\[\d+\.\d+, "o", " "\]', '', content)
 
-# Remove carriage return echo entries: [timestamp, "o", "\r"]
+# Remove carriage return echo entries
 content = re.sub(r'\n\[\d+\.\d+, "o", "\\\\r"\]', '', content)
 
 with open(cast_file, 'w') as f:
     f.write(content)
 
-print("Cursor and arrow sequences removed")
+print("Post-processing complete")
 PYEOF
 
 # ----------------------------- GIF Conversion -------------------------------
 header "Converting to GIF using agg..."
 
-# Ensure agg is available (pure Python, reliable in 2025+)
+# Ensure agg is available
 if ! python -c "import agg" &>/dev/null; then
     log "Installing agg (asciinema → GIF converter)..."
     pip install -q agg || { error "Failed to install agg"; exit 1; }
@@ -450,10 +138,8 @@ if asciinema-agg "$OUTPUT_CAST" "$OUTPUT_GIF" \
     echo
     echo "   ![hledger-preprocessor demo](${OUTPUT_GIF})"
     echo
-    echo "   Done! 🎉"
 else
     error "GIF conversion failed (asciinema-agg error)"
-    error "The command inside may have failed → check output above (look for red/orange lines)"
     exit 1
 fi
 
