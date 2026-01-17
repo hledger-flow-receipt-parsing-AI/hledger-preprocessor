@@ -14,37 +14,63 @@ to pre-processes and categorise bank `.csv` files and receipts so that
 
 ## Demos (auto-generated from integration tests)
 
-0. TUI to quickly enter receipts:
-   ![hledger-preprocessor demo](gifs/edit_receipt/output/edit_receipt.gif)
-1. Algorithmic matching of bank .csv statements to receipt transactions:
+### Quick Start: 5-Step Workflow
+
+**Step 1: Configure your accounts**
+
+Set up your bank accounts and wallets in `config.yaml`:
+
+![Step 1: Setup Config](gifs/01_setup_config/output/01_setup_config.gif)
+
+**Step 2: Define your categories**
+
+Add spending categories to `categories.yaml`:
+
+![Step 2: Add Category](gifs/02_add_category/output/02_add_category.gif)
+
+**Step 3: Label your receipts**
+
+Use the TUI to label receipt images with date, shop, amount, and payment method:
+
+![Step 3: Label Receipt](gifs/03_label_receipt/output/03_label_receipt.gif)
+
+**Step 4: Match receipts to bank transactions**
+
+Automatically link receipts to your bank CSV transactions (prevents duplicates):
+
+![Step 4: Match Receipt to CSV](gifs/04_match_receipt_to_csv/output/04_match_receipt_to_csv.gif)
+
+**Step 5: Run the pipeline**
+
+Run `./start.sh` to generate journals and plots:
+
+![Step 5: Run Pipeline](gifs/05_run_pipeline/output/05_run_pipeline.gif)
+
+---
+
+### Additional Features
+
+- Using hledger-plot to automatically visualise your financial position using interactive Treemap and/or Sankey plot:
 
 \<TODO: add gif>
 
-2. Manual labelling of bank csv transaction using customisable logic:
+- Using hledger-plot to automatically visualise your financial in- and out- flows using interactive Treemap and/or Sankey plot:
 
 \<TODO: add gif>
 
-3. Using hledger-plot to automatically visualise your financial position using interactive Treemap and/or Sankey plot:
-
-\<TODO: add gif>
-
-4. Using hledger-plot to automatically visualise your financial in- and out- flows using interactive Treemap and/or Sankey plot:
-
-\<TODO: add gif>
-
-5. Include performance metrics of various self-hosted AIs:
+- Include performance metrics of various self-hosted AIs:
 
 \<TODO: add performance metrics various ai modules>
 
-6.a AI for: bank `.csv` transaction-> categorisation (e.g. groceries:wholefoods, repairs:bike etc.)
+- AI for: bank `.csv` transaction-> categorisation (e.g. groceries:wholefoods, repairs:bike etc.)
 
 \<TODO: add gif>
 
-6.b AI for: receipt image -> structured text (e.g. a json/dictionary with the time, shop, bought items, total, taxes etc.)
+- AI for: receipt image -> structured text (e.g. a json/dictionary with the time, shop, bought items, total, taxes etc.)
 
 \<TODO: add gif>
 
-6.c AI for: receipt image -> categorisation (e.g. groceries, repairs etc.)
+- AI for: receipt image -> categorisation (e.g. groceries, repairs etc.)
 
 \<TODO: add gif>
 
