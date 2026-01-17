@@ -1,19 +1,22 @@
 """Unit tests for transaction classification logic."""
 
-import pytest
 from datetime import datetime
-from typing import Dict, Any
 
-from hledger_preprocessor.Currency import Currency
-from hledger_preprocessor.TransactionObjects.Account import Account
-from hledger_preprocessor.generics.GenericTransactionWithCsv import GenericCsvTransaction
-from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
-from hledger_preprocessor.categorisation.Categories import CategoryNamespace
-from hledger_preprocessor.categorisation.load_categories import load_categories_from_yaml
+import pytest
+
+from hledger_preprocessor.categorisation.helper import dict_contains_string
+from hledger_preprocessor.categorisation.load_categories import (
+    load_categories_from_yaml,
+)
 from hledger_preprocessor.categorisation.rule_based.private_logic import (
     private_debit_classification,
 )
-from hledger_preprocessor.categorisation.helper import dict_contains_string
+from hledger_preprocessor.Currency import Currency
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
+from hledger_preprocessor.TransactionObjects.Account import Account
+from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
 
 
 class TestPrivateDebitClassification:
@@ -80,7 +83,10 @@ onbekend: {}
         )
 
         assert result is not None
-        assert "ekoplaza" in str(result).lower() or "groceries" in str(result).lower()
+        assert (
+            "ekoplaza" in str(result).lower()
+            or "groceries" in str(result).lower()
+        )
 
     def test_tnx_dict_structure(self, wallet_account):
         """Debug test to understand tnx_dict structure."""

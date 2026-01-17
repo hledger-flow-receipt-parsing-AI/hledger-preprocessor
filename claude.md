@@ -46,14 +46,13 @@ Never just look at whether the tests passes, always also check whether the cli o
 
 ## Desired gifs
 
-
 | Input Type | File | Content Summary |
 
-|------------|------|-----------------|
+|\------------|------|-----------------|
 
 | Bank CSV | triodos_2025.csv | 1 transaction: 2025-01-15, -€42.17, "Ekoplaza" |
 
-Then the receipt should be manually labelled by showing the receipt image and showing how it is filled in.  You could re-use the edit_receipt test for this.
+Then the receipt should be manually labelled by showing the receipt image and showing how it is filled in. You could re-use the edit_receipt test for this.
 
 Then it should show that the receipt label exists.
 | Receipt Label (card) | groceries_ekoplaza_card.json | Card payment €42.17 → triodos account (matches CSV) |
@@ -69,14 +68,13 @@ Ideally before the receipt is being edited, it should show how to add the (upcom
 
 Perhaps it should also show how to edit the config.yaml at the start.
 
-However all of this in a single gif is a bit much, so perhaps make it multiple gifs. 
-
+However all of this in a single gif is a bit much, so perhaps make it multiple gifs.
 
 ## Proposed GIF Sequence (5 short demos)
 
 | # | GIF Name | Shows | Duration |
 
-|---|----------|-------|----------|
+|\---|----------|-------|----------|
 
 | 1 | 01_setup_config | Edit config.yaml to add bank account + wallet | ~15s |
 
@@ -87,4 +85,3 @@ However all of this in a single gif is a bit much, so perhaps make it multiple g
 | 4 | 04_match_receipt_to_csv | Matching algo linking receipt → bank CSV transaction | ~15s |
 
 | 5 | 05_run_pipeline | ./start.sh → shows journals + plot output | ~20s |
-
