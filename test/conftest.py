@@ -1,3 +1,5 @@
+import json
+import shutil
 import textwrap
 from pathlib import Path
 
@@ -187,6 +189,29 @@ def temp_finance_root(tmp_path_factory):
     )
 
     # ------------------------------------------------------------------
+    # 6c. Copy receipt image and label for GIF demos
+    # ------------------------------------------------------------------
+    # Copy dummy receipt image
+    fixtures_dir = Path(__file__).parent / "fixtures"
+    receipt_img_src = fixtures_dir / "receipts" / "dummy_receipt.jpg"
+    receipt_img_dst = root / "receipt_images_input" / "ekoplaza_2025-01-15.jpg"
+    if receipt_img_src.exists():
+        shutil.copy(receipt_img_src, receipt_img_dst)
+
+    # Copy receipt label JSON (card payment matching CSV)
+    receipt_label_src = (
+        fixtures_dir / "receipts" / "groceries_ekoplaza_card.json"
+    )
+    receipt_label_dst = root / "receipt_labels" / "groceries_ekoplaza_card.json"
+    if receipt_label_src.exists():
+        # Load and update the raw_img_filepath to point to temp location
+        with open(receipt_label_src) as f:
+            receipt_data = json.load(f)
+        receipt_data["raw_img_filepath"] = str(receipt_img_dst)
+        with open(receipt_label_dst, "w") as f:
+            json.dump(receipt_data, f, indent=2)
+
+    # ------------------------------------------------------------------
     # 7. Yield everything a test might need
     # ------------------------------------------------------------------
     yield {
@@ -194,6 +219,10 @@ def temp_finance_root(tmp_path_factory):
         "config_path": final_config_path,
         "triodos_csv": root / "triodos_2025.csv",
         "start_journal": root / "start_pos" / "2024_complete.journal",
+        "receipt_image": receipt_img_dst,
+        "receipt_label": receipt_label_dst,
+        "categories_yaml": root / "categories.yaml",
+        "working_dir": working_dir,
     }
 
     # cleanup is automatic because tmp_path_factory uses tempdir

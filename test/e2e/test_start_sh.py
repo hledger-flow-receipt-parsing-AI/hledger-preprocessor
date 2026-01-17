@@ -1235,17 +1235,22 @@ echo "start.sh completed successfully!"
                             # Skip TensorFlow/CUDA warnings that look like errors
                             context_start = max(0, i - 2)
                             context_end = min(len(lines), i + 10)
-                            context = "\n".join(lines[context_start:context_end])
+                            context = "\n".join(
+                                lines[context_start:context_end]
+                            )
 
                             # Filter out TensorFlow/CUDA warnings
-                            if any(skip in context for skip in [
-                                "Unable to register cuFFT",
-                                "Unable to register cuDNN",
-                                "Unable to register cuBLAS",
-                                "cuda_fft.cc",
-                                "cuda_dnn.cc",
-                                "cuda_blas.cc",
-                            ]):
+                            if any(
+                                skip in context
+                                for skip in [
+                                    "Unable to register cuFFT",
+                                    "Unable to register cuDNN",
+                                    "Unable to register cuBLAS",
+                                    "cuda_fft.cc",
+                                    "cuda_dnn.cc",
+                                    "cuda_blas.cc",
+                                ]
+                            ):
                                 continue
 
                             errors_found.append(f"STDERR: {context}")
