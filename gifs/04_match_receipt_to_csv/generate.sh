@@ -14,11 +14,11 @@ source "${SCRIPT_DIR}/../scripts/common.sh"
 # Initialize demo (sets up paths, runs preflight checks)
 init_demo "04_match_receipt_to_csv" "$@"
 
-# Run the full pipeline with the match receipt module
+# Run the full pipeline with the REAL match receipt module
 run_full_pipeline \
-    "gifs.automation.match_receipt_demo" \
+    "gifs.automation.real_match_demo" \
     "Step 4: Match Receipt to Transaction" \
-    35 \
-    90
+    38 \
+    100
 
 exit 0
