@@ -48,15 +48,15 @@ Run `./start.sh` to generate journals and plots:
 
 ---
 
+### Bonus: Visualize Your Finances
+
+Use `hledger_plot` to create interactive Sankey diagrams and Treemap plots:
+
+![Bonus: Show Plots](gifs/06_show_plots/output/06_show_plots.gif)
+
+---
+
 ### Additional Features
-
-- Using hledger-plot to automatically visualise your financial position using interactive Treemap and/or Sankey plot:
-
-\<TODO: add gif>
-
-- Using hledger-plot to automatically visualise your financial in- and out- flows using interactive Treemap and/or Sankey plot:
-
-\<TODO: add gif>
 
 - Include performance metrics of various self-hosted AIs:
 

@@ -230,3 +230,28 @@ class TestGifSequence:
             / "04_match_receipt_to_csv.gif"
         )
         assert output_gif.exists(), f"GIF should exist at {output_gif}"
+
+    def test_06_show_plots_demo(
+        self, temp_finance_root, project_root, demo_env, monkeypatch
+    ):
+        """Test GIF 6: show_plots demo runs successfully."""
+        monkeypatch.chdir(project_root)
+
+        script_path = project_root / "gifs" / "06_show_plots" / "generate.sh"
+        if not script_path.exists():
+            pytest.skip(f"Script not found: {script_path}")
+
+        result = self.run_demo_script(
+            script_path=script_path,
+            config_path=temp_finance_root["config_path"],
+            env=demo_env,
+            timeout=90,
+        )
+
+        assert result.returncode == 0, f"Demo failed: {result.stderr}"
+
+        # Check GIF was created
+        output_gif = (
+            project_root / "gifs" / "06_show_plots" / "output" / "06_show_plots.gif"
+        )
+        assert output_gif.exists(), f"GIF should exist at {output_gif}"
