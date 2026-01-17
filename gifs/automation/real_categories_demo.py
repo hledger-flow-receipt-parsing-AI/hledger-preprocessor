@@ -13,14 +13,14 @@ from .nano_editor import NanoEditor, ENTER, PAGE_DOWN, PAGE_UP
 
 
 def setup_demo_environment():
-    """Set up a clean demo environment with example files."""
+    """Set up a clean demo environment with test fixture files."""
     demo_dir = "/tmp/hledger_demo"
     os.makedirs(demo_dir, exist_ok=True)
 
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-    # Copy example categories
-    src = os.path.join(project_root, "example_categories.yaml")
+    # Copy test fixture categories
+    src = os.path.join(project_root, "test/fixtures/categories/example_categories.yaml")
     dst = os.path.join(demo_dir, "categories.yaml")
     shutil.copy(src, dst)
 
