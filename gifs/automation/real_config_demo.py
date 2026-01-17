@@ -13,14 +13,14 @@ from .nano_editor import NanoEditor, ENTER, PAGE_DOWN, CTRL_K
 
 
 def setup_demo_environment():
-    """Set up a clean demo environment with example files."""
+    """Set up a clean demo environment with test fixture files."""
     demo_dir = "/tmp/hledger_demo"
     os.makedirs(demo_dir, exist_ok=True)
 
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-    # Copy example config
-    src = os.path.join(project_root, "example_config.yaml")
+    # Copy test fixture config (uses triodos_2025.csv, placeholder paths)
+    src = os.path.join(project_root, "test/fixtures/config_templates/1_bank_1_wallet.yaml")
     dst = os.path.join(demo_dir, "config.yaml")
     shutil.copy(src, dst)
 
@@ -61,44 +61,45 @@ def run_demo():
     # Let viewer see the initial file
     editor.wait(2)
 
-    # Edit 1: Change csv_filename from "some_bank_2024-2025.csv" to "triodos_2024.csv"
+    # Edit 1: Change csv_filename from "triodos_2025.csv" to "my_bank_2024.csv"
     # Search puts cursor at start of match
-    editor.search("some_bank_2024-2025")
-    editor.wait(0.8)
-
-    # Delete "some_bank_2024-2025" (19 chars) and type new name
     from .nano_editor import DELETE
-    for _ in range(19):
+    editor.search("triodos_2025")
+    editor.wait(0.8)
+
+    # Delete "triodos_2025" (12 chars) and type new name
+    for _ in range(12):
         editor.child.send(DELETE)
         time.sleep(0.03)
     editor.wait(0.3)
-    editor.type_text("triodos_2024")
+    editor.type_text("my_bank_2024")
 
     editor.wait(1)
 
-    # Edit 2: Change account_holder from "some_name" to "alice"
-    editor.search("some_name")
+    # Edit 2: Change bank from "triodos" to "mybank" (first occurrence)
+    editor.search("bank: triodos")
     editor.wait(0.8)
 
-    # Delete "some_name" (9 chars) and type "alice"
-    for _ in range(9):
+    # Delete "triodos" (7 chars) - cursor is at 'b' of bank, move to 't'
+    editor.move_right(6)  # move past "bank: "
+    for _ in range(7):
         editor.child.send(DELETE)
         time.sleep(0.03)
     editor.wait(0.3)
-    editor.type_text("alice")
+    editor.type_text("mybank")
 
     editor.wait(1)
 
-    # Edit 3: Change bank from "some_bank" to "triodos"
-    editor.search("some_bank")
+    # Edit 3: Change root_finance_path from placeholder to real path
+    editor.search("placeholder_root")
     editor.wait(0.8)
 
-    # Delete "some_bank" (9 chars) and type "triodos"
-    for _ in range(9):
+    # Delete "placeholder_root" (16 chars) and type new path
+    for _ in range(16):
         editor.child.send(DELETE)
         time.sleep(0.03)
     editor.wait(0.3)
-    editor.type_text("triodos")
+    editor.type_text("finance_data")
 
     editor.wait(1.2)
 
@@ -121,8 +122,9 @@ def run_demo():
     print("\033[1;32m" + "-" * 50 + "\033[0m")
     print()
     print("\033[37mYour config.yaml now includes:\033[0m")
-    print("\033[90m  - Triodos checking account for Alice\033[0m")
-    print("\033[90m  - Bank CSV: triodos_2024.csv\033[0m")
+    print("\033[90m  - Bank: mybank (was triodos)\033[0m")
+    print("\033[90m  - CSV: my_bank_2024.csv\033[0m")
+    print("\033[90m  - Data path: ~/finance_data\033[0m")
     print()
     print("\033[1;33mNext step:\033[0m Define your spending categories")
     print()
