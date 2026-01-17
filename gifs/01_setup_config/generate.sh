@@ -14,11 +14,11 @@ source "${SCRIPT_DIR}/../scripts/common.sh"
 # Initialize demo (sets up paths, runs preflight checks)
 init_demo "01_setup_config" "$@"
 
-# Run the full pipeline with the setup config module
+# Run the full pipeline with the REAL config demo (using nano)
 run_full_pipeline \
-    "gifs.automation.setup_config_demo" \
+    "gifs.automation.real_config_demo" \
     "Step 1: Configure Your Accounts" \
-    30 \
-    100
+    40 \
+    115
 
 exit 0
