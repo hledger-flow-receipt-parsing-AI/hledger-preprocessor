@@ -62,7 +62,7 @@ Flow:
 
 04_label_receipt | TUI labelling a receipt image (reuse edit_receipt).
 
-## 05_match_receipt_to_csv | Matching algo linking receipt → bank CSV transaction. Really run that command on working data.
+05_match_receipt_to_csv | Matching algo linking receipt → bank CSV transaction. Really run that command on working data.
 
 6. Run the whole ./start.sh from scratch (once the receipt has been cropped, labelled and matched to the csv transaction) to show the whole flow.
 
