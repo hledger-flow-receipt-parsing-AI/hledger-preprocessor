@@ -9,7 +9,7 @@ import os
 import shutil
 import time
 
-from .nano_editor import NanoEditor, ENTER, PAGE_DOWN, PAGE_UP
+from .nano_editor import ENTER, PAGE_DOWN, PAGE_UP, NanoEditor
 
 
 def setup_demo_environment():
@@ -20,7 +20,9 @@ def setup_demo_environment():
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
     # Copy test fixture categories
-    src = os.path.join(project_root, "test/fixtures/categories/example_categories.yaml")
+    src = os.path.join(
+        project_root, "test/fixtures/categories/example_categories.yaml"
+    )
     dst = os.path.join(demo_dir, "categories.yaml")
     shutil.copy(src, dst)
 
@@ -37,7 +39,10 @@ def print_header():
     print()
     print("\033[37mCategories become hledger accounts like:\033[0m")
     print("\033[90m  groceries:\033[0m")
-    print("\033[90m    supermarket: {}  \033[33m-> expenses:groceries:supermarket\033[0m")
+    print(
+        "\033[90m    supermarket: {}  \033[33m->"
+        " expenses:groceries:supermarket\033[0m"
+    )
     print()
     time.sleep(3)
 

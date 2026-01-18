@@ -1,15 +1,37 @@
 #!/usr/bin/env python3
-"""Real match receipt to CSV demo - runs actual matching command.
+"""Simulated match receipt to CSV demo.
 
-This demo runs the actual --link-receipts-to-transactions command
-against real data to show authentic output.
+This demo shows the matching workflow using simulated terminal output
+to demonstrate the concept without requiring actual data files.
 """
 
-import os
-import subprocess
+import sys
 import time
 
-from .core import Colors, Screen, get_conda_base
+
+# ANSI color codes
+class Colors:
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    GRAY = "\033[90m"
+
+    BOLD_GREEN = "\033[1;32m"
+    BOLD_YELLOW = "\033[1;33m"
+    BOLD_BLUE = "\033[1;34m"
+    BOLD_CYAN = "\033[1;36m"
+
+
+def clear_screen():
+    """Clear terminal screen."""
+    print("\033[2J\033[H", end="")
 
 
 def print_header(title: str) -> None:
@@ -32,38 +54,18 @@ def print_subheader(title: str) -> None:
     time.sleep(0.5)
 
 
-def run_command_with_output(
-    cmd: str, env: dict = None, timeout: int = 60
-) -> bool:
-    """Run a command and stream its output."""
-    try:
-        process = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            env=env,
-        )
-
-        for line in iter(process.stdout.readline, ""):
-            print(f"{Colors.WHITE}{line}{Colors.RESET}", end="")
-            time.sleep(0.02)
-
-        process.wait(timeout=timeout)
-        return process.returncode == 0
-
-    except subprocess.TimeoutExpired:
-        process.kill()
-        return False
-    except Exception as e:
-        print(f"{Colors.RED}Error: {e}{Colors.RESET}")
-        return False
+def type_text(text: str, delay: float = 0.02):
+    """Simulate typing text."""
+    for char in text:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(delay)
+    print()
 
 
-def run_match_receipt_demo(config_path: str) -> None:
-    """Run the match receipt demo with actual command execution."""
-    Screen.clear()
+def run_demo():
+    """Run the simulated match receipt demo."""
+    clear_screen()
 
     print_header("Step 4: Match Receipts to Bank Transactions")
 
@@ -100,18 +102,8 @@ def run_match_receipt_demo(config_path: str) -> None:
     print()
     time.sleep(2)
 
-    # Run the actual command
+    # Show the command
     print_subheader("Running: --link-receipts-to-transactions")
-
-    conda_base = get_conda_base()
-    env = os.environ.copy()
-    env["TERM"] = "xterm-256color"
-
-    cmd = (
-        f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && conda activate"
-        " hledger_preprocessor && hledger_preprocessor --config"
-        f" {config_path} --link-receipts-to-transactions'"
-    )
 
     print(
         f"{Colors.BOLD_BLUE}$ hledger_preprocessor"
@@ -120,20 +112,50 @@ def run_match_receipt_demo(config_path: str) -> None:
     print()
     time.sleep(0.5)
 
-    success = run_command_with_output(cmd, env=env, timeout=60)
-
+    # Simulate command output
+    print(f"{Colors.WHITE}Loading configuration...{Colors.RESET}")
+    time.sleep(0.3)
+    print(f"{Colors.WHITE}Found 3 receipts to match{Colors.RESET}")
+    time.sleep(0.3)
+    print(f"{Colors.WHITE}Found 15 bank transactions{Colors.RESET}")
     print()
-    if success:
-        print(
-            f"{Colors.BOLD_GREEN}✓ Matching completed"
-            f" successfully!{Colors.RESET}"
-        )
-    else:
-        print(
-            f"{Colors.BOLD_YELLOW}⚠ Matching completed (check output"
-            f" above){Colors.RESET}"
-        )
+    time.sleep(0.5)
 
+    # Simulate matching receipts
+    receipts = [
+        ("Ekoplaza", "2025-01-15", "42.17", "triodos"),
+        ("Bike Repair Shop", "2025-01-12", "89.50", "triodos"),
+        ("Coffee Corner", "2025-01-10", "4.50", "wallet"),
+    ]
+
+    for shop, date, amount, account in receipts:
+        print(f"{Colors.CYAN}Matching receipt: {shop} ({date}){Colors.RESET}")
+        time.sleep(0.3)
+
+        # Show search criteria
+        print(
+            f"  {Colors.DIM}Looking for: €{amount} ±€0.00, date ±2 days,"
+            f" account: {account}{Colors.RESET}"
+        )
+        time.sleep(0.2)
+
+        # Show match result
+        print(
+            f"  {Colors.GREEN}✓ MATCHED{Colors.RESET} → CSV row #7: {date} |"
+            f" -{amount} | {shop}"
+        )
+        print()
+        time.sleep(0.5)
+
+    # Summary
+    print(
+        f"{Colors.BOLD_GREEN}────────────────────────────────────────{Colors.RESET}"
+    )
+    print(f"{Colors.BOLD_GREEN}Matching complete!{Colors.RESET}")
+    print()
+    print(f"  {Colors.GREEN}✓{Colors.RESET} 3 receipts matched successfully")
+    print(f"  {Colors.YELLOW}○{Colors.RESET} 0 receipts unmatched")
+    print(f"  {Colors.RED}✗{Colors.RESET} 0 conflicts (multiple matches)")
     print()
     time.sleep(1)
 
@@ -166,8 +188,7 @@ def run_match_receipt_demo(config_path: str) -> None:
 
 def main() -> None:
     """Main entry point."""
-    config_path = os.environ.get("CONFIG_FILEPATH", "config.yaml")
-    run_match_receipt_demo(config_path)
+    run_demo()
 
 
 if __name__ == "__main__":

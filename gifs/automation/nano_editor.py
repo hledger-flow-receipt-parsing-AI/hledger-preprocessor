@@ -8,6 +8,7 @@ terminal recordings that show real file editing.
 import os
 import sys
 import time
+
 import pexpect
 
 # Nano control sequences
@@ -65,13 +66,16 @@ class NanoEditor:
         os.environ["LINES"] = str(rows)
         os.environ["COLUMNS"] = str(cols)
 
-        # Start nano
+        # Start nano via bash to ensure proper PTY handling
         self.child = pexpect.spawn(
-            f"nano {filename}",
+            f"bash -c 'nano {filename}'",
             encoding="utf-8",
             dimensions=(rows, cols),
         )
         self.child.delaybeforesend = self.typing_delay
+        # Forward nano output to stdout so asciinema captures it
+        # logfile_read captures what the child process outputs (the nano UI)
+        self.child.logfile_read = sys.stdout
 
         # Wait for nano to start
         time.sleep(self.action_delay * 2)

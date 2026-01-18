@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Label Receipt Demo - GIF Generator
+# Crop Receipt Demo - GIF Generator
 #
-# Demonstrates labelling a receipt using the TUI interface.
-# Step 3 of the 5-GIF demo sequence.
+# Demonstrates how to crop receipt images before labeling
 # =============================================================================
 
 set -euo pipefail
@@ -13,13 +12,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../scripts/common.sh"
 
 # Initialize demo (sets up paths, runs preflight checks)
-init_demo "03_label_receipt" "$@"
+init_demo "02b_crop_receipt" "$@"
 
-# Run the full pipeline with the simulated label demo (avoids X11/TUI issues)
+# Run the full pipeline with the simulated crop demo
 run_full_pipeline \
-    "gifs.automation.simulated_label_demo" \
-    "Step 3: Label Your Receipt" \
+    "gifs.automation.simulated_crop_demo" \
+    "Step 2b: Crop Receipt Images" \
     35 \
-    60
+    75
 
 exit 0

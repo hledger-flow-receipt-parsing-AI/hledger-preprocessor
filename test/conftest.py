@@ -1,10 +1,13 @@
-import json
-import shutil
 import textwrap
 from pathlib import Path
+from test.helpers import seed_receipts_into_root
+from typing import List
 
 import pytest
 import yaml
+
+from hledger_preprocessor.config.Config import Config
+from hledger_preprocessor.config.load_config import load_config
 
 
 # ----------------------------------------------------------------------
@@ -189,27 +192,35 @@ def temp_finance_root(tmp_path_factory):
     )
 
     # ------------------------------------------------------------------
-    # 6c. Copy receipt image and label for GIF demos
+    # 6c. Seed receipt images and labels via seed_receipts_into_root
     # ------------------------------------------------------------------
-    # Copy dummy receipt image
-    fixtures_dir = Path(__file__).parent / "fixtures"
-    receipt_img_src = fixtures_dir / "receipts" / "dummy_receipt.jpg"
-    receipt_img_dst = root / "receipt_images_input" / "ekoplaza_2025-01-15.jpg"
-    if receipt_img_src.exists():
-        shutil.copy(receipt_img_src, receipt_img_dst)
+    # This properly creates:
+    # - Input images in receipt_images_input/
+    # - Cropped images in receipt_images_processed/
+    # - Labels in hash-based subdirectories of receipt_labels/
+    #
+    # This ensures the directory structure matches what
+    # load_receipts_from_dir() expects.
 
-    # Copy receipt label JSON (card payment matching CSV)
-    receipt_label_src = (
-        fixtures_dir / "receipts" / "groceries_ekoplaza_card.json"
+    # Load config to seed receipts
+    config: Config = load_config(
+        config_path=str(final_config_path),
+        pre_processed_output_dir=None,
     )
-    receipt_label_dst = root / "receipt_labels" / "groceries_ekoplaza_card.json"
-    if receipt_label_src.exists():
-        # Load and update the raw_img_filepath to point to temp location
-        with open(receipt_label_src) as f:
-            receipt_data = json.load(f)
-        receipt_data["raw_img_filepath"] = str(receipt_img_dst)
-        with open(receipt_label_dst, "w") as f:
-            json.dump(receipt_data, f, indent=2)
+
+    # Seed the groceries_ekoplaza_card.json receipt (card payment matching CSV)
+    fixtures_dir = Path(__file__).parent / "fixtures" / "receipts"
+    source_files: List[Path] = [
+        fixtures_dir / "groceries_ekoplaza_card.json",
+    ]
+    seed_receipts_into_root(config=config, source_json_paths=source_files)
+
+    # Get the seeded receipt paths for tests that need them
+    # The receipt image path is derived from the JSON's raw_img_filepath
+    receipt_img_input = root / "receipt_images_input" / "example_card.jpg"
+    receipt_img_processed = (
+        root / "receipt_images_processed" / "example_card_cropped.jpg"
+    )
 
     # ------------------------------------------------------------------
     # 7. Yield everything a test might need
@@ -219,10 +230,10 @@ def temp_finance_root(tmp_path_factory):
         "config_path": final_config_path,
         "triodos_csv": root / "triodos_2025.csv",
         "start_journal": root / "start_pos" / "2024_complete.journal",
-        "receipt_image": receipt_img_dst,
-        "receipt_label": receipt_label_dst,
         "categories_yaml": root / "categories.yaml",
         "working_dir": working_dir,
+        "receipt_image": receipt_img_input,
+        "receipt_image_processed": receipt_img_processed,
     }
 
     # cleanup is automatic because tmp_path_factory uses tempdir
