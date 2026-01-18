@@ -35,10 +35,10 @@ rendering:
 # -----------------------------------------------------------------------------
 themes:
   # Generate all themed variants (true) or just a single default (false)
-  generate_themed_gifs: false
+  generate_themed_gifs: true
 
   # Generate showcase GIF combining all themes (only if generate_themed_gifs is true)
-  generate_showcase: false
+  generate_showcase: true
 
   # Default theme to use when generate_themed_gifs is false
   # Must match a name from the themes list below
@@ -86,6 +86,13 @@ demos:
     # terminal:
     #   rows: 50
     #   cols: 120
+
+  # Label receipt TUI demo (04_label_receipt)
+  04_label_receipt:
+    enabled: true
+    terminal:
+      rows: 50
+      cols: 120
 
   # Start.sh full pipeline demo
   start_sh_pipeline:
