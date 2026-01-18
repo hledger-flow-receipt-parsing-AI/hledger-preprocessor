@@ -11,7 +11,7 @@ def test_gif_04_label_receipt(temp_finance_root, monkeypatch):
     run_gif_test(
         temp_finance_root=temp_finance_root,
         monkeypatch=monkeypatch,
-        demo_name="03_label_receipt",
-        gif_subdir="03_label_receipt",
+        demo_name="04_label_receipt",
+        gif_subdir="04_label_receipt",
         timeout=60,
     )

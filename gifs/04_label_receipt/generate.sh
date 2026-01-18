@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../scripts/common.sh"
 
 # Initialize demo (sets up paths, runs preflight checks)
-init_demo "03_label_receipt" "$@"
+init_demo "04_label_receipt" "$@"
 
 # Run the full pipeline with the simulated label demo (avoids X11/TUI issues)
 run_full_pipeline \

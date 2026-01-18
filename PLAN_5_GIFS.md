@@ -22,7 +22,7 @@ ______________________________________________________________________
 | --- | ------------------------- | --------------------------------- | -------- | -------------------------- |
 | 1   | `01_setup_config`         | Display `config.yaml`             | ~15s     | TODO                       |
 | 2   | `02_add_category`         | Display `categories.yaml`         | ~10s     | TODO                       |
-| 3   | `03_label_receipt`        | `--edit-receipt` TUI              | ~30s     | EXISTS (edit_receipt)      |
+| 3   | `04_label_receipt`        | `--edit-receipt` TUI              | ~30s     | EXISTS (edit_receipt)      |
 | 4   | `04_match_receipt_to_csv` | `--link-receipts-to-transactions` | ~15s     | TODO                       |
 | 5   | `05_run_pipeline`         | `./start.sh`                      | ~20s     | EXISTS (start_sh_pipeline) |
 
@@ -105,7 +105,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## GIF 3: `03_label_receipt`
+## GIF 3: `04_label_receipt`
 
 **Purpose:** Show TUI for labelling receipt images
 
@@ -128,7 +128,7 @@ ______________________________________________________________________
 
 **Implementation:**
 
-- **REUSE**: `gifs/edit_receipt/` (rename folder to `03_label_receipt/`)
+- **REUSE**: `gifs/edit_receipt/` (rename folder to `04_label_receipt/`)
 - Update `receipt_editor.py` if needed to match story data
 
 ______________________________________________________________________
@@ -212,7 +212,7 @@ gifs/
 │   ├── generate.sh
 │   ├── output/
 │   └── recordings/
-├── 03_label_receipt/          # Renamed from edit_receipt
+├── 04_label_receipt/          # Renamed from edit_receipt
 │   ├── generate.sh
 │   ├── output/
 │   └── recordings/
@@ -264,7 +264,7 @@ class TestGifSequence:
         content = categories_path.read_text()
         assert "ekoplaza" in content
 
-    def test_03_label_receipt(self, demo_finance_root):
+    def test_04_label_receipt(self, demo_finance_root):
         """Receipt labelling produces valid JSON."""
         # Run receipt_editor demo
         # Assert groceries_ekoplaza_card.json created
@@ -289,7 +289,7 @@ ______________________________________________________________________
 1. **GIF 1** - `01_setup_config` (simple: display config with colors)
 1. **GIF 2** - `02_add_category` (simple: display categories with colors)
 1. **GIF 4** - `04_match_receipt_to_csv` (most novel: show matching logic)
-1. **Rename existing** - `edit_receipt` → `03_label_receipt`, `start_sh_pipeline` → `05_run_pipeline`
+1. **Rename existing** - `edit_receipt` → `04_label_receipt`, `start_sh_pipeline` → `05_run_pipeline`
 1. **Write E2E test** - `test_gif_sequence.py`
 
 ______________________________________________________________________
