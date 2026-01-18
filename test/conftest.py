@@ -212,6 +212,7 @@ def temp_finance_root(tmp_path_factory):
     fixtures_dir = Path(__file__).parent / "fixtures" / "receipts"
     source_files: List[Path] = [
         fixtures_dir / "groceries_ekoplaza_card.json",
+        fixtures_dir / "repairs_bike.json",
     ]
     seed_receipts_into_root(config=config, source_json_paths=source_files)
 
