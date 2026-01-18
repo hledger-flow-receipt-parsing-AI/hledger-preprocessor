@@ -46,7 +46,7 @@ Run `./start.sh` to generate journals and plots:
 
 ![Step 5: Run Pipeline](gifs/05_run_pipeline/output/05_run_pipeline.gif)
 
----
+______________________________________________________________________
 
 ### Bonus: Visualize Your Finances
 
@@ -54,7 +54,7 @@ Use `hledger_plot` to create interactive Sankey diagrams and Treemap plots:
 
 ![Bonus: Show Plots](gifs/06_show_plots/output/06_show_plots.gif)
 
----
+______________________________________________________________________
 
 ### Additional Features
 

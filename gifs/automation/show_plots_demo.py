@@ -32,10 +32,19 @@ def print_subheader(title: str) -> None:
 
 def show_intro() -> None:
     """Show introduction to hledger_plot."""
-    print(f"{Colors.WHITE}hledger_plot creates interactive financial visualizations:{Colors.RESET}")
+    print(
+        f"{Colors.WHITE}hledger_plot creates interactive financial"
+        f" visualizations:{Colors.RESET}"
+    )
     print()
-    print(f"  {Colors.CYAN}•{Colors.RESET} {Colors.WHITE}Sankey diagrams{Colors.RESET} - Show money flow between accounts")
-    print(f"  {Colors.CYAN}•{Colors.RESET} {Colors.WHITE}Treemap plots{Colors.RESET} - Show hierarchical spending breakdown")
+    print(
+        f"  {Colors.CYAN}•{Colors.RESET} {Colors.WHITE}Sankey"
+        f" diagrams{Colors.RESET} - Show money flow between accounts"
+    )
+    print(
+        f"  {Colors.CYAN}•{Colors.RESET} {Colors.WHITE}Treemap"
+        f" plots{Colors.RESET} - Show hierarchical spending breakdown"
+    )
     print()
     time.sleep(1.5)
 
@@ -44,28 +53,49 @@ def show_export_commands(config_path: str, journal_path: str) -> None:
     """Show the export commands."""
     print_subheader("Export Static SVG Files")
 
-    print(f"{Colors.GRAY}Generate SVG files for embedding in reports:{Colors.RESET}")
+    print(
+        f"{Colors.GRAY}Generate SVG files for embedding in"
+        f" reports:{Colors.RESET}"
+    )
     print()
 
     # Sankey export
-    print(f"{Colors.BOLD_BLUE}$ hledger_plot --config {os.path.basename(config_path)} \\{Colors.RESET}")
-    print(f"{Colors.BOLD_BLUE}    --journal-filepath {os.path.basename(journal_path)} \\{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_BLUE}$ hledger_plot --config"
+        f" {os.path.basename(config_path)} \\{Colors.RESET}"
+    )
+    print(
+        f"{Colors.BOLD_BLUE}    --journal-filepath"
+        f" {os.path.basename(journal_path)} \\{Colors.RESET}"
+    )
     print(f"{Colors.BOLD_BLUE}    -d EUR --export-sankey{Colors.RESET}")
     print()
     time.sleep(0.5)
 
-    print(f"  {Colors.GREEN}→{Colors.RESET} Creates: {Colors.YELLOW}hledger_plots/sankey_*.svg{Colors.RESET}")
+    print(
+        f"  {Colors.GREEN}→{Colors.RESET} Creates:"
+        f" {Colors.YELLOW}hledger_plots/sankey_*.svg{Colors.RESET}"
+    )
     print()
     time.sleep(0.5)
 
     # Treemap export
-    print(f"{Colors.BOLD_BLUE}$ hledger_plot --config {os.path.basename(config_path)} \\{Colors.RESET}")
-    print(f"{Colors.BOLD_BLUE}    --journal-filepath {os.path.basename(journal_path)} \\{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_BLUE}$ hledger_plot --config"
+        f" {os.path.basename(config_path)} \\{Colors.RESET}"
+    )
+    print(
+        f"{Colors.BOLD_BLUE}    --journal-filepath"
+        f" {os.path.basename(journal_path)} \\{Colors.RESET}"
+    )
     print(f"{Colors.BOLD_BLUE}    -d EUR --export-treemap{Colors.RESET}")
     print()
     time.sleep(0.5)
 
-    print(f"  {Colors.GREEN}→{Colors.RESET} Creates: {Colors.YELLOW}hledger_plots/treemap_*.svg{Colors.RESET}")
+    print(
+        f"  {Colors.GREEN}→{Colors.RESET} Creates:"
+        f" {Colors.YELLOW}hledger_plots/treemap_*.svg{Colors.RESET}"
+    )
     print()
     time.sleep(1)
 
@@ -77,13 +107,22 @@ def show_dashboard_command(config_path: str, journal_path: str) -> None:
     print(f"{Colors.GRAY}Launch the interactive Dash dashboard:{Colors.RESET}")
     print()
 
-    print(f"{Colors.BOLD_BLUE}$ hledger_plot --config {os.path.basename(config_path)} \\{Colors.RESET}")
-    print(f"{Colors.BOLD_BLUE}    --journal-filepath {os.path.basename(journal_path)} \\{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_BLUE}$ hledger_plot --config"
+        f" {os.path.basename(config_path)} \\{Colors.RESET}"
+    )
+    print(
+        f"{Colors.BOLD_BLUE}    --journal-filepath"
+        f" {os.path.basename(journal_path)} \\{Colors.RESET}"
+    )
     print(f"{Colors.BOLD_BLUE}    -d EUR --show-plots{Colors.RESET}")
     print()
     time.sleep(0.5)
 
-    print(f"  {Colors.GREEN}→{Colors.RESET} Opens browser at {Colors.CYAN}http://127.0.0.1:8050{Colors.RESET}")
+    print(
+        f"  {Colors.GREEN}→{Colors.RESET} Opens browser at"
+        f" {Colors.CYAN}http://127.0.0.1:8050{Colors.RESET}"
+    )
     print()
     time.sleep(1)
 
@@ -92,21 +131,52 @@ def show_sankey_diagram() -> None:
     """Show ASCII representation of Sankey diagram."""
     print_subheader("Sankey Diagram: Money Flow")
 
-    print(f"{Colors.WHITE}Shows how money flows between accounts:{Colors.RESET}")
+    print(
+        f"{Colors.WHITE}Shows how money flows between accounts:{Colors.RESET}"
+    )
     print()
 
     # ASCII art representation of Sankey
     print(f"  {Colors.GREEN}Income{Colors.RESET}")
     print(f"    {Colors.GRAY}│{Colors.RESET}")
-    print(f"    {Colors.GRAY}├──────────────────────────────────────┐{Colors.RESET}")
-    print(f"    {Colors.GRAY}│{Colors.RESET}                                      {Colors.GRAY}│{Colors.RESET}")
-    print(f"    {Colors.GRAY}▼{Colors.RESET}                                      {Colors.GRAY}▼{Colors.RESET}")
-    print(f"  {Colors.CYAN}Assets:Checking{Colors.RESET}                    {Colors.YELLOW}Expenses{Colors.RESET}")
-    print(f"    {Colors.GRAY}│{Colors.RESET}                                      {Colors.GRAY}│{Colors.RESET}")
-    print(f"    {Colors.GRAY}│{Colors.RESET}                          {Colors.GRAY}┌──────────┼──────────┐{Colors.RESET}")
-    print(f"    {Colors.GRAY}│{Colors.RESET}                          {Colors.GRAY}│{Colors.RESET}          {Colors.GRAY}│{Colors.RESET}          {Colors.GRAY}│{Colors.RESET}")
-    print(f"    {Colors.GRAY}▼{Colors.RESET}                          {Colors.GRAY}▼{Colors.RESET}          {Colors.GRAY}▼{Colors.RESET}          {Colors.GRAY}▼{Colors.RESET}")
-    print(f"  {Colors.MAGENTA}Savings{Colors.RESET}                  {Colors.RED}Groceries{Colors.RESET}  {Colors.RED}Rent{Colors.RESET}    {Colors.RED}Other{Colors.RESET}")
+    print(
+        f"    {Colors.GRAY}├──────────────────────────────────────┐{Colors.RESET}"
+    )
+    print(
+        f"    {Colors.GRAY}│{Colors.RESET}                                     "
+        f" {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"    {Colors.GRAY}▼{Colors.RESET}                                     "
+        f" {Colors.GRAY}▼{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.CYAN}Assets:Checking{Colors.RESET}                   "
+        f" {Colors.YELLOW}Expenses{Colors.RESET}"
+    )
+    print(
+        f"    {Colors.GRAY}│{Colors.RESET}                                     "
+        f" {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"    {Colors.GRAY}│{Colors.RESET}                         "
+        f" {Colors.GRAY}┌──────────┼──────────┐{Colors.RESET}"
+    )
+    print(
+        f"    {Colors.GRAY}│{Colors.RESET}                         "
+        f" {Colors.GRAY}│{Colors.RESET}          {Colors.GRAY}│{Colors.RESET}  "
+        f"        {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"    {Colors.GRAY}▼{Colors.RESET}                         "
+        f" {Colors.GRAY}▼{Colors.RESET}          {Colors.GRAY}▼{Colors.RESET}  "
+        f"        {Colors.GRAY}▼{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.MAGENTA}Savings{Colors.RESET}                 "
+        f" {Colors.RED}Groceries{Colors.RESET}  {Colors.RED}Rent{Colors.RESET} "
+        f"   {Colors.RED}Other{Colors.RESET}"
+    )
     print()
     time.sleep(2)
 
@@ -115,22 +185,67 @@ def show_treemap_diagram() -> None:
     """Show ASCII representation of Treemap."""
     print_subheader("Treemap: Spending Breakdown")
 
-    print(f"{Colors.WHITE}Shows hierarchical breakdown of expenses:{Colors.RESET}")
+    print(
+        f"{Colors.WHITE}Shows hierarchical breakdown of expenses:{Colors.RESET}"
+    )
     print()
 
     # ASCII art representation of Treemap
-    print(f"  {Colors.GRAY}┌─────────────────────────────────────────────────────┐{Colors.RESET}")
-    print(f"  {Colors.GRAY}│{Colors.RESET} {Colors.BOLD_WHITE}Expenses{Colors.RESET}                                            {Colors.GRAY}│{Colors.RESET}")
-    print(f"  {Colors.GRAY}├─────────────────────────┬───────────────────────────┤{Colors.RESET}")
-    print(f"  {Colors.GRAY}│{Colors.RESET} {Colors.YELLOW}Rent{Colors.RESET}                    {Colors.GRAY}│{Colors.RESET} {Colors.CYAN}Groceries{Colors.RESET}                 {Colors.GRAY}│{Colors.RESET}")
-    print(f"  {Colors.GRAY}│{Colors.RESET}   €800/mo                {Colors.GRAY}│{Colors.RESET}   €300/mo                 {Colors.GRAY}│{Colors.RESET}")
-    print(f"  {Colors.GRAY}│{Colors.RESET}                          {Colors.GRAY}├─────────────┬─────────────┤{Colors.RESET}")
-    print(f"  {Colors.GRAY}│{Colors.RESET}                          {Colors.GRAY}│{Colors.RESET} {Colors.GREEN}ekoplaza{Colors.RESET}    {Colors.GRAY}│{Colors.RESET} {Colors.GREEN}other{Colors.RESET}       {Colors.GRAY}│{Colors.RESET}")
-    print(f"  {Colors.GRAY}│{Colors.RESET}                          {Colors.GRAY}│{Colors.RESET}   €150      {Colors.GRAY}│{Colors.RESET}   €150      {Colors.GRAY}│{Colors.RESET}")
-    print(f"  {Colors.GRAY}├─────────────────────────┴─────────────┴─────────────┤{Colors.RESET}")
-    print(f"  {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Utilities{Colors.RESET}  {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Transport{Colors.RESET} {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Entertainment{Colors.RESET}            {Colors.GRAY}│{Colors.RESET}")
-    print(f"  {Colors.GRAY}│{Colors.RESET}   €100     {Colors.GRAY}│{Colors.RESET}   €80      {Colors.GRAY}│{Colors.RESET}   €50                    {Colors.GRAY}│{Colors.RESET}")
-    print(f"  {Colors.GRAY}└────────────┴───────────┴─────────────────────────────┘{Colors.RESET}")
+    print(
+        f"  {Colors.GRAY}┌─────────────────────────────────────────────────────┐{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}│{Colors.RESET} {Colors.BOLD_WHITE}Expenses{Colors.RESET} "
+        "                                          "
+        f" {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}├─────────────────────────┬───────────────────────────┤{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}│{Colors.RESET} {Colors.YELLOW}Rent{Colors.RESET}     "
+        "              "
+        f" {Colors.GRAY}│{Colors.RESET} {Colors.CYAN}Groceries{Colors.RESET}   "
+        f"              {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}│{Colors.RESET}   €800/mo               "
+        f" {Colors.GRAY}│{Colors.RESET}   €300/mo                "
+        f" {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}│{Colors.RESET}                         "
+        f" {Colors.GRAY}├─────────────┬─────────────┤{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}│{Colors.RESET}                         "
+        f" {Colors.GRAY}│{Colors.RESET} {Colors.GREEN}ekoplaza{Colors.RESET}   "
+        f" {Colors.GRAY}│{Colors.RESET} {Colors.GREEN}other{Colors.RESET}      "
+        f" {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}│{Colors.RESET}                         "
+        f" {Colors.GRAY}│{Colors.RESET}   €150     "
+        f" {Colors.GRAY}│{Colors.RESET}   €150     "
+        f" {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}├─────────────────────────┴─────────────┴─────────────┤{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Utilities{Colors.RESET} "
+        f" {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Transport{Colors.RESET} {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Entertainment{Colors.RESET} "
+        f"           {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}│{Colors.RESET}   €100    "
+        f" {Colors.GRAY}│{Colors.RESET}   €80     "
+        f" {Colors.GRAY}│{Colors.RESET}   €50                   "
+        f" {Colors.GRAY}│{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GRAY}└────────────┴───────────┴─────────────────────────────┘{Colors.RESET}"
+    )
     print()
     time.sleep(2)
 
@@ -169,7 +284,9 @@ def run_actual_export(config_path: str, journal_path: str) -> None:
         if result.returncode == 0:
             print(f"{Colors.GREEN}✓ Export successful{Colors.RESET}")
         else:
-            print(f"{Colors.YELLOW}⚠ Export completed with warnings{Colors.RESET}")
+            print(
+                f"{Colors.YELLOW}⚠ Export completed with warnings{Colors.RESET}"
+            )
 
     except subprocess.TimeoutExpired:
         print(f"{Colors.YELLOW}⚠ Export timed out{Colors.RESET}")
@@ -193,11 +310,16 @@ def show_generated_files(working_dir: str) -> None:
             print(f"{Colors.WHITE}SVG files ready for embedding:{Colors.RESET}")
             print()
             for svg in sorted(svg_files)[:6]:
-                print(f"  {Colors.GREEN}✓{Colors.RESET} {Colors.CYAN}{svg}{Colors.RESET}")
+                print(
+                    f"  {Colors.GREEN}✓{Colors.RESET} {Colors.CYAN}{svg}{Colors.RESET}"
+                )
                 time.sleep(0.2)
 
             if len(svg_files) > 6:
-                print(f"  {Colors.GRAY}... and {len(svg_files) - 6} more{Colors.RESET}")
+                print(
+                    f"  {Colors.GRAY}... and"
+                    f" {len(svg_files) - 6} more{Colors.RESET}"
+                )
             print()
         else:
             print(f"{Colors.GRAY}(No SVG files generated yet){Colors.RESET}")
@@ -215,11 +337,26 @@ def show_summary() -> None:
 
     print(f"{Colors.BOLD_GREEN}hledger_plot provides:{Colors.RESET}")
     print()
-    print(f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Sankey diagrams for money flow visualization{Colors.RESET}")
-    print(f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Treemap plots for hierarchical spending{Colors.RESET}")
-    print(f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Interactive Dash dashboard (-s flag){Colors.RESET}")
-    print(f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Static SVG export for reports (-es, -et flags){Colors.RESET}")
-    print(f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Randomized data for demos (-r flag){Colors.RESET}")
+    print(
+        f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Sankey diagrams for"
+        f" money flow visualization{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Treemap plots for"
+        f" hierarchical spending{Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Interactive Dash"
+        f" dashboard (-s flag){Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Static SVG export for"
+        f" reports (-es, -et flags){Colors.RESET}"
+    )
+    print(
+        f"  {Colors.GREEN}✓{Colors.RESET} {Colors.WHITE}Randomized data for"
+        f" demos (-r flag){Colors.RESET}"
+    )
     print()
     time.sleep(1)
 
@@ -234,7 +371,9 @@ def run_show_plots_demo(config_path: str) -> None:
     with open(config_path) as f:
         config_data = yaml.safe_load(f)
 
-    root_path = os.path.expanduser(config_data["dir_paths"]["root_finance_path"])
+    root_path = os.path.expanduser(
+        config_data["dir_paths"]["root_finance_path"]
+    )
     working_subdir = config_data["dir_paths"]["working_subdir"]
     working_dir = os.path.join(root_path, working_subdir)
     journal_path = os.path.join(working_dir, "all-years.journal")

@@ -9,7 +9,7 @@ import os
 import shutil
 import time
 
-from .nano_editor import NanoEditor, ENTER, PAGE_DOWN, CTRL_K
+from .nano_editor import PAGE_DOWN, NanoEditor
 
 
 def setup_demo_environment():
@@ -20,7 +20,9 @@ def setup_demo_environment():
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
     # Copy test fixture config (uses triodos_2025.csv, placeholder paths)
-    src = os.path.join(project_root, "test/fixtures/config_templates/1_bank_1_wallet.yaml")
+    src = os.path.join(
+        project_root, "test/fixtures/config_templates/1_bank_1_wallet.yaml"
+    )
     dst = os.path.join(demo_dir, "config.yaml")
     shutil.copy(src, dst)
 
@@ -35,7 +37,10 @@ def print_header():
     print("\033[1;36m  Step 1: Set up your bank accounts in config.yaml\033[0m")
     print("\033[1;36m" + "=" * 70 + "\033[0m")
     print()
-    print("\033[37mThe config.yaml file tells hledger-preprocessor about your accounts:\033[0m")
+    print(
+        "\033[37mThe config.yaml file tells hledger-preprocessor about your"
+        " accounts:\033[0m"
+    )
     print("\033[90m  - Bank accounts (with CSV exports)\033[0m")
     print("\033[90m  - Cash wallets (transactions from receipts)\033[0m")
     print("\033[90m  - Directory paths for your data\033[0m")
@@ -64,6 +69,7 @@ def run_demo():
     # Edit 1: Change csv_filename from "triodos_2025.csv" to "my_bank_2024.csv"
     # Search puts cursor at start of match
     from .nano_editor import DELETE
+
     editor.search("triodos_2025")
     editor.wait(0.8)
 

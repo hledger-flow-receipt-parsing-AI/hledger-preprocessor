@@ -32,7 +32,9 @@ def print_subheader(title: str) -> None:
     time.sleep(0.5)
 
 
-def run_command_with_output(cmd: str, env: dict = None, timeout: int = 60) -> bool:
+def run_command_with_output(
+    cmd: str, env: dict = None, timeout: int = 60
+) -> bool:
     """Run a command and stream its output."""
     try:
         process = subprocess.Popen(
@@ -81,11 +83,20 @@ def run_match_receipt_demo(config_path: str) -> None:
 
     print(f"{Colors.WHITE}The matching algorithm compares:{Colors.RESET}")
     print()
-    print(f"  {Colors.CYAN}1.{Colors.RESET} Receipt date vs CSV transaction date (within ±2 days)")
-    print(f"  {Colors.CYAN}2.{Colors.RESET} Receipt amount vs CSV amount (absolute value match)")
+    print(
+        f"  {Colors.CYAN}1.{Colors.RESET} Receipt date vs CSV transaction date"
+        " (within ±2 days)"
+    )
+    print(
+        f"  {Colors.CYAN}2.{Colors.RESET} Receipt amount vs CSV amount"
+        " (absolute value match)"
+    )
     print(f"  {Colors.CYAN}3.{Colors.RESET} Receipt account vs CSV source bank")
     print()
-    print(f"{Colors.GRAY}When all criteria match, the receipt is linked to that transaction.{Colors.RESET}")
+    print(
+        f"{Colors.GRAY}When all criteria match, the receipt is linked to that"
+        f" transaction.{Colors.RESET}"
+    )
     print()
     time.sleep(2)
 
@@ -97,12 +108,15 @@ def run_match_receipt_demo(config_path: str) -> None:
     env["TERM"] = "xterm-256color"
 
     cmd = (
-        f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && "
-        "conda activate hledger_preprocessor && "
-        f"hledger_preprocessor --config {config_path} --link-receipts-to-transactions'"
+        f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && conda activate"
+        " hledger_preprocessor && hledger_preprocessor --config"
+        f" {config_path} --link-receipts-to-transactions'"
     )
 
-    print(f"{Colors.BOLD_BLUE}$ hledger_preprocessor --link-receipts-to-transactions{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_BLUE}$ hledger_preprocessor"
+        f" --link-receipts-to-transactions{Colors.RESET}"
+    )
     print()
     time.sleep(0.5)
 
@@ -110,9 +124,15 @@ def run_match_receipt_demo(config_path: str) -> None:
 
     print()
     if success:
-        print(f"{Colors.BOLD_GREEN}✓ Matching completed successfully!{Colors.RESET}")
+        print(
+            f"{Colors.BOLD_GREEN}✓ Matching completed"
+            f" successfully!{Colors.RESET}"
+        )
     else:
-        print(f"{Colors.BOLD_YELLOW}⚠ Matching completed (check output above){Colors.RESET}")
+        print(
+            f"{Colors.BOLD_YELLOW}⚠ Matching completed (check output"
+            f" above){Colors.RESET}"
+        )
 
     print()
     time.sleep(1)
@@ -122,9 +142,17 @@ def run_match_receipt_demo(config_path: str) -> None:
 
     print(f"{Colors.WHITE}For each matched receipt:{Colors.RESET}")
     print()
-    print(f"  {Colors.GREEN}✓{Colors.RESET} Receipt JSON now contains transaction reference")
-    print(f"  {Colors.GREEN}✓{Colors.RESET} No duplicate entries will be created")
-    print(f"  {Colors.GREEN}✓{Colors.RESET} Full audit trail from receipt → bank statement")
+    print(
+        f"  {Colors.GREEN}✓{Colors.RESET} Receipt JSON now contains transaction"
+        " reference"
+    )
+    print(
+        f"  {Colors.GREEN}✓{Colors.RESET} No duplicate entries will be created"
+    )
+    print(
+        f"  {Colors.GREEN}✓{Colors.RESET} Full audit trail from receipt → bank"
+        " statement"
+    )
     print()
     time.sleep(1.5)
 

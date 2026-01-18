@@ -15,11 +15,11 @@ source "${SCRIPT_DIR}/../scripts/common.sh"
 # Initialize demo (sets up paths, runs preflight checks)
 init_demo "03_label_receipt" "$@"
 
-# Run the full pipeline with the receipt editor module
+# Run the full pipeline with the simulated label demo (avoids X11/TUI issues)
 run_full_pipeline \
-    "gifs.automation.receipt_editor" \
+    "gifs.automation.simulated_label_demo" \
     "Step 3: Label Your Receipt" \
-    40 \
-    120
+    35 \
+    60
 
 exit 0
