@@ -32,7 +32,7 @@ Add spending categories to `categories.yaml`:
 
 Use the TUI to label receipt images with date, shop, amount, and payment method:
 
-![Step 3: Label Receipt](gifs/03_label_receipt/output/03_label_receipt.gif)
+![Step 3: Label Receipt](gifs/04_label_receipt/output/04_label_receipt.gif)
 
 **Step 4: Match receipts to bank transactions**
 
