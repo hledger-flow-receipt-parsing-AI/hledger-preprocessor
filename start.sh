@@ -138,6 +138,9 @@ echo "GENERAL_CONFIG_FILEPATH=$GENERAL_CONFIG_FILEPATH"
 
 
 
+# Initialize and activate conda (needed for hledger_preprocessor commands)
+activate_conda
+
 # Start with an empty working dir such that your flow stays reproducible.
 # rm -rf "$ASSET_TRANSACTION_CSVS"
 rm -rf "$WORKING_DIR"
@@ -146,9 +149,6 @@ mkdir -p "$WORKING_DIR"
 
 # Validate config and CSVs
 validate_config
-
-# Initialize and activate conda
-activate_conda
 
 
 # Preprocess accounts with csvs.
