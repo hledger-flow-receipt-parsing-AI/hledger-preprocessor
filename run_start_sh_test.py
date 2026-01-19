@@ -18,7 +18,6 @@ Requirements:
 
 import hashlib
 import json
-import shutil
 import textwrap
 from pathlib import Path
 from typing import Any, Dict, List
@@ -81,7 +80,11 @@ def create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
     total = tendered - change if tendered else 0
 
     draw.text(
-        (width // 2, y), shop_name.upper(), fill="black", font=font_bold, anchor="mt"
+        (width // 2, y),
+        shop_name.upper(),
+        fill="black",
+        font=font_bold,
+        anchor="mt",
     )
     y += line_height + 5
 
@@ -96,7 +99,11 @@ def create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
         y += line_height
     if zipcode and city:
         draw.text(
-            (width // 2, y), f"{zipcode} {city}", fill="black", font=font, anchor="mt"
+            (width // 2, y),
+            f"{zipcode} {city}",
+            fill="black",
+            font=font,
+            anchor="mt",
         )
         y += line_height
 
@@ -119,7 +126,11 @@ def create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
     draw.text((20, y), item_name, fill="black", font=font)
     if total > 0:
         draw.text(
-            (width - 20, y), f"EUR {total:.2f}", fill="black", font=font, anchor="rt"
+            (width - 20, y),
+            f"EUR {total:.2f}",
+            fill="black",
+            font=font,
+            anchor="rt",
         )
     y += line_height + 10
 
@@ -242,6 +253,7 @@ def create_temp_finance_root() -> Dict[str, Path]:
     root = Path.home() / "finance_test"
     if root.exists():
         import shutil
+
         shutil.rmtree(root)
     root.mkdir(parents=True, exist_ok=True)
 
@@ -322,7 +334,9 @@ def create_temp_finance_root() -> Dict[str, Path]:
     # Write config.yaml
     print("\nCreating configuration files...")
     config_path = root / "config.yaml"
-    config_path.write_text(yaml.safe_dump(config_dict, default_flow_style=False))
+    config_path.write_text(
+        yaml.safe_dump(config_dict, default_flow_style=False)
+    )
     print(f"  Created: {config_path}")
 
     # Create all required directories

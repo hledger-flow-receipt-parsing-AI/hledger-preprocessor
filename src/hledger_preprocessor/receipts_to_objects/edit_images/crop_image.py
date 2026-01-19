@@ -10,6 +10,11 @@ from typeguard import typechecked
 
 from hledger_preprocessor.config.load_config import Config
 from hledger_preprocessor.generics.enums import EnumEncoder
+
+# Import drawing functions from the shared module
+from hledger_preprocessor.receipts_to_objects.edit_images.drawing import (
+    draw_crop_overlay,
+)
 from hledger_preprocessor.TransactionObjects.Receipt import (  # For image handling
     ExchangedItem,
     Receipt,
@@ -69,27 +74,11 @@ def crop_and_save_image(
             )
         return image
 
+    # Use the module-level draw function (for reuse in demos)
     def draw_crop_rectangle(
         image: np.ndarray, coords: List[float], active: int
     ) -> np.ndarray:
-        img_copy = image.copy()
-        h, w = img_copy.shape[:2]
-        x1, y1, x2, y2 = (int(c * dim) for c, dim in zip(coords, [w, h, w, h]))
-        x1, y1 = max(0, x1), max(0, y1)
-        x2, y2 = min(w, x2), min(h, y2)
-        if x2 > x1 and y2 > y1:
-            cv2.rectangle(img_copy, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        # Draw red crosshair at active corner
-        crosshair_x, crosshair_y = (x1, y1) if active == 0 else (x2, y2)
-        cv2.drawMarker(
-            img_copy,
-            (crosshair_x, crosshair_y),
-            (0, 0, 255),
-            markerType=cv2.MARKER_CROSS,
-            markerSize=10,
-            thickness=2,
-        )
-        return img_copy
+        return draw_crop_overlay(image, coords, active)
 
     display_image = resize_to_fit(cv_image, max_width, max_window_height)
 
