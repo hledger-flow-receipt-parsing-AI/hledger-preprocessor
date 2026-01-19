@@ -18,7 +18,7 @@ Requirements:
 
 import hashlib
 import json
-import tempfile
+import shutil
 import textwrap
 from pathlib import Path
 from typing import Any, Dict, List
@@ -238,7 +238,12 @@ def create_temp_finance_root() -> Dict[str, Path]:
 
     Returns a dictionary with paths to key files/directories.
     """
-    root = Path(tempfile.mkdtemp(prefix="finance_test_"))
+    # Use a fixed path that won't be cleaned up when the script exits
+    root = Path.home() / "finance_test"
+    if root.exists():
+        import shutil
+        shutil.rmtree(root)
+    root.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'='*60}")
     print(f"Creating test environment at: {root}")
