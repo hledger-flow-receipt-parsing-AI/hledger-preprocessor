@@ -125,7 +125,7 @@ def run_demo():
     receipts = [
         ("Ekoplaza", "2025-01-15", "42.17", "triodos"),
         ("Bike Repair Shop", "2025-01-12", "89.50", "triodos"),
-        ("Coffee Corner", "2025-01-10", "4.50", "wallet"),
+        ("Odin", "2025-01-10", "4.50", "wallet"),
     ]
 
     for shop, date, amount, account in receipts:

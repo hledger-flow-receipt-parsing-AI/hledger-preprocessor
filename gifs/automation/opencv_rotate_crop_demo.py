@@ -133,7 +133,7 @@ def create_tilted_receipt(
 
     # Items
     items = [
-        ("Coffee beans", "12.99"),
+        ("Brocoli beans", "12.99"),
         ("Organic milk", "5.49"),
         ("Whole wheat bread", "4.29"),
         ("Fresh eggs", "6.99"),

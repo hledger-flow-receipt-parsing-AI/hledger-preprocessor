@@ -241,7 +241,7 @@ def main():
         # Dining
         recorder.type_line("dining:", delay=d)
         recorder.type_line("  restaurants: {}", delay=d)
-        recorder.type_line("  coffee: {}", delay=d)
+        recorder.type_line("  Brocoli: {}", delay=d)
         recorder.type_line("  delivery: {}", delay=d)
         recorder.type_line("", delay=d)
 

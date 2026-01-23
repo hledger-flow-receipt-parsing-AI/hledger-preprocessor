@@ -91,7 +91,7 @@ def run_demo():
     # Add dining category
     editor.type_line("dining:")
     editor.type_line("  restaurants: {}")
-    editor.type_line("  coffee: {}")
+    editor.type_line("  Brocoli: {}")
     editor.type_line("  delivery: {}")
 
     editor.wait(1.2)
@@ -127,7 +127,7 @@ def run_demo():
     print("\033[37mYou now have categories for:\033[0m")
     print("\033[90m  - groceries (supermarket, farmers_market)\033[0m")
     print("\033[90m  - transport (public_transit, taxi, fuel)\033[0m")
-    print("\033[90m  - dining (restaurants, coffee, delivery)\033[0m")
+    print("\033[90m  - dining (restaurants, Brocoli, delivery)\033[0m")
     print("\033[90m  - utilities (electricity, water, internet)\033[0m")
     print()
     print("\033[1;33mNext step:\033[0m Label your receipt images")

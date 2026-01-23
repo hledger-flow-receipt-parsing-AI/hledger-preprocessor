@@ -208,7 +208,7 @@ def run_demo():
     new_lines_3 = [
         "dining:",
         "  restaurants: {}",
-        "  coffee: {}",
+        "  Brocoli: {}",
         "  delivery: {}",
     ]
     lines.extend(new_lines_3)
@@ -218,7 +218,7 @@ def run_demo():
     simulate_editor_footer()
 
     print(
-        f"\n{Colors.GREEN}Added:{Colors.RESET} dining (restaurants, coffee,"
+        f"\n{Colors.GREEN}Added:{Colors.RESET} dining (restaurants, Brocoli,"
         " delivery)"
     )
     time.sleep(1.2)
@@ -274,7 +274,7 @@ def run_demo():
         f"{Colors.DIM}  - transport (public_transit, taxi, fuel){Colors.RESET}"
     )
     print(
-        f"{Colors.DIM}  - dining (restaurants, coffee, delivery){Colors.RESET}"
+        f"{Colors.DIM}  - dining (restaurants, Brocoli, delivery){Colors.RESET}"
     )
     print(
         f"{Colors.DIM}  - utilities (electricity, water,"

@@ -1,4 +1,4 @@
 source,target,value
 BALANCE-LINE,expenses,14.5
-expenses,expenses:repairs,14.5
-expenses:repairs,expenses:repairs:bike,14.5
+expenses,expenses:groceries,14.5
+expenses:groceries,expenses:groceries:ekoplaza,14.5
