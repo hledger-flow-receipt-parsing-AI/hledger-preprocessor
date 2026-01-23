@@ -105,7 +105,9 @@ def read_csv_to_asset_transactions(
             tenderded_amount_out, change_returned = get_amounts(row=row)
 
             # Get parent_receipt_category from description field (if present)
-            parent_receipt_category = row.get("description") or row.get("parent_receipt_category")
+            parent_receipt_category = row.get("description") or row.get(
+                "parent_receipt_category"
+            )
 
             transaction: AccountTransaction = AccountTransaction(
                 the_date=the_date,

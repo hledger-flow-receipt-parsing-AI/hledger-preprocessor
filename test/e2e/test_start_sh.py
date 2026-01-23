@@ -693,7 +693,7 @@ class TestHledgerFlowImport:
         csv_content = """\
 date,description,amount,balance
 2025-01-15,Opening Balance,1000.00,1000.00
-2025-01-20,Coffee Shop,-5.50,994.50
+2025-01-20,Brocoli Shop,-5.50,994.50
 2025-02-01,Salary,2500.00,3494.50
 """
         csv_file = input_dir / "statement.csv"
@@ -1235,17 +1235,22 @@ echo "start.sh completed successfully!"
                             # Skip TensorFlow/CUDA warnings that look like errors
                             context_start = max(0, i - 2)
                             context_end = min(len(lines), i + 10)
-                            context = "\n".join(lines[context_start:context_end])
+                            context = "\n".join(
+                                lines[context_start:context_end]
+                            )
 
                             # Filter out TensorFlow/CUDA warnings
-                            if any(skip in context for skip in [
-                                "Unable to register cuFFT",
-                                "Unable to register cuDNN",
-                                "Unable to register cuBLAS",
-                                "cuda_fft.cc",
-                                "cuda_dnn.cc",
-                                "cuda_blas.cc",
-                            ]):
+                            if any(
+                                skip in context
+                                for skip in [
+                                    "Unable to register cuFFT",
+                                    "Unable to register cuDNN",
+                                    "Unable to register cuBLAS",
+                                    "cuda_fft.cc",
+                                    "cuda_dnn.cc",
+                                    "cuda_blas.cc",
+                                ]
+                            ):
                                 continue
 
                             errors_found.append(f"STDERR: {context}")

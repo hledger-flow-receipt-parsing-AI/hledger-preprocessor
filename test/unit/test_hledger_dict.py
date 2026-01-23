@@ -30,7 +30,7 @@ def sample_transaction(sample_account: Account) -> GenericCsvTransaction:
         tendered_amount_out=-42.50,
         change_returned=0.0,
         balance_after=9857.30,
-        description="Coffee shop",
+        description="Brocoli shop",
         other_party_name="Brewed Awakening",
         other_party_account_name="NL12INHO0001234567",
         transaction_code=TransactionCode.DEBIT,
@@ -80,7 +80,7 @@ def test_to_hledger_dict_works_with_valid_mapping(
     # Check the expected fields are present with correct values
     assert result["date"] == "2025-01-15-00-00-00"
     assert result["amount"] == -42.50
-    assert result["description"] == "Coffee shop"
+    assert result["description"] == "Brocoli shop"
     assert result["payee"] == "Brewed Awakening"
 
 

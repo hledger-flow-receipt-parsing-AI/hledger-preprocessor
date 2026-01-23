@@ -14,37 +14,69 @@ to pre-processes and categorise bank `.csv` files and receipts so that
 
 ## Demos (auto-generated from integration tests)
 
-0. TUI to quickly enter receipts:
-   ![hledger-preprocessor demo](gifs/edit_receipt/output/edit_receipt.gif)
-1. Algorithmic matching of bank .csv statements to receipt transactions:
+### Quick Start: 5-Step Workflow
 
-\<TODO: add gif>
+**Step 1a: Configure your accounts**
 
-2. Manual labelling of bank csv transaction using customisable logic:
+Set up your bank accounts and wallets in `config.yaml`:
 
-\<TODO: add gif>
+![Step 1a: Setup Config](gifs/1a_setup_config/output/1a_setup_config.gif)
 
-3. Using hledger-plot to automatically visualise your financial position using interactive Treemap and/or Sankey plot:
+**Step 1b: Define your categories**
 
-\<TODO: add gif>
+Add spending categories to `categories.yaml`:
 
-4. Using hledger-plot to automatically visualise your financial in- and out- flows using interactive Treemap and/or Sankey plot:
+![Step 1b: Add Category](gifs/1b_add_category/output/1b_add_category.gif)
 
-\<TODO: add gif>
+**Step 2a: Rotate & Crop your receipts**
 
-5. Include performance metrics of various self-hosted AIs:
+Use the CLI to rotate and crop your receipts (if necessary), to increase their zoomed readability and reduce noise.
+
+![Step 2a: Crop Receipt](gifs/2a_crop_receipt/output/2a_crop_receipt_workflow.gif)
+
+**Step 2b: Label your receipts**
+
+Use the TUI to label receipt images with date, shop, amount, and payment method:
+
+![Step 2b: Label Receipt](gifs/2b_label_receipt/output/2b_label_receipt.gif)
+
+**Step 3: Match receipts to bank transactions**
+
+Algorithmically/semi-automated linking of receipts to your bank/exchange CSV transactions (prevents *duplicate double-entry bookkeeping postings*):
+
+![Step 3: Match Receipt to CSV](gifs/3_match_receipt_to_csv/output/3_match_receipt_to_csv.gif)
+
+**Step 4: Run the pipeline**
+
+Run `./start.sh` to generate journals and plots:
+
+![Step 4: Run Pipeline](gifs/4_run_pipeline/output/4_run_pipeline.gif)
+
+______________________________________________________________________
+
+### Step 5: Visualize Your Finances
+
+Use `hledger_plot` to create interactive Sankey diagrams and Treemap plots:
+
+![Step 5: Show Plots](gifs/5_show_plots/output/5_show_plots.gif)
+
+______________________________________________________________________
+
+### Additional Features
+
+- Include performance metrics of various self-hosted AIs:
 
 \<TODO: add performance metrics various ai modules>
 
-6.a AI for: bank `.csv` transaction-> categorisation (e.g. groceries:wholefoods, repairs:bike etc.)
+- AI for: bank `.csv` transaction-> categorisation (e.g. groceries:wholefoods, repairs:bike etc.)
 
 \<TODO: add gif>
 
-6.b AI for: receipt image -> structured text (e.g. a json/dictionary with the time, shop, bought items, total, taxes etc.)
+- AI for: receipt image -> structured text (e.g. a json/dictionary with the time, shop, bought items, total, taxes etc.)
 
 \<TODO: add gif>
 
-6.c AI for: receipt image -> categorisation (e.g. groceries, repairs etc.)
+- AI for: receipt image -> categorisation (e.g. groceries, repairs etc.)
 
 \<TODO: add gif>
 
