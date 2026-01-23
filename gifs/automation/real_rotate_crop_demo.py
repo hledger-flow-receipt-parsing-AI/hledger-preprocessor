@@ -472,10 +472,14 @@ def generate_workflow_gif(
     from PIL import ImageDraw, ImageFont
 
     terminal_width = 400
-    # Use the height of the first frame for terminal height
-    frame_height = frames[0][0].shape[0] if frames else 600
-    terminal_height = frame_height
     terminal_bg = (30, 30, 30)
+
+    # Find a consistent frame size for the image panel
+    # Use a fixed size that works well for all frames
+    image_panel_width = 520
+    image_panel_height = 400
+
+    terminal_height = image_panel_height
 
     gif_frames = []
     gif_durations = []
@@ -508,17 +512,27 @@ def generate_workflow_gif(
         term_np = np.array(term_img)
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # Resize frame to match terminal height, maintaining aspect ratio
+        # Resize frame to fit within the image panel, maintaining aspect ratio
         h, w = frame_rgb.shape[:2]
-        if h != terminal_height:
-            scale = terminal_height / h
-            new_w = int(w * scale)
-            frame_rgb = cv2.resize(frame_rgb, (new_w, terminal_height))
+        scale = min(image_panel_width / w, image_panel_height / h)
+        new_w, new_h = int(w * scale), int(h * scale)
+        frame_resized = cv2.resize(frame_rgb, (new_w, new_h))
+
+        # Create a dark background panel and center the frame in it
+        image_panel = np.zeros(
+            (image_panel_height, image_panel_width, 3), dtype=np.uint8
+        )
+        image_panel[:] = (40, 40, 40)  # Dark gray background
+        y_offset = (image_panel_height - new_h) // 2
+        x_offset = (image_panel_width - new_w) // 2
+        image_panel[
+            y_offset : y_offset + new_h, x_offset : x_offset + new_w
+        ] = frame_resized
 
         # Combine side by side
         gap = np.zeros((terminal_height, 5, 3), dtype=np.uint8)
         gap[:] = (20, 20, 20)
-        combined = np.hstack([term_np, gap, frame_rgb])
+        combined = np.hstack([term_np, gap, image_panel])
 
         gif_frames.append(Image.fromarray(combined))
         # Calculate duration from timestamps
