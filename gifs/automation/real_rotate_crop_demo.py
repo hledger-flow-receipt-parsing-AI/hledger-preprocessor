@@ -35,12 +35,12 @@ from hledger_preprocessor.receipts_to_objects.edit_images.rotate_all_images impo
 _captured_frames: List[Tuple[np.ndarray, float, str]] = (
     []
 )  # (frame, timestamp, phase)
-_rotation_frames: List[Tuple[np.ndarray, float, List[str]]] = (
+_rotation_frames: List[Tuple[np.ndarray, float, List[str], str]] = (
     []
-)  # (frame, timestamp, terminal_snapshot)
-_crop_frames: List[Tuple[np.ndarray, float, List[str]]] = (
+)  # (frame, timestamp, terminal_snapshot, last_key)
+_crop_frames: List[Tuple[np.ndarray, float, List[str], str]] = (
     []
-)  # (frame, timestamp, terminal_snapshot)
+)  # (frame, timestamp, terminal_snapshot, last_key)
 _rotation_terminal: List[str] = []
 _crop_terminal: List[str] = []
 _terminal_output: List[str] = []
@@ -51,6 +51,32 @@ _automated_keys: List[int] = []
 _key_index = 0
 _current_phase = "rotation"  # "rotation" or "crop"
 _captured_stdout: io.StringIO = None  # Reference to captured stdout
+_last_key_pressed: str = ""  # Human-readable name of last key pressed
+
+
+def key_code_to_name(key_code: int) -> str:
+    """Convert a key code to a human-readable key name."""
+    key_names = {
+        13: "Enter",
+        27: "Esc",
+        32: "Space",
+        8: "Backspace",
+        127: "Backspace",
+        ord("r"): "r",
+        ord("l"): "l",
+        ord("q"): "q",
+        65513: "Alt",
+        65514: "Alt",
+        0xFF51: "←",
+        0xFF52: "↑",
+        0xFF53: "→",
+        0xFF54: "↓",
+    }
+    if key_code in key_names:
+        return key_names[key_code]
+    if 32 <= key_code <= 126:
+        return chr(key_code)
+    return f"Key({key_code})"
 
 
 def create_tilted_receipt(
@@ -184,7 +210,7 @@ def create_tilted_receipt(
 def captured_imshow(window_name: str, image: np.ndarray) -> None:
     """Intercept cv2.imshow to capture frames."""
     global _captured_frames, _rotation_frames, _crop_frames, _current_phase
-    global _captured_stdout
+    global _captured_stdout, _last_key_pressed
     timestamp = time.time()
     frame_copy = image.copy()
     _captured_frames.append((frame_copy, timestamp, _current_phase))
@@ -198,34 +224,32 @@ def captured_imshow(window_name: str, image: np.ndarray) -> None:
     # Only capture frames from the "Image" window (rotation) and "Crop Image" window (crop)
     # Filter by window name to avoid capturing frames from other windows
     if window_name == "Image" and _current_phase == "rotation":
-        _rotation_frames.append((frame_copy, timestamp, terminal_snapshot))
-        # print(
-        #     f"Captured rotation frame: {window_name}, phase: {_current_phase},"
-        #     f" size: {frame_copy.shape}"
-        # )
+        _rotation_frames.append(
+            (frame_copy, timestamp, terminal_snapshot, _last_key_pressed)
+        )
     elif window_name == "Crop Image" and _current_phase == "crop":
-        _crop_frames.append((frame_copy, timestamp, terminal_snapshot))
-        # print(
-        #     f"Captured crop frame: {window_name}, phase: {_current_phase},"
-        #     f" size: {frame_copy.shape}"
-        # )
+        _crop_frames.append(
+            (frame_copy, timestamp, terminal_snapshot, _last_key_pressed)
+        )
     # Don't actually show the window
     # _original_imshow(window_name, image)
 
 
 def captured_waitKey(delay: int = 0) -> int:
     """Intercept cv2.waitKey to automate keypresses."""
-    global _key_index, _automated_keys
+    global _key_index, _automated_keys, _last_key_pressed
 
     if delay == 0:
         # Wait for keypress - return next automated key
         if _key_index < len(_automated_keys):
             key = _automated_keys[_key_index]
             _key_index += 1
+            _last_key_pressed = key_code_to_name(key)
             time.sleep(0.5)  # Small delay to make it visible in GIF
             return key
         else:
             # No more keys, return Enter to finish
+            _last_key_pressed = "Enter"
             return 13  # Enter key
     else:
         # Delay mode - just wait
@@ -235,17 +259,19 @@ def captured_waitKey(delay: int = 0) -> int:
 
 def captured_waitKeyEx(delay: int = 0) -> int:
     """Intercept cv2.waitKeyEx to automate keypresses (for arrow keys)."""
-    global _key_index, _automated_keys
+    global _key_index, _automated_keys, _last_key_pressed
 
     if delay == 0:
         # Wait for keypress - return next automated key
         if _key_index < len(_automated_keys):
             key = _automated_keys[_key_index]
             _key_index += 1
+            _last_key_pressed = key_code_to_name(key)
             time.sleep(0.5)  # Small delay to make it visible in GIF
             return key
         else:
             # No more keys, return Enter to finish
+            _last_key_pressed = "Enter"
             return 13  # Enter key
     else:
         # Delay mode - just wait
@@ -259,6 +285,7 @@ def capture_opencv_windows(keys: List[int]):
     global _captured_frames, _rotation_frames, _crop_frames
     global _rotation_terminal, _crop_terminal, _terminal_output
     global _automated_keys, _key_index, _current_phase, _captured_stdout
+    global _last_key_pressed
 
     # Reset state
     _captured_frames = []
@@ -270,6 +297,7 @@ def capture_opencv_windows(keys: List[int]):
     _automated_keys = keys
     _key_index = 0
     _current_phase = "rotation"
+    _last_key_pressed = ""
 
     # Patch cv2 functions
     cv2.imshow = captured_imshow
@@ -360,7 +388,7 @@ def wrap_text(text: str, max_width: int) -> List[str]:
 
 
 def generate_image_only_gif(
-    frames: List[Tuple[np.ndarray, float, List[str]]],
+    frames: List[Tuple[np.ndarray, float, List[str], str]],
     output_path: str,
     speed_multiplier: float = 1.0,
 ) -> None:
@@ -374,7 +402,7 @@ def generate_image_only_gif(
 
     # Find consistent frame size (use most common size)
     sizes = {}
-    for frame, _, _ in frames:
+    for frame, _, _, _ in frames:
         size = (frame.shape[1], frame.shape[0])  # (width, height)
         sizes[size] = sizes.get(size, 0) + 1
 
@@ -384,7 +412,9 @@ def generate_image_only_gif(
     target_size = max(sizes.items(), key=lambda x: x[1])[0]
     target_w, target_h = target_size
 
-    for i, (frame, timestamp, _terminal_snapshot) in enumerate(frames):
+    for i, (frame, timestamp, _terminal_snapshot, _last_key) in enumerate(
+        frames
+    ):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Resize to target size maintaining aspect ratio, then pad if needed
@@ -498,7 +528,7 @@ def generate_terminal_only_gif(
 
 
 def generate_workflow_gif(
-    frames: List[Tuple[np.ndarray, float, List[str]]],
+    frames: List[Tuple[np.ndarray, float, List[str], str]],
     terminal_lines: List[str],
     output_path: str,
 ) -> None:
@@ -506,6 +536,7 @@ def generate_workflow_gif(
 
     Each frame includes a terminal snapshot captured at that moment, so the
     terminal output progresses in sync with the image changes.
+    The key pressed is shown in the bottom right corner.
     """
     if not frames:
         print("No frames captured!")
@@ -531,10 +562,14 @@ def generate_workflow_gif(
         font = ImageFont.truetype(
             "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 12
         )
+        key_font = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 16
+        )
     except OSError:
         font = ImageFont.load_default()
+        key_font = font
 
-    for i, (frame, timestamp, terminal_snapshot) in enumerate(frames):
+    for i, (frame, timestamp, terminal_snapshot, last_key) in enumerate(frames):
         # Create terminal panel
         term_img = Image.new(
             "RGB", (terminal_width, terminal_height), terminal_bg
@@ -588,7 +623,35 @@ def generate_workflow_gif(
         gap[:] = (20, 20, 20)
         combined = np.hstack([term_np, gap, image_panel])
 
-        gif_frames.append(Image.fromarray(combined))
+        # Convert to PIL Image and draw key indicator in bottom right
+        combined_img = Image.fromarray(combined)
+        if last_key:
+            combined_draw = ImageDraw.Draw(combined_img)
+            key_text = f"Key: {last_key}"
+            # Get text bounding box
+            bbox = combined_draw.textbbox((0, 0), key_text, font=key_font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            # Position in bottom right with padding
+            padding = 10
+            x_pos = combined_img.width - text_width - padding
+            y_pos = combined_img.height - text_height - padding
+            # Draw background rectangle for better visibility
+            combined_draw.rectangle(
+                [
+                    x_pos - 5,
+                    y_pos - 3,
+                    x_pos + text_width + 5,
+                    y_pos + text_height + 3,
+                ],
+                fill=(60, 60, 60),
+            )
+            # Draw key text
+            combined_draw.text(
+                (x_pos, y_pos), key_text, fill=(100, 255, 100), font=key_font
+            )
+
+        gif_frames.append(combined_img)
         # Calculate duration from timestamps
         if i < len(frames) - 1:
             duration = (frames[i + 1][1] - timestamp) * 1000  # Convert to ms

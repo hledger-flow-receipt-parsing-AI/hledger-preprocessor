@@ -72,7 +72,7 @@ def rotate_and_save_image(
     # Display instructions
     print(
         "Commands: 'r' (rotate 90° clockwise), 'l' (rotate 90°"
-        " counter-clockwise), Backspace (undo last rotation), Enter (save and"
+        " counter-clockwise), BaCkspace (undo last rotation), Enter (save and"
         " exit), 'q' (quit without saving)"
     )
 
