@@ -35,7 +35,7 @@ python run_start_sh_test.py
 which outputs an environment that can be run with (something it says like):
 
 ```sh
-  ./start.sh --config /home/a/finance_test/config.yaml
+./start.sh --config /home/a/finance_test/config.yaml
 ```
 
 ## Publish pip package
