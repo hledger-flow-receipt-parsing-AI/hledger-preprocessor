@@ -513,13 +513,13 @@ def generate_workflow_gif(
 
     from PIL import ImageDraw, ImageFont
 
-    terminal_width = 400
+    terminal_width = 600
     terminal_bg = (30, 30, 30)
-    max_chars_per_line = 50  # Characters that fit in terminal panel
+    max_chars_per_line = 75  # Characters that fit in terminal panel
 
     # Find a consistent frame size for the image panel
-    # Use a fixed size that works well for all frames
-    image_panel_width = 520
+    # Use a fixed size that works well for all frames (66-33 ratio: terminal wider)
+    image_panel_width = 300
     image_panel_height = 400
 
     terminal_height = image_panel_height
