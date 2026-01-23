@@ -253,6 +253,15 @@ def make_receipt_label(
     from tensorflow import image as img
     from tensorflow import io
 
+    # Validate cropped image exists before attempting to load
+    if not os.path.isfile(cropped_receipt_img_filepath):
+        raise FileNotFoundError(
+            "Cropped receipt image not found:"
+            f" {cropped_receipt_img_filepath}\nPlease run the image cropping"
+            " step first (rotate and crop the receipt images).\nRaw image"
+            f" path: {raw_receipt_img_filepath}"
+        )
+
     tensor_img = io.read_file(cropped_receipt_img_filepath)
     tensor_img = img.decode_png(tensor_img, channels=3)
 

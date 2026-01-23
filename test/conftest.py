@@ -1,8 +1,13 @@
 import textwrap
 from pathlib import Path
+from test.helpers import seed_receipts_into_root
+from typing import List
 
 import pytest
 import yaml
+
+from hledger_preprocessor.config.Config import Config
+from hledger_preprocessor.config.load_config import load_config
 
 
 # ----------------------------------------------------------------------
@@ -187,6 +192,38 @@ def temp_finance_root(tmp_path_factory):
     )
 
     # ------------------------------------------------------------------
+    # 6c. Seed receipt images and labels via seed_receipts_into_root
+    # ------------------------------------------------------------------
+    # This properly creates:
+    # - Input images in receipt_images_input/
+    # - Cropped images in receipt_images_processed/
+    # - Labels in hash-based subdirectories of receipt_labels/
+    #
+    # This ensures the directory structure matches what
+    # load_receipts_from_dir() expects.
+
+    # Load config to seed receipts
+    config: Config = load_config(
+        config_path=str(final_config_path),
+        pre_processed_output_dir=None,
+    )
+
+    # Seed the groceries_ekoplaza_card.json receipt (card payment matching CSV)
+    fixtures_dir = Path(__file__).parent / "fixtures" / "receipts"
+    source_files: List[Path] = [
+        fixtures_dir / "groceries_ekoplaza_card.json",
+        fixtures_dir / "repairs_bike.json",
+    ]
+    seed_receipts_into_root(config=config, source_json_paths=source_files)
+
+    # Get the seeded receipt paths for tests that need them
+    # The receipt image path is derived from the JSON's raw_img_filepath
+    receipt_img_input = root / "receipt_images_input" / "example_card.jpg"
+    receipt_img_processed = (
+        root / "receipt_images_processed" / "example_card_cropped.jpg"
+    )
+
+    # ------------------------------------------------------------------
     # 7. Yield everything a test might need
     # ------------------------------------------------------------------
     yield {
@@ -194,6 +231,10 @@ def temp_finance_root(tmp_path_factory):
         "config_path": final_config_path,
         "triodos_csv": root / "triodos_2025.csv",
         "start_journal": root / "start_pos" / "2024_complete.journal",
+        "categories_yaml": root / "categories.yaml",
+        "working_dir": working_dir,
+        "receipt_image": receipt_img_input,
+        "receipt_image_processed": receipt_img_processed,
     }
 
     # cleanup is automatic because tmp_path_factory uses tempdir
