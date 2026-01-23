@@ -1,4 +1,4 @@
-"""E2E test for GIF 03: Crop Receipt demo.
+"""E2E test for GIF 2a: Crop Receipt demo.
 
 Demonstrates how to crop receipt images before labeling.
 This test uses the actual source code drawing functions, so when src is updated,
@@ -14,8 +14,8 @@ from test.e2e.gif_test_helpers import (
 import pytest
 
 
-def test_gif_03_crop_receipt(temp_finance_root, monkeypatch):
-    """Test GIF 3: crop_receipt demo runs successfully and creates GIF.
+def test_gif_2a_crop_receipt(temp_finance_root, monkeypatch):
+    """Test GIF 2a: crop_receipt demo runs successfully and creates GIF.
 
     This test uses the actual OpenCV demo which calls the real drawing functions
     from src/hledger_preprocessor/.../drawing.py, ensuring the GIF reflects
@@ -28,7 +28,7 @@ def test_gif_03_crop_receipt(temp_finance_root, monkeypatch):
     monkeypatch.chdir(project_root)
 
     # Use generate.sh which uses the OpenCV demo with actual src code
-    script_path = project_root / "gifs" / "02b_crop_receipt" / "generate.sh"
+    script_path = project_root / "gifs" / "2a_crop_receipt" / "generate.sh"
     if not script_path.exists():
         pytest.skip(f"Script not found: {script_path}")
 
@@ -49,8 +49,8 @@ def test_gif_03_crop_receipt(temp_finance_root, monkeypatch):
     output_gif = (
         project_root
         / "gifs"
-        / "02b_crop_receipt"
+        / "2a_crop_receipt"
         / "output"
-        / "02b_crop_receipt_workflow.gif"
+        / "2a_crop_receipt_workflow.gif"
     )
     assert output_gif.exists(), f"GIF should exist at {output_gif}"

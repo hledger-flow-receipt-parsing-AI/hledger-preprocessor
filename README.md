@@ -16,46 +16,49 @@ to pre-processes and categorise bank `.csv` files and receipts so that
 
 ### Quick Start: 5-Step Workflow
 
-**Step 1: Configure your accounts**
+**Step 1a: Configure your accounts**
 
 Set up your bank accounts and wallets in `config.yaml`:
 
-![Step 1: Setup Config](gifs/01_setup_config/output/01_setup_config.gif)
+![Step 1a: Setup Config](gifs/1a_setup_config/output/1a_setup_config.gif)
 
-**Step 2: Define your categories**
+**Step 1b: Define your categories**
 
 Add spending categories to `categories.yaml`:
 
-![Step 2: Add Category](gifs/02_add_category/output/02_add_category.gif)
+![Step 1b: Add Category](gifs/1b_add_category/output/1b_add_category.gif)
 
-**Step 3: Rotate & Crop your receipts**
+**Step 2a: Rotate & Crop your receipts**
+
 Use the CLI to rotate and crop your receipts (if necessary), to increase their zoomed readability and reduce noise.
-![Step 3: Label Receipt](gifs/02b_crop_receipt/output/02b_crop_receipt_workflow.gif)
 
-**Step 4: Label your receipts**
+![Step 2a: Crop Receipt](gifs/2a_crop_receipt/output/2a_crop_receipt_workflow.gif)
+
+**Step 2b: Label your receipts**
+
 Use the TUI to label receipt images with date, shop, amount, and payment method:
 
-![Step 3: Label Receipt](gifs/04_label_receipt/output/04_label_receipt.gif)
+![Step 2b: Label Receipt](gifs/2b_label_receipt/output/2b_label_receipt.gif)
 
-**Step 4: Match receipts to bank transactions**
+**Step 3: Match receipts to bank transactions**
 
 Algorithmically/semi-automated linking of receipts to your bank/exchange CSV transactions (prevents *duplicate double-entry bookkeeping postings*):
 
-![Step 4: Match Receipt to CSV](gifs/04_match_receipt_to_csv/output/04_match_receipt_to_csv.gif)
+![Step 3: Match Receipt to CSV](gifs/3_match_receipt_to_csv/output/3_match_receipt_to_csv.gif)
 
-**Step 5: Run the pipeline**
+**Step 4: Run the pipeline**
 
 Run `./start.sh` to generate journals and plots:
 
-![Step 5: Run Pipeline](gifs/05_run_pipeline/output/05_run_pipeline.gif)
+![Step 4: Run Pipeline](gifs/4_run_pipeline/output/4_run_pipeline.gif)
 
 ______________________________________________________________________
 
-### Bonus: Visualize Your Finances
+### Step 5: Visualize Your Finances
 
 Use `hledger_plot` to create interactive Sankey diagrams and Treemap plots:
 
-![Bonus: Show Plots](gifs/06_show_plots/output/06_show_plots.gif)
+![Step 5: Show Plots](gifs/5_show_plots/output/5_show_plots.gif)
 
 ______________________________________________________________________
 
