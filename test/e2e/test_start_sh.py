@@ -693,7 +693,7 @@ class TestHledgerFlowImport:
         csv_content = """\
 date,description,amount,balance
 2025-01-15,Opening Balance,1000.00,1000.00
-2025-01-20,Coffee Shop,-5.50,994.50
+2025-01-20,Brocoli Shop,-5.50,994.50
 2025-02-01,Salary,2500.00,3494.50
 """
         csv_file = input_dir / "statement.csv"

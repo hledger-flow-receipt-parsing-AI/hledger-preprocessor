@@ -39,7 +39,7 @@ Use the TUI to label receipt images with date, shop, amount, and payment method:
 
 **Step 4: Match receipts to bank transactions**
 
-Automatically link receipts to your bank CSV transactions (prevents duplicates):
+Algorithmically/semi-automated linking of receipts to your bank/exchange CSV transactions (prevents *duplicate double-entry bookkeeping postings*):
 
 ![Step 4: Match Receipt to CSV](gifs/04_match_receipt_to_csv/output/04_match_receipt_to_csv.gif)
 
