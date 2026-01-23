@@ -22,7 +22,6 @@ from pathlib import Path
 from typing import List, Tuple
 
 import cv2
-import imageio.v3 as iio
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
@@ -851,14 +850,25 @@ def generate_rotation_crop_demo(
             output_dir, "02b_crop_receipt_workflow.gif"
         )
         print(f"Saving combined GIF to {combined_path}")
-        
+
         # Calculate durations in seconds, then convert to milliseconds for PIL
         durations_sec = [d * speed_multiplier / 1000.0 for d in all_durations]
-        durations_ms = [int(d * 1000) for d in durations_sec]  # Convert to milliseconds for PIL
-        print(f"Frame durations (seconds): {durations_sec[:5]}... (showing first 5)")
-        print(f"Frame durations (ms for PIL): {durations_ms[:5]}... (showing first 5)")
-        print(f"Total frames: {len(all_frames_rgb)}, Total duration: {sum(durations_sec):.2f} seconds")
-        
+        durations_ms = [
+            int(d * 1000) for d in durations_sec
+        ]  # Convert to milliseconds for PIL
+        print(
+            f"Frame durations (seconds): {durations_sec[:5]}... (showing"
+            " first 5)"
+        )
+        print(
+            f"Frame durations (ms for PIL): {durations_ms[:5]}... (showing"
+            " first 5)"
+        )
+        print(
+            f"Total frames: {len(all_frames_rgb)}, Total duration:"
+            f" {sum(durations_sec):.2f} seconds"
+        )
+
         # Use PIL for more reliable duration control
         pil_frames = [Image.fromarray(frame) for frame in all_frames_rgb]
         pil_frames[0].save(
@@ -933,11 +943,17 @@ def generate_rotation_crop_demo(
             output_dir, "02b_crop_receipt_opencv_only.gif"
         )
         print(f"Saving OpenCV-only GIF to {opencv_only_path}")
-        
+
         # Use PIL for more reliable duration control
-        opencv_only_durations_sec = [d * speed_multiplier / 1000.0 for d in opencv_only_durations]
-        opencv_only_durations_ms = [int(d * 1000) for d in opencv_only_durations_sec]
-        opencv_only_pil_frames = [Image.fromarray(frame) for frame in opencv_only_rgb]
+        opencv_only_durations_sec = [
+            d * speed_multiplier / 1000.0 for d in opencv_only_durations
+        ]
+        opencv_only_durations_ms = [
+            int(d * 1000) for d in opencv_only_durations_sec
+        ]
+        opencv_only_pil_frames = [
+            Image.fromarray(frame) for frame in opencv_only_rgb
+        ]
         opencv_only_pil_frames[0].save(
             opencv_only_path,
             save_all=True,
@@ -956,7 +972,7 @@ def generate_rotation_crop_demo(
 
 def main():
     """Generate the rotation and cropping demo GIFs.
-    
+
     This uses the actual drawing functions from src/hledger_preprocessor/.../drawing.py,
     so any changes to the source code will be reflected in the generated GIF.
     """
@@ -965,7 +981,7 @@ def main():
 
     # Check if we have a config path from test environment
     config_path = os.environ.get("CONFIG_FILEPATH")
-    
+
     print("=" * 70)
     print("Receipt Rotation & Cropping TUI Demo Generator")
     print("=" * 70)
@@ -979,7 +995,7 @@ def main():
     print("  2. Rotation TUI: press 'r' to rotate, Enter to save")
     print("  3. Cropping TUI: adjust corners, Enter to save")
     print()
-    
+
     if config_path:
         print(f"Using config from test environment: {config_path}")
         print("(Receipt images will be created in test directories)")

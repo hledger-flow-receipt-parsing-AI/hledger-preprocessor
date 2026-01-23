@@ -41,10 +41,10 @@ if ! python -c "import cv2" 2>/dev/null; then
 fi
 
 # Generate the complete workflow GIF (rotation + cropping)
-# This uses the actual drawing functions from source code
-log "Generating workflow demo using actual src drawing functions..."
+# This uses the actual rotate_images() and crop_images() functions from source code
+log "Generating workflow demo using actual rotate_images() and crop_images()..."
 cd "$PROJECT_ROOT"
-python -m gifs.automation.opencv_rotate_crop_demo
+python -m gifs.automation.real_rotate_crop_demo
 
 # Optimize the GIFs
 WORKFLOW_GIF="${OUTPUT_DIR}/02b_crop_receipt_workflow.gif"

@@ -5,20 +5,22 @@ This test uses the actual source code drawing functions, so when src is updated,
 the GIF will reflect those changes.
 """
 
-from pathlib import Path
+from test.e2e.gif_test_helpers import (
+    get_demo_env,
+    get_project_root,
+    run_demo_script,
+)
 
 import pytest
-
-from test.e2e.gif_test_helpers import get_project_root, get_demo_env, run_demo_script
 
 
 def test_gif_03_crop_receipt(temp_finance_root, monkeypatch):
     """Test GIF 3: crop_receipt demo runs successfully and creates GIF.
-    
+
     This test uses the actual OpenCV demo which calls the real drawing functions
     from src/hledger_preprocessor/.../drawing.py, ensuring the GIF reflects
     any changes to the source code.
-    
+
     The demo uses generate.sh which directly calls the Python module that uses
     the actual source code drawing functions.
     """
@@ -45,6 +47,10 @@ def test_gif_03_crop_receipt(temp_finance_root, monkeypatch):
 
     # Check GIF was created (the OpenCV demo creates this file)
     output_gif = (
-        project_root / "gifs" / "02b_crop_receipt" / "output" / "02b_crop_receipt_workflow.gif"
+        project_root
+        / "gifs"
+        / "02b_crop_receipt"
+        / "output"
+        / "02b_crop_receipt_workflow.gif"
     )
     assert output_gif.exists(), f"GIF should exist at {output_gif}"
