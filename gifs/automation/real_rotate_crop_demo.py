@@ -35,8 +35,12 @@ from hledger_preprocessor.receipts_to_objects.edit_images.rotate_all_images impo
 _captured_frames: List[Tuple[np.ndarray, float, str]] = (
     []
 )  # (frame, timestamp, phase)
-_rotation_frames: List[Tuple[np.ndarray, float]] = []
-_crop_frames: List[Tuple[np.ndarray, float]] = []
+_rotation_frames: List[Tuple[np.ndarray, float, List[str]]] = (
+    []
+)  # (frame, timestamp, terminal_snapshot)
+_crop_frames: List[Tuple[np.ndarray, float, List[str]]] = (
+    []
+)  # (frame, timestamp, terminal_snapshot)
 _rotation_terminal: List[str] = []
 _crop_terminal: List[str] = []
 _terminal_output: List[str] = []
@@ -46,6 +50,7 @@ _original_waitKeyEx = cv2.waitKeyEx
 _automated_keys: List[int] = []
 _key_index = 0
 _current_phase = "rotation"  # "rotation" or "crop"
+_captured_stdout: io.StringIO = None  # Reference to captured stdout
 
 
 def create_tilted_receipt(
@@ -179,25 +184,31 @@ def create_tilted_receipt(
 def captured_imshow(window_name: str, image: np.ndarray) -> None:
     """Intercept cv2.imshow to capture frames."""
     global _captured_frames, _rotation_frames, _crop_frames, _current_phase
+    global _captured_stdout
     timestamp = time.time()
     frame_copy = image.copy()
     _captured_frames.append((frame_copy, timestamp, _current_phase))
+
+    # Capture current terminal output snapshot
+    terminal_snapshot = []
+    if _captured_stdout is not None:
+        terminal_snapshot = _captured_stdout.getvalue().splitlines()
 
     # Also store in phase-specific lists
     # Only capture frames from the "Image" window (rotation) and "Crop Image" window (crop)
     # Filter by window name to avoid capturing frames from other windows
     if window_name == "Image" and _current_phase == "rotation":
-        _rotation_frames.append((frame_copy, timestamp))
-        print(
-            f"Captured rotation frame: {window_name}, phase: {_current_phase},"
-            f" size: {frame_copy.shape}"
-        )
+        _rotation_frames.append((frame_copy, timestamp, terminal_snapshot))
+        # print(
+        #     f"Captured rotation frame: {window_name}, phase: {_current_phase},"
+        #     f" size: {frame_copy.shape}"
+        # )
     elif window_name == "Crop Image" and _current_phase == "crop":
-        _crop_frames.append((frame_copy, timestamp))
-        print(
-            f"Captured crop frame: {window_name}, phase: {_current_phase},"
-            f" size: {frame_copy.shape}"
-        )
+        _crop_frames.append((frame_copy, timestamp, terminal_snapshot))
+        # print(
+        #     f"Captured crop frame: {window_name}, phase: {_current_phase},"
+        #     f" size: {frame_copy.shape}"
+        # )
     # Don't actually show the window
     # _original_imshow(window_name, image)
 
@@ -247,7 +258,7 @@ def capture_opencv_windows(keys: List[int]):
     """Context manager to intercept OpenCV calls and automate keypresses."""
     global _captured_frames, _rotation_frames, _crop_frames
     global _rotation_terminal, _crop_terminal, _terminal_output
-    global _automated_keys, _key_index, _current_phase
+    global _automated_keys, _key_index, _current_phase, _captured_stdout
 
     # Reset state
     _captured_frames = []
@@ -267,7 +278,8 @@ def capture_opencv_windows(keys: List[int]):
 
     # Capture stdout
     old_stdout = sys.stdout
-    sys.stdout = captured_stdout = io.StringIO()
+    _captured_stdout = io.StringIO()
+    sys.stdout = _captured_stdout
 
     try:
         yield
@@ -279,8 +291,9 @@ def capture_opencv_windows(keys: List[int]):
         sys.stdout = old_stdout
 
         # Get terminal output and split by phase
-        all_lines = captured_stdout.getvalue().splitlines()
+        all_lines = _captured_stdout.getvalue().splitlines()
         _terminal_output = all_lines
+        _captured_stdout = None
 
         # Find where cropping starts (look for "crop" or "cropped_path")
         crop_start = len(all_lines)
@@ -325,8 +338,29 @@ def setup_test_environment(config_path: str) -> Tuple[Config, str]:
     return config, receipt_path
 
 
+def wrap_text(text: str, max_width: int) -> List[str]:
+    """Wrap text to fit within max_width characters."""
+    if len(text) <= max_width:
+        return [text]
+
+    lines = []
+    while text:
+        if len(text) <= max_width:
+            lines.append(text)
+            break
+        # Find a good break point
+        break_point = max_width
+        # Try to break at a space
+        space_idx = text.rfind(" ", 0, max_width)
+        if space_idx > max_width // 2:
+            break_point = space_idx
+        lines.append(text[:break_point])
+        text = text[break_point:].lstrip()
+    return lines
+
+
 def generate_image_only_gif(
-    frames: List[Tuple[np.ndarray, float]],
+    frames: List[Tuple[np.ndarray, float, List[str]]],
     output_path: str,
     speed_multiplier: float = 1.0,
 ) -> None:
@@ -340,7 +374,7 @@ def generate_image_only_gif(
 
     # Find consistent frame size (use most common size)
     sizes = {}
-    for frame, _ in frames:
+    for frame, _, _ in frames:
         size = (frame.shape[1], frame.shape[0])  # (width, height)
         sizes[size] = sizes.get(size, 0) + 1
 
@@ -350,7 +384,7 @@ def generate_image_only_gif(
     target_size = max(sizes.items(), key=lambda x: x[1])[0]
     target_w, target_h = target_size
 
-    for i, (frame, timestamp) in enumerate(frames):
+    for i, (frame, timestamp, _terminal_snapshot) in enumerate(frames):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Resize to target size maintaining aspect ratio, then pad if needed
@@ -397,12 +431,13 @@ def generate_terminal_only_gif(
     output_path: str,
     num_frames: int = None,
 ) -> None:
-    """Generate a GIF showing only terminal output."""
+    """Generate a GIF showing only terminal output with text wrapping."""
     from PIL import ImageDraw, ImageFont
 
     terminal_width = 600
     terminal_height = 400
     terminal_bg = (30, 30, 30)
+    max_chars_per_line = 75  # Characters that fit in terminal width
 
     gif_frames = []
     gif_durations = []
@@ -414,12 +449,17 @@ def generate_terminal_only_gif(
     except OSError:
         font = ImageFont.load_default()
 
-    # Create frames showing progressive terminal output
-    max_lines = terminal_height // 18
-    if num_frames is None:
-        num_frames = len(terminal_lines) + 1
+    # Wrap all lines first
+    wrapped_lines = []
+    for line in terminal_lines:
+        wrapped_lines.extend(wrap_text(line, max_chars_per_line))
 
-    for i in range(min(num_frames, len(terminal_lines) + 1)):
+    # Create frames showing progressive terminal output
+    max_display_lines = terminal_height // 18
+    if num_frames is None:
+        num_frames = len(wrapped_lines) + 1
+
+    for i in range(min(num_frames, len(wrapped_lines) + 1)):
         term_img = Image.new(
             "RGB", (terminal_width, terminal_height), terminal_bg
         )
@@ -428,14 +468,12 @@ def generate_terminal_only_gif(
         # Show lines up to current frame
         y = 10
         lines_to_show = (
-            terminal_lines[: i + 1]
-            if i < len(terminal_lines)
-            else terminal_lines
+            wrapped_lines[: i + 1] if i < len(wrapped_lines) else wrapped_lines
         )
-        start_idx = max(0, len(lines_to_show) - max_lines)
+        start_idx = max(0, len(lines_to_show) - max_display_lines)
 
         for line in lines_to_show[start_idx:]:
-            draw.text((10, y), line[:70], fill=(200, 200, 200), font=font)
+            draw.text((10, y), line, fill=(200, 200, 200), font=font)
             y += 18
             if y > terminal_height - 20:
                 break
@@ -460,11 +498,15 @@ def generate_terminal_only_gif(
 
 
 def generate_workflow_gif(
-    frames: List[Tuple[np.ndarray, float]],
+    frames: List[Tuple[np.ndarray, float, List[str]]],
     terminal_lines: List[str],
     output_path: str,
 ) -> None:
-    """Generate a GIF combining OpenCV frames with terminal output side-by-side."""
+    """Generate a GIF combining OpenCV frames with terminal output side-by-side.
+
+    Each frame includes a terminal snapshot captured at that moment, so the
+    terminal output progresses in sync with the image changes.
+    """
     if not frames:
         print("No frames captured!")
         return
@@ -473,6 +515,7 @@ def generate_workflow_gif(
 
     terminal_width = 400
     terminal_bg = (30, 30, 30)
+    max_chars_per_line = 50  # Characters that fit in terminal panel
 
     # Find a consistent frame size for the image panel
     # Use a fixed size that works well for all frames
@@ -491,19 +534,30 @@ def generate_workflow_gif(
     except OSError:
         font = ImageFont.load_default()
 
-    for i, (frame, timestamp) in enumerate(frames):
+    for i, (frame, timestamp, terminal_snapshot) in enumerate(frames):
         # Create terminal panel
         term_img = Image.new(
             "RGB", (terminal_width, terminal_height), terminal_bg
         )
         draw = ImageDraw.Draw(term_img)
 
-        # Draw terminal lines (show last few lines)
+        # Use the terminal snapshot from this frame (progressive output)
+        # If snapshot is empty, fall back to final terminal_lines
+        current_terminal = (
+            terminal_snapshot if terminal_snapshot else terminal_lines
+        )
+
+        # Wrap all lines for display
+        wrapped_lines = []
+        for line in current_terminal:
+            wrapped_lines.extend(wrap_text(line, max_chars_per_line))
+
+        # Draw terminal lines (show last few lines that fit)
         y = 10
-        max_lines = terminal_height // 18
-        start_line = max(0, len(terminal_lines) - max_lines)
-        for line in terminal_lines[start_line:]:
-            draw.text((10, y), line[:50], fill=(200, 200, 200), font=font)
+        max_display_lines = terminal_height // 18
+        start_line = max(0, len(wrapped_lines) - max_display_lines)
+        for line in wrapped_lines[start_line:]:
+            draw.text((10, y), line, fill=(200, 200, 200), font=font)
             y += 18
             if y > terminal_height - 20:
                 break
