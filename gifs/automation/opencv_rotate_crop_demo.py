@@ -636,7 +636,7 @@ def generate_rotation_crop_demo(
         rotation_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        rotation_durations.append(2000)
+        rotation_durations.append(10000)  # 10 seconds (5x slower)
 
         # Frame 2: Press 'r' to rotate clockwise
         print("Rendering rotation frame 2: Rotate clockwise")
@@ -651,7 +651,7 @@ def generate_rotation_crop_demo(
         rotation_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        rotation_durations.append(1500)
+        rotation_durations.append(7500)  # 7.5 seconds (5x slower)
 
         # Frame 3: Press Enter to save
         print("Rendering rotation frame 3: Save rotation")
@@ -670,7 +670,7 @@ def generate_rotation_crop_demo(
         rotation_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        rotation_durations.append(2000)
+        rotation_durations.append(10000)  # 10 seconds (5x slower)
 
         # =====================
         # CROPPING PHASE FRAMES
@@ -708,7 +708,7 @@ def generate_rotation_crop_demo(
         crop_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        crop_durations.append(2000)
+        crop_durations.append(10000)  # 10 seconds (5x slower)
 
         # Frame 2: Move top-left right
         print("Rendering crop frame 2: Move top-left right")
@@ -726,7 +726,7 @@ def generate_rotation_crop_demo(
         crop_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        crop_durations.append(1000)
+        crop_durations.append(5000)  # 5 seconds (5x slower)
 
         # Frame 3: Move top-left down
         print("Rendering crop frame 3: Move top-left down")
@@ -744,7 +744,7 @@ def generate_rotation_crop_demo(
         crop_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        crop_durations.append(1000)
+        crop_durations.append(5000)  # 5 seconds (5x slower)
 
         # Frame 4: Switch to bottom-right corner
         print("Rendering crop frame 4: Switch corner")
@@ -762,7 +762,7 @@ def generate_rotation_crop_demo(
         crop_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        crop_durations.append(1200)
+        crop_durations.append(6000)  # 6 seconds (5x slower)
 
         # Frame 5: Move bottom-right left
         print("Rendering crop frame 5: Move bottom-right left")
@@ -780,7 +780,7 @@ def generate_rotation_crop_demo(
         crop_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        crop_durations.append(1000)
+        crop_durations.append(5000)  # 5 seconds (5x slower)
 
         # Frame 6: Move bottom-right up
         print("Rendering crop frame 6: Move bottom-right up")
@@ -798,7 +798,7 @@ def generate_rotation_crop_demo(
         crop_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        crop_durations.append(1000)
+        crop_durations.append(5000)  # 5 seconds (5x slower)
 
         # Frame 7: Fine-tune to ideal coordinates
         print("Rendering crop frame 7: Fine-tune")
@@ -813,7 +813,7 @@ def generate_rotation_crop_demo(
         crop_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        crop_durations.append(1500)
+        crop_durations.append(7500)  # 7.5 seconds (5x slower)
 
         # Frame 8: Save crop
         print("Rendering crop frame 8: Save crop")
@@ -831,7 +831,7 @@ def generate_rotation_crop_demo(
         crop_frames.append(
             combine_frames_side_by_side(opencv_frame, term_panel)
         )
-        crop_durations.append(2500)
+        crop_durations.append(12500)  # 12.5 seconds (5x slower)
 
         # =====================
         # COMBINE AND SAVE
@@ -851,11 +851,23 @@ def generate_rotation_crop_demo(
             output_dir, "02b_crop_receipt_workflow.gif"
         )
         print(f"Saving combined GIF to {combined_path}")
-        iio.imwrite(
+        
+        # Calculate durations in seconds, then convert to milliseconds for PIL
+        durations_sec = [d * speed_multiplier / 1000.0 for d in all_durations]
+        durations_ms = [int(d * 1000) for d in durations_sec]  # Convert to milliseconds for PIL
+        print(f"Frame durations (seconds): {durations_sec[:5]}... (showing first 5)")
+        print(f"Frame durations (ms for PIL): {durations_ms[:5]}... (showing first 5)")
+        print(f"Total frames: {len(all_frames_rgb)}, Total duration: {sum(durations_sec):.2f} seconds")
+        
+        # Use PIL for more reliable duration control
+        pil_frames = [Image.fromarray(frame) for frame in all_frames_rgb]
+        pil_frames[0].save(
             combined_path,
-            all_frames_rgb,
-            duration=[d * speed_multiplier / 1000.0 for d in all_durations],
+            save_all=True,
+            append_images=pil_frames[1:],
+            duration=durations_ms,  # PIL expects milliseconds
             loop=0,
+            optimize=False,
         )
 
         # Also create OpenCV-only frames for a smaller GIF
@@ -865,15 +877,15 @@ def generate_rotation_crop_demo(
         # Use padded images for consistent size
         # Rotation phase OpenCV only
         opencv_only_frames.append(create_rotation_frame(padded_original, 0, ""))
-        opencv_only_durations.append(2000)
+        opencv_only_durations.append(10000)  # 10 seconds (5x slower)
         opencv_only_frames.append(
             create_rotation_frame(padded_rotated, 90, "r")
         )
-        opencv_only_durations.append(1500)
+        opencv_only_durations.append(7500)  # 7.5 seconds (5x slower)
         opencv_only_frames.append(
             create_rotation_frame(padded_rotated, 90, "Enter")
         )
-        opencv_only_durations.append(1500)
+        opencv_only_durations.append(7500)  # 7.5 seconds (5x slower)
 
         # Add separator frame - same size as other frames
         sep_h, sep_w = frame_h + 60, frame_w
@@ -889,29 +901,29 @@ def generate_rotation_crop_demo(
             2,
         )
         opencv_only_frames.append(separator)
-        opencv_only_durations.append(1500)
+        opencv_only_durations.append(7500)  # 7.5 seconds (5x slower)
 
         # Crop phase OpenCV only
         opencv_only_frames.append(
             create_crop_frame(crop_image, [0.10, 0.10, 0.90, 0.90], 0, "")
         )
-        opencv_only_durations.append(1500)
+        opencv_only_durations.append(7500)  # 7.5 seconds (5x slower)
         opencv_only_frames.append(
             create_crop_frame(crop_image, [0.20, 0.20, 0.90, 0.90], 0, "Arrows")
         )
-        opencv_only_durations.append(1000)
+        opencv_only_durations.append(5000)  # 5 seconds (5x slower)
         opencv_only_frames.append(
             create_crop_frame(crop_image, [0.20, 0.20, 0.90, 0.90], 1, "Alt")
         )
-        opencv_only_durations.append(1200)
+        opencv_only_durations.append(6000)  # 6 seconds (5x slower)
         opencv_only_frames.append(
             create_crop_frame(crop_image, [0.20, 0.20, 0.80, 0.80], 1, "Arrows")
         )
-        opencv_only_durations.append(1000)
+        opencv_only_durations.append(5000)  # 5 seconds (5x slower)
         opencv_only_frames.append(
             create_crop_frame(crop_image, ideal_coords, 1, "Enter")
         )
-        opencv_only_durations.append(2000)
+        opencv_only_durations.append(10000)  # 10 seconds (5x slower)
 
         # Convert and save OpenCV-only GIF
         opencv_only_rgb = [
@@ -921,13 +933,18 @@ def generate_rotation_crop_demo(
             output_dir, "02b_crop_receipt_opencv_only.gif"
         )
         print(f"Saving OpenCV-only GIF to {opencv_only_path}")
-        iio.imwrite(
+        
+        # Use PIL for more reliable duration control
+        opencv_only_durations_sec = [d * speed_multiplier / 1000.0 for d in opencv_only_durations]
+        opencv_only_durations_ms = [int(d * 1000) for d in opencv_only_durations_sec]
+        opencv_only_pil_frames = [Image.fromarray(frame) for frame in opencv_only_rgb]
+        opencv_only_pil_frames[0].save(
             opencv_only_path,
-            opencv_only_rgb,
-            duration=[
-                d * speed_multiplier / 1000.0 for d in opencv_only_durations
-            ],
+            save_all=True,
+            append_images=opencv_only_pil_frames[1:],
+            duration=opencv_only_durations_ms,  # PIL expects milliseconds
             loop=0,
+            optimize=False,
         )
 
         print(f"\nGenerated:")
@@ -938,24 +955,43 @@ def generate_rotation_crop_demo(
 
 
 def main():
-    """Generate the rotation and cropping demo GIFs."""
+    """Generate the rotation and cropping demo GIFs.
+    
+    This uses the actual drawing functions from src/hledger_preprocessor/.../drawing.py,
+    so any changes to the source code will be reflected in the generated GIF.
+    """
     script_dir = Path(__file__).parent.parent
     output_dir = script_dir / "02b_crop_receipt" / "output"
 
+    # Check if we have a config path from test environment
+    config_path = os.environ.get("CONFIG_FILEPATH")
+    
     print("=" * 70)
     print("Receipt Rotation & Cropping TUI Demo Generator")
     print("=" * 70)
     print()
-    print("This demo shows the ACTUAL workflow with REAL code:")
+    print("This demo uses the ACTUAL drawing functions from source code:")
+    print("  - src/hledger_preprocessor/.../drawing.py")
+    print("  - Any changes to src will be reflected in the GIF")
+    print()
+    print("Workflow shown:")
     print("  1. Receipt image that needs rotation (tilted 90°)")
     print("  2. Rotation TUI: press 'r' to rotate, Enter to save")
     print("  3. Cropping TUI: adjust corners, Enter to save")
     print()
+    
+    if config_path:
+        print(f"Using config from test environment: {config_path}")
+        print("(Receipt images will be created in test directories)")
+    else:
+        print("No CONFIG_FILEPATH set - using temporary directory for demo")
+    print()
 
     # speed_multiplier: 1.0 = original speed, 2.0 = 2x slower, 0.5 = 2x faster
+    # Note: Base durations are already set to 5x slower, so we use 1.0 here
     combined_path, opencv_path = generate_rotation_crop_demo(
         str(output_dir),
-        speed_multiplier=1.5,  # 50% slower than original
+        speed_multiplier=1.0,  # Base durations are already 5x slower
     )
 
     print()
