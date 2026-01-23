@@ -28,8 +28,11 @@ Add spending categories to `categories.yaml`:
 
 ![Step 2: Add Category](gifs/02_add_category/output/02_add_category.gif)
 
-**Step 3: Label your receipts**
+**Step 3: Rotate & Crop your receipts**
+Use the CLI to rotate and crop your receipts (if necessary), to increase their zoomed readability and reduce noise.
+![Step 3: Label Receipt](gifs/02b_crop_receipt/output/02b_crop_receipt_workflow.gif)
 
+**Step 4: Label your receipts**
 Use the TUI to label receipt images with date, shop, amount, and payment method:
 
 ![Step 3: Label Receipt](gifs/04_label_receipt/output/04_label_receipt.gif)
