@@ -36,3 +36,8 @@ It uses:
 ## Test Environment
 
 Use `run_start_sh_test.py` in the project root to create a test environment at `~/finance_test` with sample data.
+Then that script outputs how to run the ./start.sh code like:
+NEXT STEP - Run start.sh with the config file:
+------------------------------------------------------------
+  ./start.sh --config /home/a/finance_test/config.yaml
+
