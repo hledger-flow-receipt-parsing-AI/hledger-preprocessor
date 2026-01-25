@@ -1,6 +1,8 @@
 """E2E test for GIF 3: Match Receipt to CSV demo.
 
 Demonstrates automatic linking of receipts to bank CSV transactions.
+This demo creates its own test environment internally, so it doesn't
+need an external config file.
 """
 
 from test.e2e.gif_test_helpers import run_gif_test
@@ -14,4 +16,5 @@ def test_gif_3_match_receipt_to_csv(temp_finance_root, monkeypatch):
         demo_name="3_match_receipt_to_csv",
         gif_subdir="3_match_receipt_to_csv",
         timeout=120,
+        needs_config=False,  # This demo creates its own test environment
     )

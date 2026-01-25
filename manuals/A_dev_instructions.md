@@ -17,7 +17,9 @@ Run a specific test:
 ```sh
  cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_03_crop_receipt.py::test_gif_03_crop_receipt -v
  cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_04_label_receipt.py::test_gif_04_label_receipt -v
- cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_05_match_receipt.py::test_gif_05_match_receipt -v
+ cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_03_match_receipt.py::test_gif_03_match_receipt -v
+ cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_3_match_receipt_to_csv.py::test_gif_3_match_receipt_to_csv -v
+
 ```
 
 ## Developer
