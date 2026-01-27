@@ -148,7 +148,7 @@ def convert_original_transaction_dict(
     # Convert transaction_code string to TransactionCode enum
     txn_code = original_txn_dict.get("transaction_code")
     if txn_code and isinstance(txn_code, str):
-        original_txn_dict["transaction_code"] = TransactionCode(txn_code)
+        original_txn_dict["transaction_code"] = TransactionCode.normalize_transaction_code(txn_code)
 
     # Remove fields not in GenericCsvTransaction constructor
     original_txn_dict.pop("currency", None)
