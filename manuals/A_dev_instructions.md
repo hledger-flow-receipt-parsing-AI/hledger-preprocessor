@@ -17,7 +17,9 @@ Run a specific test:
 ```sh
  cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_03_crop_receipt.py::test_gif_03_crop_receipt -v
  cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_04_label_receipt.py::test_gif_04_label_receipt -v
- cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_05_match_receipt.py::test_gif_05_match_receipt -v
+ cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_03_match_receipt.py::test_gif_03_match_receipt -v
+ cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_3_match_receipt_to_csv.py::test_gif_3_match_receipt_to_csv -v
+
 ```
 
 ## Developer
@@ -38,6 +40,7 @@ go install github.com/charmbracelet/vhs@latest   # or brew install vhs
 
 ```sh
 python run_start_sh_test.py
+python /home/a/git/git/hledger/hledger-preprocessor/debug_match_setup.py
 ```
 
 which outputs an environment that can be run with (something it says like):

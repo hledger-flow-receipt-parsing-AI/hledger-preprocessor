@@ -79,15 +79,12 @@ def store_updated_receipt_label(
         )
         print(f"exported latest_receipt")
 
-        with open(label_filepath, encoding=config.csv_encoding) as f:
-            receipt_data = json.load(f)
-        if "config" in receipt_data.keys():
-            receipt_data.pop("config")
-            print(
-                f"WARNING: Popped old config, tied to receipt updated it with"
-                f" new config"
-            )
-        loaded_receipt: Receipt = Receipt(config=config, **receipt_data)
+        loaded_receipt: Receipt = read_receipt_from_json(
+            config=config,
+            label_filepath=label_filepath,
+            verbose=False,
+            raw_receipt_img_filepath=latest_receipt.raw_img_filepath,
+        )
 
         ignore_keys_none = {
             "balance_after",
@@ -277,6 +274,7 @@ def has_diff_and_print(
                         ignore_keys_none,
                         ignore_empty_dict_keys,
                         ignore_keys,
+                        verbose=verbose,
                     )
                 if list_diff:
                     if verbose:
@@ -299,6 +297,7 @@ def has_diff_and_print(
                     ignore_keys_none=ignore_keys_none,
                     ignore_empty_dict_keys=ignore_empty_dict_keys,
                     ignore_keys=ignore_keys,
+                    verbose=verbose,
                 )
                 if sub_diff:
                     # print(f"{prefix}* {key!r} differs^.")
@@ -354,6 +353,7 @@ def _compare_values(
             ignore_keys_none=ignore_keys_none,
             ignore_empty_dict_keys=ignore_empty_dict_keys,
             ignore_keys=ignore_keys,
+            verbose=verbose,
         )
     else:
         if verbose:
