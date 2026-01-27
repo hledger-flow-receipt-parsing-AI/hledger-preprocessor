@@ -17,6 +17,8 @@ def get_demo_env() -> dict:
     """Environment variables for running demos."""
     env = os.environ.copy()
     env["TERM"] = "xterm-256color"
+    # Ensure the same Python is used in subprocesses
+    env["PYTHON"] = sys.executable
     return env
 
 

@@ -211,7 +211,7 @@ def find_receipt_folder_path(
         os.path.join(dataset_path, d)
         for d in os.listdir(dataset_path)
         if os.path.isdir(os.path.join(dataset_path, d))
-        and d.endswith("_" + image_hash)
+        and (d.endswith("_" + image_hash) or d == image_hash)
     ]
 
     valid_dirs = []
