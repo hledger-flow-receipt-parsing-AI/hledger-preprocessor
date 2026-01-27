@@ -79,6 +79,9 @@ def create_test_environment() -> Dict[str, Any]:
         (root / d).mkdir(parents=True, exist_ok=True)
 
     # Create config.yaml
+    # We need TWO accounts:
+    # 1. triodos checking - has CSV file (bank transactions come from CSV)
+    # 2. triodos debit - NO CSV file (receipt payment method, will be matched to CSV)
     config_dict = {
         "account_configs": [
             {
@@ -102,6 +105,16 @@ def create_test_environment() -> Dict[str, Any]:
                     ["the_date", "date"],
                     ["description", "description"],
                 ],
+            },
+            {
+                # Second account - same bank but NO CSV (for receipt payment method)
+                # This allows the receipt transaction to be an AccountTransaction
+                # which can then be matched and linked to CSV transactions
+                "base_currency": "EUR",
+                "account_holder": "at",
+                "bank": "triodos",
+                "account_type": "debit",
+                # No input_csv_filename - so transactions are AccountTransaction type
             },
         ],
         "dir_paths": {
@@ -146,11 +159,12 @@ def create_test_environment() -> Dict[str, Any]:
     categories = {"groceries": {"ekoplaza": {}}}
     (root / "categories.yaml").write_text(yaml.safe_dump(categories))
 
-    # Create bank CSV with the Ekoplaza transaction (15-01-2025, -42.17 EUR)
+    # Create bank CSV with the Ekoplaza transaction (15-01-2025, 42.17 EUR)
     # NOTE: Amounts use European format (comma as decimal separator) per parse_generic_tnx_with_csv.py
+    # NOTE: For matching to work, both receipt and CSV amounts must have the same sign (positive for outgoing payments)
     csv_content = (
-        '15-01-2025,NL123,"-42,17",debit,Ekoplaza,NL456,IC,groceries payment,"1000,00"\n'
-        '14-01-2025,NL234,"-15,50",debit,AH,NL789,IC,groceries ah,"1042,17"\n'
+        '15-01-2025,NL123,"42,17",debit,Ekoplaza,NL456,IC,groceries payment,"1000,00"\n'
+        '14-01-2025,NL234,"15,50",debit,AH,NL789,IC,groceries ah,"1042,17"\n'
     )
     csv_path = root / "triodos_2025.csv"
     csv_path.write_text(csv_content)
@@ -205,7 +219,9 @@ def create_test_environment() -> Dict[str, Any]:
                 {
                     "account": {
                         "account_holder": "at",
-                        "account_type": "checking",
+                        # Use "debit" account (no CSV) so this creates an AccountTransaction
+                        # which can be matched to the CSV transaction from "checking"
+                        "account_type": "debit",
                         "bank": "triodos",
                         "base_currency": "EUR",
                     },
@@ -259,178 +275,182 @@ def create_test_environment() -> Dict[str, Any]:
 
 
 def show_inputs(env: Dict[str, Any]) -> None:
-    """Show the input files: CSV and receipt label (from step 2b)."""
+    """Show the input files: CSV and receipt label (from step 2b) using actual cat commands."""
+    import subprocess
+
     print_subheader("Input: Bank CSV Transactions")
 
     csv_path = env["csv_path"]
-    print(f"{Colors.BOLD_WHITE}$ cat {csv_path.name}{Colors.RESET}")
+
+    # Verify file exists
+    if not csv_path.exists():
+        print(f"{Colors.RED}Error: CSV file not found at {csv_path}{Colors.RESET}")
+        return
+
+    print(f"{Colors.BOLD_WHITE}$ cat {csv_path}{Colors.RESET}")
     print()
     time.sleep(0.3)
 
-    # Parse CSV properly with European format handling
-    csv_content = csv_path.read_text().strip()
-    for line in csv_content.split("\n"):
-        # Parse the CSV line carefully
-        parts = []
-        in_quote = False
-        current = ""
-        for char in line:
-            if char == '"':
-                in_quote = not in_quote
-            elif char == ',' and not in_quote:
-                parts.append(current.strip('"'))
-                current = ""
-            else:
-                current += char
-        parts.append(current.strip('"'))
-
-        if len(parts) >= 8:
-            # Convert European amount format
-            amount = parts[2].replace(",", ".")
-            print(f"  {Colors.CYAN}Date:{Colors.RESET}        {Colors.YELLOW}{parts[0]}{Colors.RESET}")
-            print(f"  {Colors.CYAN}Amount:{Colors.RESET}      {Colors.YELLOW}{amount} EUR{Colors.RESET}")
-            print(f"  {Colors.CYAN}Payee:{Colors.RESET}       {Colors.WHITE}{parts[4]}{Colors.RESET}")
-            print(f"  {Colors.CYAN}Description:{Colors.RESET} {Colors.WHITE}{parts[7]}{Colors.RESET}")
-            print()
+    # Run actual cat command
+    result = subprocess.run(
+        ["cat", str(csv_path)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        print(result.stdout)
+    else:
+        print(f"{Colors.RED}Error: {result.stderr}{Colors.RESET}")
     time.sleep(1)
 
     print_subheader("Input: Receipt Label (from Step 2b)")
 
     label_path = env["label_path"]
-    print(f"{Colors.BOLD_WHITE}$ cat receipt_labels/.../receipt_image_to_obj_label.json{Colors.RESET}")
+
+    # Verify file exists
+    if not label_path.exists():
+        print(f"{Colors.RED}Error: Label file not found at {label_path}{Colors.RESET}")
+        return
+
+    print(f"{Colors.BOLD_WHITE}$ cat {label_path}{Colors.RESET}")
     print()
     time.sleep(0.3)
 
-    label_data = json.loads(label_path.read_text())
-    print(f"  {Colors.CYAN}Shop:{Colors.RESET}             {Colors.WHITE}{label_data['shop_identifier']['name']}{Colors.RESET}")
-    print(f"  {Colors.CYAN}Date:{Colors.RESET}             {Colors.YELLOW}{label_data['the_date'][:10]}{Colors.RESET}")
-    print(f"  {Colors.CYAN}Amount:{Colors.RESET}           {Colors.YELLOW}-{label_data['net_bought_items']['account_transactions'][0]['tendered_amount_out']} EUR{Colors.RESET}")
-    print(f"  {Colors.CYAN}Category:{Colors.RESET}         {Colors.WHITE}{label_data['receipt_category']}{Colors.RESET}")
-    print(f"  {Colors.CYAN}transaction_hash:{Colors.RESET} {Colors.YELLOW}null{Colors.RESET} (not yet linked)")
-    print()
+    # Run actual cat command
+    result = subprocess.run(
+        ["cat", str(label_path)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        print(result.stdout)
+    else:
+        print(f"{Colors.RED}Error: {result.stderr}{Colors.RESET}")
     time.sleep(1)
 
 
 def run_matching_demo(env: Dict[str, Any]) -> bool:
-    """Demonstrate the matching algorithm using real code from the codebase."""
-    print_subheader("Running: Matching Receipt to CSV Transaction")
+    """Run the actual --link-receipts-to-transactions CLI command using pexpect."""
+    import pexpect
 
-    print(f"{Colors.BOLD_BLUE}$ hledger_preprocessor --config config.yaml \\{Colors.RESET}")
-    print(f"{Colors.BOLD_BLUE}    --link-receipts-to-transactions{Colors.RESET}")
+    from .tui_navigator import Keys, TuiNavigator
+
+    print_subheader("Running: hledger_preprocessor --link-receipts-to-transactions")
+
+    config_path = env["config_path"]
+    root = env["root"]
+
+    # Build the shell command (need to run Python module)
+    cmd = (
+        f"cd {root} && {sys.executable} -m hledger_preprocessor "
+        f"--config {config_path} --link-receipts-to-transactions"
+    )
+
+    display_cmd = (
+        f"hledger_preprocessor --config config.yaml --link-receipts-to-transactions"
+    )
+    print(f"{Colors.BOLD_WHITE}$ {display_cmd}{Colors.RESET}")
     print()
     time.sleep(0.5)
 
-    # Load the real config and data structures
+    # Use TuiNavigator to handle interactive prompts
+    nav = TuiNavigator(
+        f"bash -c '{cmd}'",
+        dimensions=(50, 120),
+        timeout=60,
+        log_to_stdout=True,
+        show_keys=False,  # Don't show key overlay for this demo
+    )
+
     try:
-        from hledger_preprocessor.config.load_config import load_config
-        from hledger_preprocessor.matching.helper import prepare_transactions_per_account
+        nav.spawn()
 
-        config_path = env["config_path"]
-        config = load_config(
-            config_path=str(config_path),
-            pre_processed_output_dir="2-csv",
-        )
+        # The matching process has several input() prompts that need Enter:
+        # 1. "ignore_keys=" - debug prompt in has_diff_and_print
+        # 2. "EXPORTING to:" - confirmation before saving receipt label
 
-        print(f"{Colors.WHITE}Loading configuration...{Colors.RESET}")
-        time.sleep(0.3)
-
-        # Load CSV transactions using real code
-        csv_transactions_per_account = prepare_transactions_per_account(
-            labelled_receipts=[],
-            config=config,
-        )
-
-        print(f"{Colors.WHITE}Loading CSV transactions...{Colors.RESET}")
-        time.sleep(0.3)
-
-        # Get the receipt data
-        label_data = json.loads(env["label_path"].read_text())
-        receipt_date = datetime.fromisoformat(label_data["the_date"][:10])
-        receipt_amount = label_data["net_bought_items"]["account_transactions"][0]["tendered_amount_out"]
-
-        print(f"{Colors.WHITE}Loading receipt labels...{Colors.RESET}")
-        time.sleep(0.3)
-
-        print()
-        print(f"{Colors.BOLD_WHITE}Matching algorithm:{Colors.RESET}")
-        print(f"  • Receipt date:   {Colors.YELLOW}{receipt_date.strftime('%Y-%m-%d')}{Colors.RESET}")
-        print(f"  • Receipt amount: {Colors.YELLOW}-{receipt_amount} EUR{Colors.RESET}")
-        print(f"  • Date margin:    {Colors.WHITE}±{config.matching_algo.days} days{Colors.RESET}")
-        print()
-        time.sleep(0.5)
-
-        # Find matching transactions
-        print(f"{Colors.WHITE}Searching for matching CSV transactions...{Colors.RESET}")
-        time.sleep(0.5)
-
-        matched = False
-        for account_config, year_txns in csv_transactions_per_account.items():
-            for year, txns in year_txns.items():
-                for txn in txns:
-                    # Check date within margin
-                    date_diff = abs((txn.the_date.date() - receipt_date.date()).days)
-                    # Check amount match (receipt amount is positive, CSV is negative)
-                    amount_match = abs(abs(txn.tendered_amount_out) - receipt_amount) < 0.01
-
-                    if date_diff <= config.matching_algo.days and amount_match:
-                        print()
-                        print(f"  {Colors.GREEN}✓ MATCH FOUND{Colors.RESET}")
-                        print(f"    CSV Date:   {Colors.YELLOW}{txn.the_date.strftime('%Y-%m-%d')}{Colors.RESET}")
-                        print(f"    CSV Amount: {Colors.YELLOW}{txn.tendered_amount_out} EUR{Colors.RESET}")
-                        print(f"    Date diff:  {Colors.WHITE}{date_diff} days{Colors.RESET}")
-                        print()
-
-                        # Generate transaction hash (simulating what the real code does)
-                        txn_hash = hashlib.sha256(
-                            f"{txn.the_date.isoformat()}_{txn.tendered_amount_out}_{account_config.account.to_string()}".encode()
-                        ).hexdigest()
-
-                        # Update the label file with the hash
-                        label_data["transaction_hash"] = txn_hash
-                        env["label_path"].write_text(json.dumps(label_data, indent=2))
-
-                        matched = True
-                        break
-                if matched:
+        # Wait for and handle "ignore_keys=" prompt (may appear multiple times)
+        while True:
+            try:
+                # Wait for any of: ignore_keys prompt, EXPORTING prompt, or EOF
+                index = nav.child.expect(
+                    ["ignore_keys=", "EXPORTING to:", pexpect.EOF, pexpect.TIMEOUT],
+                    timeout=30,
+                )
+                if index == 0:
+                    # "ignore_keys=" prompt - press Enter to continue
+                    time.sleep(0.3)
+                    nav.press_enter(pause=0.2)
+                elif index == 1:
+                    # "EXPORTING to:" prompt - press Enter to confirm save
+                    time.sleep(0.5)
+                    nav.press_enter(pause=0.2)
+                elif index == 2:
+                    # EOF - process finished
                     break
-            if matched:
+                elif index == 3:
+                    # Timeout - check if process is still alive
+                    if not nav.child.isalive():
+                        break
+                    # Process still running, continue waiting
+                    continue
+            except pexpect.EOF:
                 break
+            except pexpect.TIMEOUT:
+                if not nav.child.isalive():
+                    break
 
-        if not matched:
-            print(f"  {Colors.YELLOW}No exact match found within date margin{Colors.RESET}")
-            print()
-
-        return matched
+        # Wait for process to fully exit
+        nav.wait_for_exit(timeout=5)
+        print()
+        return True
 
     except Exception as e:
         print(f"{Colors.RED}Error: {e}{Colors.RESET}")
         import traceback
         traceback.print_exc()
         return False
+    finally:
+        nav.terminate()
+        nav.clear_key_display()
 
 
 def show_result(env: Dict[str, Any]) -> None:
-    """Show the result: the updated receipt label with transaction_hash."""
+    """Show the result: the updated receipt label with transaction_hash using actual cat."""
+    import subprocess
+
     print_subheader("Result: Receipt Linked to Transaction")
 
     label_path = env["label_path"]
 
-    print(f"{Colors.BOLD_WHITE}$ cat receipt_labels/.../receipt_image_to_obj_label.json{Colors.RESET}")
+    # Verify file exists
+    if not label_path.exists():
+        print(f"{Colors.RED}Error: Label file not found at {label_path}{Colors.RESET}")
+        return
+
+    print(f"{Colors.BOLD_WHITE}$ cat {label_path}{Colors.RESET}")
     print()
     time.sleep(0.3)
 
-    # Re-read the label to see if it was updated
+    # Run actual cat command to show the updated file
+    result = subprocess.run(
+        ["cat", str(label_path)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        print(result.stdout)
+    else:
+        print(f"{Colors.RED}Error: {result.stderr}{Colors.RESET}")
+
+    # Check if transaction_hash was set
     label_data = json.loads(label_path.read_text())
     txn_hash = label_data.get("transaction_hash")
 
     if txn_hash:
-        print(f"  {Colors.CYAN}transaction_hash:{Colors.RESET} {Colors.GREEN}\"{txn_hash[:32]}...\"{Colors.RESET}")
-        print()
         print(f"{Colors.BOLD_GREEN}✓ Receipt successfully linked to CSV transaction!{Colors.RESET}")
     else:
-        print(f"  {Colors.CYAN}transaction_hash:{Colors.RESET} {Colors.YELLOW}null{Colors.RESET}")
-        print()
-        print(f"{Colors.WHITE}(No matching transaction found within date margin){Colors.RESET}")
+        print(f"{Colors.YELLOW}(No matching transaction found within date margin){Colors.RESET}")
 
     print()
     time.sleep(1)
