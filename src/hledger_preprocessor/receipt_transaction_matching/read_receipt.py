@@ -123,21 +123,58 @@ def read_receipt_from_json(
 @typechecked
 def convert_original_transaction_dict(
     original_txn_dict: Dict,
+    parent_currency: Optional[Currency] = None,
 ) -> GenericCsvTransaction:
     """Convert a dictionary to a GenericCsvTransaction object.
 
     Args:
         original_txn_dict: Dictionary containing GenericCsvTransaction data.
+        parent_currency: Currency from parent context to use if not in dict.
 
     Returns:
         GenericCsvTransaction object.
     """
+    # Map 'amount' to 'tendered_amount_out' if needed
+    if "amount" in original_txn_dict and "tendered_amount_out" not in original_txn_dict:
+        original_txn_dict["tendered_amount_out"] = float(original_txn_dict["amount"])
+
+    # Set default change_returned if missing
+    if "change_returned" not in original_txn_dict:
+        original_txn_dict["change_returned"] = 0.0
+
+    # Get currency from dict or parent context
+    currency_val = original_txn_dict.get("currency") or original_txn_dict.get("base_currency") or parent_currency
+    if currency_val and isinstance(currency_val, str):
+        currency_val = Currency(currency_val)
+
     # Convert account dict to Account object
-    account_dict = original_txn_dict.get("account")
-    if account_dict and isinstance(account_dict, dict):
-        if isinstance(account_dict.get("base_currency"), str):
-            account_dict["base_currency"] = Currency(account_dict["base_currency"])
-        original_txn_dict["account"] = Account(**account_dict)
+    account_val = original_txn_dict.get("account")
+    if account_val and isinstance(account_val, dict):
+        if isinstance(account_val.get("base_currency"), str):
+            account_val["base_currency"] = Currency(account_val["base_currency"])
+        original_txn_dict["account"] = Account(**account_val)
+    elif account_val and isinstance(account_val, str):
+        # Account is a string like "at:triodos:checking" - need currency from elsewhere
+        parts = account_val.split(":")
+        if len(parts) == 3 and currency_val:
+            original_txn_dict["account"] = Account(
+                base_currency=currency_val,
+                account_holder=parts[0],
+                bank=parts[1],
+                account_type=parts[2],
+            )
+    elif not account_val:
+        # Build Account from top-level fields if account is missing
+        account_holder = original_txn_dict.get("account_holder")
+        bank = original_txn_dict.get("bank")
+        account_type = original_txn_dict.get("account_type")
+        if currency_val and account_holder and bank and account_type:
+            original_txn_dict["account"] = Account(
+                base_currency=currency_val,
+                account_holder=account_holder,
+                bank=bank,
+                account_type=account_type,
+            )
 
     # Convert the_date string to datetime
     if isinstance(original_txn_dict.get("the_date"), str):
@@ -150,10 +187,16 @@ def convert_original_transaction_dict(
     if txn_code and isinstance(txn_code, str):
         original_txn_dict["transaction_code"] = TransactionCode.normalize_transaction_code(txn_code)
 
-    # Remove fields not in GenericCsvTransaction constructor
-    original_txn_dict.pop("currency", None)
+    # Only keep fields that GenericCsvTransaction accepts
+    valid_fields = {
+        "account", "the_date", "tendered_amount_out", "change_returned",
+        "balance_after", "description", "other_party_name",
+        "other_party_account_name", "transaction_code", "bic",
+        "original_transaction", "extra"
+    }
+    filtered_dict = {k: v for k, v in original_txn_dict.items() if k in valid_fields}
 
-    return GenericCsvTransaction(**original_txn_dict)
+    return GenericCsvTransaction(**filtered_dict)
 
 
 @typechecked
@@ -208,8 +251,14 @@ def convert_to_exchanged_item(
             # Convert original_transaction dict to GenericCsvTransaction object
             original_txn = account_transaction_dict.get("original_transaction")
             if original_txn and isinstance(original_txn, dict):
+                # Get currency from parent context to pass to original_transaction
+                parent_currency = account_transaction_dict.get("currency")
+                if not parent_currency and account_dict and isinstance(account_dict, dict):
+                    parent_currency = account_dict.get("base_currency")
+                if parent_currency and isinstance(parent_currency, str):
+                    parent_currency = Currency(parent_currency)
                 account_transaction_dict["original_transaction"] = (
-                    convert_original_transaction_dict(original_txn)
+                    convert_original_transaction_dict(original_txn, parent_currency)
                 )
 
             account_transactions.append(
