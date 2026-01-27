@@ -114,7 +114,10 @@ def create_test_environment() -> Dict[str, Any]:
                 "account_holder": "at",
                 "bank": "triodos",
                 "account_type": "debit",
-                # No input_csv_filename - so transactions are AccountTransaction type
+                # For non-CSV accounts, these fields must be present but set to None
+                "input_csv_filename": None,
+                "csv_column_mapping": None,
+                "tnx_date_columns": None,
             },
         ],
         "dir_paths": {

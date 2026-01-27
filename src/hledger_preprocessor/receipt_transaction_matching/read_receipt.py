@@ -12,6 +12,9 @@ from typeguard import typechecked
 
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.Currency import Currency
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
@@ -19,6 +22,7 @@ from hledger_preprocessor.TransactionObjects.AccountTransaction import (
 from hledger_preprocessor.TransactionObjects.Address import Address
 from hledger_preprocessor.TransactionObjects.AssetType import AssetType
 from hledger_preprocessor.TransactionObjects.ExchangedItem import ExchangedItem
+from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 from hledger_preprocessor.TransactionObjects.ShopId import ShopId
 
@@ -117,6 +121,42 @@ def read_receipt_from_json(
 
 
 @typechecked
+def convert_original_transaction_dict(
+    original_txn_dict: Dict,
+) -> GenericCsvTransaction:
+    """Convert a dictionary to a GenericCsvTransaction object.
+
+    Args:
+        original_txn_dict: Dictionary containing GenericCsvTransaction data.
+
+    Returns:
+        GenericCsvTransaction object.
+    """
+    # Convert account dict to Account object
+    account_dict = original_txn_dict.get("account")
+    if account_dict and isinstance(account_dict, dict):
+        if isinstance(account_dict.get("base_currency"), str):
+            account_dict["base_currency"] = Currency(account_dict["base_currency"])
+        original_txn_dict["account"] = Account(**account_dict)
+
+    # Convert the_date string to datetime
+    if isinstance(original_txn_dict.get("the_date"), str):
+        original_txn_dict["the_date"] = datetime.fromisoformat(
+            original_txn_dict["the_date"]
+        )
+
+    # Convert transaction_code string to TransactionCode enum
+    txn_code = original_txn_dict.get("transaction_code")
+    if txn_code and isinstance(txn_code, str):
+        original_txn_dict["transaction_code"] = TransactionCode(txn_code)
+
+    # Remove fields not in GenericCsvTransaction constructor
+    original_txn_dict.pop("currency", None)
+
+    return GenericCsvTransaction(**original_txn_dict)
+
+
+@typechecked
 def convert_to_exchanged_item(
     *,
     the_date: datetime,
@@ -164,6 +204,14 @@ def convert_to_exchanged_item(
 
                 account_transaction_dict["account"] = Account(**account_dict)
                 account_transaction_dict["the_date"] = the_date
+
+            # Convert original_transaction dict to GenericCsvTransaction object
+            original_txn = account_transaction_dict.get("original_transaction")
+            if original_txn and isinstance(original_txn, dict):
+                account_transaction_dict["original_transaction"] = (
+                    convert_original_transaction_dict(original_txn)
+                )
+
             account_transactions.append(
                 AccountTransaction(**account_transaction_dict)
             )

@@ -37,8 +37,11 @@ header "Match Receipt to CSV Demo Generator (using real CLI)"
 # Ensure directories exist
 mkdir -p "$OUTPUT_DIR" "$RECORDINGS_DIR"
 
+# Use PYTHON env var if set, otherwise use python from PATH
+PYTHON="${PYTHON:-python}"
+
 # Check conda environment
-if ! python -c "import hledger_preprocessor" 2>/dev/null; then
+if ! "$PYTHON" -c "import hledger_preprocessor" 2>/dev/null; then
     error "hledger_preprocessor not importable. Activate conda environment first."
     warn "Run: conda activate hledger_preprocessor"
     exit 1
@@ -66,7 +69,7 @@ cd "$PROJECT_ROOT"
 export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
 
 asciinema rec "$CAST_FILE" \
-    --command="python -m gifs.automation.real_link_receipts_demo" \
+    --command="$PYTHON -m gifs.automation.real_link_receipts_demo" \
     --title "Step 3: Match Receipt to CSV Transaction" \
     --idle-time-limit=2 \
     --rows 38 \
@@ -77,7 +80,7 @@ log "Recording completed → ${CAST_FILE}"
 
 # Post-process the cast file (clean up escape sequences)
 log "Post-processing cast file..."
-CAST_FILE="$CAST_FILE" python -m gifs.automation.cast_postprocess || true
+CAST_FILE="$CAST_FILE" "$PYTHON" -m gifs.automation.cast_postprocess || true
 
 # Generate themed GIFs
 log "Generating GIFs..."
