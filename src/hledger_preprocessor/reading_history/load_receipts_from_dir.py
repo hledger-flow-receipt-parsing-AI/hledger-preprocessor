@@ -70,10 +70,6 @@ def load_existing_receipt_labels_via_images(
                     receipt_data["raw_img_filepath"] = raw_receipt_img_filepath
                 if "config" in receipt_data.keys():
                     receipt_data.pop("config")
-                    print(
-                        f"WARNING: Popped old config, tied to receipt updated"
-                        f" it with new config"
-                    )
                 receipt = Receipt(
                     config=config, **receipt_data
                 )  # Assuming Receipt is a dataclass or similar
@@ -129,10 +125,6 @@ def load_receipts_from_dir(*, config: Config) -> List[Receipt]:
                         )
                         if "config" in receipt_data.keys():
                             receipt_data.pop("config")
-                            print(
-                                f"WARNING: Popped old config, tied to receipt"
-                                f" updated it with new config"
-                            )
                         receipt = Receipt(config=config, **receipt_data)
                         found_label = True
 
@@ -144,10 +136,6 @@ def load_receipts_from_dir(*, config: Config) -> List[Receipt]:
             else:
                 if "config" in receipt_data.keys():
                     receipt_data.pop("config")
-                    print(
-                        f"WARNING: Popped old config, tied to receipt updated"
-                        f" it with new config"
-                    )
                 receipt = Receipt(config=config, **receipt_data)
                 receipts.append(receipt)
         # if receipt_data["the_date"] == "2024-12-20T20:31:00":

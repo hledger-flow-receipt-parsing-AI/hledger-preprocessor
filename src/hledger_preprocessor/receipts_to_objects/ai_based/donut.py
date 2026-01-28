@@ -1,6 +1,14 @@
+import os
 import re
+import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, Tuple
+
+# Suppress TensorFlow/CUDA warnings before importing torch
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
+warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
 
 import torch
 from PIL import Image

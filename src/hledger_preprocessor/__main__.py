@@ -1,5 +1,14 @@
 """Entry point for the project."""
 
+import os
+import warnings
+
+# Suppress TensorFlow and CUDA warnings before any imports
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
+warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
+
 from argparse import Namespace
 from typing import Any, Dict, List
 
@@ -34,27 +43,22 @@ def main() -> None:
 
     ## NEW
     args: Namespace = parser.parse_args()
-    print(f"DEBUG: args parsed, link_receipts_to_transactions={args.link_receipts_to_transactions}")
     assert_args_are_valid(args=args)
     config: Config = load_config(
         config_path=args.config,
         pre_processed_output_dir=args.pre_processed_output_dir,
     )
-    print("DEBUG: config loaded")
 
     labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
-    print(f"DEBUG: loaded {len(labelled_receipts)} receipts from dir")
 
     if (
         args.preprocess_csvs
         or args.preprocess_assets
         or args.link_receipts_to_transactions
     ):
-        print("DEBUG: entering models/matching block")
         models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
             quick_categorisation=args.quick_categorisation
         )
-        print("DEBUG: models loaded")
 
         if args.preprocess_csvs:
             manage_preprocessing_csvs(
@@ -71,13 +75,11 @@ def main() -> None:
             )
 
         if args.link_receipts_to_transactions:
-            print("DEBUG: calling manage_matching_manual_receipt_objs_to_account_transactions")
             manage_matching_manual_receipt_objs_to_account_transactions(
                 config=config,
                 models=models,
                 labelled_receipts=labelled_receipts,
             )
-            print("DEBUG: finished manage_matching_manual_receipt_objs_to_account_transactions")
 
     if args.edit_receipt:
         edit_receipt(config=config, labelled_receipts=labelled_receipts)
