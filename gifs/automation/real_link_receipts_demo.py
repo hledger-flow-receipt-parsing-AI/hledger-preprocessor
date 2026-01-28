@@ -453,10 +453,10 @@ def show_result(env: Dict[str, Any]) -> None:
     if txn_hash:
         print(f"{Colors.BOLD_GREEN}✓ Receipt successfully linked to CSV transaction!{Colors.RESET}")
     else:
-        print(f"{Colors.YELLOW}(No matching transaction found within date margin){Colors.RESET}")
+        print(f"{Colors.RED}(No matching transaction found within date margin){Colors.RESET}")
 
     print()
-    time.sleep(1)
+    time.sleep(10)
 
     print(f"{Colors.BOLD_WHITE}Why this matters:{Colors.RESET}")
     print()
@@ -464,7 +464,7 @@ def show_result(env: Dict[str, Any]) -> None:
     print(f"  {Colors.GREEN}✓{Colors.RESET} Receipt metadata attached to bank transaction")
     print(f"  {Colors.GREEN}✓{Colors.RESET} Full audit trail: receipt → bank statement")
     print()
-    time.sleep(1)
+    time.sleep(10)
 
 
 def cleanup(env: Dict[str, Any]) -> None:
