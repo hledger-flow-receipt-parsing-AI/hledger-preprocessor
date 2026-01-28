@@ -73,9 +73,11 @@ def store_updated_receipt_label(
     )
 
     if original_receipt.__dict__ != latest_receipt.__dict__:
+        print(f"exporting latest_receipt")
         export_human_label(
             receipt=latest_receipt, label_filepath=label_filepath
         )
+        print(f"exported latest_receipt")
 
         loaded_receipt: Receipt = read_receipt_from_json(
             config=config,
@@ -118,9 +120,14 @@ def store_updated_receipt_label(
             ignore_empty_dict_keys={"extra", "nr_in_batch"},
             ignore_keys={"nr_in_batch"},
         ):
+            print("loaded")
+            pprint(loaded_receipt.get_both_item_types())
+            print("original")
+            pprint(original_receipt.get_both_item_types())
             raise ValueError(
                 "The loaded receipt is the same as the original receipt. "
             )
+        print("Everything went better than expected :)")
 
 
 @typechecked
@@ -139,6 +146,7 @@ def has_diff_and_print(
     ignore_keys: Union[None, Set[str]],
     verbose: Optional[bool] = False,
 ) -> bool:
+    print(f"Warning: ignore_keys={ignore_keys}")
     if ignore_keys_none is None:
         ignore_keys_none = set()
     if ignore_empty_dict_keys is None:

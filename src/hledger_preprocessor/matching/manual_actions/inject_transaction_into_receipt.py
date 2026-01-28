@@ -263,6 +263,11 @@ def receipt_already_contains_csv_transaction(
                 == csv_transaction.get_hash()
             ):
                 nr_of_matches += 1
+        else:
+            print(
+                f"WARNING: No original for: {type(receipt_transaction)} with"
+                f" value:\n{receipt_transaction}"
+            )
     if nr_of_matches == 1:
         return True
     elif nr_of_matches > 1:
