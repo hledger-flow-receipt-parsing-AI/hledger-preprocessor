@@ -100,3 +100,7 @@ def run_gif_test(
         project_root / "gifs" / gif_subdir / "output" / f"{demo_name}.gif"
     )
     assert output_gif.exists(), f"GIF should exist at {output_gif}"
+
+    # Check MP4 was created (requires ffmpeg)
+    output_mp4 = output_gif.with_suffix(".mp4")
+    assert output_mp4.exists(), f"MP4 should exist at {output_mp4}"
