@@ -750,10 +750,10 @@ def record_real_rotation_crop_workflow(
 
     # Generate GIFs
     workflow_gif_path = os.path.join(
-        output_dir, "02b_crop_receipt_workflow.gif"
+        output_dir, "2a_crop_receipt_workflow.gif"
     )
-    image_gif_path = os.path.join(output_dir, "02b_crop_receipt_image.gif")
-    cli_gif_path = os.path.join(output_dir, "02b_crop_receipt_cli.gif")
+    image_gif_path = os.path.join(output_dir, "2a_crop_receipt_image.gif")
+    cli_gif_path = os.path.join(output_dir, "2a_crop_receipt_cli.gif")
 
     print(f"\nCaptured frames:")
     print(f"  Rotation frames: {len(_rotation_frames)}")
