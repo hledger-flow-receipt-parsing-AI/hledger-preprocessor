@@ -11,7 +11,7 @@ set -euo pipefail
 # ================================ Config =====================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DEMO_NAME="02_add_category"
+DEMO_NAME="1b_add_category"
 OUTPUT_DIR="${SCRIPT_DIR}/output"
 
 # Input YAML file - use the test fixture
