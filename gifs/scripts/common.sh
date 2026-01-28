@@ -573,13 +573,13 @@ print_summary() {
     echo
     echo "  ![${DEMO_NAME} demo](${demo_path}/output/${DEMO_NAME}.gif)"
     echo
-    echo "Or use HTML video for pausable playback (recommended):"
+    echo "For pausable MP4 on GitHub:"
+    echo "  1. Edit README.md on GitHub.com"
+    echo "  2. Drag-drop the MP4 file into the editor"
+    echo "  3. GitHub generates a user-images.githubusercontent.com URL"
+    echo "  4. Place that URL on its own line (bare URL, no markdown):"
     echo
-    cat <<EOF
-  <video src="${demo_path}/output/${DEMO_NAME}.mp4" controls muted autoplay loop>
-    Your browser does not support the video tag.
-  </video>
-EOF
+    echo "  https://user-images.githubusercontent.com/YOUR_ID/VIDEO_ID.mp4"
     echo
 }
 
