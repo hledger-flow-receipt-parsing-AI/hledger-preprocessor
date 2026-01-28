@@ -117,3 +117,18 @@ output:
 
   # Clean up old GIFs before generating new ones
   clean_before_generate: true
+
+  # Generate MP4 files alongside GIFs for pausable GitHub README videos
+  # MP4 files use HTML5 video tags and allow users to pause/play/seek
+  generate_mp4: true
+
+  # MP4 encoding settings (using H.264 for browser compatibility)
+  mp4:
+    # Constant Rate Factor (0-51): lower = better quality, larger file
+    # 23 is a good balance for demos
+    crf: 23
+
+    # Encoding preset: ultrafast, superfast, veryfast, faster, fast,
+    # medium, slow, slower, veryslow
+    # Slower = better compression but longer encoding time
+    preset: medium
