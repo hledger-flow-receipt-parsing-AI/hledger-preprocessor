@@ -146,7 +146,7 @@ def has_diff_and_print(
     ignore_keys: Union[None, Set[str]],
     verbose: Optional[bool] = False,
 ) -> bool:
-    input(f"ignore_keys={ignore_keys}")
+    print(f"Warning: ignore_keys={ignore_keys}")
     if ignore_keys_none is None:
         ignore_keys_none = set()
     if ignore_empty_dict_keys is None:
