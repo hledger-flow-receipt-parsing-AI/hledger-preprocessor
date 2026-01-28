@@ -20,37 +20,49 @@ to pre-processes and categorise bank `.csv` files and receipts so that
 
 Set up your bank accounts and wallets in `config.yaml`:
 
-![Step 1a: Setup Config](gifs/1a_setup_config/output/1a_setup_config.gif)
+<video src="gifs/1a_setup_config/output/1a_setup_config.mp4" controls muted autoplay loop>
+  Your browser does not support the video tag.
+</video>
 
 **Step 1b: Define your categories**
 
 Add spending categories to `categories.yaml`:
 
-![Step 1b: Add Category](gifs/1b_add_category/output/1b_add_category.gif)
+<video src="gifs/1b_add_category/output/1b_add_category.mp4" controls muted autoplay loop>
+  Your browser does not support the video tag.
+</video>
 
 **Step 2a: Rotate & Crop your receipts**
 
 Use the CLI to rotate and crop your receipts (if necessary), to increase their zoomed readability and reduce noise.
 
-![Step 2a: Crop Receipt](gifs/2a_crop_receipt/output/2a_crop_receipt_workflow.gif)
+<video src="gifs/2a_crop_receipt/output/2a_crop_receipt_workflow.mp4" controls muted autoplay loop>
+  Your browser does not support the video tag.
+</video>
 
 **Step 2b: Label your receipts**
 
 Use the TUI to label receipt images with date, shop, amount, and payment method:
 
-![Step 2b: Label Receipt](gifs/2b_label_receipt/output/2b_label_receipt.gif)
+<video src="gifs/2b_label_receipt/output/2b_label_receipt.mp4" controls muted autoplay loop>
+  Your browser does not support the video tag.
+</video>
 
 **Step 3: Match receipts to bank transactions**
 
 Algorithmically/semi-automated linking of receipts to your bank/exchange CSV transactions (prevents *duplicate double-entry bookkeeping postings*):
 
-![Step 3: Match Receipt to CSV](gifs/3_match_receipt_to_csv/output/3_match_receipt_to_csv.gif)
+<video src="gifs/3_match_receipt_to_csv/output/3_match_receipt_to_csv.mp4" controls muted autoplay loop>
+  Your browser does not support the video tag.
+</video>
 
 **Step 4: Run the pipeline**
 
 Run `./start.sh` to generate journals and plots:
 
-![Step 4: Run Pipeline](gifs/4_run_pipeline/output/4_run_pipeline.gif)
+<video src="gifs/4_run_pipeline/output/4_run_pipeline.mp4" controls muted autoplay loop>
+  Your browser does not support the video tag.
+</video>
 
 ______________________________________________________________________
 
@@ -58,7 +70,9 @@ ______________________________________________________________________
 
 Use `hledger_plot` to create interactive Sankey diagrams and Treemap plots:
 
-![Step 5: Show Plots](gifs/5_show_plots/output/5_show_plots.gif)
+<video src="gifs/5_show_plots/output/5_show_plots.mp4" controls muted autoplay loop>
+  Your browser does not support the video tag.
+</video>
 
 ______________________________________________________________________
 
