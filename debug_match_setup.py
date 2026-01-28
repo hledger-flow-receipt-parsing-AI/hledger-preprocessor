@@ -310,11 +310,11 @@ def main():
     print("  To run the link command manually:")
     print()
     print(f"    cd {root}")
-    print(f"    {sys.executable} -m hledger_preprocessor --config {config_path} --link-receipts-to-transactions")
+    print(f"    python -m hledger_preprocessor --config {config_path} --link-receipts-to-transactions")
     print()
     print("  Or as a single command:")
     print()
-    cmd = f"cd {root} && {sys.executable} -m hledger_preprocessor --config {config_path} --link-receipts-to-transactions"
+    cmd = f"cd {root} && python -m hledger_preprocessor --config {config_path} --link-receipts-to-transactions"
     print(f"    {cmd}")
     print()
 

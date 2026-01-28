@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../scripts/common.sh"
 
 # Initialize demo (sets up paths, runs preflight checks)
-init_demo "06_show_plots" "$@"
+init_demo "5_show_plots" "$@"
 
 # Run the full pipeline with the show plots module
 run_full_pipeline \
