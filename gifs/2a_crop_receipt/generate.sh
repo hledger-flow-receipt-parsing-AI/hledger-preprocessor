@@ -47,12 +47,13 @@ cd "$PROJECT_ROOT"
 python -m gifs.automation.real_rotate_crop_demo
 
 # Optimize the GIFs
-WORKFLOW_GIF="${OUTPUT_DIR}/02b_crop_receipt_workflow.gif"
-OPENCV_ONLY_GIF="${OUTPUT_DIR}/02b_crop_receipt_opencv_only.gif"
+WORKFLOW_GIF="${OUTPUT_DIR}/2a_crop_receipt_workflow.gif"
+IMAGE_GIF="${OUTPUT_DIR}/2a_crop_receipt_image.gif"
+CLI_GIF="${OUTPUT_DIR}/2a_crop_receipt_cli.gif"
 
 if command -v gifsicle >/dev/null 2>&1; then
     log "Optimizing GIFs with gifsicle..."
-    for gif in "$WORKFLOW_GIF" "$OPENCV_ONLY_GIF"; do
+    for gif in "$WORKFLOW_GIF" "$IMAGE_GIF" "$CLI_GIF"; do
         if [[ -f "$gif" ]]; then
             gifsicle -O3 "$gif" -o "${gif}.tmp" 2>/dev/null || true
             if [[ -f "${gif}.tmp" ]]; then
@@ -70,12 +71,47 @@ log "Generated GIFs:"
 echo "  1. ${WORKFLOW_GIF}"
 echo "     Terminal + OpenCV side-by-side ($(du -h "$WORKFLOW_GIF" 2>/dev/null | cut -f1 || echo 'N/A'))"
 echo
-echo "  2. ${OPENCV_ONLY_GIF}"
-echo "     OpenCV frames only ($(du -h "$OPENCV_ONLY_GIF" 2>/dev/null | cut -f1 || echo 'N/A'))"
+echo "  2. ${IMAGE_GIF}"
+echo "     Image frames only ($(du -h "$IMAGE_GIF" 2>/dev/null | cut -f1 || echo 'N/A'))"
+echo
+echo "  3. ${CLI_GIF}"
+echo "     CLI output only ($(du -h "$CLI_GIF" 2>/dev/null | cut -f1 || echo 'N/A'))"
 echo
 echo "Note: This demo uses the actual drawing functions from:"
 echo "  src/hledger_preprocessor/receipts_to_objects/edit_images/drawing.py"
 echo "  Any changes to the source code will be reflected in the GIF."
 echo
+
+# Convert GIFs to MP4 for pausable GitHub README videos
+convert_gif_to_mp4() {
+    local gif_file="$1"
+    local mp4_file="${gif_file%.gif}.mp4"
+
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+        log "ffmpeg not found, skipping MP4 conversion"
+        return 0
+    fi
+
+    log "Converting $(basename "$gif_file") to MP4..."
+    if ffmpeg -y -i "$gif_file" \
+        -movflags faststart \
+        -pix_fmt yuv420p \
+        -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
+        -c:v libx264 \
+        -crf 23 \
+        -preset medium \
+        "$mp4_file" 2>/dev/null; then
+        log "MP4 created at: $mp4_file"
+    else
+        log "MP4 conversion failed (non-fatal)"
+    fi
+}
+
+# Convert all generated GIFs to MP4
+for gif in "$WORKFLOW_GIF" "$IMAGE_GIF" "$CLI_GIF"; do
+    if [[ -f "$gif" ]]; then
+        convert_gif_to_mp4 "$gif"
+    fi
+done
 
 exit 0
