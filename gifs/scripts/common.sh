@@ -201,11 +201,21 @@ check_agg() {
     return 0
 }
 
+check_ffmpeg() {
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+        error "ffmpeg not found!"
+        warn "Install with: sudo apt install ffmpeg"
+        return 1
+    fi
+    return 0
+}
+
 run_preflight_checks() {
     check_conda_env || exit 1
     check_gifsicle || exit 1
     check_asciinema || exit 1
     check_agg || exit 1
+    check_ffmpeg || exit 1
 }
 
 # ================================ Initialization =============================
@@ -457,6 +467,74 @@ optimize_gif() {
     log "  Size: $(du -h "$gif_file" | cut -f1)"
 }
 
+# ================================ MP4 Conversion ==============================
+
+convert_gif_to_mp4() {
+    # Convert a GIF to MP4 for GitHub README (pausable video)
+    # Usage: convert_gif_to_mp4 [gif_file]
+    # Output: Creates an MP4 file alongside the GIF with the same base name
+    #
+    # GitHub supports HTML5 video tags which allow users to pause/play videos.
+    # GIFs autoplay and cannot be paused, making MP4 a better choice for demos.
+
+    local gif_file="${1:-$OUTPUT_GIF}"
+    local mp4_file="${gif_file%.gif}.mp4"
+
+    if [[ ! -f "$gif_file" ]]; then
+        warn "GIF file not found: $gif_file"
+        return 1
+    fi
+
+    log "Converting $(basename "$gif_file") → MP4..."
+
+    # Convert GIF to MP4 with settings optimized for GitHub:
+    # - H.264 codec for maximum browser compatibility
+    # - yuv420p pixel format for compatibility
+    # - CRF 23 for good quality/size balance
+    # - Scale to even dimensions (required by H.264)
+    # - Reasonable framerate from GIF
+    if ffmpeg -y -i "$gif_file" \
+        -movflags faststart \
+        -pix_fmt yuv420p \
+        -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
+        -c:v libx264 \
+        -crf 23 \
+        -preset medium \
+        "$mp4_file" 2>/dev/null; then
+        log "  → ${mp4_file} ($(du -h "$mp4_file" | cut -f1))"
+        return 0
+    else
+        error "Failed to convert $(basename "$gif_file") to MP4"
+        return 1
+    fi
+}
+
+convert_all_gifs_to_mp4() {
+    # Convert all generated GIFs to MP4
+    # Usage: convert_all_gifs_to_mp4
+
+    if [[ ${#GENERATED_GIFS[@]} -eq 0 ]]; then
+        warn "No GIFs to convert to MP4"
+        return 1
+    fi
+
+    header "Converting GIFs to MP4..."
+
+    local converted=0
+    for gif in "${GENERATED_GIFS[@]}"; do
+        if convert_gif_to_mp4 "$gif"; then
+            ((converted++))
+        fi
+    done
+
+    # Also convert the default GIF if it exists
+    if [[ -f "$OUTPUT_GIF" ]]; then
+        convert_gif_to_mp4 "$OUTPUT_GIF"
+    fi
+
+    log "Converted ${converted} GIFs to MP4"
+}
+
 # ================================ Summary ====================================
 
 print_summary() {
@@ -464,6 +542,7 @@ print_summary() {
     # Usage: print_summary
 
     local demo_path="gifs/${DEMO_NAME}"
+    local mp4_file="${OUTPUT_GIF%.gif}.mp4"
 
     echo
     header "Summary"
@@ -482,16 +561,25 @@ print_summary() {
     fi
 
     if [[ -f "$OUTPUT_GIF" ]]; then
-        log "Default: $(basename "$OUTPUT_GIF") ($(du -h "$OUTPUT_GIF" | cut -f1))"
+        log "Default GIF: $(basename "$OUTPUT_GIF") ($(du -h "$OUTPUT_GIF" | cut -f1))"
+    fi
+
+    if [[ -f "$mp4_file" ]]; then
+        log "Default MP4: $(basename "$mp4_file") ($(du -h "$mp4_file" | cut -f1))"
     fi
 
     echo
-    echo "Add to README.md:"
+    echo "Add to README.md (GIF - auto-plays, not pausable):"
     echo
     echo "  ![${DEMO_NAME} demo](${demo_path}/output/${DEMO_NAME}.gif)"
-    if [[ -f "$SHOWCASE_GIF" ]]; then
-        echo "  ![${DEMO_NAME} themes](${demo_path}/output/${DEMO_NAME}_showcase.gif)"
-    fi
+    echo
+    echo "Or use HTML video for pausable playback (recommended):"
+    echo
+    cat <<EOF
+  <video src="${demo_path}/output/${DEMO_NAME}.mp4" controls muted autoplay loop>
+    Your browser does not support the video tag.
+  </video>
+EOF
     echo
 }
 
@@ -522,6 +610,9 @@ run_full_pipeline() {
     set_default_gif || exit 1
     optimize_gif || true
 
-    # 6. Summary
+    # 6. Convert GIFs to MP4 for pausable GitHub README videos
+    convert_all_gifs_to_mp4 || true  # Don't fail if MP4 conversion fails
+
+    # 7. Summary
     print_summary
 }
