@@ -270,6 +270,7 @@ def run_actual_export(config_path: str, journal_path: str) -> None:
 
     env = os.environ.copy()
     env["TERM"] = "xterm-256color"
+    env["SKIP_DASH"] = "true"  # Skip Dash dashboard launch for export-only
 
     try:
         result = subprocess.run(
