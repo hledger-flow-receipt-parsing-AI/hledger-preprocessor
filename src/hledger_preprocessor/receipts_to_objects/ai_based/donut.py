@@ -1,16 +1,26 @@
 import os
 import re
+import sys
 import warnings
+from contextlib import redirect_stderr
 from dataclasses import dataclass
+from io import StringIO
 from typing import Any, Dict, Tuple
 
-# Suppress TensorFlow/CUDA warnings before importing torch
+# Suppress TensorFlow/CUDA/absl warnings before importing torch
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["ABSL_MIN_LOG_LEVEL"] = "3"
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
 
-import torch
+# Redirect stderr during torch import to suppress CUDA factory registration warnings
+_stderr = sys.stderr
+sys.stderr = StringIO()
+try:
+    import torch
+finally:
+    sys.stderr = _stderr
 from PIL import Image
 from typeguard import typechecked
 
@@ -42,7 +52,8 @@ class DonutAI:
 
         self.name = "Donut"
         self.processor = DonutProcessor.from_pretrained(
-            "naver-clova-ix/donut-base-finetuned-cord-v2"
+            "naver-clova-ix/donut-base-finetuned-cord-v2",
+            use_fast=True,
         )
 
         self.model = VisionEncoderDecoderModel.from_pretrained(

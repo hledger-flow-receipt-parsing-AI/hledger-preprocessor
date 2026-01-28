@@ -3,11 +3,15 @@
 import os
 import warnings
 
-# Suppress TensorFlow and CUDA warnings before any imports
+# Suppress TensorFlow/CUDA/absl warnings before any imports
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["ABSL_MIN_LOG_LEVEL"] = "3"
+os.environ["GRPC_VERBOSITY"] = "ERROR"
+os.environ["GLOG_minloglevel"] = "2"
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="runpy")
 
 from argparse import Namespace
 from typing import Any, Dict, List

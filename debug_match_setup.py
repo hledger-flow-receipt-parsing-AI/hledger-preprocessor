@@ -317,6 +317,11 @@ def main():
     cmd = f"cd {root} && python -m hledger_preprocessor --config {config_path} --link-receipts-to-transactions"
     print(f"    {cmd}")
     print()
+    print("  To suppress TensorFlow/CUDA warnings (for GIF recording):")
+    print()
+    cmd_filtered = f"cd {root} && python -m hledger_preprocessor --config {config_path} --link-receipts-to-transactions 2>&1 | grep -v -E 'cuda_|cuDNN|cuBLAS|cuFFT|absl::|E0000|WARNING.*absl|frozen runpy'"
+    print(f"    {cmd_filtered}")
+    print()
 
     print("-" * 70)
     print("  EXPECTED INTERACTIVE PROMPTS")
