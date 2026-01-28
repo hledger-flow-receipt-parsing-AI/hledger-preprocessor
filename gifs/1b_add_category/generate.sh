@@ -53,4 +53,31 @@ python -m gifs.automation.yaml_typing_gif \
 
 log "Done! GIF created at: $OUTPUT_GIF"
 
+# Convert GIF to MP4 for pausable GitHub README videos
+convert_gif_to_mp4() {
+    local gif_file="$1"
+    local mp4_file="${gif_file%.gif}.mp4"
+
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+        log "ffmpeg not found, skipping MP4 conversion"
+        return 0
+    fi
+
+    log "Converting GIF to MP4..."
+    if ffmpeg -y -i "$gif_file" \
+        -movflags faststart \
+        -pix_fmt yuv420p \
+        -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
+        -c:v libx264 \
+        -crf 23 \
+        -preset medium \
+        "$mp4_file" 2>/dev/null; then
+        log "MP4 created at: $mp4_file"
+    else
+        log "MP4 conversion failed (non-fatal)"
+    fi
+}
+
+convert_gif_to_mp4 "$OUTPUT_GIF"
+
 exit 0

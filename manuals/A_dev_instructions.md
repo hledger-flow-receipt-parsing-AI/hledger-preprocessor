@@ -21,7 +21,10 @@ Run a specific test:
  cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_3_match_receipt_to_csv.py::test_gif_3_match_receipt_to_csv -v
 
 ```
-
+## Gifs
+```sh
+for gif in gifs/*/output/*.gif; do   mp4="${gif%.gif}.mp4";   ffmpeg -y -i "$gif" -movflags faststart -pix_fmt yuv420p     -vf "scale=trunc(iw/2)
+```
 ## Developer
 
 ```bash

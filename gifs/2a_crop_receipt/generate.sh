@@ -78,4 +78,36 @@ echo "  src/hledger_preprocessor/receipts_to_objects/edit_images/drawing.py"
 echo "  Any changes to the source code will be reflected in the GIF."
 echo
 
+# Convert GIFs to MP4 for pausable GitHub README videos
+convert_gif_to_mp4() {
+    local gif_file="$1"
+    local mp4_file="${gif_file%.gif}.mp4"
+
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+        log "ffmpeg not found, skipping MP4 conversion"
+        return 0
+    fi
+
+    log "Converting $(basename "$gif_file") to MP4..."
+    if ffmpeg -y -i "$gif_file" \
+        -movflags faststart \
+        -pix_fmt yuv420p \
+        -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
+        -c:v libx264 \
+        -crf 23 \
+        -preset medium \
+        "$mp4_file" 2>/dev/null; then
+        log "MP4 created at: $mp4_file"
+    else
+        log "MP4 conversion failed (non-fatal)"
+    fi
+}
+
+# Convert all generated GIFs to MP4
+for gif in "$WORKFLOW_GIF" "$OPENCV_ONLY_GIF"; do
+    if [[ -f "$gif" ]]; then
+        convert_gif_to_mp4 "$gif"
+    fi
+done
+
 exit 0
