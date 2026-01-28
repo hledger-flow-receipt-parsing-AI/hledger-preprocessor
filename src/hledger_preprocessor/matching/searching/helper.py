@@ -108,25 +108,13 @@ def filter_transactions_by_amount(
     )
 
     amount_range: float = action_dataset.config.matching_algo.amount_range
-    print(
-        "\nUnmatched AccountTransaction of"
-        f" {action_dataset.search_receipt_account_transaction.account.account_holder}:{action_dataset.search_receipt_account_transaction.account.bank}:{action_dataset.search_receipt_account_transaction.account.account_type} amount:"
-        f" {target_amount} [{action_dataset.search_receipt_account_transaction.account.base_currency.value}]"
-    )
     for transaction in yearly_transactions:
-        currency = transaction.account.base_currency.value
         net_out = transaction.tendered_amount_out - transaction.change_returned
-        print(
-            f"Evaluating csv txn amount:{net_out:>7} [{currency:<5}]"
-            f" amount_range={str(amount_range):>4} tnx"
-            f" date:{str(transaction.the_date):>18} (out-in={transaction.tendered_amount_out:>7}-{transaction.change_returned:>7})"
-        )
         if is_amount_within_margin(
             transaction_amount=net_out,
             receipt_amount=target_amount,
             margin=amount_range,
         ):
-            print(f"Transaction MATCH FOUND! {net_out}")
             filtered_transactions.append(transaction)
     return filtered_transactions
 

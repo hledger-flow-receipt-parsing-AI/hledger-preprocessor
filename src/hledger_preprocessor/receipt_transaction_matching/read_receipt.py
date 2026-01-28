@@ -99,10 +99,6 @@ def read_receipt_from_json(
         converted_data["raw_img_filepath"] = raw_receipt_img_filepath
     if "config" in converted_data.keys():
         converted_data.pop("config")
-        print(
-            f"WARNING: Popped old config, tied to receipt updated"
-            f" it with new config"
-        )
     return Receipt(
         config=config,
         # shop_identifier=converted_data["shop_identifier"],

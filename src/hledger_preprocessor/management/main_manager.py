@@ -309,7 +309,6 @@ def manage_matching_manual_receipt_objs_to_account_transactions(
         )
     )
 
-    print("STARTING MATCHING PROCESS")
     manage_matching_receipts_to_transactions(
         config=config,
         labelled_receipts=labelled_receipts,
@@ -320,5 +319,3 @@ def manage_matching_manual_receipt_objs_to_account_transactions(
         ),
         models=models,
     )
-    # concatenate_asset_csvs(config=config)
-    print("DONE WITH ALL MATCHING")

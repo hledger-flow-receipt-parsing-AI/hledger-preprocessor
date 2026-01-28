@@ -1,5 +1,4 @@
 import logging
-from pprint import pprint
 
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
@@ -40,42 +39,6 @@ def auto_link_receipt(
         account: Account information.
         result: Dictionary to store matching results.
     """
-    if isinstance(
-        original_receipt_account_transaction, GenericCsvTransaction
-    ) or isinstance(found_csv_transaction, GenericCsvTransaction):
-        if found_csv_transaction.tendered_amount_out == 29.23:
-            print("found_csv_transaction=")
-            pprint(found_csv_transaction)
-            pprint(type(found_csv_transaction))
-
-            print("original_receipt_account_transaction")
-            pprint(original_receipt_account_transaction)
-            pprint(type(original_receipt_account_transaction))
-
-            # Usage in your if-block
-            if (
-                isinstance(
-                    original_receipt_account_transaction, AccountTransaction
-                )
-                and isinstance(found_csv_transaction, GenericCsvTransaction)
-                and base_transaction_fields_equal(
-                    original_receipt_account_transaction, found_csv_transaction
-                )
-            ):
-                print("SAME BASE TNSX")
-                # Transactions match on core fields
-                # Now additionally check if accountConfig is the same
-                if (
-                    original_receipt_account_transaction.account
-                    == found_csv_transaction.account
-                ):  # adjust attribute name as needed
-                    # Full match
-                    print("SAME ACCOUNT CONFIGS")
-        print(
-            "WARNING: GenericCsv Transaction found in first"
-            f" tnx:{found_csv_transaction}"
-        )
-
     # Assert the csv_transaction is not yet in the AccountTransaction.
     if receipt_already_contains_csv_transaction(
         receipt=action_dataset.receipt, csv_transaction=found_csv_transaction

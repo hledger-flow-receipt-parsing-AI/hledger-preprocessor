@@ -258,26 +258,11 @@ def receipt_already_contains_csv_transaction(
                     "Found unexpected"
                     f" type:{receipt_transaction.original_transaction}"
                 )
-            # if isinstance(receipt_transaction.original_transaction, dict):
-            #     csv_transaction_in_receipt: GenericCsvTransaction = (
-            #         GenericCsvTransaction(
-            #             **receipt_transaction.original_transaction
-            #         )
-            #     )
-            print(
-                f"receipt_transaction.original_transaction={receipt_transaction.original_transaction}"
-            )
             if (
-                # receipt_transaction.original_transaction.get_hash()
                 receipt_transaction.original_transaction.get_hash()
                 == csv_transaction.get_hash()
             ):
                 nr_of_matches += 1
-        else:
-            print(
-                f"WARNING: No original for: {type(receipt_transaction)} with"
-                f" value:\n{receipt_transaction}"
-            )
     if nr_of_matches == 1:
         return True
     elif nr_of_matches > 1:
