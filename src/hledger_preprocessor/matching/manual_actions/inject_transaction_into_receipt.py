@@ -264,10 +264,8 @@ def receipt_already_contains_csv_transaction(
             ):
                 nr_of_matches += 1
         else:
-            print(
-                f"WARNING: No original for: {type(receipt_transaction)} with"
-                f" value:\n{receipt_transaction}"
-            )
+            # Expected when checking before linking - receipt_transaction has no original yet
+            pass
     if nr_of_matches == 1:
         return True
     elif nr_of_matches > 1:

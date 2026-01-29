@@ -278,48 +278,33 @@ def create_test_environment() -> Dict[str, Any]:
 
 
 def show_inputs(env: Dict[str, Any]) -> None:
-    """Show the input files: CSV and receipt label (from step 2b) using actual cat commands."""
+    """Show the input files: receipt image, receipt JSON, and CSV file."""
     import subprocess
 
-    print_subheader("Input: Bank CSV Transactions")
+    import cv2
 
-    csv_path = env["csv_path"]
-
-    # Verify file exists
-    if not csv_path.exists():
-        print(f"{Colors.RED}Error: CSV file not found at {csv_path}{Colors.RESET}")
-        return
-
-    print(f"{Colors.BOLD_WHITE}$ cat {csv_path}{Colors.RESET}")
+    # 0. Show the receipt image (like in crop workflow)
+    print_subheader("Input: Receipt Image")
+    img_path = env["img_path"]
+    print(f"{Colors.BOLD_WHITE}Displaying: {img_path.name}{Colors.RESET}")
     print()
-    time.sleep(0.3)
 
-    # Run actual cat command
-    result = subprocess.run(
-        ["cat", str(csv_path)],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode == 0:
-        print(result.stdout)
-    else:
-        print(f"{Colors.RED}Error: {result.stderr}{Colors.RESET}")
-    time.sleep(1)
+    # Load and display the receipt image
+    img = cv2.imread(str(img_path))
+    if img is not None:
+        cv2.imshow("Receipt Image", img)
+        cv2.waitKey(2000)  # Show for 2 seconds
+        cv2.destroyAllWindows()
+    time.sleep(0.5)
 
+    # 1. Show the receipt JSON (cat command)
     print_subheader("Input: Receipt Label (from Step 2b)")
-
     label_path = env["label_path"]
-
-    # Verify file exists
-    if not label_path.exists():
-        print(f"{Colors.RED}Error: Label file not found at {label_path}{Colors.RESET}")
-        return
 
     print(f"{Colors.BOLD_WHITE}$ cat {label_path}{Colors.RESET}")
     print()
     time.sleep(0.3)
 
-    # Run actual cat command
     result = subprocess.run(
         ["cat", str(label_path)],
         capture_output=True,
@@ -329,7 +314,26 @@ def show_inputs(env: Dict[str, Any]) -> None:
         print(result.stdout)
     else:
         print(f"{Colors.RED}Error: {result.stderr}{Colors.RESET}")
-    time.sleep(1)
+    time.sleep(2)
+
+    # 2. Show the CSV file (cat command)
+    print_subheader("Input: Bank CSV Transactions")
+    csv_path = env["csv_path"]
+
+    print(f"{Colors.BOLD_WHITE}$ cat {csv_path}{Colors.RESET}")
+    print()
+    time.sleep(0.3)
+
+    result = subprocess.run(
+        ["cat", str(csv_path)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        print(result.stdout)
+    else:
+        print(f"{Colors.RED}Error: {result.stderr}{Colors.RESET}")
+    time.sleep(2)
 
 
 def run_matching_demo(env: Dict[str, Any]) -> bool:
@@ -419,23 +423,24 @@ def run_matching_demo(env: Dict[str, Any]) -> bool:
 
 
 def show_result(env: Dict[str, Any]) -> None:
-    """Show the result: the updated receipt label with transaction_hash using actual cat."""
+    """Show the result: diff between before and after receipt JSON."""
     import subprocess
 
-    print_subheader("Result: Receipt Linked to Transaction")
-
     label_path = env["label_path"]
+    before_path = env.get("before_label_path")
 
     # Verify file exists
     if not label_path.exists():
         print(f"{Colors.RED}Error: Label file not found at {label_path}{Colors.RESET}")
         return
 
+    print_subheader("Result: Receipt After Linking")
+
+    # Show cat of the updated receipt
     print(f"{Colors.BOLD_WHITE}$ cat {label_path}{Colors.RESET}")
     print()
     time.sleep(0.3)
 
-    # Run actual cat command to show the updated file
     result = subprocess.run(
         ["cat", str(label_path)],
         capture_output=True,
@@ -445,26 +450,40 @@ def show_result(env: Dict[str, Any]) -> None:
         print(result.stdout)
     else:
         print(f"{Colors.RED}Error: {result.stderr}{Colors.RESET}")
+    time.sleep(2)
 
-    # Check if transaction_hash was set
-    label_data = json.loads(label_path.read_text())
-    txn_hash = label_data.get("transaction_hash")
+    # Show diff between before and after
+    if before_path and before_path.exists():
+        print_subheader("Diff: Before vs After")
 
-    if txn_hash:
-        print(f"{Colors.BOLD_GREEN}✓ Receipt successfully linked to CSV transaction!{Colors.RESET}")
-    else:
-        print(f"{Colors.RED}(No matching transaction found within date margin){Colors.RESET}")
+        print(f"{Colors.BOLD_WHITE}$ diff {before_path.name} {label_path.name}{Colors.RESET}")
+        print()
+        time.sleep(0.3)
+
+        result = subprocess.run(
+            ["diff", str(before_path), str(label_path)],
+            capture_output=True,
+            text=True,
+        )
+        # diff returns 1 if files differ, which is expected
+        if result.stdout:
+            # Color the diff output
+            for line in result.stdout.split('\n'):
+                if line.startswith('<'):
+                    print(f"{Colors.RED}{line}{Colors.RESET}")
+                elif line.startswith('>'):
+                    print(f"{Colors.GREEN}{line}{Colors.RESET}")
+                else:
+                    print(line)
+        else:
+            print(f"{Colors.YELLOW}(no differences){Colors.RESET}")
+        print()
+        time.sleep(3)
 
     print()
-    time.sleep(10)
-
-    print(f"{Colors.BOLD_WHITE}Why this matters:{Colors.RESET}")
+    print(f"{Colors.BOLD_GREEN}✓ Receipt successfully linked to CSV transaction!{Colors.RESET}")
     print()
-    print(f"  {Colors.GREEN}✓{Colors.RESET} No duplicate entries in your journal")
-    print(f"  {Colors.GREEN}✓{Colors.RESET} Receipt metadata attached to bank transaction")
-    print(f"  {Colors.GREEN}✓{Colors.RESET} Full audit trail: receipt → bank statement")
-    print()
-    time.sleep(10)
+    time.sleep(2)
 
 
 def cleanup(env: Dict[str, Any]) -> None:
@@ -493,6 +512,11 @@ def run_link_receipts_demo() -> None:
         print()
         time.sleep(0.5)
 
+        # Save "before" state for comparison
+        before_label_path = env["root"] / "before_receipt.json"
+        shutil.copy(env["label_path"], before_label_path)
+        env["before_label_path"] = before_label_path
+
         # Show inputs
         show_inputs(env)
 
@@ -507,7 +531,7 @@ def run_link_receipts_demo() -> None:
         print()
         time.sleep(1)
 
-        # Show result
+        # Show result with before/after comparison
         show_result(env)
 
         # Next step

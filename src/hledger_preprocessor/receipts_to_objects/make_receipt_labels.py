@@ -145,7 +145,7 @@ def ask_questions(
 
 
 @typechecked
-def export_human_label(*, receipt: "Receipt", label_filepath: str) -> None:
+def export_human_label(*, receipt: "Receipt", label_filepath: str, verbose: bool = True) -> None:
     """
     Stores the manually generated Receipt object to a JSON file.
 
@@ -219,9 +219,9 @@ def export_human_label(*, receipt: "Receipt", label_filepath: str) -> None:
                     )
     printing_receipt: Dict = copy.deepcopy(receipt_dict)
     printing_receipt.pop("config")
-    pprint(printing_receipt)
-    input(f"EXPORTING to:\n{label_filepath}")
-    # Note: This pauses execution; consider removing in production
+    if verbose:
+        pprint(printing_receipt)
+        input(f"EXPORTING to:\n{label_filepath}")
     with open(label_filepath, "w") as f:
         json.dump(receipt_dict, f, indent=4, cls=EnumEncoder)
 
