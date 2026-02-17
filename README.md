@@ -20,37 +20,37 @@ to pre-processes and categorise bank `.csv` files and receipts so that
 
 Set up your bank accounts and wallets in `config.yaml`:
 
-https://github.com/user-attachments/assets/PLACEHOLDER_1A_SETUP_CONFIG
+![Step 1a: Setup config](gifs/1a_setup_config/output/1a_setup_config.gif)
 
 **Step 1b: Define your categories**
 
 Add spending categories to `categories.yaml`:
 
-https://github.com/user-attachments/assets/PLACEHOLDER_1B_ADD_CATEGORY
+![Step 1b: Add category](gifs/1b_add_category/output/1b_add_category.gif)
 
 **Step 2a: Rotate & Crop your receipts**
 
 Use the CLI to rotate and crop your receipts (if necessary), to increase their zoomed readability and reduce noise.
 
-https://github.com/user-attachments/assets/PLACEHOLDER_2A_CROP_RECEIPT
+![Step 2a: Crop receipt](gifs/2a_crop_receipt/output/2a_crop_receipt_workflow.gif)
 
 **Step 2b: Label your receipts**
 
 Use the TUI to label receipt images with date, shop, amount, and payment method:
 
-https://github.com/user-attachments/assets/PLACEHOLDER_2B_LABEL_RECEIPT
+![Step 2b: Label receipt](gifs/2b_label_receipt/output/2b_label_receipt.gif)
 
 **Step 3: Match receipts to bank transactions**
 
 Algorithmically/semi-automated linking of receipts to your bank/exchange CSV transactions (prevents *duplicate double-entry bookkeeping postings*):
 
-https://github.com/user-attachments/assets/PLACEHOLDER_3_MATCH_RECEIPT
+![Step 3: Match receipt to CSV](gifs/3_match_receipt_to_csv/output/3_match_receipt_to_csv.gif)
 
 **Step 4: Run the pipeline**
 
 Run `./start.sh` to generate journals and plots:
 
-https://github.com/user-attachments/assets/PLACEHOLDER_4_RUN_PIPELINE
+![Step 4: Run pipeline](gifs/4_run_pipeline/output/4_run_pipeline.gif)
 
 ______________________________________________________________________
 
@@ -58,7 +58,7 @@ ______________________________________________________________________
 
 Use `hledger_plot` to create interactive Sankey diagrams and Treemap plots:
 
-https://github.com/user-attachments/assets/PLACEHOLDER_5_SHOW_PLOTS
+![Step 5: Show plots](gifs/5_show_plots/output/5_show_plots.gif)
 
 ______________________________________________________________________
 
