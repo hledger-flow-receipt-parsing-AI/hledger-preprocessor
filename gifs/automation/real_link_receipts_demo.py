@@ -79,9 +79,8 @@ def create_test_environment() -> Dict[str, Any]:
         (root / d).mkdir(parents=True, exist_ok=True)
 
     # Create config.yaml
-    # We need TWO accounts:
-    # 1. triodos checking - has CSV file (bank transactions come from CSV)
-    # 2. triodos debit - NO CSV file (receipt payment method, will be matched to CSV)
+    # Single account: triodos checking - has CSV file and is used by receipt
+    # Receipt account matches CSV account for same-account linking
     config_dict = {
         "account_configs": [
             {
@@ -105,19 +104,6 @@ def create_test_environment() -> Dict[str, Any]:
                     ["the_date", "date"],
                     ["description", "description"],
                 ],
-            },
-            {
-                # Second account - same bank but NO CSV (for receipt payment method)
-                # This allows the receipt transaction to be an AccountTransaction
-                # which can then be matched and linked to CSV transactions
-                "base_currency": "EUR",
-                "account_holder": "at",
-                "bank": "triodos",
-                "account_type": "debit",
-                # For non-CSV accounts, these fields must be present but set to None
-                "input_csv_filename": None,
-                "csv_column_mapping": None,
-                "tnx_date_columns": None,
             },
         ],
         "dir_paths": {
@@ -222,9 +208,9 @@ def create_test_environment() -> Dict[str, Any]:
                 {
                     "account": {
                         "account_holder": "at",
-                        # Use "debit" account (no CSV) so this creates an AccountTransaction
-                        # which can be matched to the CSV transaction from "checking"
-                        "account_type": "debit",
+                        # Use "checking" account (same as CSV) so the receipt matches
+                        # the identical account as the bank transaction
+                        "account_type": "checking",
                         "bank": "triodos",
                         "base_currency": "EUR",
                     },
@@ -297,16 +283,16 @@ def show_inputs(env: Dict[str, Any]) -> None:
         cv2.destroyAllWindows()
     time.sleep(0.5)
 
-    # 1. Show the receipt JSON (cat command)
-    print_subheader("Input: Receipt Label (from Step 2b)")
+    # 1. Show the net_bought_items from the receipt JSON (using jq)
+    print_subheader("Input: Receipt Label - net_bought_items (from Step 2b)")
     label_path = env["label_path"]
 
-    print(f"{Colors.BOLD_WHITE}$ cat {label_path}{Colors.RESET}")
+    print(f"{Colors.BOLD_WHITE}$ jq '.net_bought_items' {label_path}{Colors.RESET}")
     print()
     time.sleep(0.3)
 
     result = subprocess.run(
-        ["cat", str(label_path)],
+        ["jq", ".net_bought_items", str(label_path)],
         capture_output=True,
         text=True,
     )
@@ -434,15 +420,15 @@ def show_result(env: Dict[str, Any]) -> None:
         print(f"{Colors.RED}Error: Label file not found at {label_path}{Colors.RESET}")
         return
 
-    print_subheader("Result: Receipt After Linking")
+    print_subheader("Result: Receipt net_bought_items After Linking")
 
-    # Show cat of the updated receipt
-    print(f"{Colors.BOLD_WHITE}$ cat {label_path}{Colors.RESET}")
+    # Show jq of the updated receipt net_bought_items
+    print(f"{Colors.BOLD_WHITE}$ jq '.net_bought_items' {label_path}{Colors.RESET}")
     print()
     time.sleep(0.3)
 
     result = subprocess.run(
-        ["cat", str(label_path)],
+        ["jq", ".net_bought_items", str(label_path)],
         capture_output=True,
         text=True,
     )
@@ -452,16 +438,44 @@ def show_result(env: Dict[str, Any]) -> None:
         print(f"{Colors.RED}Error: {result.stderr}{Colors.RESET}")
     time.sleep(2)
 
-    # Show diff between before and after
+    # Show diff between before and after (net_bought_items only)
     if before_path and before_path.exists():
-        print_subheader("Diff: Before vs After")
+        print_subheader("Diff: net_bought_items Before vs After")
 
-        print(f"{Colors.BOLD_WHITE}$ diff {before_path.name} {label_path.name}{Colors.RESET}")
+        # Extract net_bought_items from both files for cleaner diff
+        before_net = env["root"] / "before_net_bought_items.json"
+        after_net = env["root"] / "after_net_bought_items.json"
+
+        # Extract net_bought_items to temp files
+        subprocess.run(
+            ["jq", ".net_bought_items", str(before_path)],
+            capture_output=True,
+            text=True,
+        ).stdout and before_net.write_text(
+            subprocess.run(
+                ["jq", ".net_bought_items", str(before_path)],
+                capture_output=True,
+                text=True,
+            ).stdout
+        )
+        subprocess.run(
+            ["jq", ".net_bought_items", str(label_path)],
+            capture_output=True,
+            text=True,
+        ).stdout and after_net.write_text(
+            subprocess.run(
+                ["jq", ".net_bought_items", str(label_path)],
+                capture_output=True,
+                text=True,
+            ).stdout
+        )
+
+        print(f"{Colors.BOLD_WHITE}$ diff before_net_bought_items.json after_net_bought_items.json{Colors.RESET}")
         print()
         time.sleep(0.3)
 
         result = subprocess.run(
-            ["diff", str(before_path), str(label_path)],
+            ["diff", str(before_net), str(after_net)],
             capture_output=True,
             text=True,
         )
