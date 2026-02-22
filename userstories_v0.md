@@ -61,7 +61,12 @@ without needing a bank CSV.
 - Receipt labels that reference this wallet are still converted into journal
   postings.
 - Cash transactions appear in the final journal under the wallet account (e.g.
-  `Assets:Wallet:EUR`). # TODO: Allow for multiple cash/Gold etc. wallets, e.g. a portomonney and a piggy bank and a sock above the fireplace etc. At the time of receipt labelling, the user should pick the right one.
+  `Assets:Wallet:EUR`).
+- Multiple wallets of the same type can be configured (e.g. a portemonnaie, a
+  piggy bank, and a sock above the fireplace), each as a separate account
+  entry in `config.yaml`.
+- During receipt labelling (Step 2b), the TUI presents all wallet accounts so
+  the user can pick which physical wallet the cash came from.
 
 ---
 
@@ -90,15 +95,21 @@ transactions,
 **I want to** configure the matching algorithm's date tolerance, amount margin,
 and day/month swap behaviour in `config.yaml`,
 **so that** the matcher's strictness fits my banking situation (e.g. some banks
-post transactions 1-3 days late). # TODO: Allow for setting different matching tolerances per bank. (Perhaps make a default and allow one to override it in the account specification).
+post transactions 1-3 days late).
 
 **Acceptance criteria:**
 
-- `matching_algo.days` controls the +/- day window for candidate search.
-- `matching_algo.amount_range` controls the amount tolerance (0 = exact).
+- `matching_algo.days` controls the global default +/- day window for
+  candidate search.
+- `matching_algo.amount_range` controls the global default amount tolerance
+  (0 = exact).
 - `matching_algo.days_month_swap` enables automatic DD-MM / MM-DD swap retry.
 - `matching_algo.multiple_receipts_per_transaction` controls whether one CSV
   transaction can be linked to multiple receipts.
+- Per-account overrides: each account entry in `config.yaml` can optionally
+  specify its own `matching_algo` section that overrides the global defaults
+  (e.g. a bank that posts 3 days late gets `days: 4` while the default is 2).
+  *[NOT YET IMPLEMENTED]*
 
 ---
 
@@ -200,7 +211,9 @@ only the cropped region,
 - A red crosshair marks the active corner.
 - Pressing `Enter` saves the cropped image and metadata.
 - Crop coordinates are stored as normalised [0-1] values.
-``` TODO: future: ensure the 10% move steps is configurable in config.yaml.```
+- The arrow key step size (default 10%) should be configurable in
+  `config.yaml`. *[NOT YET IMPLEMENTED]*
+
 ---
 
 ### US-2a.3 — Process a batch of receipt images
@@ -238,10 +251,13 @@ matched to my bank CSV and imported into hledger.
   `shop_identifier`, `receipt_category`, `net_bought_items` (with
   `account_transactions` referencing the Triodos account).
 - The JSON is saved to the `receipt_labels_dir`.
-```
-TODO: make this user story more specific including the receipt labelling structure hashing, and finding a receipt label in the stored data, and finding a photograph of a receipt label etc.
-TODO: verify these are all the requirements om the receipt label (tui)
-```
+- The receipt label JSON filename includes a deterministic hash derived from
+  the receipt content, so that duplicate labels can be detected.
+- Given a receipt label JSON, the system can locate the corresponding receipt
+  photograph (via `raw_img_filepath`).
+- Given a receipt photograph, the system can locate any existing receipt label
+  JSON that references it.
+
 ---
 
 ### US-2b.2 — Label a cash receipt
@@ -286,7 +302,6 @@ when searching my EUR bank CSV.
 card, one for cash),
 **so that** the 30 EUR card portion is matched to my bank CSV and the 20 EUR
 cash portion is recorded as a wallet expense.
-`TODO: allow listing or identifying combined payments`
 
 **Acceptance criteria:**
 
@@ -296,6 +311,9 @@ cash portion is recorded as a wallet expense.
 - The receipt JSON has two `account_transactions` in `net_bought_items`.
 - During matching, only the card portion is matched to the bank CSV; the
   wallet portion is recorded directly.
+- The system can list/identify all receipts that used combined payments (i.e.
+  receipts with 2+ account transactions), so the user can review split
+  payments. *[NOT YET IMPLEMENTED]*
 
 ---
 
@@ -577,23 +595,28 @@ recorded as a separate `Expenses:BankFees` posting.
 
 ---
 
-### US-3.12 — Handle multiple transactions on the same account in one receipt *[NOT YET IMPLEMENTED]*
+### US-3.12 — Handle multiple transactions on the same account in one receipt *[WONTFIX]*
 
-```
-TODO: WONTFIX this is not a desirable workflow as a lot relies on logic assumptions where the net amounts and different accounts allow the system to allocate the categories to the right accounts. Currently that would potentially break if you are allowed to do multiple transactions of the same account in a single receipt. In that case make 2 anotated pictures of the receipt and treat them as 2 unique receipts.
-```
 **As a** user who paid for part of a purchase with one card swipe and then
 a second card swipe on the same account (e.g. the first swipe failed and was
 retried for a different amount),
-**I want to** match a receipt that has two `account_transactions` on the same
-account to two separate CSV rows,
-**so that** both CSV debits are linked and neither appears as a duplicate.
+**I want to** know the correct workflow for this edge case,
+**so that** both CSV debits are tracked without breaking the matching logic.
+
+**Resolution:** This is intentionally not supported. The matching logic relies
+on the assumption that net amounts per account uniquely identify transactions.
+Allowing multiple transactions on the same account in a single receipt would
+break the category-to-account allocation logic.
+
+**Workaround:** Duplicate/annotate the receipt photo and create two separate
+receipt labels, one for each card swipe amount. Each is then matched
+independently as its own receipt.
 
 **Acceptance criteria:**
 
-- The receipt JSON contains two `AccountTransaction` entries referencing the
-  same account.
-- The matcher finds and links each to a separate CSV row.
+- The system raises a clear error if a receipt has two `AccountTransaction`
+  entries referencing the same account, guiding the user to split the receipt
+  into two labels.
 - Currently raises `NotImplementedError("Did not yet support multiple
   transactions on single account for a receipt.")`.
 
@@ -621,8 +644,8 @@ amount in GBP differs from gross),
 ### US-3.14 — Prevent linking the same CSV transaction to two receipts
 
 
-**As a** user who accidentally tries to match two different, or 2 pictures of 
-the same, receipts to the same bank CSV row, 
+**As a** user who accidentally tries to match two different receipts, or two
+photographs of the same receipt, to the same bank CSV row,
 **I want** the matching algorithm to detect that the CSV transaction is
 already linked and refuse the duplicate link,
 **so that** my journal does not contain two expense postings for the same
@@ -634,6 +657,8 @@ bank debit.
 - If the CSV transaction hash is already present in any receipt, a
   `SystemError` is raised.
 - The user is informed which receipt already claims this transaction.
+- This covers both the case of genuinely different receipts and the case of
+  duplicate photos of the same receipt being labelled separately.
 
 ---
 
@@ -710,21 +735,28 @@ authoring.
 
 ---
 
-### US-4.4 — Incremental pipeline runs (skip already-processed files) *[NOT YET IMPLEMENTED]*
-``` TODO: this is against the principle of hledger, it should always recompute all to verify everything still works, unless hash proofs are used to verify everything is unchaged. At best include an option to --only-compute-new-tnx or something like that.```
+### US-4.4 — Optional incremental pipeline runs *[NOT YET IMPLEMENTED]*
 
 **As a** user who runs the pipeline monthly and would like the option to only
- re-process new bank statements,
-**I want** the pipeline to detect which CSVs have already been processed and
-skip them if a an arg for --only-compute-new-tnx is given
-**so that** the pipeline runs faster and does not regenerate identical
-journals.
+re-process new bank statements,
+**I want** the pipeline to support a `--only-compute-new-tnx` flag that skips
+already-processed CSVs,
+**so that** the pipeline runs faster when I know nothing has changed.
+
+**Design note:** By default the pipeline always recomputes everything from
+scratch to verify integrity (this is the hledger principle). The incremental
+mode is opt-in only, and should use hash proofs to verify that skipped files
+are truly unchanged.
 
 **Acceptance criteria:**
 
-- The pipeline tracks processed file hashes.
-- Only new or modified CSVs are re-processed.
+- Without `--only-compute-new-tnx`, the pipeline recomputes all journals from
+  scratch every run (existing behaviour, unchanged).
+- With `--only-compute-new-tnx`, the pipeline tracks processed file hashes and
+  skips CSVs whose hash has not changed.
 - The journal output is identical whether run incrementally or from scratch.
+- If a hash mismatch is detected (file changed), the pipeline re-processes
+  that file and warns the user.
 
 ---
 
@@ -844,8 +876,27 @@ expenses per year, broken down by category),
 
 ---
 
-### US-5.7 show a correlation matrix
-TODO: show which transactions of different accounts were combined, e.g. if a cash payment is combined with a card payement, give an N x N matrix of accounts and amounts spent correlated in respective currencies, along with a fractional matrix of amounts spent per account.
+### US-5.7 — Show a correlation matrix of combined-account payments *[NOT YET IMPLEMENTED]*
+
+**As a** user who sometimes pays with split payments (e.g. part card, part
+cash),
+**I want to** see an N x N correlation matrix showing which accounts were used
+together in combined payments and how much was spent from each,
+**so that** I can understand my payment patterns across accounts.
+
+**Acceptance criteria:**
+
+- The matrix is N x N where N = number of accounts (bank accounts + wallets).
+- Each cell (i, j) shows the total amount where account i and account j were
+  both used on the same receipt.
+- Amounts are shown in their respective currencies.
+- A fractional matrix variant shows the percentage of total spending per
+  account (e.g. "for receipts involving both Triodos and Wallet, 65% came from
+  Triodos and 35% from Wallet").
+- Diagonal cells show the total spent from each account across all receipts
+  (including single-account payments).
+
+---
 
 ## Transaction Classification
 
@@ -1004,4 +1055,23 @@ output.
 
 ---
 
-### US-X.6 — Support only 1 receipt image per transaction *[NOT YET IMPLEMENTED]*
+### US-X.6 — Enforce one receipt image per transaction
+
+**As a** user who wants a clean 1:1 relationship between receipt photos and
+receipt labels,
+**I want** the system to enforce that each receipt label references exactly one
+receipt image, and each image is used by at most one label,
+**so that** there is no ambiguity about which photo belongs to which
+transaction.
+
+**Acceptance criteria:**
+
+- Each receipt label JSON references exactly one `raw_img_filepath`.
+- The system warns or errors if two receipt labels reference the same image
+  file.
+- If a user has multiple photos of the same receipt (e.g. front and back),
+  they should crop/combine them into a single image before labelling, or
+  label only the most complete photo.
+- For the edge case where a single purchase produces two card swipes (see
+  US-3.12 WONTFIX), the user duplicates the photo and creates two separate
+  receipt labels.
