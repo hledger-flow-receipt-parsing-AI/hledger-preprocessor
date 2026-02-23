@@ -521,9 +521,28 @@ layers:
 stories:
 
   # =========================================================================
-  # Step 1a: Configuration
+  # Step 1a: Account Configuration
   # =========================================================================
   - id: US-1a.1
+    title: "Configure a single bank account with CSV import"
+    section: "Step 1a: Account Configuration"
+    status: null
+    as_a: >-
+      user with one bank account
+    i_want: >-
+      add my bank account (e.g. Triodos checking) to `config.yaml` with its CSV
+      column mapping
+    so_that: >-
+      hledger-preprocessor knows how to parse my bank statement CSV file into
+      transactions.
+    acceptance_criteria:
+      - >-
+        `config.yaml` contains an entry under `accounts:` with `account_holder`,
+        `bank`, `account_type`, `input_csv_filename`, and `csv_column_mapping`.
+      - >-
+        Running `hledger_preprocessor --config config.yaml --new-setup` successfully
+        parses the CSV and creates the hledger-flow import directory structure
+        (`import/{account_holder}/{bank}/{account_type}/{year}/`).
     label: "Single bank + CSV"
     colour: "#2196F3"
     pattern: solid
@@ -534,6 +553,23 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
 
   - id: US-1a.2
+    title: "Configure multiple bank accounts"
+    section: "Step 1a: Account Configuration"
+    status: null
+    as_a: >-
+      user with accounts at multiple banks (e.g. Triodos checking and ING savings)
+    i_want: >-
+      define each bank account separately in `config.yaml`
+    so_that: >-
+      all my bank statement CSVs are parsed and combined into a single set of
+      journals.
+    acceptance_criteria:
+      - >-
+        Each account has its own `csv_column_mapping` to handle different CSV formats.
+      - >-
+        Each account produces its own import subdirectory.
+      - >-
+        All accounts are included in the final `all-years.journal`.
     label: "Multiple banks"
     colour: "#1565C0"
     pattern: solid
@@ -543,6 +579,32 @@ stories:
       - [cfg_multi_bank, cat_basic, match_default, start_2024_1000eur, csv_ing_rent_800, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_csv_only_classify, jrnl_rent_ing]
 
   - id: US-1a.3
+    title: "Configure a cash wallet (no CSV)"
+    section: "Step 1a: Account Configuration"
+    status: null
+    as_a: >-
+      user who also pays with cash
+    i_want: >-
+      define a cash wallet account that has no CSV input file
+    so_that: >-
+      cash receipts can be recorded as transactions from my wallet without needing a
+      bank CSV.
+    acceptance_criteria:
+      - >-
+        The wallet account entry in `config.yaml` has no `input_csv_filename`.
+      - >-
+        Receipt labels that reference this wallet are still converted into journal
+        postings.
+      - >-
+        Cash transactions appear in the final journal under the wallet account (e.g.
+        `Assets:Wallet:EUR`).
+      - >-
+        Multiple wallets of the same type can be configured (e.g. a portemonnaie, a
+        piggy bank, and a sock above the fireplace), each as a separate account entry
+        in `config.yaml`.
+      - >-
+        During receipt labelling (Step 2b), the TUI presents all wallet accounts so
+        the user can pick which physical wallet the cash came from.
     label: "Cash wallet (no CSV)"
     colour: "#4CAF50"
     pattern: solid
@@ -551,6 +613,25 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
 
   - id: US-1a.4
+    title: "Configure a cryptocurrency exchange account"
+    section: "Step 1a: Account Configuration"
+    status: null
+    as_a: >-
+      user who buys cryptocurrency
+    i_want: >-
+      configure a crypto exchange account (e.g. Kraken) with its CSV export format
+    so_that: >-
+      my crypto purchases and sales are tracked in hledger alongside my fiat
+      transactions.
+    acceptance_criteria:
+      - >-
+        The CSV column mapping handles crypto-specific fields (e.g. trading pair, fee
+        currency).
+      - >-
+        Transactions are recorded in the correct commodity (e.g. BTC, ETH, XMR).
+      - >-
+        The journal balance report can show crypto holdings converted to a base
+        currency (e.g. EUR) using exchange rates.
     label: "Crypto exchange"
     colour: "#9C27B0"
     pattern: dashed
@@ -559,6 +640,34 @@ stories:
       - [cfg_crypto, cat_extended, match_default, start_2024_multi]
 
   - id: US-1a.5
+    title: "Configure matching algorithm parameters"
+    section: "Step 1a: Account Configuration"
+    status: null
+    as_a: >-
+      user who wants control over how receipts are matched to CSV transactions
+    i_want: >-
+      configure the matching algorithm's date tolerance, amount margin and day/month
+      swap behaviour in `config.yaml`
+    so_that: >-
+      the matcher's strictness fits my banking situation (e.g. some banks post
+      transactions 1-3 days late).
+    acceptance_criteria:
+      - >-
+        `matching_algo.days` controls the global default +/- day window for candidate
+        search.
+      - >-
+        `matching_algo.amount_range` controls the global default amount tolerance (0 =
+        exact).
+      - >-
+        `matching_algo.days_month_swap` enables automatic DD-MM / MM-DD swap retry.
+      - >-
+        `matching_algo.multiple_receipts_per_transaction` controls whether one CSV
+        transaction can be linked to multiple receipts.
+      - >-
+        Per-account overrides: each account entry in `config.yaml` can optionally
+        specify its own `matching_algo` section that overrides the global defaults
+        (e.g. a bank that posts 3 days late gets `days: 4` while the default is 2).
+        *[NOT YET IMPLEMENTED]*
     label: "Matching params"
     colour: "#FF9800"
     pattern: solid
@@ -567,6 +676,23 @@ stories:
       - [cfg_per_bank_match, cat_basic, match_default, start_2024_1000eur]
 
   - id: US-1a.6
+    title: "Configure base currency for reporting"
+    section: "Step 1a: Account Configuration"
+    status: null
+    as_a: >-
+      user whose bank account is in EUR but who sometimes receives statements in
+      other currencies
+    i_want: >-
+      set a `base_currency` for each account in `config.yaml`
+    so_that: >-
+      the preprocessor knows the denomination of each CSV and can convert foreign
+      amounts during matching.
+    acceptance_criteria:
+      - >-
+        Each account has a `base_currency` field (e.g. `EUR`, `USD`, `POUND`).
+      - >-
+        The matching algorithm uses the base currency when comparing receipt amounts
+        to CSV amounts.
     label: "Base currency"
     colour: "#00BCD4"
     pattern: solid
@@ -574,10 +700,29 @@ stories:
     paths:
       - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
 
+
   # =========================================================================
-  # Step 1b: Categories
+  # Step 1b: Category Configuration
   # =========================================================================
   - id: US-1b.1
+    title: "Define hierarchical spending categories"
+    section: "Step 1b: Category Configuration"
+    status: null
+    as_a: >-
+      user setting up my bookkeeping for the first time
+    i_want: >-
+      define a tree of spending categories in `categories.yaml` (e.g. `groceries: {
+      ekoplaza: {}, supermarket: {} }`)
+    so_that: >-
+      every transaction can be classified into a meaningful category that maps to an
+      hledger account path like `Expenses:Groceries:Ekoplaza`.
+    acceptance_criteria:
+      - >-
+        `categories.yaml` supports arbitrary nesting depth.
+      - >-
+        Category names are used as hledger account path segments.
+      - >-
+        The TUI receipt labeller shows these categories as suggestions.
     label: "Hierarchical categories"
     colour: "#8BC34A"
     pattern: solid
@@ -585,7 +730,41 @@ stories:
     paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
 
+  - id: US-1b.2
+    title: "Add a new category after initial setup"
+    section: "Step 1b: Category Configuration"
+    status: null
+    as_a: >-
+      user who discovers a new type of expense (e.g. `repairs:bike`)
+    i_want: >-
+      add a new category to `categories.yaml` without breaking existing categorised
+      transactions
+    so_that: >-
+      I can evolve my category taxonomy over time.
+    acceptance_criteria:
+      - >-
+        Adding a new leaf or branch to `categories.yaml` does not invalidate
+        previously labelled receipts or classified transactions.
+      - >-
+        The new category appears in the TUI labeller and the rule-based classifier.
+
   - id: US-1b.3
+    title: "Use categories for income as well as expenses"
+    section: "Step 1b: Category Configuration"
+    status: null
+    as_a: >-
+      user tracking both income and expenses
+    i_want: >-
+      define income categories (e.g. `income: { salary: {} freelance: {} }`)
+      alongside expense categories
+    so_that: >-
+      credits in my bank CSV are classified under income accounts.
+    acceptance_criteria:
+      - >-
+        The rule-based classifier distinguishes debit (expense) from credit (income)
+        transactions and applies the correct category tree.
+      - >-
+        The journal contains both `Expenses:*` and `Income:*` postings.
     label: "Income categories"
     colour: "#CDDC39"
     pattern: solid
@@ -593,10 +772,113 @@ stories:
     paths:
       - [cfg_1b1w, cat_with_income, match_default, start_2024_1000eur, csv_salary_3000, lbl_salary_credit, out_csv_only_classify, jrnl_income_salary]
 
+
+  # =========================================================================
+  # Step 2a: Receipt Image Processing
+  # =========================================================================
+  - id: US-2a.1
+    title: "Rotate a receipt image"
+    section: "Step 2a: Receipt Image Processing"
+    status: null
+    as_a: >-
+      user who photographed a receipt at the wrong angle
+    i_want: >-
+      rotate the image 90/180/270 degrees using an interactive OpenCV window
+    so_that: >-
+      the text is readable for labelling and AI inference.
+    acceptance_criteria:
+      - >-
+        Pressing `r` rotates 90 degrees clockwise; `l` rotates counter-clockwise.
+      - >-
+        Pressing `Backspace` undoes the last rotation.
+      - >-
+        Pressing `Enter` saves the rotated image and a metadata JSON with the rotation
+        angle.
+      - >-
+        Pressing `q` skips the image without saving.
+
+  - id: US-2a.2
+    title: "Crop a receipt image"
+    section: "Step 2a: Receipt Image Processing"
+    status: null
+    as_a: >-
+      user whose receipt photo contains background clutter
+    i_want: >-
+      draw a crop rectangle on the image using arrow keys and save only the cropped
+      region
+    so_that: >-
+      the receipt content fills the frame and is easier to read.
+    acceptance_criteria:
+      - >-
+        Arrow keys move the active corner in 10% steps.
+      - >-
+        `Alt` switches between top-left and bottom-right corners.
+      - >-
+        A green rectangle shows the crop boundary in real-time.
+      - >-
+        A red crosshair marks the active corner.
+      - >-
+        Pressing `Enter` saves the cropped image and metadata.
+      - >-
+        Crop coordinates are stored as normalised [0-1] values.
+      - >-
+        The arrow key step size (default 10%) should be configurable in `config.yaml`.
+        *[NOT YET IMPLEMENTED]*
+
+  - id: US-2a.3
+    title: "Process a batch of receipt images"
+    section: "Step 2a: Receipt Image Processing"
+    status: null
+    as_a: >-
+      user with 20+ receipt photos from the past month
+    i_want: >-
+      rotate and crop all images in sequence, navigating forward and backward
+      through the batch
+    so_that: >-
+      I can process all my receipts in one session without restarting the tool.
+    acceptance_criteria:
+      - >-
+        After saving one image, the next unprocessed image is shown automatically.
+      - >-
+        The user can go back to the previous image to re-do it.
+      - >-
+        Already-processed images are skipped (metadata file exists).
+
+
   # =========================================================================
   # Step 2b: Receipt Labelling
   # =========================================================================
   - id: US-2b.1
+    title: "Label a simple same-currency card receipt"
+    section: "Step 2b: Receipt Labelling"
+    status: null
+    as_a: >-
+      user who paid for groceries at Ekoplaza with my Triodos debit card in EUR
+    i_want: >-
+      fill in the receipt date, shop, category, amount, currency, and payment
+      account using the TUI
+    so_that: >-
+      a structured JSON receipt label is created that can later be matched to my
+      bank CSV and imported into hledger.
+    acceptance_criteria:
+      - >-
+        The TUI prompts for: date/time, category, account, currency, amount paid,
+        change returned, and at least one bought item.
+      - >-
+        The resulting JSON contains a `Receipt` object with `the_date`,
+        `shop_identifier`, `receipt_category`, `net_bought_items` (with
+        `account_transactions` referencing the Triodos account).
+      - >-
+        The JSON is saved to the `receipt_labels_dir`.
+      - >-
+        The receipt label JSON filename includes a deterministic hash derived from the
+        receipt content, so that duplicate labels can be detected.
+      - >-
+        Given a receipt label JSON, the system can locate the corresponding receipt
+        photograph (via `raw_img_filepath`).
+      - >-
+        Given a receipt photograph, the system can locate any existing receipt label
+        JSON that references it.
     label: "Label card receipt (EUR)"
     colour: "#E91E63"
     pattern: solid
@@ -607,6 +889,24 @@ stories:
       - [cfg_1b1w, cat_basic, img_ekoplaza_card, lbl_ekoplaza_card_eur]
 
   - id: US-2b.2
+    title: "Label a cash receipt"
+    section: "Step 2b: Receipt Labelling"
+    status: null
+    as_a: >-
+      user who paid for coffee with cash from my EUR wallet
+    i_want: >-
+      select the cash wallet account (no CSV) during labelling
+    so_that: >-
+      the receipt is recorded as a cash expense and does not try to match against a
+      bank CSV.
+    acceptance_criteria:
+      - >-
+        The TUI shows the cash wallet among account choices.
+      - >-
+        The receipt JSON references the wallet account.
+      - >-
+        During matching (Step 3), receipts on wallet accounts are skipped (no CSV to
+        match against).
     label: "Label cash receipt"
     colour: "#F44336"
     pattern: solid
@@ -615,6 +915,25 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
 
   - id: US-2b.3
+    title: "Label a foreign-currency receipt"
+    section: "Step 2b: Receipt Labelling"
+    status: null
+    as_a: >-
+      user who bought lunch in London for 12.50 GBP but my bank account is in EUR
+    i_want: >-
+      label the receipt with the GBP amount and GBP currency
+    so_that: >-
+      the matching algorithm later knows to apply a currency conversion when
+      searching my EUR bank CSV.
+    acceptance_criteria:
+      - >-
+        The TUI allows selecting GBP (or any Currency enum value) as the receipt
+        currency.
+      - >-
+        The receipt JSON has `currency: POUND` in the account transaction.
+      - >-
+        The account's `base_currency` (EUR) differs from the receipt currency (GBP),
+        which triggers the alternate currency matching flow.
     label: "Label foreign-currency receipt"
     colour: "#FF5722"
     pattern: solid
@@ -623,6 +942,33 @@ stories:
       - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp, jrnl_triodos_debit_gbp]
 
   - id: US-2b.4
+    title: "Label a split-payment receipt (card + cash)"
+    section: "Step 2b: Receipt Labelling"
+    status: null
+    as_a: >-
+      user who paid for a 50 EUR dinner: 30 EUR by card (Triodos) and 20 EUR in cash
+      (wallet)
+    i_want: >-
+      add two account transactions to the same receipt (one for the card, one for
+      cash)
+    so_that: >-
+      the 30 EUR card portion is matched to my bank CSV and the 20 EUR cash portion
+      is recorded as a wallet expense.
+    acceptance_criteria:
+      - >-
+        After entering the first account+amount, the TUI asks "Add another account?
+        (y/n)".
+      - >-
+        Answering "y" prompts for a second account, currency, and amount.
+      - >-
+        The receipt JSON has two `account_transactions` in `net_bought_items`.
+      - >-
+        During matching, only the card portion is matched to the bank CSV; the wallet
+        portion is recorded directly.
+      - >-
+        The system can list/identify all receipts that used combined payments (i.e.
+        receipts with 2+ account transactions), so the user can review split payments.
+        *[NOT YET IMPLEMENTED]*
     label: "Label split-payment receipt"
     colour: "#795548"
     pattern: solid
@@ -632,6 +978,25 @@ stories:
       - [cfg_1b1w, cat_extended, match_default, start_2024_1000eur, img_split_dinner, lbl_dinner_split, out_skip_cash, jrnl_dinner_split_cash]
 
   - id: US-2b.5
+    title: "Label a receipt with returned items"
+    section: "Step 2b: Receipt Labelling"
+    status: null
+    as_a: >-
+      user who bought 3 items at a shop but returned 1 defective item on the same
+      receipt
+    i_want: >-
+      enter both `net_bought_items` and `net_returned_items`
+    so_that: >-
+      only the net amount (bought minus returned) is matched to my bank statement.
+    acceptance_criteria:
+      - >-
+        The TUI allows adding items to both bought and returned sections.
+      - >-
+        The receipt JSON contains separate `net_bought_items` and `net_returned_items`
+        ExchangedItem entries.
+      - >-
+        The net exchange amount used for matching is the difference between bought and
+        returned.
     label: "Label receipt with returns"
     colour: "#607D8B"
     pattern: solid
@@ -639,10 +1004,99 @@ stories:
     paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_return_item, lbl_return_item, out_auto_1hit, jrnl_return_net]
 
+  - id: US-2b.6
+    title: "Use AI suggestions during manual labelling"
+    section: "Step 2b: Receipt Labelling"
+    status: null
+    as_a: >-
+      user who wants to speed up receipt entry
+    i_want: >-
+      see AI-predicted values (date, category, amount) from the Donut model
+      displayed as suggestions in the TUI
+    so_that: >-
+      I can accept a suggestion with `Alt+U` instead of typing every field manually.
+    acceptance_criteria:
+      - >-
+        The AI suggestions box shows up to 3 predictions with confidence scores.
+      - >-
+        Pressing `Alt+U` applies the top AI suggestion to the current field.
+      - >-
+        Pressing `Ctrl+U` applies the top history suggestion (from previously entered
+        values).
+      - >-
+        Tab auto-completes if there is exactly one matching suggestion.
+
+  - id: US-2b.7
+    title: "Edit an existing receipt label"
+    section: "Step 2b: Receipt Labelling"
+    status: null
+    as_a: >-
+      user who made a mistake in a previously saved receipt label
+    i_want: >-
+      re-open the receipt in the TUI with all fields pre-filled from the existing
+      JSON
+    so_that: >-
+      I can correct a single field without re-entering everything.
+    acceptance_criteria:
+      - >-
+        Running `--edit-receipt` loads the existing receipt JSON and pre-fills all TUI
+        fields.
+      - >-
+        Only changed fields are updated in the saved JSON.
+      - >-
+        The old receipt label is replaced (not duplicated).
+
+  - id: US-2b.8
+    title: "Fully automated AI receipt labelling"
+    section: "Step 2b: Receipt Labelling"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user with hundreds of receipt images
+    i_want: >-
+      run a fully automated AI pipeline that converts receipt images to structured
+      JSON labels without any manual input
+    so_that: >-
+      I can process a large backlog of receipts quickly.
+    acceptance_criteria:
+      - >-
+        The Donut model (or a finetuned variant) extracts date, shop, items, amounts,
+        and tax from the image.
+      - >-
+        The AI output is converted into a `Receipt` object.
+      - >-
+        A confidence threshold determines whether the result is auto-saved or flagged
+        for human review.
+
+
   # =========================================================================
-  # Step 3: Receipt-to-CSV Matching
+  # Step 3: Receipt-to-CSV Transaction Matching
   # =========================================================================
   - id: US-3.1
+    title: "Auto-match a simple same-currency receipt"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user who paid 42.17 EUR at Ekoplaza by card on 2025-01-15 and my Triodos CSV
+      contains a debit of 42.17 EUR on the same date
+    i_want: >-
+      run the matching algorithm and have it auto-link the receipt to the CSV
+      transaction without any TUI interaction
+    so_that: >-
+      the receipt is connected to the bank transaction and I do not get a duplicate
+      double-entry posting.
+    acceptance_criteria:
+      - >-
+        The matcher searches transactions within +/- `matching_algo.days` of the
+        receipt date.
+      - >-
+        Exactly 1 transaction matches on date and amount.
+      - >-
+        The receipt JSON is updated with an `original_transaction` reference
+        containing the CSV transaction hash.
+      - >-
+        The CSV transaction is updated with the receipt reference.
+      - >-
+        No TUI is shown (auto-link path: `len(matches) == 1`).
     label: "Auto-match same currency"
     colour: "#4CAF50"
     pattern: bold
@@ -653,6 +1107,37 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
 
   - id: US-3.2
+    title: "Match a foreign-currency withdrawal receipt to a bank CSV in a different currency"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user who withdrew 100 GBP from an ATM in London and my Triodos bank account
+      CSV shows a debit of 117.50 EUR (at a 1.175 EUR/GBP exchange rate) on the same
+      date
+    i_want: >-
+      tell the matching algorithm the estimated conversion rate so it can find the
+      corresponding EUR transaction in my bank CSV
+    so_that: >-
+      the GBP cash receipt and the EUR bank debit are linked and I do not get
+      duplicate entries (one from the receipt, one from the CSV).
+    acceptance_criteria:
+      - >-
+        The matcher detects that the receipt currency (GBP) differs from the account's
+        base currency (EUR).
+      - >-
+        The matching TUI presents option "1. Add estimated conversion rate for
+        alternative currency".
+      - >-
+        The user enters the from-currency (GBP) and the conversion ratio (1.175).
+      - >-
+        The matcher converts the receipt amount (100 GBP * 1.175 = 117.50 EUR) and
+        re-searches the CSV.
+      - >-
+        On finding a single match, the receipt JSON is updated with both:
+      - >-
+        The original CSV transaction (117.50 EUR from Triodos).
+      - >-
+        A foreign-currency asset transaction (100 GBP).
     label: "Foreign currency match"
     colour: "#FF6F00"
     pattern: bold
@@ -664,6 +1149,25 @@ stories:
       - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
 
   - id: US-3.3
+    title: "Match when no candidates are found (widen date range)"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user whose receipt is dated 2025-01-15 but my bank posted the transaction on
+      2025-01-18 (3 days later, outside the default +/- 2 day window)
+    i_want: >-
+      widen the date margin to +/- 5 days and retry
+    so_that: >-
+      the delayed bank posting is found and linked to my receipt.
+    acceptance_criteria:
+      - >-
+        The matching TUI presents option "4. Widen the date margin".
+      - >-
+        The user enters the additional days (e.g. 3, making total margin 5).
+      - >-
+        The matcher re-searches with the wider window.
+      - >-
+        The transaction is found and linked.
     label: "Widen date range"
     colour: "#F57C00"
     pattern: dashed
@@ -672,6 +1176,25 @@ stories:
       - [cfg_1b1w, cat_basic, match_narrow, start_2024_1000eur, csv_delayed_jan18, img_delayed_shop, lbl_delayed_shop, out_widen_date, jrnl_delayed_shop]
 
   - id: US-3.4
+    title: "Match when no candidates are found (widen amount range)"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user whose receipt total is 49.99 EUR but the bank CSV shows 50.00 EUR
+      (rounded differently by the bank)
+    i_want: >-
+      widen the amount tolerance (e.g. to 0.02) and retry
+    so_that: >-
+      the slightly different amount is still matched.
+    acceptance_criteria:
+      - >-
+        The matching TUI presents option "5. Widen the amount margin".
+      - >-
+        The user enters the widening fraction (e.g. 0.02).
+      - >-
+        The matcher re-searches with amount +/- 0.02.
+      - >-
+        The rounding-affected transaction is found and linked.
     label: "Widen amount range"
     colour: "#EF6C00"
     pattern: dashed
@@ -680,6 +1203,30 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_rounded_5000, img_rounded_shop, lbl_rounded_shop, out_widen_amount, jrnl_rounded_shop]
 
   - id: US-3.5
+    title: "Match when DD-MM and MM-DD date formats are swapped"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user whose receipt has date 05-01-2025 but I accidentally entered it as
+      January 5th instead of May 1st (or vice versa, because the day and month are
+      both <= 12)
+    i_want: >-
+      matching algorithm to automatically try swapping day and month when no match
+      is found on the original date
+    so_that: >-
+      a common date format mistake does not prevent matching.
+    acceptance_criteria:
+      - >-
+        The config option `matching_algo.days_month_swap: true` is set.
+      - >-
+        If no match is found on the original date and day <= 12, the matcher retries
+        with day and month swapped.
+      - >-
+        Alternatively, the matching TUI presents option "6. Swap day and month" for
+        manual activation.
+      - >-
+        The swap can only be applied as the first modification (before any other
+        adjustments).
     label: "Swap DD/MM"
     colour: "#E65100"
     pattern: dashed
@@ -688,6 +1235,27 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_swapped_date, img_swapped_date, lbl_swapped_date, out_swap_dd_mm, jrnl_swapped_shop]
 
   - id: US-3.6
+    title: "Disambiguate when multiple matches are found (2-14 candidates)"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user who buys groceries at the same shop for similar amounts on consecutive
+      days (e.g. 42.17 EUR on Jan 14, 42.17 EUR on Jan 15, 43.00 EUR on Jan 16)
+    i_want: >-
+      see a ranked list of candidate transactions sorted by weighted closeness score
+      and select the correct one from the TUI
+    so_that: >-
+      my receipt is linked to exactly the right bank transaction.
+    acceptance_criteria:
+      - >-
+        Candidates are ranked by weighted closeness score: `0.5 * date_diff/5 + 0.3 *
+        amount_diff + 0.2 * time_diff/24`.
+      - >-
+        The TUI shows each candidate with date, amount, and score.
+      - >-
+        The user selects one by number.
+      - >-
+        The selected transaction is linked; the others remain unlinked.
     label: "Disambiguate 2-14 matches"
     colour: "#BF360C"
     pattern: dashed
@@ -698,6 +1266,24 @@ stories:
       - [cfg_1b1w, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4300_jan16, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
 
   - id: US-3.7
+    title: "Reduce search scope when too many matches are found (15+)"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user who set the date and amount margins too wide and got 20+ candidate
+      transactions
+    i_want: >-
+      be prompted to reduce the date margin, amount margin, or check my receipt data
+    so_that: >-
+      the candidate set is small enough to manually review.
+    acceptance_criteria:
+      - >-
+        The TUI offers options to: check the receipt, check if transactions are up to
+        date, reduce date margin, reduce amount margin.
+      - >-
+        After adjustment, the matcher re-searches with tighter parameters.
+      - >-
+        The resulting candidate count is manageable (< 15).
     label: "Too many matches (15+)"
     colour: "#D84315"
     pattern: dotted
@@ -706,6 +1292,24 @@ stories:
       - [cfg_1b1w, cat_basic, match_wide_both, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_too_many_reduce]
 
   - id: US-3.8
+    title: "Correct a receipt label during matching"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user who notices the receipt date is wrong while trying to match
+    i_want: >-
+      select option "2. Check if the receipt is correct" and fix the receipt fields
+      inline
+    so_that: >-
+      I do not have to exit the matching flow, go back to the labeller, fix the
+      receipt, and restart matching.
+    acceptance_criteria:
+      - >-
+        The TUI re-opens the receipt label for editing.
+      - >-
+        After saving corrections, the matcher retries with the updated receipt data.
+      - >-
+        The corrected receipt JSON is persisted.
     label: "Correct receipt inline"
     colour: "#DD2C00"
     pattern: dashed
@@ -714,6 +1318,27 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_correct_receipt, out_auto_1hit, jrnl_groceries_ekoplaza]
 
   - id: US-3.9
+    title: "Match a receipt for a direct asset purchase (e.g. gold)"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user who bought 10 grams of gold at a dealer and paid by bank transfer
+    i_want: >-
+      match the receipt (denominated in GRAMS of gold) to the EUR bank CSV
+      transaction
+    so_that: >-
+      my gold asset is recorded alongside the EUR debit in a proper double-entry
+      posting.
+    acceptance_criteria:
+      - >-
+        The receipt currency is `GRAMS` (or `SILVER`, etc. from `DirectAssetPurchases`
+        enum).
+      - >-
+        The matching algorithm supports `DirectAssetPurchases` as a "from_currency"
+        for the alternate currency conversion.
+      - >-
+        The journal contains a posting pair: debit `Assets:Gold` / credit
+        `Assets:Bank:Triodos:Checking`.
     label: "Direct asset purchase (gold)"
     colour: "#FFD600"
     pattern: bold
@@ -723,6 +1348,22 @@ stories:
       - [cfg_1b5a, cat_extended, match_default, start_2024_1000eur, csv_gold_dealer_580, img_gold, lbl_gold_10g, out_asset_convert, jrnl_triodos_debit_gold]
 
   - id: US-3.10
+    title: "Skip matching for cash-only receipts"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user who paid for something with cash from my wallet
+    i_want: >-
+      the matching algorithm to automatically skip receipts that only reference
+      wallet accounts (no CSV)
+    so_that: >-
+      I am not prompted to find a nonexistent CSV transaction for a cash purchase.
+    acceptance_criteria:
+      - >-
+        Receipts where all `account_transactions` reference accounts without
+        `input_csv_filename` are skipped during matching.
+      - >-
+        These receipts are still included in the journal as wallet expenses.
     label: "Skip cash-only receipt"
     colour: "#66BB6A"
     pattern: solid
@@ -731,6 +1372,27 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_bike_repair, lbl_bike_cash, out_skip_cash, jrnl_repairs_bike]
 
   - id: US-3.11
+    title: "Handle a receipt with withdrawal fees"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who withdrew 200 GBP from an ATM abroad and my bank charged a 3.50 EUR
+      fee on top of the converted amount (so the CSV shows 200 * 1.17 + 3.50 =
+      237.50 EUR)
+    i_want: >-
+      specify both the conversion rate and the fee amount during matching
+    so_that: >-
+      the receipt is linked to the full CSV amount and the fee is recorded as a
+      separate `Expenses:BankFees` posting.
+    acceptance_criteria:
+      - >-
+        The matching TUI allows entering a fee amount in addition to the conversion
+        rate.
+      - >-
+        The matcher searches for the receipt amount * conversion rate + fee.
+      - >-
+        The journal posting splits the CSV debit into: the converted amount (to
+        `Assets:Wallet:GBP`) and the fee (to `Expenses:BankFees`).
     label: "Withdrawal + fees"
     colour: "#FF8F00"
     pattern: dotted
@@ -739,7 +1401,82 @@ stories:
       - [cfg_1b5a, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_wallet_gbp_200]
       - [cfg_1b5a, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_bankfees]
 
+  - id: US-3.12
+    title: "Handle multiple transactions on the same account in one receipt"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: "WONTFIX"
+    as_a: >-
+      user who paid for part of a purchase with one card swipe and then a second
+      card swipe on the same account (e.g. the first swipe failed and was retried
+      for a different amount)
+    i_want: >-
+      know the correct workflow for this edge case
+    so_that: >-
+      both CSV debits are tracked without breaking the matching logic.
+    acceptance_criteria:
+      - >-
+        The system raises a clear error if a receipt has two `AccountTransaction`
+        entries referencing the same account, guiding the user to split the receipt
+        into two labels.
+      - >-
+        Currently raises `NotImplementedError("Did not yet support multiple
+        transactions on single account for a receipt.")`.
+    resolution: >-
+      This is intentionally not supported. The matching logic relies on the
+      assumption that net amounts per account uniquely identify transactions.
+      Allowing multiple transactions on the same account in a single receipt would
+      break the category-to-account allocation logic.
+    workaround: >-
+      Duplicate/annotate the receipt photo and create two separate receipt labels,
+      one for each card swipe amount. Each is then matched independently as its own
+      receipt.
+
+  - id: US-3.13
+    title: "Handle a foreign-currency receipt with returned items"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who bought and returned items in GBP on the same receipt (net amount in
+      GBP differs from gross)
+    i_want: >-
+      match the net GBP amount (converted to EUR) to my bank CSV
+    so_that: >-
+      only the net charge appears in my journal.
+    acceptance_criteria:
+      - >-
+        The receipt has both `net_bought_items` and `net_returned_items` with GBP
+        account transactions.
+      - >-
+        The matcher computes the net GBP amount, converts to EUR, and searches the
+        CSV.
+      - >-
+        Currently raises `NotImplementedError("Do not yet know how to handle the
+        scenario of multiple transacted items per receipt for foreign currency
+        withdrawl receipts.")`.
+
   - id: US-3.14
+    title: "Prevent linking the same CSV transaction to two receipts"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: null
+    as_a: >-
+      user who accidentally tries to match two different receipts, or two
+      photographs of the same receipt, to the same bank CSV row
+    i_want: >-
+      the matching algorithm to detect that the CSV transaction is already linked
+      and refuse the duplicate link
+    so_that: >-
+      my journal does not contain two expense postings for the same bank debit.
+    acceptance_criteria:
+      - >-
+        Before linking, the matcher checks `receipt_already_contains_csv_transaction`.
+      - >-
+        If the CSV transaction hash is already present in any receipt, a `SystemError`
+        is raised.
+      - >-
+        The user is informed which receipt already claims this transaction.
+      - >-
+        This covers both the case of genuinely different receipts and the case of
+        duplicate photos of the same receipt being labelled separately.
     label: "Duplicate blocked"
     colour: "#B71C1C"
     pattern: dotted
@@ -747,10 +1484,53 @@ stories:
     paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_duplicate_blocked]
 
+  - id: US-3.15
+    title: "Verify transaction data is up to date"
+    section: "Step 3: Receipt-to-CSV Transaction Matching"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who cannot find a match because the bank CSV does not yet contain recent
+      transactions
+    i_want: >-
+      select option "3. Check if transactions for this account are up to date" and
+      see the latest transaction date in the CSV
+    so_that: >-
+      I know whether I need to download a newer CSV export from my bank.
+    acceptance_criteria:
+      - >-
+        The TUI shows the date of the most recent transaction in the CSV for the
+        relevant account.
+      - >-
+        Currently raises `NotImplementedError("Did not implement this yet.")`.
+
+
   # =========================================================================
-  # Step 4: Pipeline + Step 5: Visualisation
+  # Step 4: Pipeline Execution
   # =========================================================================
   - id: US-4.1
+    title: "Run the full pipeline end-to-end"
+    section: "Step 4: Pipeline Execution"
+    status: null
+    as_a: >-
+      user who has configured accounts, defined categories, labelled receipts, and
+      matched them to CSV transactions
+    i_want: >-
+      run `./start.sh` and have the entire pipeline execute: validate config,
+      preprocess CSVs, run hledger-flow import, consolidate journals, and generate
+      plots
+    so_that: >-
+      I get a complete `all-years.journal` and financial visualisations with a
+      single command.
+    acceptance_criteria:
+      - >-
+        `start.sh` exits 0 on success.
+      - >-
+        `all-years.journal` includes all bank transactions and receipt-based
+        transactions.
+      - >-
+        The starting position journal (`start_journal_filepath`) is included.
+      - >-
+        Plot SVGs are generated in the output directory.
     label: "Full pipeline"
     colour: "#3F51B5"
     pattern: bold
@@ -761,7 +1541,118 @@ stories:
     demo_paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey]
 
+  - id: US-4.2
+    title: "Run the pipeline with randomised/scrambled data for demos"
+    section: "Step 4: Pipeline Execution"
+    status: null
+    as_a: >-
+      user who wants to share screenshots or GIFs of my financial visualisations
+      without revealing real financial data
+    i_want: >-
+      run the pipeline with `--randomize` to scramble account names and amounts
+    so_that: >-
+      the plots show realistic structure but no private information.
+    acceptance_criteria:
+      - >-
+        `hledger_plot --randomize` scrambles category names and amounts.
+      - >-
+        The Sankey and Treemap plots use scrambled data.
+      - >-
+        The scrambled output is deterministic for the same seed (reproducible demos).
+
+  - id: US-4.3
+    title: "Generate hledger rules files for a bank"
+    section: "Step 4: Pipeline Execution"
+    status: null
+    as_a: >-
+      user setting up a new bank account
+    i_want: >-
+      run `hledger_preprocessor --generate-rules` to create `.rules` files that tell
+      hledger-flow how to convert my bank's CSV format into journal entries
+    so_that: >-
+      `hledger-flow import` can process my CSVs without manual rules authoring.
+    acceptance_criteria:
+      - >-
+        A `.rules` file is generated per account configuration.
+      - >-
+        The rules file maps CSV columns to hledger fields (date, amount, description).
+      - >-
+        The rules file includes categorisation logic (if rule-based classification is
+        enabled).
+
+  - id: US-4.4
+    title: "Optional incremental pipeline runs"
+    section: "Step 4: Pipeline Execution"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who runs the pipeline monthly and would like the option to only
+      re-process new bank statements
+    i_want: >-
+      the pipeline to support a `--only-compute-new-tnx` flag that skips
+      already-processed CSVs
+    so_that: >-
+      the pipeline runs faster when I know nothing has changed.
+    acceptance_criteria:
+      - >-
+        Without `--only-compute-new-tnx`, the pipeline recomputes all journals from
+        scratch every run (existing behaviour, unchanged).
+      - >-
+        With `--only-compute-new-tnx`, the pipeline tracks processed file hashes and
+        skips CSVs whose hash has not changed.
+      - >-
+        The journal output is identical whether run incrementally or from scratch.
+      - >-
+        If a hash mismatch is detected (file changed), the pipeline re-processes that
+        file and warns the user.
+    design_note: >-
+      By default the pipeline always recomputes everything from scratch to verify
+      integrity (this is the hledger principle). The incremental mode is opt-in
+      only, and should use hash proofs to verify that skipped files are truly
+      unchanged.
+
+  - id: US-4.5
+    title: "Include opening balances from a starting journal"
+    section: "Step 4: Pipeline Execution"
+    status: null
+    as_a: >-
+      user starting bookkeeping mid-year with existing account balances
+    i_want: >-
+      provide a `start_journal_filepath` that contains my opening balances (e.g.
+      1000 EUR in checking)
+    so_that: >-
+      the `all-years.journal` reflects my correct total balances, not just the delta
+      from imported CSVs.
+    acceptance_criteria:
+      - >-
+        The starting journal is appended as an `include` directive in
+        `all-years.journal`.
+      - >-
+        `hledger bal` shows the correct total balances including the opening position.
+
+
+  # =========================================================================
+  # Step 5: Visualisation
+  # =========================================================================
   - id: US-5.1
+    title: "Generate a Sankey diagram of money flows"
+    section: "Step 5: Visualisation"
+    status: null
+    as_a: >-
+      user who wants to see where my money goes at a glance
+    i_want: >-
+      generate an interactive Sankey diagram showing flows from income sources
+      through accounts to expense categories
+    so_that: >-
+      I can visually understand my spending patterns.
+    acceptance_criteria:
+      - >-
+        The Sankey diagram is generated from the `all-years.journal`.
+      - >-
+        Left nodes = income sources / assets; right nodes = expense categories.
+      - >-
+        Flow widths are proportional to amounts.
+      - >-
+        The diagram is interactive (Plotly: hover shows amounts, links are clickable).
     label: "Sankey diagram"
     colour: "#673AB7"
     pattern: bold
@@ -770,6 +1661,25 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, jrnl_groceries_ekoplaza, viz_sankey]
 
   - id: US-5.2
+    title: "Generate a Treemap of spending by category"
+    section: "Step 5: Visualisation"
+    status: null
+    as_a: >-
+      user who wants to see which expense categories dominate my spending
+    i_want: >-
+      generate a Treemap where each rectangle's size represents the amount spent in
+      that category
+    so_that: >-
+      I can immediately see that e.g. 40% goes to rent, 25% to groceries, etc.
+    acceptance_criteria:
+      - >-
+        The Treemap is generated from the `all-years.journal`.
+      - >-
+        Categories are nested (e.g. `Expenses > Groceries > Ekoplaza`).
+      - >-
+        Rectangle size = amount; colour = category group.
+      - >-
+        Hover shows exact amount and percentage.
     label: "Treemap plot"
     colour: "#9C27B0"
     pattern: bold
@@ -777,10 +1687,135 @@ stories:
     paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, jrnl_groceries_ekoplaza, viz_treemap]
 
+  - id: US-5.3
+    title: "Launch an interactive Dash dashboard"
+    section: "Step 5: Visualisation"
+    status: null
+    as_a: >-
+      user who wants to explore my financial data interactively
+    i_want: >-
+      launch a local Dash web dashboard that shows both the Sankey diagram and the
+      Treemap in a browser
+    so_that: >-
+      I can zoom, filter, and interact with the visualisations.
+    acceptance_criteria:
+      - >-
+        Running `hledger_plot` opens a browser tab at `localhost`.
+      - >-
+        The dashboard shows both Sankey and Treemap plots.
+      - >-
+        The `SKIP_DASH=true` environment variable disables the dashboard (for
+        headless/test environments).
+
+  - id: US-5.4
+    title: "Filter visualisations by time period"
+    section: "Step 5: Visualisation"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who wants to see my spending for just the last quarter
+    i_want: >-
+      pass a date range (e.g. `--from 2025-01-01 --to 2025-03-31`) to the plot tool
+    so_that: >-
+      the Sankey and Treemap only show transactions within that period.
+    acceptance_criteria:
+      - >-
+        The plot tool accepts `--from` and `--to` date arguments.
+      - >-
+        Only transactions within the date range are included in the plots.
+      - >-
+        The dashboard title shows the filtered date range.
+
+  - id: US-5.5
+    title: "Generate monthly/quarterly/yearly reports"
+    section: "Step 5: Visualisation"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who wants to track spending trends over time
+    i_want: >-
+      generate comparative reports (e.g. monthly spending per category for the last
+      6 months)
+    so_that: >-
+      I can see whether my spending in each category is increasing or decreasing.
+    acceptance_criteria:
+      - >-
+        Reports show spending per category per time period.
+      - >-
+        Time periods: monthly (last 6 months), quarterly (last year), yearly (last 5
+        years).
+      - >-
+        Reports show expenses as a percentage of income.
+
+  - id: US-5.6
+    title: "Calculate personal inflation rate"
+    section: "Step 5: Visualisation"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user tracking spending over multiple years
+    i_want: >-
+      calculate my personal inflation rate (percentage increase in expenses per
+      year, broken down by category)
+    so_that: >-
+      I can see which costs are rising fastest in my own life.
+    acceptance_criteria:
+      - >-
+        The tool compares total expenses (and per-category expenses) year over year.
+      - >-
+        Output shows percentage change per category per year.
+      - >-
+        Categories with insufficient data are excluded.
+
+  - id: US-5.7
+    title: "Show a correlation matrix of combined-account payments"
+    section: "Step 5: Visualisation"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who sometimes pays with split payments (e.g. part card, part cash)
+    i_want: >-
+      see an N x N correlation matrix showing which accounts were used together in
+      combined payments and how much was spent from each
+    so_that: >-
+      I can understand my payment patterns across accounts.
+    acceptance_criteria:
+      - >-
+        The matrix is N x N where N = number of accounts (bank accounts + wallets).
+      - >-
+        Each cell (i, j) shows the total amount where account i and account j were
+        both used on the same receipt.
+      - >-
+        Amounts are shown in their respective currencies.
+      - >-
+        A fractional matrix variant shows the percentage of total spending per account
+        (e.g. "for receipts involving both Triodos and Wallet, 65% came from Triodos
+        and 35% from Wallet").
+      - >-
+        Diagonal cells show the total spent from each account across all receipts
+        (including single-account payments).
+
+
   # =========================================================================
   # Transaction Classification
   # =========================================================================
   - id: US-C.1
+    title: "Classify transactions using rule-based logic"
+    section: "Transaction Classification"
+    status: null
+    as_a: >-
+      user who prefers deterministic, explainable transaction classification
+    i_want: >-
+      define pattern-matching rules (e.g. "if description contains 'Ekoplaza',
+      classify as `groceries:ekoplaza`")
+    so_that: >-
+      recurring transactions are automatically categorised without AI.
+    acceptance_criteria:
+      - >-
+        Rule-based classification checks transaction description, other_party_name,
+        and amount.
+      - >-
+        Classification is case-insensitive.
+      - >-
+        Multiple rules can match (first match wins or most specific match wins).
+      - >-
+        Uncategorised transactions prompt the user for manual classification.
     label: "Rule-based classification"
     colour: "#009688"
     pattern: solid
@@ -788,13 +1823,206 @@ stories:
     paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, out_csv_only_classify, jrnl_groceries_ekoplaza]
 
+  - id: US-C.2
+    title: "Classify transactions using a self-hosted AI"
+    section: "Transaction Classification"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who wants AI-assisted classification without sending data to the cloud
+    i_want: >-
+      use a locally-hosted LLM (e.g. GPT4All) to suggest categories for bank CSV
+      transactions
+    so_that: >-
+      my financial data stays private while still getting smart suggestions.
+    acceptance_criteria:
+      - >-
+        The AI model runs locally (no network calls).
+      - >-
+        AI suggestions are stored alongside rule-based classifications in the
+        `ProcessedTransaction`.
+      - >-
+        The user can accept or override AI suggestions.
+      - >-
+        Multiple AI models can be configured and compared.
+
+  - id: US-C.3
+    title: "Train a classification model on my own categorised data"
+    section: "Transaction Classification"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who has manually categorised hundreds of transactions over time
+    i_want: >-
+      use my categorised transaction history as training data for a custom finetuned
+      classification model
+    so_that: >-
+      the AI suggestions become increasingly accurate for my personal spending
+      patterns.
+    acceptance_criteria:
+      - >-
+        A training dataset is generated from previously classified transactions.
+      - >-
+        The finetuned model is stored locally.
+      - >-
+        The model can be retrained as more data accumulates.
+      - >-
+        Performance metrics (accuracy, precision, recall per category) are reported.
+
+  - id: US-C.4
+    title: "Classify receipt images by category using AI"
+    section: "Transaction Classification"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who wants receipts auto-categorised from the image alone (without reading
+      the text)
+    i_want: >-
+      use an image classification model that predicts the receipt category (e.g.
+      "groceries", "repairs") from the photo
+    so_that: >-
+      the category field is pre-filled before I start manual labelling.
+    acceptance_criteria:
+      - >-
+        The model takes a receipt image and returns a category prediction with
+        confidence score.
+      - >-
+        The prediction is shown as an AI suggestion in the labelling TUI.
+      - >-
+        The model runs locally (self-hosted).
+
+
   # =========================================================================
-  # Cross-cutting
+  # Cross-cutting Concerns
   # =========================================================================
+  - id: US-X.1
+    title: "Privacy: no data leaves my machine"
+    section: "Cross-cutting Concerns"
+    status: null
+    as_a: >-
+      privacy-conscious user
+    i_want: >-
+      all AI models (receipt OCR, transaction classification, receipt
+      categorisation) to run entirely on my local machine
+    so_that: >-
+      my financial data, receipt images, and bank statements are never sent to any
+      external service.
+    acceptance_criteria:
+      - >-
+        No network calls are made during any pipeline step.
+      - >-
+        AI models are downloaded once and cached locally.
+      - >-
+        The tool works fully offline after initial model download.
+
+  - id: US-X.2
+    title: "Reproducible pipeline output"
+    section: "Cross-cutting Concerns"
+    status: null
+    as_a: >-
+      user who wants to verify my bookkeeping
+    i_want: >-
+      running the full pipeline on the same inputs to always produce the exact same
+      journal output
+    so_that: >-
+      I can audit and diff my financial records.
+    acceptance_criteria:
+      - >-
+        The working directory is cleared at the start of each run.
+      - >-
+        Transaction hashes are deterministic.
+      - >-
+        Journal file content is identical across runs with the same input.
+
+  - id: US-X.3
+    title: "Multi-bank, multi-currency support"
+    section: "Cross-cutting Concerns"
+    status: null
+    as_a: >-
+      user with a EUR bank account (Triodos), a USD bank account (Chase) and a BTC
+      exchange (Kraken)
+    i_want: >-
+      the pipeline to handle all three accounts with their respective currencies and
+      CSV formats
+    so_that: >-
+      my consolidated journal shows all assets in all currencies, convertible to a
+      single reporting currency.
+    acceptance_criteria:
+      - >-
+        Each account has its own CSV column mapping and base currency.
+      - >-
+        The journal contains postings in EUR, USD, and BTC.
+      - >-
+        `hledger bal -X EUR` converts all holdings to EUR using exchange rates.
+
+  - id: US-X.4
+    title: "Unique transaction hashes prevent duplicates"
+    section: "Cross-cutting Concerns"
+    status: null
+    as_a: >-
+      user who might accidentally import the same CSV twice
+    i_want: >-
+      every transaction to have a unique SHA256 hash based on its content
+    so_that: >-
+      the pipeline detects and rejects duplicate imports.
+    acceptance_criteria:
+      - >-
+        Each `Transaction` has a `get_hash()` method producing a deterministic hash.
+      - >-
+        Importing the same CSV twice does not create duplicate journal entries.
+      - >-
+        Duplicate detection works across both CSV transactions and receipt-linked
+        transactions.
+
+  - id: US-X.5
+    title: "GIF demos are auto-generated from integration tests"
+    section: "Cross-cutting Concerns"
+    status: null
+    as_a: >-
+      contributor who wants the README demos to always reflect the actual tool
+      behaviour
+    i_want: >-
+      the demo GIFs to be generated automatically by running the e2e test suite
+    so_that: >-
+      the documentation never goes stale or shows fake/simulated output.
+    acceptance_criteria:
+      - >-
+        Each README GIF corresponds to an e2e test in `test/e2e/`.
+      - >-
+        The tests use real CLI commands (not simulated terminal output).
+      - >-
+        GIFs are generated via asciinema recordings converted with agg/gifsicle.
+      - >-
+        Themed variants (dracula, monokai, etc.) are generated from the same
+        recording.
+
   - id: US-X.6
+    title: "Enforce one receipt image per transaction"
+    section: "Cross-cutting Concerns"
+    status: null
+    as_a: >-
+      user who wants a clean 1:1 relationship between receipt photos and receipt
+      labels
+    i_want: >-
+      the system to enforce that each receipt label references exactly one receipt
+      image, and each image is used by at most one label
+    so_that: >-
+      there is no ambiguity about which photo belongs to which transaction.
+    acceptance_criteria:
+      - >-
+        Each receipt label JSON references exactly one `raw_img_filepath`.
+      - >-
+        The system warns or errors if two receipt labels reference the same image
+        file.
+      - >-
+        If a user has multiple photos of the same receipt (e.g. front and back), they
+        should crop/combine them into a single image before labelling, or label only
+        the most complete photo.
+      - >-
+        For the edge case where a single purchase produces two card swipes (see
+        US-3.12 WONTFIX), the user duplicates the photo and creates two separate
+        receipt labels.
     label: "1 image per receipt"
     colour: "#455A64"
     pattern: solid
     data_use: test
     paths:
       - [img_ekoplaza_card, lbl_ekoplaza_card_eur]
+
