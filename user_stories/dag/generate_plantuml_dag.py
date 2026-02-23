@@ -179,6 +179,8 @@ def generate_dot_full(
     stories: List[Dict],
     highlight_story_id: Optional[str] = None,
     only_story_id: Optional[str] = None,
+    info_fontsize: int = 10,
+    info_acceptance_criteria: bool = False,
 ) -> Tuple[str, Optional[str]]:
     """Generate a Graphviz DOT diagram wrapped in PlantUML @startdot."""
     node_usage = count_node_usage(stories)
@@ -261,16 +263,34 @@ def generate_dot_full(
                     result_lines.append(line)
                 return "<BR/>".join(result_lines)
 
+            body_fs = info_fontsize
+            detail_fs = max(body_fs - 2, 6)
+            ac_rows = ""
+            if info_acceptance_criteria:
+                ac_list = s.get("acceptance_criteria", [])
+                if ac_list:
+                    ac_items = "".join(
+                        f'<BR/>&#8226; {_wrap(ac)}'
+                        for ac in ac_list
+                    )
+                    ac_rows = (
+                        f'<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="{detail_fs}">'
+                        f'<B>Acceptance criteria:</B>{ac_items}'
+                        f'</FONT></TD></TR>'
+                    )
             legend_html = (
                 '<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="2"'
                 ' CELLPADDING="4" BGCOLOR="#FAFAFA">'
-                f'<TR><TD ALIGN="CENTER"><B>{_esc(s["id"])}</B></TD></TR>'
-                f'<TR><TD ALIGN="CENTER"><I>{_wrap(title)}</I></TD></TR>'
-                f'<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">'
+                f'<TR><TD ALIGN="CENTER"><FONT POINT-SIZE="{body_fs + 2}">'
+                f'<B>{_esc(s["id"])}</B></FONT></TD></TR>'
+                f'<TR><TD ALIGN="CENTER"><FONT POINT-SIZE="{body_fs}">'
+                f'<I>{_wrap(title)}</I></FONT></TD></TR>'
+                f'<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="{detail_fs}">'
                 f'<B>As a</B> {_wrap(as_a)}'
                 f'<BR/><B>I want to</B> {_wrap(i_want)}'
                 f'<BR/><B>so that</B> {_wrap(so_that)}'
                 f'</FONT></TD></TR>'
+                + ac_rows +
                 f'<TR><TD ALIGN="CENTER"><FONT COLOR="{c}">'
                 f'{sym}</FONT></TD></TR>'
                 "</TABLE>>"
@@ -669,6 +689,18 @@ def main():
         action="store_true",
         help="Use demo_paths instead of paths where available",
     )
+    parser.add_argument(
+        "--info-fontsize",
+        type=int,
+        default=10,
+        help="Font point-size for the user story info box (default: 10)",
+    )
+    parser.add_argument(
+        "--info-acceptance-criteria",
+        action="store_true",
+        default=False,
+        help="Include acceptance criteria in the isolated story info box",
+    )
     args = parser.parse_args()
 
     data = load_data()
@@ -702,12 +734,16 @@ def main():
         safe = args.story.replace(".", "_").replace("-", "_")
         if args.context == "full":
             dot, legend = generate_dot_full(
-                data, node_index, stories, highlight_story_id=args.story
+                data, node_index, stories, highlight_story_id=args.story,
+                info_fontsize=args.info_fontsize,
+                info_acceptance_criteria=args.info_acceptance_criteria,
             )
             path = write_puml(f"{safe}.puml", dot, subdir="highlighted")
         else:
             dot, legend = generate_dot_full(
-                data, node_index, stories, only_story_id=args.story
+                data, node_index, stories, only_story_id=args.story,
+                info_fontsize=args.info_fontsize,
+                info_acceptance_criteria=args.info_acceptance_criteria,
             )
             path = write_puml(f"{safe}.puml", dot, subdir="isolated")
         print(f"Written: {path}")
@@ -722,7 +758,9 @@ def main():
 
             # Isolated view -> isolated/ folder (story info box)
             dot, info_box = generate_dot_full(
-                data, node_index, stories, only_story_id=s["id"]
+                data, node_index, stories, only_story_id=s["id"],
+                info_fontsize=args.info_fontsize,
+                info_acceptance_criteria=args.info_acceptance_criteria,
             )
             p = write_puml(f"{safe}.puml", dot, subdir="isolated")
             paths_written.append(p)
@@ -730,7 +768,9 @@ def main():
 
             # Full-context highlighted view -> highlighted/ folder
             dot_ctx, legend = generate_dot_full(
-                data, node_index, stories, highlight_story_id=s["id"]
+                data, node_index, stories, highlight_story_id=s["id"],
+                info_fontsize=args.info_fontsize,
+                info_acceptance_criteria=args.info_acceptance_criteria,
             )
             p_ctx = write_puml(f"{safe}.puml", dot_ctx, subdir="highlighted")
             paths_written.append(p_ctx)
@@ -748,7 +788,11 @@ def main():
                 print()
             return
 
-        dot, legend = generate_dot_full(data, node_index, stories)
+        dot, legend = generate_dot_full(
+            data, node_index, stories,
+            info_fontsize=args.info_fontsize,
+            info_acceptance_criteria=args.info_acceptance_criteria,
+        )
         if args.filter and args.filter != "both":
             fname = f"dag_{args.filter}_only.puml"
         else:

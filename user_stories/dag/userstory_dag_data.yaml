@@ -747,6 +747,9 @@ stories:
         previously labelled receipts or classified transactions.
       - >-
         The new category appears in the TUI labeller and the rule-based classifier.
+    no_dag_reason: >-
+      Schema evolution concern — no data flows through layers; it modifies an
+      existing config file in-place.
 
   - id: US-1b.3
     title: "Use categories for income as well as expenses"
@@ -796,6 +799,9 @@ stories:
         angle.
       - >-
         Pressing `q` skips the image without saving.
+    no_dag_reason: >-
+      UI-only operation — rotates an image in-place; no data flows between
+      DAG layers.
 
   - id: US-2a.2
     title: "Crop a receipt image"
@@ -824,6 +830,9 @@ stories:
       - >-
         The arrow key step size (default 10%) should be configurable in `config.yaml`.
         *[NOT YET IMPLEMENTED]*
+    no_dag_reason: >-
+      UI-only operation — crops an image in-place; no data flows between
+      DAG layers.
 
   - id: US-2a.3
     title: "Process a batch of receipt images"
@@ -843,6 +852,9 @@ stories:
         The user can go back to the previous image to re-do it.
       - >-
         Already-processed images are skipped (metadata file exists).
+    no_dag_reason: >-
+      UI workflow orchestration — sequences rotate/crop operations; no new
+      data flows between DAG layers.
 
 
   # =========================================================================
@@ -1025,6 +1037,9 @@ stories:
         values).
       - >-
         Tab auto-completes if there is exactly one matching suggestion.
+    no_dag_reason: >-
+      TUI enhancement — AI suggestions are shown in the labelling UI; the
+      data path is the same as the parent labelling story.
 
   - id: US-2b.7
     title: "Edit an existing receipt label"
@@ -1045,6 +1060,9 @@ stories:
         Only changed fields are updated in the saved JSON.
       - >-
         The old receipt label is replaced (not duplicated).
+    no_dag_reason: >-
+      TUI enhancement — edits an existing receipt label in-place; the data
+      path is the same as the original labelling story.
 
   - id: US-2b.8
     title: "Fully automated AI receipt labelling"
@@ -1066,6 +1084,9 @@ stories:
       - >-
         A confidence threshold determines whether the result is auto-saved or flagged
         for human review.
+    no_dag_reason: >-
+      Not yet implemented — once built, the data path will mirror US-2b.1
+      but with AI-generated labels instead of manual entry.
 
 
   # =========================================================================
@@ -1430,6 +1451,9 @@ stories:
       Duplicate/annotate the receipt photo and create two separate receipt labels,
       one for each card swipe amount. Each is then matched independently as its own
       receipt.
+    no_dag_reason: >-
+      WONTFIX — intentionally unsupported scenario; the workaround is to split
+      into two separate receipts (each follows an existing DAG path).
 
   - id: US-3.13
     title: "Handle a foreign-currency receipt with returned items"
@@ -1453,6 +1477,9 @@ stories:
         Currently raises `NotImplementedError("Do not yet know how to handle the
         scenario of multiple transacted items per receipt for foreign currency
         withdrawl receipts.")`.
+    no_dag_reason: >-
+      Not yet implemented — once built, the data path will extend US-3.3
+      (foreign-currency matching) with net-amount computation for returns.
 
   - id: US-3.14
     title: "Prevent linking the same CSV transaction to two receipts"
@@ -1502,6 +1529,9 @@ stories:
         relevant account.
       - >-
         Currently raises `NotImplementedError("Did not implement this yet.")`.
+    no_dag_reason: >-
+      Not yet implemented — TUI diagnostic action; reads CSV metadata but
+      does not produce data flowing through DAG layers.
 
 
   # =========================================================================
@@ -1559,6 +1589,9 @@ stories:
         The Sankey and Treemap plots use scrambled data.
       - >-
         The scrambled output is deterministic for the same seed (reproducible demos).
+    no_dag_reason: >-
+      Post-processing flag — randomisation modifies output in-place; the
+      underlying data path is identical to US-4.1.
 
   - id: US-4.3
     title: "Generate hledger rules files for a bank"
@@ -1579,6 +1612,9 @@ stories:
       - >-
         The rules file includes categorisation logic (if rule-based classification is
         enabled).
+    no_dag_reason: >-
+      Setup utility — generates .rules files from config; produces a
+      side-artifact, not data that flows through the main DAG layers.
 
   - id: US-4.4
     title: "Optional incremental pipeline runs"
@@ -1609,6 +1645,9 @@ stories:
       integrity (this is the hledger principle). The incremental mode is opt-in
       only, and should use hash proofs to verify that skipped files are truly
       unchanged.
+    no_dag_reason: >-
+      Not yet implemented — optimisation flag; the data path is the same as
+      US-4.1 but with caching/skip logic around unchanged files.
 
   - id: US-4.5
     title: "Include opening balances from a starting journal"
@@ -1628,6 +1667,10 @@ stories:
         `all-years.journal`.
       - >-
         `hledger bal` shows the correct total balances including the opening position.
+    no_dag_reason: >-
+      The opening balance journal is referenced via start_journal nodes in
+      other stories' paths (e.g. start_2024_1000eur); this story describes
+      the requirement but its data is exercised by US-4.1 and others.
 
 
   # =========================================================================
@@ -1706,6 +1749,9 @@ stories:
       - >-
         The `SKIP_DASH=true` environment variable disables the dashboard (for
         headless/test environments).
+    no_dag_reason: >-
+      UI presentation layer — combines US-5.1 and US-5.2 outputs in a Dash
+      app; no new data path, just a viewer for existing visualisations.
 
   - id: US-5.4
     title: "Filter visualisations by time period"
@@ -1724,6 +1770,9 @@ stories:
         Only transactions within the date range are included in the plots.
       - >-
         The dashboard title shows the filtered date range.
+    no_dag_reason: >-
+      Not yet implemented — filtering flag on the visualisation layer; the
+      underlying data path is the same as US-5.1/US-5.2.
 
   - id: US-5.5
     title: "Generate monthly/quarterly/yearly reports"
@@ -1744,6 +1793,9 @@ stories:
         years).
       - >-
         Reports show expenses as a percentage of income.
+    no_dag_reason: >-
+      Not yet implemented — aggregation/reporting feature on the
+      visualisation layer; reads journal data but adds no new DAG nodes.
 
   - id: US-5.6
     title: "Calculate personal inflation rate"
@@ -1763,6 +1815,9 @@ stories:
         Output shows percentage change per category per year.
       - >-
         Categories with insufficient data are excluded.
+    no_dag_reason: >-
+      Not yet implemented — derived metric on the visualisation layer;
+      compares yearly totals from journal data but adds no new DAG nodes.
 
   - id: US-5.7
     title: "Show a correlation matrix of combined-account payments"
@@ -1790,6 +1845,9 @@ stories:
       - >-
         Diagonal cells show the total spent from each account across all receipts
         (including single-account payments).
+    no_dag_reason: >-
+      Not yet implemented — analytical visualisation on the journal layer;
+      reads transaction data but introduces no new data-flow path.
 
 
   # =========================================================================
@@ -1844,6 +1902,9 @@ stories:
         The user can accept or override AI suggestions.
       - >-
         Multiple AI models can be configured and compared.
+    no_dag_reason: >-
+      Not yet implemented — once built, the data path will mirror US-C.1
+      but with an AI model replacing the rule-based classifier.
 
   - id: US-C.3
     title: "Train a classification model on my own categorised data"
@@ -1866,6 +1927,9 @@ stories:
         The model can be retrained as more data accumulates.
       - >-
         Performance metrics (accuracy, precision, recall per category) are reported.
+    no_dag_reason: >-
+      Not yet implemented — training pipeline; produces a model artifact
+      rather than data flowing through the transaction DAG layers.
 
   - id: US-C.4
     title: "Classify receipt images by category using AI"
@@ -1887,6 +1951,9 @@ stories:
         The prediction is shown as an AI suggestion in the labelling TUI.
       - >-
         The model runs locally (self-hosted).
+    no_dag_reason: >-
+      Not yet implemented — image classification step; once built, the path
+      will add a classification node between receipt_img and receipt_lbl layers.
 
 
   # =========================================================================
@@ -1911,6 +1978,9 @@ stories:
         AI models are downloaded once and cached locally.
       - >-
         The tool works fully offline after initial model download.
+    no_dag_reason: >-
+      Cross-cutting constraint — applies to every pipeline step as a
+      non-functional requirement; no distinct data-flow path of its own.
 
   - id: US-X.2
     title: "Reproducible pipeline output"
@@ -1930,6 +2000,9 @@ stories:
         Transaction hashes are deterministic.
       - >-
         Journal file content is identical across runs with the same input.
+    no_dag_reason: >-
+      Cross-cutting constraint — reproducibility property that applies to
+      every pipeline run; verified by running US-4.1 twice and diffing output.
 
   - id: US-X.3
     title: "Multi-bank, multi-currency support"
@@ -1951,6 +2024,9 @@ stories:
         The journal contains postings in EUR, USD, and BTC.
       - >-
         `hledger bal -X EUR` converts all holdings to EUR using exchange rates.
+    no_dag_reason: >-
+      Cross-cutting constraint — multi-currency support is tested through
+      US-1a.4 and US-3.3 paths; this story captures the combined requirement.
 
   - id: US-X.4
     title: "Unique transaction hashes prevent duplicates"
@@ -1970,6 +2046,9 @@ stories:
       - >-
         Duplicate detection works across both CSV transactions and receipt-linked
         transactions.
+    no_dag_reason: >-
+      Cross-cutting constraint — hash uniqueness is verified within US-3.14
+      (duplicate blocked) path; this story captures the broader requirement.
 
   - id: US-X.5
     title: "GIF demos are auto-generated from integration tests"
@@ -1992,6 +2071,9 @@ stories:
       - >-
         Themed variants (dracula, monokai, etc.) are generated from the same
         recording.
+    no_dag_reason: >-
+      CI/documentation concern — GIF generation runs tests but produces
+      documentation artifacts, not data flowing through the transaction DAG.
 
   - id: US-X.6
     title: "Enforce one receipt image per transaction"
