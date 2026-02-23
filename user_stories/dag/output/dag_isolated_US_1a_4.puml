@@ -1,0 +1,42 @@
+@startdot
+digraph userstory_dag {
+  rankdir=TB;
+  fontname="DejaVu Sans";
+  node [fontname="DejaVu Sans", fontsize=10];
+  edge [fontname="DejaVu Sans", fontsize=8];
+  newrank=true;
+  compound=true;
+
+  subgraph cluster_config {
+    label="Configuration";
+    style=filled; fillcolor="#E3F2FD";
+    rank=same;
+    cfg_crypto [label="1 bank + crypto", shape=box3d, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos (EUR) + Kraken exchange (BTC/ETH)"];
+  }
+
+  subgraph cluster_categories {
+    label="Categories";
+    style=filled; fillcolor="#E8F5E9";
+    rank=same;
+    cat_extended [label="extended categories", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
+  }
+
+  subgraph cluster_matching_cfg {
+    label="Matching Parameters";
+    style=filled; fillcolor="#FFF3E0";
+    rank=same;
+    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+  }
+
+  subgraph cluster_start_journal {
+    label="Starting Journal";
+    style=filled; fillcolor="#F3E5F5";
+    rank=same;
+    start_2024_multi [label="2024: multi-currency", shape=note, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="1000 EUR + 500 USD + 0.05 BTC"];
+  }
+
+  cat_extended -> match_default [color="#9C27B0", penwidth=2.5, style=dashed];
+  cfg_crypto -> cat_extended [color="#9C27B0", penwidth=2.5, style=dashed];
+  match_default -> start_2024_multi [color="#9C27B0", penwidth=2.5, style=dashed];
+}
+@enddot
