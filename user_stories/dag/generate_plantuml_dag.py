@@ -114,6 +114,11 @@ def count_edge_usage(stories: List[Dict]) -> Counter:
     return counter
 
 
+def dag_stories(stories: List[Dict]) -> List[Dict]:
+    """Return only stories that have DAG paths."""
+    return [s for s in stories if "paths" in s and s["paths"]]
+
+
 def filter_stories(
     stories: List[Dict], data_filter: Optional[str]
 ) -> List[Dict]:
@@ -121,7 +126,7 @@ def filter_stories(
         return stories
     filtered = []
     for s in stories:
-        if s["data_use"] in (data_filter, "both"):
+        if s.get("data_use") in (data_filter, "both"):
             filtered.append(s)
     return filtered
 
@@ -210,15 +215,68 @@ def generate_dot_full(
     lines.append('  compound=true;')
     lines.append("")
 
-    # Build legend HTML (rendered separately and composited onto the DAG)
+    # Build side-panel HTML (rendered separately and composited onto the DAG)
+    # For full/highlighted views: full legend with all stories
+    # For isolated views: small info box with just the story details
+    pattern_symbols = {
+        "solid": "&#9473;&#9473;&#9473;",       # ━━━
+        "dashed": "&#9476; &#9476; &#9476;",     # ╴ ╴ ╴
+        "dotted": "&#183;&#183;&#183;&#183;&#183;&#183;",  # ······
+        "bold": "&#9552;&#9552;&#9552;",         # ═══
+    }
     legend_html = None
-    if not only_story_id:
-        pattern_symbols = {
-            "solid": "&#9473;&#9473;&#9473;",       # ━━━
-            "dashed": "&#9476; &#9476; &#9476;",     # ╴ ╴ ╴
-            "dotted": "&#183;&#183;&#183;&#183;&#183;&#183;",  # ······
-            "bold": "&#9552;&#9552;&#9552;",         # ═══
-        }
+    if only_story_id:
+        # Info box for the isolated story with full As a / I want / So that
+        target_story = [s for s in stories if s["id"] == only_story_id]
+        if target_story:
+            s = target_story[0]
+            c = s["colour"]
+            pat = s.get("pattern", "solid")
+            sym = pattern_symbols.get(pat, "&#9473;&#9473;&#9473;")
+            title = s.get("title", s.get("label", ""))
+            as_a = s.get("as_a", "")
+            i_want = s.get("i_want", "")
+            so_that = s.get("so_that", "")
+
+            def _esc(text: str) -> str:
+                """Escape HTML-sensitive characters for Graphviz labels."""
+                return (text
+                        .replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                        .replace('"', "&quot;"))
+
+            def _wrap(text: str, width: int = 35) -> str:
+                """Word-wrap text with HTML line breaks."""
+                words = _esc(text).split()
+                result_lines: List[str] = []
+                line = ""
+                for w in words:
+                    if line and len(line) + 1 + len(w) > width:
+                        result_lines.append(line)
+                        line = w
+                    else:
+                        line = f"{line} {w}" if line else w
+                if line:
+                    result_lines.append(line)
+                return "<BR/>".join(result_lines)
+
+            legend_html = (
+                '<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="2"'
+                ' CELLPADDING="4" BGCOLOR="#FAFAFA">'
+                f'<TR><TD ALIGN="CENTER"><B>{_esc(s["id"])}</B></TD></TR>'
+                f'<TR><TD ALIGN="CENTER"><I>{_wrap(title)}</I></TD></TR>'
+                f'<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">'
+                f'<B>As a</B> {_wrap(as_a)}'
+                f'<BR/><B>I want to</B> {_wrap(i_want)}'
+                f'<BR/><B>so that</B> {_wrap(so_that)}'
+                f'</FONT></TD></TR>'
+                f'<TR><TD ALIGN="CENTER"><FONT COLOR="{c}">'
+                f'{sym}</FONT></TD></TR>'
+                "</TABLE>>"
+            )
+    elif not only_story_id:
+        # Full legend for highlighted / all-stories views
         legend_rows = []
         for s in stories:
             c = s["colour"]
@@ -530,14 +588,13 @@ def _composite_legend(dag_png: Path, legend_png: Path, gap: int = 4) -> None:
         dag_left_edge = 0
 
     # Place legend so its right edge is `gap` pixels left of content
-    legend_x = max(0, dag_left_edge - leg.width - gap)
-    # Canvas: may need to expand left if legend doesn't fit
+    legend_x = dag_left_edge - leg.width - gap
     if legend_x >= 0:
         # Legend fits within existing DAG whitespace
         canvas = dag.copy()
         canvas.paste(leg, (legend_x, 0), leg)
     else:
-        # Need extra space on the left
+        # Need extra space on the left — expand the canvas
         extra = -legend_x
         canvas = Image.new("RGBA", (dag.width + extra, max(dag.height, leg.height)),
                             (255, 255, 255, 255))
@@ -616,7 +673,10 @@ def main():
 
     data = load_data()
     node_index = build_node_index(data)
-    stories = data["stories"]
+    all_stories = data["stories"]
+
+    # Only stories with DAG paths participate in diagram generation
+    stories = dag_stories(all_stories)
 
     # Swap to demo_paths if requested
     if args.demo_paths:
@@ -627,9 +687,11 @@ def main():
     stories = filter_stories(stories, args.filter)
 
     if args.list:
-        for s in stories:
-            status = s.get("data_use", "test")
-            print(f"  {s['id']:12s}  {s['label']:35s}  [{status}]")
+        for s in all_stories:
+            label = s.get("label", s.get("title", ""))
+            status = s.get("data_use", "-")
+            has_dag = "*" if "paths" in s and s["paths"] else " "
+            print(f"  {has_dag} {s['id']:12s}  {label:40s}  [{status}]")
         return
 
     if args.story:
@@ -658,13 +720,13 @@ def main():
         for s in stories:
             safe = s["id"].replace(".", "_").replace("-", "_")
 
-            # Isolated view -> isolated/ folder (no legend)
-            dot, _ = generate_dot_full(
+            # Isolated view -> isolated/ folder (story info box)
+            dot, info_box = generate_dot_full(
                 data, node_index, stories, only_story_id=s["id"]
             )
             p = write_puml(f"{safe}.puml", dot, subdir="isolated")
             paths_written.append(p)
-            legend_for_path[p] = None
+            legend_for_path[p] = info_box
 
             # Full-context highlighted view -> highlighted/ folder
             dot_ctx, legend = generate_dot_full(
