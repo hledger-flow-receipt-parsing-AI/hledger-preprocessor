@@ -1,0 +1,99 @@
+@startdot
+digraph userstory_dag {
+  rankdir=TB;
+  fontname="DejaVu Sans";
+  node [fontname="DejaVu Sans", fontsize=10];
+  edge [fontname="DejaVu Sans", fontsize=8];
+  newrank=true;
+  compound=true;
+
+  subgraph cluster_config {
+    label="Configuration";
+    style=filled; fillcolor="#E3F2FD";
+    rank=same;
+    cfg_1b1w [label="1 bank + 1 wallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking (EUR CSV) + EUR cash wallet (no CSV)"];
+  }
+
+  subgraph cluster_categories {
+    label="Categories";
+    style=filled; fillcolor="#E8F5E9";
+    rank=same;
+    cat_extended [label="extended categories", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
+  }
+
+  subgraph cluster_matching_cfg {
+    label="Matching Parameters";
+    style=filled; fillcolor="#FFF3E0";
+    rank=same;
+    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+  }
+
+  subgraph cluster_start_journal {
+    label="Starting Journal";
+    style=filled; fillcolor="#F3E5F5";
+    rank=same;
+    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
+  }
+
+  subgraph cluster_csv_txn {
+    label="Bank CSV Transactions";
+    style=filled; fillcolor="#E0F7FA";
+    rank=same;
+    csv_split_dinner_30 [label="Triodos -30.00 EUR\n2025-02-01 Restaurant", shape=cylinder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Card portion of 50 EUR split dinner"];
+  }
+
+  subgraph cluster_receipt_img {
+    label="Receipt Images";
+    style=filled; fillcolor="#FBE9E7";
+    rank=same;
+    img_split_dinner [label="split_dinner.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Restaurant receipt, split card+cash"];
+  }
+
+  subgraph cluster_receipt_lbl {
+    label="Receipt Labels (JSON)";
+    style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    lbl_dinner_split [label="dinner_split\n30 card + 20 cash", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos 30 EUR + wallet 20 EUR"];
+  }
+
+  subgraph cluster_matching_out {
+    label="Matching Outcome";
+    style=filled; fillcolor="#FFF8E1";
+    rank=same;
+    out_auto_1hit [label="AUTO-LINK\n1 match found", shape=diamond, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Exact date+amount, no TUI needed"];
+    out_skip_cash [label="SKIP\nno CSV for wallet", shape=diamond, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Cash receipt, no bank CSV to match against"];
+  }
+
+  subgraph cluster_journal_out {
+    label="Journal Output";
+    style=filled; fillcolor="#E8EAF6";
+    rank=same;
+    jrnl_dinner_split_card [label="Expenses:Dining:\nRestaurant 30 EUR (card)", shape=box, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Card portion of split dinner"];
+    jrnl_dinner_split_cash [label="Expenses:Dining:\nRestaurant 20 EUR (cash)", shape=box, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Cash portion of split dinner"];
+  }
+
+  _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  cfg_1b1w -> cat_extended [style=invis];
+  cat_extended -> match_default [style=invis];
+  match_default -> start_2024_1000eur [style=invis];
+  start_2024_1000eur -> csv_split_dinner_30 [style=invis];
+  csv_split_dinner_30 -> img_split_dinner [style=invis];
+  img_split_dinner -> lbl_dinner_split [style=invis];
+  lbl_dinner_split -> out_auto_1hit [style=invis];
+  out_auto_1hit -> jrnl_dinner_split_card [style=invis];
+  jrnl_dinner_split_card -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
+
+  cat_extended -> match_default [color="#795548", penwidth=2.5, style=solid];
+  cfg_1b1w -> cat_extended [color="#795548", penwidth=2.5, style=solid];
+  csv_split_dinner_30 -> img_split_dinner [color="#795548", penwidth=2.5, style=solid];
+  img_split_dinner -> lbl_dinner_split [color="#795548", penwidth=2.5, style=solid];
+  lbl_dinner_split -> out_auto_1hit [color="#795548", penwidth=2.5, style=solid];
+  lbl_dinner_split -> out_skip_cash [color="#795548", penwidth=2.5, style=solid];
+  match_default -> start_2024_1000eur [color="#795548", penwidth=2.5, style=solid];
+  out_auto_1hit -> jrnl_dinner_split_card [color="#795548", penwidth=2.5, style=solid];
+  out_skip_cash -> jrnl_dinner_split_cash [color="#795548", penwidth=2.5, style=solid];
+  start_2024_1000eur -> csv_split_dinner_30 [color="#795548", penwidth=2.5, style=solid];
+  start_2024_1000eur -> img_split_dinner [color="#795548", penwidth=2.5, style=solid];
+}
+@enddot
