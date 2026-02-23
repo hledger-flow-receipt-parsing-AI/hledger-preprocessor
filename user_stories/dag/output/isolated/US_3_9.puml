@@ -1,0 +1,96 @@
+@startdot
+digraph userstory_dag {
+  rankdir=TB;
+  fontname="DejaVu Sans";
+  node [fontname="DejaVu Sans", fontsize=10];
+  edge [fontname="DejaVu Sans", fontsize=8];
+  newrank=true;
+  compound=true;
+
+  subgraph cluster_config {
+    label="Configuration";
+    style=filled; fillcolor="#E3F2FD";
+    rank=same;
+    cfg_1b5a [label="1 bank + 5 assets", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking + EUR/GBP/BTC/GOLD/SILVER wallets"];
+  }
+
+  subgraph cluster_categories {
+    label="Categories";
+    style=filled; fillcolor="#E8F5E9";
+    rank=same;
+    cat_extended [label="extended categories", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
+  }
+
+  subgraph cluster_matching_cfg {
+    label="Matching Parameters";
+    style=filled; fillcolor="#FFF3E0";
+    rank=same;
+    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+  }
+
+  subgraph cluster_start_journal {
+    label="Starting Journal";
+    style=filled; fillcolor="#F3E5F5";
+    rank=same;
+    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
+  }
+
+  subgraph cluster_csv_txn {
+    label="Bank CSV Transactions";
+    style=filled; fillcolor="#E0F7FA";
+    rank=same;
+    csv_gold_dealer_580 [label="Triodos -580.00 EUR\n2025-01-20 GoldDealer", shape=cylinder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="10g gold purchase at 58 EUR/g"];
+  }
+
+  subgraph cluster_receipt_img {
+    label="Receipt Images";
+    style=filled; fillcolor="#FBE9E7";
+    rank=same;
+    img_gold [label="gold_dealer.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Gold purchase receipt, 10g"];
+  }
+
+  subgraph cluster_receipt_lbl {
+    label="Receipt Labels (JSON)";
+    style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    lbl_gold_10g [label="gold_10g\n10 GRAMS", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, DirectAssetPurchases.GOLD"];
+  }
+
+  subgraph cluster_matching_out {
+    label="Matching Outcome";
+    style=filled; fillcolor="#FFF8E1";
+    rank=same;
+    out_asset_convert [label="ASSET CONVERT\ngold rate", shape=diamond, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="DirectAssetPurchases conversion (GRAMS -> EUR)"];
+  }
+
+  subgraph cluster_journal_out {
+    label="Journal Output";
+    style=filled; fillcolor="#E8EAF6";
+    rank=same;
+    jrnl_asset_gold [label="Assets:Gold\n10 GRAMS", shape=box, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Gold asset purchased"];
+    jrnl_triodos_debit_gold [label="Assets:Triodos:\nChecking -580 EUR", shape=box, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Bank debit for gold purchase"];
+  }
+
+  _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  cfg_1b5a -> cat_extended [style=invis];
+  cat_extended -> match_default [style=invis];
+  match_default -> start_2024_1000eur [style=invis];
+  start_2024_1000eur -> csv_gold_dealer_580 [style=invis];
+  csv_gold_dealer_580 -> img_gold [style=invis];
+  img_gold -> lbl_gold_10g [style=invis];
+  lbl_gold_10g -> out_asset_convert [style=invis];
+  out_asset_convert -> jrnl_asset_gold [style=invis];
+  jrnl_asset_gold -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
+
+  cat_extended -> match_default [color="#FFD600", penwidth=2.5, style=bold];
+  cfg_1b5a -> cat_extended [color="#FFD600", penwidth=2.5, style=bold];
+  csv_gold_dealer_580 -> img_gold [color="#FFD600", penwidth=2.5, style=bold];
+  img_gold -> lbl_gold_10g [color="#FFD600", penwidth=2.5, style=bold];
+  lbl_gold_10g -> out_asset_convert [color="#FFD600", penwidth=2.5, style=bold];
+  match_default -> start_2024_1000eur [color="#FFD600", penwidth=2.5, style=bold];
+  out_asset_convert -> jrnl_asset_gold [color="#FFD600", penwidth=2.5, style=bold];
+  out_asset_convert -> jrnl_triodos_debit_gold [color="#FFD600", penwidth=2.5, style=bold];
+  start_2024_1000eur -> csv_gold_dealer_580 [color="#FFD600", penwidth=2.5, style=bold];
+}
+@enddot

@@ -1,0 +1,96 @@
+@startdot
+digraph userstory_dag {
+  rankdir=TB;
+  fontname="DejaVu Sans";
+  node [fontname="DejaVu Sans", fontsize=10];
+  edge [fontname="DejaVu Sans", fontsize=8];
+  newrank=true;
+  compound=true;
+
+  subgraph cluster_config {
+    label="Configuration";
+    style=filled; fillcolor="#E3F2FD";
+    rank=same;
+    cfg_1b5a [label="1 bank + 5 assets", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking + EUR/GBP/BTC/GOLD/SILVER wallets"];
+  }
+
+  subgraph cluster_categories {
+    label="Categories";
+    style=filled; fillcolor="#E8F5E9";
+    rank=same;
+    cat_extended [label="extended categories", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
+  }
+
+  subgraph cluster_matching_cfg {
+    label="Matching Parameters";
+    style=filled; fillcolor="#FFF3E0";
+    rank=same;
+    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+  }
+
+  subgraph cluster_start_journal {
+    label="Starting Journal";
+    style=filled; fillcolor="#F3E5F5";
+    rank=same;
+    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
+  }
+
+  subgraph cluster_csv_txn {
+    label="Bank CSV Transactions";
+    style=filled; fillcolor="#E0F7FA";
+    rank=same;
+    csv_atm_gbp_23750_fee [label="Triodos -237.50 EUR\n2025-01-15 ATM London", shape=cylinder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="200 GBP * 1.17 + 3.50 EUR fee"];
+  }
+
+  subgraph cluster_receipt_img {
+    label="Receipt Images";
+    style=filled; fillcolor="#FBE9E7";
+    rank=same;
+    img_atm_gbp_fee [label="atm_london_fee.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="ATM withdrawal slip, 200 GBP + fee"];
+  }
+
+  subgraph cluster_receipt_lbl {
+    label="Receipt Labels (JSON)";
+    style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    lbl_atm_200gbp_fee [label="atm_200gbp\nGBP 200 + fee", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, GBP withdrawal with bank fee"];
+  }
+
+  subgraph cluster_matching_out {
+    label="Matching Outcome";
+    style=filled; fillcolor="#FFF8E1";
+    rank=same;
+    out_currency_convert_fee [label="CURRENCY + FEE\nrate + fee amount", shape=diamond, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Foreign withdrawal with bank fee split"];
+  }
+
+  subgraph cluster_journal_out {
+    label="Journal Output";
+    style=filled; fillcolor="#E8EAF6";
+    rank=same;
+    jrnl_bankfees [label="Expenses:BankFees\n3.50 EUR", shape=box, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="ATM withdrawal fee posting"];
+    jrnl_wallet_gbp_200 [label="Assets:Wallet:\nGBP 200", shape=box, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Foreign currency asset (large withdrawal)"];
+  }
+
+  _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  cfg_1b5a -> cat_extended [style=invis];
+  cat_extended -> match_default [style=invis];
+  match_default -> start_2024_1000eur [style=invis];
+  start_2024_1000eur -> csv_atm_gbp_23750_fee [style=invis];
+  csv_atm_gbp_23750_fee -> img_atm_gbp_fee [style=invis];
+  img_atm_gbp_fee -> lbl_atm_200gbp_fee [style=invis];
+  lbl_atm_200gbp_fee -> out_currency_convert_fee [style=invis];
+  out_currency_convert_fee -> jrnl_bankfees [style=invis];
+  jrnl_bankfees -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
+
+  cat_extended -> match_default [color="#FF8F00", penwidth=2.5, style=dotted];
+  cfg_1b5a -> cat_extended [color="#FF8F00", penwidth=2.5, style=dotted];
+  csv_atm_gbp_23750_fee -> img_atm_gbp_fee [color="#FF8F00", penwidth=2.5, style=dotted];
+  img_atm_gbp_fee -> lbl_atm_200gbp_fee [color="#FF8F00", penwidth=2.5, style=dotted];
+  lbl_atm_200gbp_fee -> out_currency_convert_fee [color="#FF8F00", penwidth=2.5, style=dotted];
+  match_default -> start_2024_1000eur [color="#FF8F00", penwidth=2.5, style=dotted];
+  out_currency_convert_fee -> jrnl_bankfees [color="#FF8F00", penwidth=2.5, style=dotted];
+  out_currency_convert_fee -> jrnl_wallet_gbp_200 [color="#FF8F00", penwidth=2.5, style=dotted];
+  start_2024_1000eur -> csv_atm_gbp_23750_fee [color="#FF8F00", penwidth=2.5, style=dotted];
+}
+@enddot

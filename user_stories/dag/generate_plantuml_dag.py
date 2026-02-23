@@ -236,11 +236,34 @@ def generate_dot_full(
             + "</TABLE>>"
         )
 
-    # Layer subgraphs with rank=same
+    # Build a map of layer name -> label from data for placeholder use
+    all_layer_labels = {}
+    for layer in data["layers"]:
+        all_layer_labels[layer["name"]] = layer["label"]
+
+    # Build ordered list of (layer_name, node_ids_or_None) for all layers.
+    # For isolated views, layers without visible nodes get a placeholder.
+    ordered_layers: List[Tuple[str, Optional[List[str]]]] = []
     for layer_name in LAYER_ORDER:
-        if layer_name not in layer_nodes:
+        if layer_name in layer_nodes:
+            ordered_layers.append((layer_name, sorted(layer_nodes[layer_name])))
+        elif only_story_id and layer_name in all_layer_labels:
+            ordered_layers.append((layer_name, None))  # placeholder
+
+    # Emit layer subgraphs and placeholder nodes
+    chain_nodes: List[str] = []  # ordered anchor nodes for vertical chain
+    for layer_name, nids in ordered_layers:
+        if nids is None:
+            # Placeholder for a skipped layer
+            lbl = all_layer_labels[layer_name]
+            placeholder_id = f"_skip_{layer_name}"
+            lines.append(f'  {placeholder_id} [label="{lbl}",'
+                          f" shape=plaintext, fontsize=9,"
+                          f' fontcolor="#AAAAAA"];')
+            chain_nodes.append(placeholder_id)
+            lines.append("")
             continue
-        nids = sorted(layer_nodes[layer_name])
+
         layer_label = node_index[nids[0]]["layer_label"]
         fill = LAYER_COLOURS.get(layer_name, "#FFFFFF")
 
@@ -273,6 +296,24 @@ def generate_dot_full(
                 f' tooltip="{tooltip}"];'
             )
         lines.append("  }")
+        chain_nodes.append(nids[0])
+        lines.append("")
+
+    # For isolated views, chain all layers (real and placeholder) with
+    # invisible edges to enforce correct vertical ordering.
+    if only_story_id and len(chain_nodes) > 1:
+        for i in range(len(chain_nodes) - 1):
+            src, dst = chain_nodes[i], chain_nodes[i + 1]
+            is_placeholder = src.startswith("_skip_") or dst.startswith("_skip_")
+            if is_placeholder:
+                lines.append(
+                    f"  {src} -> {dst}"
+                    f' [style=dotted, color="#CCCCCC", arrowhead=none];'
+                )
+            else:
+                lines.append(
+                    f"  {src} -> {dst} [style=invis];"
+                )
         lines.append("")
 
     # Edges
@@ -420,9 +461,10 @@ def generate_cli_view(
 # =========================================================================
 
 
-def write_puml(filename: str, content: str) -> Path:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    path = OUTPUT_DIR / filename
+def write_puml(filename: str, content: str, subdir: str = "") -> Path:
+    target = OUTPUT_DIR / subdir if subdir else OUTPUT_DIR
+    target.mkdir(parents=True, exist_ok=True)
+    path = target / filename
     path.write_text(content, encoding="utf-8")
     return path
 
@@ -464,24 +506,43 @@ def _generate_legend_puml(legend_html: str) -> str:
     )
 
 
-def _composite_legend(dag_png: Path, legend_png: Path, margin: int = 8) -> None:
-    """Paste the legend image onto the top-left of the DAG image."""
+def _composite_legend(dag_png: Path, legend_png: Path, gap: int = 4) -> None:
+    """Paste the legend flush-left against the DAG content."""
     try:
         from PIL import Image
+        import numpy as np
     except ImportError:
-        print("  Warning: Pillow not installed, skipping legend composite")
+        print("  Warning: Pillow/numpy not installed, skipping composite")
         return
     dag = Image.open(dag_png).convert("RGBA")
     leg = Image.open(legend_png).convert("RGBA")
-    # Ensure the canvas is wide enough for legend + dag side by side
-    new_w = max(dag.width, leg.width + margin + dag.width)
-    new_h = max(dag.height, leg.height + margin)
-    canvas = Image.new("RGBA", (leg.width + margin + dag.width, new_h),
-                        (255, 255, 255, 255))
-    # Legend at top-left
-    canvas.paste(leg, (margin, margin), leg)
-    # DAG to the right of legend
-    canvas.paste(dag, (leg.width + margin, 0), dag)
+
+    # Find the leftmost non-white column in the DAG image so we can
+    # place the legend right next to the actual content, not next to
+    # the whitespace border that PlantUML adds.
+    arr = np.array(dag)
+    # non-white = any channel < 250 (accounting for antialiasing)
+    non_white = np.any(arr[:, :, :3] < 250, axis=2)
+    col_has_content = np.any(non_white, axis=0)
+    if np.any(col_has_content):
+        dag_left_edge = int(np.argmax(col_has_content))
+    else:
+        dag_left_edge = 0
+
+    # Place legend so its right edge is `gap` pixels left of content
+    legend_x = max(0, dag_left_edge - leg.width - gap)
+    # Canvas: may need to expand left if legend doesn't fit
+    if legend_x >= 0:
+        # Legend fits within existing DAG whitespace
+        canvas = dag.copy()
+        canvas.paste(leg, (legend_x, 0), leg)
+    else:
+        # Need extra space on the left
+        extra = -legend_x
+        canvas = Image.new("RGBA", (dag.width + extra, max(dag.height, leg.height)),
+                            (255, 255, 255, 255))
+        canvas.paste(dag, (extra, 0), dag)
+        canvas.paste(leg, (0, 0), leg)
     canvas.save(dag_png)
 
 
@@ -492,8 +553,9 @@ def render_with_legend(
     dag_png = render_puml(puml_path)
     if dag_png is None or legend_html is None:
         return
-    # Write and render the legend separately
-    legend_puml_path = OUTPUT_DIR / "_legend_tmp.puml"
+    # Write and render the legend in the same directory as the target
+    target_dir = puml_path.parent
+    legend_puml_path = target_dir / "_legend_tmp.puml"
     legend_puml_path.write_text(
         _generate_legend_puml(legend_html), encoding="utf-8"
     )
@@ -575,18 +637,17 @@ def main():
             print(generate_cli_view(data, node_index, stories, args.story))
             return
 
+        safe = args.story.replace(".", "_").replace("-", "_")
         if args.context == "full":
             dot, legend = generate_dot_full(
                 data, node_index, stories, highlight_story_id=args.story
             )
-            safe = args.story.replace(".", "_").replace("-", "_")
-            path = write_puml(f"dag_highlight_{safe}.puml", dot)
+            path = write_puml(f"{safe}.puml", dot, subdir="highlighted")
         else:
             dot, legend = generate_dot_full(
                 data, node_index, stories, only_story_id=args.story
             )
-            safe = args.story.replace(".", "_").replace("-", "_")
-            path = write_puml(f"dag_isolated_{safe}.puml", dot)
+            path = write_puml(f"{safe}.puml", dot, subdir="isolated")
         print(f"Written: {path}")
         if args.render:
             render_with_legend(path, legend)
@@ -595,20 +656,21 @@ def main():
         paths_written = []
         legend_for_path = {}
         for s in stories:
-            # Isolated view (no legend)
+            safe = s["id"].replace(".", "_").replace("-", "_")
+
+            # Isolated view -> isolated/ folder (no legend)
             dot, _ = generate_dot_full(
                 data, node_index, stories, only_story_id=s["id"]
             )
-            safe = s["id"].replace(".", "_").replace("-", "_")
-            p = write_puml(f"dag_isolated_{safe}.puml", dot)
+            p = write_puml(f"{safe}.puml", dot, subdir="isolated")
             paths_written.append(p)
-            legend_for_path[p] = None  # isolated views have no legend
+            legend_for_path[p] = None
 
-            # Full-context highlighted view (has legend)
+            # Full-context highlighted view -> highlighted/ folder
             dot_ctx, legend = generate_dot_full(
                 data, node_index, stories, highlight_story_id=s["id"]
             )
-            p_ctx = write_puml(f"dag_highlight_{safe}.puml", dot_ctx)
+            p_ctx = write_puml(f"{safe}.puml", dot_ctx, subdir="highlighted")
             paths_written.append(p_ctx)
             legend_for_path[p_ctx] = legend
 
