@@ -1,0 +1,42 @@
+@startdot
+digraph userstory_dag {
+  rankdir=TB;
+  fontname="DejaVu Sans";
+  node [fontname="DejaVu Sans", fontsize=10];
+  edge [fontname="DejaVu Sans", fontsize=8];
+  newrank=true;
+  compound=true;
+
+  subgraph cluster_config {
+    label="Configuration";
+    style=filled; fillcolor="#E3F2FD";
+    rank=same;
+    cfg_per_bank_match [label="per-bank matching", shape=box3d, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos (days:4) + ING (days:2) override global default"];
+  }
+
+  subgraph cluster_categories {
+    label="Categories";
+    style=filled; fillcolor="#E8F5E9";
+    rank=same;
+    cat_basic [label="basic categories", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}"];
+  }
+
+  subgraph cluster_matching_cfg {
+    label="Matching Parameters";
+    style=filled; fillcolor="#FFF3E0";
+    rank=same;
+    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+  }
+
+  subgraph cluster_start_journal {
+    label="Starting Journal";
+    style=filled; fillcolor="#F3E5F5";
+    rank=same;
+    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
+  }
+
+  cat_basic -> match_default [color="#FF9800", penwidth=2.5, style=solid];
+  cfg_per_bank_match -> cat_basic [color="#FF9800", penwidth=2.5, style=solid];
+  match_default -> start_2024_1000eur [color="#FF9800", penwidth=2.5, style=solid];
+}
+@enddot

@@ -1,0 +1,639 @@
+#!/usr/bin/env python3
+"""Generate PlantUML DAG diagrams from user story data.
+
+Reads userstory_dag_data.yaml and produces .puml files showing data-flow
+paths through the test/demo fixture layers.
+
+Usage:
+    python generate_plantuml_dag.py --all                  # all stories overlaid
+    python generate_plantuml_dag.py --story US-3.2         # single story isolated
+    python generate_plantuml_dag.py --story US-3.2 --context full  # highlighted on full graph
+    python generate_plantuml_dag.py --each                 # one file per story
+    python generate_plantuml_dag.py --filter demo          # only demo data paths
+    python generate_plantuml_dag.py --filter test           # only test data paths
+    python generate_plantuml_dag.py --cli --story US-3.2   # ASCII box-drawing variant
+    python generate_plantuml_dag.py --render               # also run plantuml to produce PNGs
+"""
+
+import argparse
+import os
+import subprocess
+import sys
+from collections import Counter, defaultdict
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+import yaml
+
+SCRIPT_DIR = Path(__file__).parent
+DATA_FILE = SCRIPT_DIR / "userstory_dag_data.yaml"
+OUTPUT_DIR = SCRIPT_DIR / "output"
+
+# PlantUML layer colours (background fills for subgraph clusters)
+LAYER_COLOURS = {
+    "config": "#E3F2FD",
+    "categories": "#E8F5E9",
+    "matching_cfg": "#FFF3E0",
+    "start_journal": "#F3E5F5",
+    "csv_txn": "#E0F7FA",
+    "receipt_img": "#FBE9E7",
+    "receipt_lbl": "#FCE4EC",
+    "matching_out": "#FFF8E1",
+    "journal_out": "#E8EAF6",
+    "visualization": "#F3E5F5",
+}
+
+LAYER_ORDER = [
+    "config",
+    "categories",
+    "matching_cfg",
+    "start_journal",
+    "csv_txn",
+    "receipt_img",
+    "receipt_lbl",
+    "matching_out",
+    "journal_out",
+    "visualization",
+]
+
+
+def load_data() -> Dict[str, Any]:
+    with open(DATA_FILE) as f:
+        return yaml.safe_load(f)
+
+
+def build_node_index(data: Dict) -> Dict[str, Dict]:
+    """Map node id -> {layer, label, desc, used_by}."""
+    index = {}
+    for layer in data["layers"]:
+        for node in layer["nodes"]:
+            index[node["id"]] = {
+                "layer": layer["name"],
+                "layer_label": layer["label"],
+                "label": node["label"],
+                "desc": node["desc"],
+                "used_by": node.get("used_by", ["test"]),
+            }
+    return index
+
+
+def collect_edges_from_paths(
+    paths: List[List[str]],
+) -> Set[Tuple[str, str]]:
+    """Extract directed edges from a list of paths."""
+    edges = set()
+    for path in paths:
+        for i in range(len(path) - 1):
+            edges.add((path[i], path[i + 1]))
+    return edges
+
+
+def collect_nodes_from_paths(paths: List[List[str]]) -> Set[str]:
+    nodes = set()
+    for path in paths:
+        nodes.update(path)
+    return nodes
+
+
+def count_node_usage(stories: List[Dict]) -> Counter:
+    """Count how many stories use each node (for thickness)."""
+    counter: Counter = Counter()
+    for story in stories:
+        nodes = collect_nodes_from_paths(story["paths"])
+        for n in nodes:
+            counter[n] += 1
+    return counter
+
+
+def count_edge_usage(stories: List[Dict]) -> Counter:
+    counter: Counter = Counter()
+    for story in stories:
+        edges = collect_edges_from_paths(story["paths"])
+        for e in edges:
+            counter[e] += 1
+    return counter
+
+
+def filter_stories(
+    stories: List[Dict], data_filter: Optional[str]
+) -> List[Dict]:
+    if data_filter is None or data_filter == "both":
+        return stories
+    filtered = []
+    for s in stories:
+        if s["data_use"] in (data_filter, "both"):
+            filtered.append(s)
+    return filtered
+
+
+def pattern_to_dot(pattern: str) -> str:
+    mapping = {
+        "solid": "solid",
+        "dashed": "dashed",
+        "dotted": "dotted",
+        "bold": "bold",
+    }
+    return mapping.get(pattern, "solid")
+
+
+def node_shape(layer_name: str) -> str:
+    shapes = {
+        "config": "box3d",
+        "categories": "box3d",
+        "matching_cfg": "component",
+        "start_journal": "note",
+        "csv_txn": "cylinder",
+        "receipt_img": "folder",
+        "receipt_lbl": "tab",
+        "matching_out": "diamond",
+        "journal_out": "box",
+        "visualization": "octagon",
+    }
+    return shapes.get(layer_name, "box")
+
+
+def penwidth_for_count(count: int, is_edge: bool = False) -> float:
+    if count <= 1:
+        return 1.5 if is_edge else 1.0
+    elif count <= 3:
+        return 2.5 if is_edge else 1.5
+    elif count <= 6:
+        return 3.5 if is_edge else 2.0
+    else:
+        return 5.0 if is_edge else 3.0
+
+
+# =========================================================================
+# PlantUML DOT generation
+# =========================================================================
+
+
+def generate_dot_full(
+    data: Dict,
+    node_index: Dict,
+    stories: List[Dict],
+    highlight_story_id: Optional[str] = None,
+    only_story_id: Optional[str] = None,
+) -> Tuple[str, Optional[str]]:
+    """Generate a Graphviz DOT diagram wrapped in PlantUML @startdot."""
+    node_usage = count_node_usage(stories)
+    edge_usage = count_edge_usage(stories)
+
+    # Determine which nodes/edges to show
+    if only_story_id:
+        target = [s for s in stories if s["id"] == only_story_id]
+        if not target:
+            raise ValueError(f"Story {only_story_id} not found")
+        visible_nodes = collect_nodes_from_paths(target[0]["paths"])
+        visible_edges = collect_edges_from_paths(target[0]["paths"])
+    else:
+        visible_nodes = set()
+        visible_edges = set()
+        for s in stories:
+            visible_nodes.update(collect_nodes_from_paths(s["paths"]))
+            visible_edges.update(collect_edges_from_paths(s["paths"]))
+
+    # Build layer -> nodes mapping (only visible)
+    layer_nodes: Dict[str, List[str]] = defaultdict(list)
+    for nid in visible_nodes:
+        if nid in node_index:
+            layer_nodes[node_index[nid]["layer"]].append(nid)
+
+    lines = []
+    lines.append("@startdot")
+    lines.append("digraph userstory_dag {")
+    lines.append('  rankdir=TB;')
+    lines.append('  fontname="DejaVu Sans";')
+    lines.append('  node [fontname="DejaVu Sans", fontsize=10];')
+    lines.append('  edge [fontname="DejaVu Sans", fontsize=8];')
+    lines.append("  newrank=true;")
+    lines.append('  compound=true;')
+    lines.append("")
+
+    # Build legend HTML (rendered separately and composited onto the DAG)
+    legend_html = None
+    if not only_story_id:
+        pattern_symbols = {
+            "solid": "&#9473;&#9473;&#9473;",       # ━━━
+            "dashed": "&#9476; &#9476; &#9476;",     # ╴ ╴ ╴
+            "dotted": "&#183;&#183;&#183;&#183;&#183;&#183;",  # ······
+            "bold": "&#9552;&#9552;&#9552;",         # ═══
+        }
+        legend_rows = []
+        for s in stories:
+            c = s["colour"]
+            pat = s.get("pattern", "solid")
+            sym = pattern_symbols.get(pat, "&#9473;&#9473;&#9473;")
+            legend_rows.append(
+                f'<TR><TD ALIGN="LEFT"><FONT COLOR="{c}">'
+                f'{sym} {s["id"]}: {s["label"]}</FONT></TD></TR>'
+            )
+        legend_html = (
+            '<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="2"'
+            ' CELLPADDING="4" BGCOLOR="#FAFAFA">'
+            '<TR><TD ALIGN="CENTER"><B>Legend</B></TD></TR>'
+            + "".join(legend_rows)
+            + "</TABLE>>"
+        )
+
+    # Layer subgraphs with rank=same
+    for layer_name in LAYER_ORDER:
+        if layer_name not in layer_nodes:
+            continue
+        nids = sorted(layer_nodes[layer_name])
+        layer_label = node_index[nids[0]]["layer_label"]
+        fill = LAYER_COLOURS.get(layer_name, "#FFFFFF")
+
+        lines.append(f"  subgraph cluster_{layer_name} {{")
+        lines.append(f'    label="{layer_label}";')
+        lines.append(f'    style=filled; fillcolor="{fill}";')
+        lines.append("    rank=same;")
+
+        for nid in nids:
+            info = node_index[nid]
+            shape = node_shape(layer_name)
+            pw = penwidth_for_count(node_usage.get(nid, 1))
+            label = info["label"].replace("\n", "\\n")
+            tooltip = info["desc"].replace('"', '\\"')
+
+            # Greyed-out if highlighting a different story
+            if highlight_story_id and nid not in _get_story_nodes(
+                stories, highlight_story_id
+            ):
+                colour = "#CCCCCC"
+                fontcolour = "#999999"
+            else:
+                colour = "#333333"
+                fontcolour = "#000000"
+
+            lines.append(
+                f'    {nid} [label="{label}", shape={shape},'
+                f' penwidth={pw}, color="{colour}",'
+                f' fontcolor="{fontcolour}",'
+                f' tooltip="{tooltip}"];'
+            )
+        lines.append("  }")
+        lines.append("")
+
+    # Edges
+    if highlight_story_id:
+        # Draw all edges grey first
+        for src, dst in sorted(visible_edges):
+            if src in node_index and dst in node_index:
+                lines.append(
+                    f'  {src} -> {dst} [color="#DDDDDD",'
+                    f" penwidth=1.0, style=solid];"
+                )
+        # Then draw highlighted story edges on top
+        target = [s for s in stories if s["id"] == highlight_story_id]
+        if target:
+            s = target[0]
+            story_edges = collect_edges_from_paths(s["paths"])
+            for src, dst in sorted(story_edges):
+                pw = penwidth_for_count(edge_usage.get((src, dst), 1), True)
+                style = pattern_to_dot(s["pattern"])
+                lines.append(
+                    f'  {src} -> {dst} [color="{s["colour"]}",'
+                    f' penwidth={pw}, style={style},'
+                    f' label="{s["id"]}"];'
+                )
+    elif only_story_id:
+        target = [s for s in stories if s["id"] == only_story_id]
+        if target:
+            s = target[0]
+            story_edges = collect_edges_from_paths(s["paths"])
+            for src, dst in sorted(story_edges):
+                style = pattern_to_dot(s["pattern"])
+                lines.append(
+                    f'  {src} -> {dst} [color="{s["colour"]}",'
+                    f' penwidth=2.5, style={style}];'
+                )
+    else:
+        # All stories — colour-coded edges
+        # First pass: draw base grey for shared edges
+        for (src, dst), count in sorted(edge_usage.items()):
+            if src in visible_nodes and dst in visible_nodes:
+                if count > 1:
+                    pw = penwidth_for_count(count, True)
+                    lines.append(
+                        f'  {src} -> {dst} [color="#CCCCCC",'
+                        f" penwidth={pw}, style=solid];"
+                    )
+        # Second pass: per-story coloured edges
+        for s in stories:
+            story_edges = collect_edges_from_paths(s["paths"])
+            style = pattern_to_dot(s["pattern"])
+            for src, dst in sorted(story_edges):
+                if src in visible_nodes and dst in visible_nodes:
+                    lines.append(
+                        f'  {src} -> {dst} [color="{s["colour"]}",'
+                        f' penwidth=1.5, style={style},'
+                        f' tooltip="{s["id"]}"];'
+                    )
+
+
+    lines.append("}")
+    lines.append("@enddot")
+    return "\n".join(lines), legend_html
+
+
+def _get_story_nodes(stories: List[Dict], story_id: str) -> Set[str]:
+    for s in stories:
+        if s["id"] == story_id:
+            return collect_nodes_from_paths(s["paths"])
+    return set()
+
+
+# =========================================================================
+# CLI (ASCII box-drawing) variant
+# =========================================================================
+
+
+def generate_cli_view(
+    data: Dict,
+    node_index: Dict,
+    stories: List[Dict],
+    story_id: str,
+) -> str:
+    """Generate an ASCII box-drawing representation of a single story path."""
+    target = [s for s in stories if s["id"] == story_id]
+    if not target:
+        return f"Story {story_id} not found."
+    story = target[0]
+    node_usage = count_node_usage(stories)
+
+    lines = []
+    lines.append(f"{'=' * 72}")
+    lines.append(f"  {story['id']}: {story['label']}")
+    lines.append(f"  colour: {story['colour']}  pattern: {story['pattern']}")
+    lines.append(f"  data_use: {story['data_use']}")
+    lines.append(f"{'=' * 72}")
+    lines.append("")
+
+    for path_idx, path in enumerate(story["paths"]):
+        if len(story["paths"]) > 1:
+            lines.append(f"  Path {path_idx + 1}/{len(story['paths'])}:")
+            lines.append("")
+
+        prev_layer = None
+        for i, nid in enumerate(path):
+            info = node_index.get(nid)
+            if not info:
+                continue
+            layer = info["layer_label"]
+            usage = node_usage.get(nid, 1)
+
+            # Thickness indicator
+            if usage >= 6:
+                bar = "┃"
+                corner_d = "┣"
+            elif usage >= 3:
+                bar = "│"
+                corner_d = "├"
+            else:
+                bar = "│"
+                corner_d = "├"
+
+            # Layer header
+            if layer != prev_layer:
+                if prev_layer is not None:
+                    lines.append(f"  {bar}")
+                    lines.append(f"  ▼")
+                lines.append(f"  ┌─ {layer} ──────────────────────────")
+                prev_layer = layer
+
+            # Node box
+            label = info["label"].replace("\n", " / ")
+            usage_str = f"(used by {usage} stories)" if usage > 1 else ""
+            lines.append(f"  {corner_d}  [{nid}]")
+            lines.append(f"  {bar}    {label}  {usage_str}")
+            lines.append(f"  {bar}    {info['desc']}")
+
+        lines.append(f"  └──────────────────────────────────────")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+# =========================================================================
+# Main
+# =========================================================================
+
+
+def write_puml(filename: str, content: str) -> Path:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    path = OUTPUT_DIR / filename
+    path.write_text(content, encoding="utf-8")
+    return path
+
+
+def render_puml(puml_path: Path) -> Optional[Path]:
+    """Run plantuml to render the .puml file to PNG. Returns PNG path."""
+    try:
+        subprocess.run(
+            ["plantuml", "-tpng", str(puml_path)],
+            check=True,
+            capture_output=True,
+            timeout=120,
+        )
+        png = puml_path.with_suffix(".png")
+        if png.exists():
+            print(f"  Rendered: {png}")
+            return png
+        else:
+            print(f"  Warning: plantuml ran but {png} not found")
+    except FileNotFoundError:
+        print("  Warning: plantuml not found, skipping render")
+    except subprocess.CalledProcessError as e:
+        print(f"  Warning: plantuml failed: {e.stderr.decode()[:200]}")
+    return None
+
+
+def _generate_legend_puml(legend_html: str) -> str:
+    """Generate a standalone PlantUML DOT file for the legend only."""
+    return (
+        "@startdot\n"
+        "digraph legend {\n"
+        '  rankdir=TB;\n'
+        '  fontname="DejaVu Sans";\n'
+        '  node [fontname="DejaVu Sans", fontsize=10];\n'
+        f"  legend_table [label={legend_html},"
+        f" shape=plaintext, margin=0];\n"
+        "}\n"
+        "@enddot"
+    )
+
+
+def _composite_legend(dag_png: Path, legend_png: Path, margin: int = 8) -> None:
+    """Paste the legend image onto the top-left of the DAG image."""
+    try:
+        from PIL import Image
+    except ImportError:
+        print("  Warning: Pillow not installed, skipping legend composite")
+        return
+    dag = Image.open(dag_png).convert("RGBA")
+    leg = Image.open(legend_png).convert("RGBA")
+    # Ensure the canvas is wide enough for legend + dag side by side
+    new_w = max(dag.width, leg.width + margin + dag.width)
+    new_h = max(dag.height, leg.height + margin)
+    canvas = Image.new("RGBA", (leg.width + margin + dag.width, new_h),
+                        (255, 255, 255, 255))
+    # Legend at top-left
+    canvas.paste(leg, (margin, margin), leg)
+    # DAG to the right of legend
+    canvas.paste(dag, (leg.width + margin, 0), dag)
+    canvas.save(dag_png)
+
+
+def render_with_legend(
+    puml_path: Path, legend_html: Optional[str]
+) -> None:
+    """Render a .puml file and composite the legend onto the top-left."""
+    dag_png = render_puml(puml_path)
+    if dag_png is None or legend_html is None:
+        return
+    # Write and render the legend separately
+    legend_puml_path = OUTPUT_DIR / "_legend_tmp.puml"
+    legend_puml_path.write_text(
+        _generate_legend_puml(legend_html), encoding="utf-8"
+    )
+    legend_png = render_puml(legend_puml_path)
+    if legend_png is None:
+        return
+    _composite_legend(dag_png, legend_png)
+    # Clean up temp files
+    legend_puml_path.unlink(missing_ok=True)
+    legend_png.unlink(missing_ok=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Generate PlantUML DAG diagrams from user story data."
+    )
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--all", action="store_true", help="All stories overlaid"
+    )
+    group.add_argument("--story", type=str, help="Single story ID (e.g. US-3.2)")
+    group.add_argument(
+        "--each",
+        action="store_true",
+        help="Generate one file per story",
+    )
+    group.add_argument(
+        "--list", action="store_true", help="List all story IDs"
+    )
+    parser.add_argument(
+        "--context",
+        choices=["isolated", "full"],
+        default="isolated",
+        help="For --story: isolated sub-graph or highlighted on full graph",
+    )
+    parser.add_argument(
+        "--filter",
+        choices=["test", "demo", "both"],
+        default=None,
+        help="Filter by data usage: test, demo, or both",
+    )
+    parser.add_argument(
+        "--cli",
+        action="store_true",
+        help="Output ASCII box-drawing instead of PlantUML",
+    )
+    parser.add_argument(
+        "--render",
+        action="store_true",
+        help="Also run plantuml to produce PNG files",
+    )
+    parser.add_argument(
+        "--demo-paths",
+        action="store_true",
+        help="Use demo_paths instead of paths where available",
+    )
+    args = parser.parse_args()
+
+    data = load_data()
+    node_index = build_node_index(data)
+    stories = data["stories"]
+
+    # Swap to demo_paths if requested
+    if args.demo_paths:
+        for s in stories:
+            if "demo_paths" in s and s["demo_paths"]:
+                s["paths"] = s["demo_paths"]
+
+    stories = filter_stories(stories, args.filter)
+
+    if args.list:
+        for s in stories:
+            status = s.get("data_use", "test")
+            print(f"  {s['id']:12s}  {s['label']:35s}  [{status}]")
+        return
+
+    if args.story:
+        if args.cli:
+            print(generate_cli_view(data, node_index, stories, args.story))
+            return
+
+        if args.context == "full":
+            dot, legend = generate_dot_full(
+                data, node_index, stories, highlight_story_id=args.story
+            )
+            safe = args.story.replace(".", "_").replace("-", "_")
+            path = write_puml(f"dag_highlight_{safe}.puml", dot)
+        else:
+            dot, legend = generate_dot_full(
+                data, node_index, stories, only_story_id=args.story
+            )
+            safe = args.story.replace(".", "_").replace("-", "_")
+            path = write_puml(f"dag_isolated_{safe}.puml", dot)
+        print(f"Written: {path}")
+        if args.render:
+            render_with_legend(path, legend)
+
+    elif args.each:
+        paths_written = []
+        legend_for_path = {}
+        for s in stories:
+            # Isolated view (no legend)
+            dot, _ = generate_dot_full(
+                data, node_index, stories, only_story_id=s["id"]
+            )
+            safe = s["id"].replace(".", "_").replace("-", "_")
+            p = write_puml(f"dag_isolated_{safe}.puml", dot)
+            paths_written.append(p)
+            legend_for_path[p] = None  # isolated views have no legend
+
+            # Full-context highlighted view (has legend)
+            dot_ctx, legend = generate_dot_full(
+                data, node_index, stories, highlight_story_id=s["id"]
+            )
+            p_ctx = write_puml(f"dag_highlight_{safe}.puml", dot_ctx)
+            paths_written.append(p_ctx)
+            legend_for_path[p_ctx] = legend
+
+        print(f"Written {len(paths_written)} files to {OUTPUT_DIR}/")
+        if args.render:
+            for p in paths_written:
+                render_with_legend(p, legend_for_path[p])
+
+    elif args.all:
+        if args.cli:
+            for s in stories:
+                print(generate_cli_view(data, node_index, stories, s["id"]))
+                print()
+            return
+
+        dot, legend = generate_dot_full(data, node_index, stories)
+        if args.filter and args.filter != "both":
+            fname = f"dag_{args.filter}_only.puml"
+        else:
+            fname = "dag_all_stories.puml"
+        path = write_puml(fname, dot)
+        print(f"Written: {path}")
+        if args.render:
+            render_with_legend(path, legend)
+
+
+if __name__ == "__main__":
+    main()

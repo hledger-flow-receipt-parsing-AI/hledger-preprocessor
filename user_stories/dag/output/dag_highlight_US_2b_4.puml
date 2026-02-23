@@ -1,0 +1,264 @@
+@startdot
+digraph userstory_dag {
+  rankdir=TB;
+  fontname="DejaVu Sans";
+  node [fontname="DejaVu Sans", fontsize=10];
+  edge [fontname="DejaVu Sans", fontsize=8];
+  newrank=true;
+  compound=true;
+
+  subgraph cluster_config {
+    label="Configuration";
+    style=filled; fillcolor="#E3F2FD";
+    rank=same;
+    cfg_1b1w [label="1 bank + 1 wallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking (EUR CSV) + EUR cash wallet (no CSV)"];
+    cfg_1b5a [label="1 bank + 5 assets", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos checking + EUR/GBP/BTC/GOLD/SILVER wallets"];
+    cfg_crypto [label="1 bank + crypto", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos (EUR) + Kraken exchange (BTC/ETH)"];
+    cfg_multi_bank [label="2 banks + 1 wallet", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos (EUR) + ING (EUR) + EUR cash wallet"];
+    cfg_per_bank_match [label="per-bank matching", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos (days:4) + ING (days:2) override global default"];
+  }
+
+  subgraph cluster_categories {
+    label="Categories";
+    style=filled; fillcolor="#E8F5E9";
+    rank=same;
+    cat_basic [label="basic categories", shape=box3d, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}"];
+    cat_extended [label="extended categories", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
+    cat_with_income [label="categories + income", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="basic + income:{salary,freelance}"];
+  }
+
+  subgraph cluster_matching_cfg {
+    label="Matching Parameters";
+    style=filled; fillcolor="#FFF3E0";
+    rank=same;
+    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+    match_narrow [label="narrow (±1d, exact)", shape=component, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="days:1, amount_range:0 — initially too tight"];
+    match_wide_both [label="wide both (±5d, ±0.05)", shape=component, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="days:5, amount_range:0.05 — triggers 15+ matches"];
+    match_wide_date [label="wide date (±5d)", shape=component, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="days:5, amount_range:0"];
+  }
+
+  subgraph cluster_start_journal {
+    label="Starting Journal";
+    style=filled; fillcolor="#F3E5F5";
+    rank=same;
+    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
+    start_2024_multi [label="2024: multi-currency", shape=note, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="1000 EUR + 500 USD + 0.05 BTC"];
+  }
+
+  subgraph cluster_csv_txn {
+    label="Bank CSV Transactions";
+    style=filled; fillcolor="#E0F7FA";
+    rank=same;
+    csv_atm_gbp_11750 [label="Triodos -117.50 EUR\n2025-01-15 ATM London", shape=cylinder, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Foreign ATM withdrawal: 100 GBP * 1.175"];
+    csv_atm_gbp_23750_fee [label="Triodos -237.50 EUR\n2025-01-15 ATM London", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="200 GBP * 1.17 + 3.50 EUR fee"];
+    csv_delayed_jan18 [label="Triodos -49.99 EUR\n2025-01-18 ShopX", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Posted 3 days late (receipt dated Jan 15)"];
+    csv_ekoplaza_4217_jan14 [label="Triodos -42.17 EUR\n2025-01-14 Ekoplaza", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Same amount different day — ambiguous match candidate"];
+    csv_ekoplaza_4217_jan15 [label="Triodos -42.17 EUR\n2025-01-15 Ekoplaza", shape=cylinder, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Debit card purchase at Ekoplaza, exact date match"];
+    csv_ekoplaza_4300_jan16 [label="Triodos -43.00 EUR\n2025-01-16 Ekoplaza", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Similar amount different day — ambiguous match candidate"];
+    csv_gold_dealer_580 [label="Triodos -580.00 EUR\n2025-01-20 GoldDealer", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="10g gold purchase at 58 EUR/g"];
+    csv_ing_rent_800 [label="ING -800.00 EUR\n2025-01-01 Landlord", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Monthly rent from ING savings"];
+    csv_rounded_5000 [label="Triodos -50.00 EUR\n2025-01-15 ShopX", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Bank rounded 49.99 to 50.00"];
+    csv_salary_3000 [label="Triodos +3000.00 EUR\n2025-01-01 Employer", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Monthly salary credit"];
+    csv_split_dinner_30 [label="Triodos -30.00 EUR\n2025-02-01 Restaurant", shape=cylinder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Card portion of 50 EUR split dinner"];
+    csv_swapped_date [label="Triodos -25.00 EUR\n2025-05-01 BookShop", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Receipt entered as 01-05 but meant 05-01"];
+  }
+
+  subgraph cluster_receipt_img {
+    label="Receipt Images";
+    style=filled; fillcolor="#FBE9E7";
+    rank=same;
+    img_atm_gbp [label="atm_london.jpg", shape=folder, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="ATM withdrawal slip, 100 GBP"];
+    img_atm_gbp_fee [label="atm_london_fee.jpg", shape=folder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="ATM withdrawal slip, 200 GBP + fee"];
+    img_bike_repair [label="bike_repair.jpg", shape=folder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Bike repair receipt, cash"];
+    img_coffee_cash [label="coffee_cash.jpg", shape=folder, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Coffee receipt, paid cash"];
+    img_delayed_shop [label="delayed_shop.jpg", shape=folder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Receipt dated Jan 15, bank posted Jan 18"];
+    img_ekoplaza_card [label="ekoplaza_card.jpg", shape=folder, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Ekoplaza receipt, paid by card"];
+    img_gold [label="gold_dealer.jpg", shape=folder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Gold purchase receipt, 10g"];
+    img_return_item [label="return_item.jpg", shape=folder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Receipt with bought + returned items"];
+    img_rounded_shop [label="rounded_shop.jpg", shape=folder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Receipt 49.99, bank shows 50.00"];
+    img_split_dinner [label="split_dinner.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Restaurant receipt, split card+cash"];
+    img_swapped_date [label="bookshop.jpg", shape=folder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Receipt with ambiguous DD-MM date"];
+  }
+
+  subgraph cluster_receipt_lbl {
+    label="Receipt Labels (JSON)";
+    style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    lbl_atm_100gbp [label="atm_100gbp\nGBP 100 withdrawal", shape=tab, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, GBP withdrawal receipt"];
+    lbl_atm_200gbp_fee [label="atm_200gbp\nGBP 200 + fee", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, GBP withdrawal with bank fee"];
+    lbl_bike_cash [label="bike_repair\nEUR 14.50 cash", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="EUR wallet, repairs:bike"];
+    lbl_coffee_cash [label="coffee_cash\nEUR 3.50 cash", shape=tab, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="EUR wallet, dining:coffee"];
+    lbl_delayed_shop [label="delayed_shop\nEUR 49.99 card", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, receipt dated Jan 15"];
+    lbl_dinner_split [label="dinner_split\n30 card + 20 cash", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos 30 EUR + wallet 20 EUR"];
+    lbl_ekoplaza_card_eur [label="ekoplaza_card\nEUR 42.17 card", shape=tab, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, 2025-01-15, groceries:ekoplaza"];
+    lbl_gold_10g [label="gold_10g\n10 GRAMS", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, DirectAssetPurchases.GOLD"];
+    lbl_return_item [label="return_item\nbought 3, returned 1", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Net EUR 28.50 (bought 42.50 - returned 14.00)"];
+    lbl_rounded_shop [label="rounded_shop\nEUR 49.99 card", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, bank will show 50.00"];
+    lbl_salary_credit [label="salary_credit\nEUR 3000 income", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Income:Salary, no receipt image"];
+    lbl_swapped_date [label="bookshop\nEUR 25.00 card", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, date entered as 01-05-2025"];
+  }
+
+  subgraph cluster_matching_out {
+    label="Matching Outcome";
+    style=filled; fillcolor="#FFF8E1";
+    rank=same;
+    out_asset_convert [label="ASSET CONVERT\ngold rate", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="DirectAssetPurchases conversion (GRAMS -> EUR)"];
+    out_auto_1hit [label="AUTO-LINK\n1 match found", shape=diamond, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Exact date+amount, no TUI needed"];
+    out_correct_receipt [label="CORRECT RECEIPT\nedit inline", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="User fixes receipt label, matcher retries"];
+    out_csv_only_classify [label="CLASSIFY\nrule/AI based", shape=diamond, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="CSV transaction classified without receipt"];
+    out_currency_convert [label="CURRENCY CONVERT\nuser enters rate", shape=diamond, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Receipt GBP != CSV EUR, user provides conversion ratio"];
+    out_currency_convert_fee [label="CURRENCY + FEE\nrate + fee amount", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Foreign withdrawal with bank fee split"];
+    out_disambiguate_3 [label="DISAMBIGUATE\n3 candidates ranked", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="User selects from weighted-score-ranked list"];
+    out_duplicate_blocked [label="BLOCKED\nalready linked", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="CSV transaction already claimed by another receipt"];
+    out_skip_cash [label="SKIP\nno CSV for wallet", shape=diamond, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Cash receipt, no bank CSV to match against"];
+    out_swap_dd_mm [label="SWAP DD/MM\n01-05 -> 05-01", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Auto-retry with day/month swapped"];
+    out_too_many_reduce [label="TOO MANY (15+)\nuser reduces scope", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="User tightens margins, retries"];
+    out_widen_amount [label="WIDEN AMOUNT\n0 -> ±0.02", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No match at exact, user widens to ±0.02, finds match"];
+    out_widen_date [label="WIDEN DATE\n±2d -> ±5d", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No match at ±2d, user widens to ±5d, finds match"];
+  }
+
+  subgraph cluster_journal_out {
+    label="Journal Output";
+    style=filled; fillcolor="#E8EAF6";
+    rank=same;
+    jrnl_asset_gold [label="Assets:Gold\n10 GRAMS", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Gold asset purchased"];
+    jrnl_bankfees [label="Expenses:BankFees\n3.50 EUR", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="ATM withdrawal fee posting"];
+    jrnl_coffee_cash [label="Expenses:Dining:\nCoffee 3.50 EUR", shape=box, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Debit dining, credit EUR wallet"];
+    jrnl_delayed_shop [label="Expenses:Shopping\n49.99 EUR", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Delayed posting matched after widening date"];
+    jrnl_dinner_split_card [label="Expenses:Dining:\nRestaurant 30 EUR (card)", shape=box, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Card portion of split dinner"];
+    jrnl_dinner_split_cash [label="Expenses:Dining:\nRestaurant 20 EUR (cash)", shape=box, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Cash portion of split dinner"];
+    jrnl_groceries_ekoplaza [label="Expenses:Groceries:\nEkoplaza 42.17 EUR", shape=box, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Debit groceries, credit Triodos checking"];
+    jrnl_income_salary [label="Income:Salary\n3000 EUR", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Credit income, debit Triodos checking"];
+    jrnl_rent_ing [label="Expenses:Housing:\nRent 800 EUR", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Rent paid from ING savings"];
+    jrnl_repairs_bike [label="Expenses:Repairs:\nBike 14.50 EUR", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Debit repairs, credit EUR wallet"];
+    jrnl_return_net [label="Expenses:Shopping\n28.50 EUR (net)", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Net after return: 42.50 bought - 14.00 returned"];
+    jrnl_rounded_shop [label="Expenses:Shopping\n50.00 EUR", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Bank-rounded amount matched after widening amount"];
+    jrnl_swapped_shop [label="Expenses:Shopping\n25.00 EUR", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Date-swapped receipt matched after DD/MM fix"];
+    jrnl_triodos_debit_gbp [label="Assets:Triodos:\nChecking -117.50 EUR", shape=box, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Bank debit for GBP withdrawal"];
+    jrnl_triodos_debit_gold [label="Assets:Triodos:\nChecking -580 EUR", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Bank debit for gold purchase"];
+    jrnl_wallet_gbp [label="Assets:Wallet:\nGBP 100", shape=box, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Foreign currency asset from ATM withdrawal"];
+    jrnl_wallet_gbp_200 [label="Assets:Wallet:\nGBP 200", shape=box, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Foreign currency asset (large withdrawal)"];
+  }
+
+  subgraph cluster_visualization {
+    label="Visualisation";
+    style=filled; fillcolor="#F3E5F5";
+    rank=same;
+    viz_sankey [label="Sankey Diagram", shape=octagon, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Interactive Plotly Sankey of all flows"];
+    viz_treemap [label="Treemap Plot", shape=octagon, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Interactive Plotly Treemap of spending"];
+  }
+
+  cat_basic -> match_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  cat_basic -> match_narrow [color="#DDDDDD", penwidth=1.0, style=solid];
+  cat_basic -> match_wide_both [color="#DDDDDD", penwidth=1.0, style=solid];
+  cat_basic -> match_wide_date [color="#DDDDDD", penwidth=1.0, style=solid];
+  cat_extended -> match_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  cat_with_income -> match_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  cfg_1b1w -> cat_basic [color="#DDDDDD", penwidth=1.0, style=solid];
+  cfg_1b1w -> cat_extended [color="#DDDDDD", penwidth=1.0, style=solid];
+  cfg_1b1w -> cat_with_income [color="#DDDDDD", penwidth=1.0, style=solid];
+  cfg_1b5a -> cat_basic [color="#DDDDDD", penwidth=1.0, style=solid];
+  cfg_1b5a -> cat_extended [color="#DDDDDD", penwidth=1.0, style=solid];
+  cfg_crypto -> cat_extended [color="#DDDDDD", penwidth=1.0, style=solid];
+  cfg_multi_bank -> cat_basic [color="#DDDDDD", penwidth=1.0, style=solid];
+  cfg_per_bank_match -> cat_basic [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_atm_gbp_11750 -> img_atm_gbp [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_atm_gbp_23750_fee -> img_atm_gbp_fee [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_delayed_jan18 -> img_delayed_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_ekoplaza_4217_jan14 -> img_ekoplaza_card [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_ekoplaza_4217_jan15 -> out_csv_only_classify [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_ekoplaza_4300_jan16 -> img_ekoplaza_card [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_gold_dealer_580 -> img_gold [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_ing_rent_800 -> img_ekoplaza_card [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_rounded_5000 -> img_rounded_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_salary_3000 -> lbl_salary_credit [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_split_dinner_30 -> img_split_dinner [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_swapped_date -> img_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_atm_gbp -> lbl_atm_100gbp [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_atm_gbp_fee -> lbl_atm_200gbp_fee [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_bike_repair -> lbl_bike_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_coffee_cash -> lbl_coffee_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_delayed_shop -> lbl_delayed_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_ekoplaza_card -> lbl_ekoplaza_card_eur [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_gold -> lbl_gold_10g [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_return_item -> lbl_return_item [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_rounded_shop -> lbl_rounded_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_split_dinner -> lbl_dinner_split [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_swapped_date -> lbl_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
+  jrnl_groceries_ekoplaza -> viz_sankey [color="#DDDDDD", penwidth=1.0, style=solid];
+  jrnl_groceries_ekoplaza -> viz_treemap [color="#DDDDDD", penwidth=1.0, style=solid];
+  jrnl_wallet_gbp -> jrnl_triodos_debit_gbp [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_atm_100gbp -> out_currency_convert [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_atm_200gbp_fee -> out_currency_convert_fee [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_bike_cash -> out_skip_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_coffee_cash -> out_skip_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_delayed_shop -> out_widen_date [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_dinner_split -> out_auto_1hit [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_dinner_split -> out_skip_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_ekoplaza_card_eur -> out_auto_1hit [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_ekoplaza_card_eur -> out_correct_receipt [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_ekoplaza_card_eur -> out_csv_only_classify [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_ekoplaza_card_eur -> out_disambiguate_3 [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_ekoplaza_card_eur -> out_duplicate_blocked [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_ekoplaza_card_eur -> out_too_many_reduce [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_gold_10g -> out_asset_convert [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_return_item -> out_auto_1hit [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_rounded_shop -> out_widen_amount [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_salary_credit -> out_csv_only_classify [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_swapped_date -> out_swap_dd_mm [color="#DDDDDD", penwidth=1.0, style=solid];
+  match_default -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
+  match_default -> start_2024_multi [color="#DDDDDD", penwidth=1.0, style=solid];
+  match_narrow -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
+  match_wide_both -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
+  match_wide_date -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_asset_convert -> jrnl_asset_gold [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_asset_convert -> jrnl_triodos_debit_gold [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_auto_1hit -> jrnl_dinner_split_card [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_auto_1hit -> jrnl_groceries_ekoplaza [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_auto_1hit -> jrnl_return_net [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_correct_receipt -> out_auto_1hit [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_csv_only_classify -> jrnl_groceries_ekoplaza [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_csv_only_classify -> jrnl_income_salary [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_csv_only_classify -> jrnl_rent_ing [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_currency_convert -> jrnl_triodos_debit_gbp [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_currency_convert -> jrnl_wallet_gbp [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_currency_convert_fee -> jrnl_bankfees [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_currency_convert_fee -> jrnl_wallet_gbp_200 [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_disambiguate_3 -> jrnl_groceries_ekoplaza [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_skip_cash -> jrnl_coffee_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_skip_cash -> jrnl_dinner_split_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_skip_cash -> jrnl_repairs_bike [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_swap_dd_mm -> jrnl_swapped_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_widen_amount -> jrnl_rounded_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_widen_date -> jrnl_delayed_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_atm_gbp_11750 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_atm_gbp_23750_fee [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_delayed_jan18 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_ekoplaza_4217_jan14 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_ekoplaza_4217_jan15 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_ekoplaza_4300_jan16 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_gold_dealer_580 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_ing_rent_800 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_rounded_5000 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_salary_3000 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_split_dinner_30 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> img_bike_repair [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> img_coffee_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> img_return_item [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> img_split_dinner [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> jrnl_groceries_ekoplaza [color="#DDDDDD", penwidth=1.0, style=solid];
+  cat_extended -> match_default [color="#795548", penwidth=3.5, style=solid, label="US-2b.4"];
+  cfg_1b1w -> cat_extended [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
+  csv_split_dinner_30 -> img_split_dinner [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
+  img_split_dinner -> lbl_dinner_split [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
+  lbl_dinner_split -> out_auto_1hit [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
+  lbl_dinner_split -> out_skip_cash [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
+  match_default -> start_2024_1000eur [color="#795548", penwidth=5.0, style=solid, label="US-2b.4"];
+  out_auto_1hit -> jrnl_dinner_split_card [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
+  out_skip_cash -> jrnl_dinner_split_cash [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
+  start_2024_1000eur -> csv_split_dinner_30 [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
+  start_2024_1000eur -> img_split_dinner [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
+}
+@enddot

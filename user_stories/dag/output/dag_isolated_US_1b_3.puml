@@ -1,0 +1,74 @@
+@startdot
+digraph userstory_dag {
+  rankdir=TB;
+  fontname="DejaVu Sans";
+  node [fontname="DejaVu Sans", fontsize=10];
+  edge [fontname="DejaVu Sans", fontsize=8];
+  newrank=true;
+  compound=true;
+
+  subgraph cluster_config {
+    label="Configuration";
+    style=filled; fillcolor="#E3F2FD";
+    rank=same;
+    cfg_1b1w [label="1 bank + 1 wallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking (EUR CSV) + EUR cash wallet (no CSV)"];
+  }
+
+  subgraph cluster_categories {
+    label="Categories";
+    style=filled; fillcolor="#E8F5E9";
+    rank=same;
+    cat_with_income [label="categories + income", shape=box3d, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="basic + income:{salary,freelance}"];
+  }
+
+  subgraph cluster_matching_cfg {
+    label="Matching Parameters";
+    style=filled; fillcolor="#FFF3E0";
+    rank=same;
+    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+  }
+
+  subgraph cluster_start_journal {
+    label="Starting Journal";
+    style=filled; fillcolor="#F3E5F5";
+    rank=same;
+    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
+  }
+
+  subgraph cluster_csv_txn {
+    label="Bank CSV Transactions";
+    style=filled; fillcolor="#E0F7FA";
+    rank=same;
+    csv_salary_3000 [label="Triodos +3000.00 EUR\n2025-01-01 Employer", shape=cylinder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Monthly salary credit"];
+  }
+
+  subgraph cluster_receipt_lbl {
+    label="Receipt Labels (JSON)";
+    style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    lbl_salary_credit [label="salary_credit\nEUR 3000 income", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Income:Salary, no receipt image"];
+  }
+
+  subgraph cluster_matching_out {
+    label="Matching Outcome";
+    style=filled; fillcolor="#FFF8E1";
+    rank=same;
+    out_csv_only_classify [label="CLASSIFY\nrule/AI based", shape=diamond, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="CSV transaction classified without receipt"];
+  }
+
+  subgraph cluster_journal_out {
+    label="Journal Output";
+    style=filled; fillcolor="#E8EAF6";
+    rank=same;
+    jrnl_income_salary [label="Income:Salary\n3000 EUR", shape=box, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Credit income, debit Triodos checking"];
+  }
+
+  cat_with_income -> match_default [color="#CDDC39", penwidth=2.5, style=solid];
+  cfg_1b1w -> cat_with_income [color="#CDDC39", penwidth=2.5, style=solid];
+  csv_salary_3000 -> lbl_salary_credit [color="#CDDC39", penwidth=2.5, style=solid];
+  lbl_salary_credit -> out_csv_only_classify [color="#CDDC39", penwidth=2.5, style=solid];
+  match_default -> start_2024_1000eur [color="#CDDC39", penwidth=2.5, style=solid];
+  out_csv_only_classify -> jrnl_income_salary [color="#CDDC39", penwidth=2.5, style=solid];
+  start_2024_1000eur -> csv_salary_3000 [color="#CDDC39", penwidth=2.5, style=solid];
+}
+@enddot

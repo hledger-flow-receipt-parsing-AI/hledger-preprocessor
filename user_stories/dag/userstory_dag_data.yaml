@@ -1,0 +1,800 @@
+# =============================================================================
+# User Story DAG Data
+# =============================================================================
+# This file defines all data nodes (grouped by layer) and the paths each
+# user story takes through those nodes.  A Python generator script reads
+# this file and produces PlantUML (.puml) files.
+#
+# Layer order (top to bottom in the DAG):
+#   1. config        - config.yaml variants
+#   2. categories    - categories.yaml variants
+#   3. matching_cfg  - matching algorithm parameters
+#   4. start_journal - opening-balance journals
+#   5. csv_txn       - bank CSV transaction rows
+#   6. receipt_img   - receipt photographs
+#   7. receipt_lbl   - receipt label JSONs
+#   8. matching_out  - matching algorithm outcomes
+#   9. journal_out   - hledger journal postings
+#  10. visualization - Sankey / Treemap visualisations
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Layer definitions — each node has an id, short label, and long description
+# -----------------------------------------------------------------------------
+layers:
+  - name: config
+    label: "Configuration"
+    nodes:
+      - id: cfg_1b1w
+        label: "1 bank + 1 wallet"
+        desc: "Triodos checking (EUR CSV) + EUR cash wallet (no CSV)"
+        used_by: [test, demo]
+
+      - id: cfg_1b5a
+        label: "1 bank + 5 assets"
+        desc: "Triodos checking + EUR/GBP/BTC/GOLD/SILVER wallets"
+        used_by: [test]
+
+      - id: cfg_multi_bank
+        label: "2 banks + 1 wallet"
+        desc: "Triodos (EUR) + ING (EUR) + EUR cash wallet"
+        used_by: [test]
+
+      - id: cfg_crypto
+        label: "1 bank + crypto"
+        desc: "Triodos (EUR) + Kraken exchange (BTC/ETH)"
+        used_by: [test]
+
+      - id: cfg_per_bank_match
+        label: "per-bank matching"
+        desc: "Triodos (days:4) + ING (days:2) override global default"
+        used_by: [test]
+
+  - name: categories
+    label: "Categories"
+    nodes:
+      - id: cat_basic
+        label: "basic categories"
+        desc: "groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}"
+        used_by: [test, demo]
+
+      - id: cat_with_income
+        label: "categories + income"
+        desc: "basic + income:{salary,freelance}"
+        used_by: [test]
+
+      - id: cat_extended
+        label: "extended categories"
+        desc: "basic + dining, transport, bankfees, investments:{gold,silver}"
+        used_by: [test]
+
+  - name: matching_cfg
+    label: "Matching Parameters"
+    nodes:
+      - id: match_default
+        label: "default (±2d, exact)"
+        desc: "days:2, amount_range:0, days_month_swap:true"
+        used_by: [test, demo]
+
+      - id: match_wide_date
+        label: "wide date (±5d)"
+        desc: "days:5, amount_range:0"
+        used_by: [test]
+
+      - id: match_wide_amount
+        label: "wide amount (±0.02)"
+        desc: "days:2, amount_range:0.02"
+        used_by: [test]
+
+      - id: match_wide_both
+        label: "wide both (±5d, ±0.05)"
+        desc: "days:5, amount_range:0.05 — triggers 15+ matches"
+        used_by: [test]
+
+      - id: match_narrow
+        label: "narrow (±1d, exact)"
+        desc: "days:1, amount_range:0 — initially too tight"
+        used_by: [test]
+
+  - name: start_journal
+    label: "Starting Journal"
+    nodes:
+      - id: start_2024_1000eur
+        label: "2024: 1000 EUR"
+        desc: "Opening balance: Assets:Triodos:Checking 1000 EUR"
+        used_by: [test, demo]
+
+      - id: start_2024_multi
+        label: "2024: multi-currency"
+        desc: "1000 EUR + 500 USD + 0.05 BTC"
+        used_by: [test]
+
+  - name: csv_txn
+    label: "Bank CSV Transactions"
+    nodes:
+      # --- Triodos EUR transactions ---
+      - id: csv_ekoplaza_4217_jan15
+        label: "Triodos -42.17 EUR\n2025-01-15 Ekoplaza"
+        desc: "Debit card purchase at Ekoplaza, exact date match"
+        used_by: [test, demo]
+
+      - id: csv_ekoplaza_4217_jan14
+        label: "Triodos -42.17 EUR\n2025-01-14 Ekoplaza"
+        desc: "Same amount different day — ambiguous match candidate"
+        used_by: [test]
+
+      - id: csv_ekoplaza_4300_jan16
+        label: "Triodos -43.00 EUR\n2025-01-16 Ekoplaza"
+        desc: "Similar amount different day — ambiguous match candidate"
+        used_by: [test]
+
+      - id: csv_delayed_jan18
+        label: "Triodos -49.99 EUR\n2025-01-18 ShopX"
+        desc: "Posted 3 days late (receipt dated Jan 15)"
+        used_by: [test]
+
+      - id: csv_rounded_5000
+        label: "Triodos -50.00 EUR\n2025-01-15 ShopX"
+        desc: "Bank rounded 49.99 to 50.00"
+        used_by: [test]
+
+      - id: csv_atm_gbp_11750
+        label: "Triodos -117.50 EUR\n2025-01-15 ATM London"
+        desc: "Foreign ATM withdrawal: 100 GBP * 1.175"
+        used_by: [test, demo]
+
+      - id: csv_atm_gbp_23750_fee
+        label: "Triodos -237.50 EUR\n2025-01-15 ATM London"
+        desc: "200 GBP * 1.17 + 3.50 EUR fee"
+        used_by: [test]
+
+      - id: csv_gold_dealer_580
+        label: "Triodos -580.00 EUR\n2025-01-20 GoldDealer"
+        desc: "10g gold purchase at 58 EUR/g"
+        used_by: [test]
+
+      - id: csv_salary_3000
+        label: "Triodos +3000.00 EUR\n2025-01-01 Employer"
+        desc: "Monthly salary credit"
+        used_by: [test]
+
+      - id: csv_split_dinner_30
+        label: "Triodos -30.00 EUR\n2025-02-01 Restaurant"
+        desc: "Card portion of 50 EUR split dinner"
+        used_by: [test]
+
+      - id: csv_swapped_date
+        label: "Triodos -25.00 EUR\n2025-05-01 BookShop"
+        desc: "Receipt entered as 01-05 but meant 05-01"
+        used_by: [test]
+
+      - id: csv_bike_repair
+        label: "Triodos -14.50 EUR\n2025-06-15 BikeShop"
+        desc: "Bike repair payment by card"
+        used_by: [test]
+
+      # --- ING EUR transactions ---
+      - id: csv_ing_rent_800
+        label: "ING -800.00 EUR\n2025-01-01 Landlord"
+        desc: "Monthly rent from ING savings"
+        used_by: [test]
+
+  - name: receipt_img
+    label: "Receipt Images"
+    nodes:
+      - id: img_ekoplaza_card
+        label: "ekoplaza_card.jpg"
+        desc: "Ekoplaza receipt, paid by card"
+        used_by: [test, demo]
+
+      - id: img_ekoplaza_cash
+        label: "ekoplaza_cash.jpg"
+        desc: "Ekoplaza receipt, paid by cash"
+        used_by: [test]
+
+      - id: img_london_lunch
+        label: "london_lunch.jpg"
+        desc: "London lunch receipt in GBP"
+        used_by: [test]
+
+      - id: img_atm_gbp
+        label: "atm_london.jpg"
+        desc: "ATM withdrawal slip, 100 GBP"
+        used_by: [test, demo]
+
+      - id: img_atm_gbp_fee
+        label: "atm_london_fee.jpg"
+        desc: "ATM withdrawal slip, 200 GBP + fee"
+        used_by: [test]
+
+      - id: img_gold
+        label: "gold_dealer.jpg"
+        desc: "Gold purchase receipt, 10g"
+        used_by: [test]
+
+      - id: img_bike_repair
+        label: "bike_repair.jpg"
+        desc: "Bike repair receipt, cash"
+        used_by: [test]
+
+      - id: img_coffee_cash
+        label: "coffee_cash.jpg"
+        desc: "Coffee receipt, paid cash"
+        used_by: [test]
+
+      - id: img_split_dinner
+        label: "split_dinner.jpg"
+        desc: "Restaurant receipt, split card+cash"
+        used_by: [test]
+
+      - id: img_return_item
+        label: "return_item.jpg"
+        desc: "Receipt with bought + returned items"
+        used_by: [test]
+
+      - id: img_delayed_shop
+        label: "delayed_shop.jpg"
+        desc: "Receipt dated Jan 15, bank posted Jan 18"
+        used_by: [test]
+
+      - id: img_rounded_shop
+        label: "rounded_shop.jpg"
+        desc: "Receipt 49.99, bank shows 50.00"
+        used_by: [test]
+
+      - id: img_swapped_date
+        label: "bookshop.jpg"
+        desc: "Receipt with ambiguous DD-MM date"
+        used_by: [test]
+
+  - name: receipt_lbl
+    label: "Receipt Labels (JSON)"
+    nodes:
+      - id: lbl_ekoplaza_card_eur
+        label: "ekoplaza_card\nEUR 42.17 card"
+        desc: "Triodos account, 2025-01-15, groceries:ekoplaza"
+        used_by: [test, demo]
+
+      - id: lbl_ekoplaza_cash_eur
+        label: "ekoplaza_cash\nEUR 28.95 cash"
+        desc: "EUR wallet, 2025-05-20, groceries:ekoplaza, 50 tendered 21.05 change"
+        used_by: [test]
+
+      - id: lbl_london_lunch_gbp
+        label: "london_lunch\nGBP 12.50 card"
+        desc: "Triodos account, receipt in GBP, account in EUR"
+        used_by: [test]
+
+      - id: lbl_atm_100gbp
+        label: "atm_100gbp\nGBP 100 withdrawal"
+        desc: "Triodos account, GBP withdrawal receipt"
+        used_by: [test, demo]
+
+      - id: lbl_atm_200gbp_fee
+        label: "atm_200gbp\nGBP 200 + fee"
+        desc: "Triodos account, GBP withdrawal with bank fee"
+        used_by: [test]
+
+      - id: lbl_gold_10g
+        label: "gold_10g\n10 GRAMS"
+        desc: "Triodos account, DirectAssetPurchases.GOLD"
+        used_by: [test]
+
+      - id: lbl_bike_cash
+        label: "bike_repair\nEUR 14.50 cash"
+        desc: "EUR wallet, repairs:bike"
+        used_by: [test]
+
+      - id: lbl_coffee_cash
+        label: "coffee_cash\nEUR 3.50 cash"
+        desc: "EUR wallet, dining:coffee"
+        used_by: [test]
+
+      - id: lbl_dinner_split
+        label: "dinner_split\n30 card + 20 cash"
+        desc: "Triodos 30 EUR + wallet 20 EUR"
+        used_by: [test]
+
+      - id: lbl_return_item
+        label: "return_item\nbought 3, returned 1"
+        desc: "Net EUR 28.50 (bought 42.50 - returned 14.00)"
+        used_by: [test]
+
+      - id: lbl_delayed_shop
+        label: "delayed_shop\nEUR 49.99 card"
+        desc: "Triodos account, receipt dated Jan 15"
+        used_by: [test]
+
+      - id: lbl_rounded_shop
+        label: "rounded_shop\nEUR 49.99 card"
+        desc: "Triodos account, bank will show 50.00"
+        used_by: [test]
+
+      - id: lbl_swapped_date
+        label: "bookshop\nEUR 25.00 card"
+        desc: "Triodos account, date entered as 01-05-2025"
+        used_by: [test]
+
+      - id: lbl_salary_credit
+        label: "salary_credit\nEUR 3000 income"
+        desc: "Income:Salary, no receipt image"
+        used_by: [test]
+
+  - name: matching_out
+    label: "Matching Outcome"
+    nodes:
+      - id: out_auto_1hit
+        label: "AUTO-LINK\n1 match found"
+        desc: "Exact date+amount, no TUI needed"
+        used_by: [test, demo]
+
+      - id: out_currency_convert
+        label: "CURRENCY CONVERT\nuser enters rate"
+        desc: "Receipt GBP != CSV EUR, user provides conversion ratio"
+        used_by: [test, demo]
+
+      - id: out_currency_convert_fee
+        label: "CURRENCY + FEE\nrate + fee amount"
+        desc: "Foreign withdrawal with bank fee split"
+        used_by: [test]
+
+      - id: out_widen_date
+        label: "WIDEN DATE\n±2d -> ±5d"
+        desc: "No match at ±2d, user widens to ±5d, finds match"
+        used_by: [test]
+
+      - id: out_widen_amount
+        label: "WIDEN AMOUNT\n0 -> ±0.02"
+        desc: "No match at exact, user widens to ±0.02, finds match"
+        used_by: [test]
+
+      - id: out_swap_dd_mm
+        label: "SWAP DD/MM\n01-05 -> 05-01"
+        desc: "Auto-retry with day/month swapped"
+        used_by: [test]
+
+      - id: out_disambiguate_3
+        label: "DISAMBIGUATE\n3 candidates ranked"
+        desc: "User selects from weighted-score-ranked list"
+        used_by: [test]
+
+      - id: out_too_many_reduce
+        label: "TOO MANY (15+)\nuser reduces scope"
+        desc: "User tightens margins, retries"
+        used_by: [test]
+
+      - id: out_skip_cash
+        label: "SKIP\nno CSV for wallet"
+        desc: "Cash receipt, no bank CSV to match against"
+        used_by: [test]
+
+      - id: out_correct_receipt
+        label: "CORRECT RECEIPT\nedit inline"
+        desc: "User fixes receipt label, matcher retries"
+        used_by: [test]
+
+      - id: out_duplicate_blocked
+        label: "BLOCKED\nalready linked"
+        desc: "CSV transaction already claimed by another receipt"
+        used_by: [test]
+
+      - id: out_asset_convert
+        label: "ASSET CONVERT\ngold rate"
+        desc: "DirectAssetPurchases conversion (GRAMS -> EUR)"
+        used_by: [test]
+
+      - id: out_csv_only_classify
+        label: "CLASSIFY\nrule/AI based"
+        desc: "CSV transaction classified without receipt"
+        used_by: [test]
+
+  - name: journal_out
+    label: "Journal Output"
+    nodes:
+      - id: jrnl_groceries_ekoplaza
+        label: "Expenses:Groceries:\nEkoplaza 42.17 EUR"
+        desc: "Debit groceries, credit Triodos checking"
+        used_by: [test, demo]
+
+      - id: jrnl_groceries_cash
+        label: "Expenses:Groceries:\nEkoplaza 28.95 EUR (cash)"
+        desc: "Debit groceries, credit EUR wallet"
+        used_by: [test]
+
+      - id: jrnl_wallet_gbp
+        label: "Assets:Wallet:\nGBP 100"
+        desc: "Foreign currency asset from ATM withdrawal"
+        used_by: [test, demo]
+
+      - id: jrnl_triodos_debit_gbp
+        label: "Assets:Triodos:\nChecking -117.50 EUR"
+        desc: "Bank debit for GBP withdrawal"
+        used_by: [test, demo]
+
+      - id: jrnl_wallet_gbp_200
+        label: "Assets:Wallet:\nGBP 200"
+        desc: "Foreign currency asset (large withdrawal)"
+        used_by: [test]
+
+      - id: jrnl_bankfees
+        label: "Expenses:BankFees\n3.50 EUR"
+        desc: "ATM withdrawal fee posting"
+        used_by: [test]
+
+      - id: jrnl_asset_gold
+        label: "Assets:Gold\n10 GRAMS"
+        desc: "Gold asset purchased"
+        used_by: [test]
+
+      - id: jrnl_triodos_debit_gold
+        label: "Assets:Triodos:\nChecking -580 EUR"
+        desc: "Bank debit for gold purchase"
+        used_by: [test]
+
+      - id: jrnl_repairs_bike
+        label: "Expenses:Repairs:\nBike 14.50 EUR"
+        desc: "Debit repairs, credit EUR wallet"
+        used_by: [test]
+
+      - id: jrnl_coffee_cash
+        label: "Expenses:Dining:\nCoffee 3.50 EUR"
+        desc: "Debit dining, credit EUR wallet"
+        used_by: [test]
+
+      - id: jrnl_dinner_split_card
+        label: "Expenses:Dining:\nRestaurant 30 EUR (card)"
+        desc: "Card portion of split dinner"
+        used_by: [test]
+
+      - id: jrnl_dinner_split_cash
+        label: "Expenses:Dining:\nRestaurant 20 EUR (cash)"
+        desc: "Cash portion of split dinner"
+        used_by: [test]
+
+      - id: jrnl_return_net
+        label: "Expenses:Shopping\n28.50 EUR (net)"
+        desc: "Net after return: 42.50 bought - 14.00 returned"
+        used_by: [test]
+
+      - id: jrnl_income_salary
+        label: "Income:Salary\n3000 EUR"
+        desc: "Credit income, debit Triodos checking"
+        used_by: [test]
+
+      - id: jrnl_delayed_shop
+        label: "Expenses:Shopping\n49.99 EUR"
+        desc: "Delayed posting matched after widening date"
+        used_by: [test]
+
+      - id: jrnl_rounded_shop
+        label: "Expenses:Shopping\n50.00 EUR"
+        desc: "Bank-rounded amount matched after widening amount"
+        used_by: [test]
+
+      - id: jrnl_swapped_shop
+        label: "Expenses:Shopping\n25.00 EUR"
+        desc: "Date-swapped receipt matched after DD/MM fix"
+        used_by: [test]
+
+      - id: jrnl_rent_ing
+        label: "Expenses:Housing:\nRent 800 EUR"
+        desc: "Rent paid from ING savings"
+        used_by: [test]
+
+  - name: visualization
+    label: "Visualisation"
+    nodes:
+      - id: viz_sankey
+        label: "Sankey Diagram"
+        desc: "Interactive Plotly Sankey of all flows"
+        used_by: [test, demo]
+
+      - id: viz_treemap
+        label: "Treemap Plot"
+        desc: "Interactive Plotly Treemap of spending"
+        used_by: [test, demo]
+
+# -----------------------------------------------------------------------------
+# Edges — directed connections between layers (shared by all stories)
+# These define which downstream nodes a given upstream node feeds into.
+# Each story then selects a subset of these edges.
+# -----------------------------------------------------------------------------
+# (Edges are implicitly defined by story paths below — the generator
+#  creates edges for each consecutive pair of nodes in a path.)
+
+# -----------------------------------------------------------------------------
+# User Story Paths
+# -----------------------------------------------------------------------------
+# Each story defines one or more paths through the DAG.
+# A path is an ordered list of node IDs from top layer to bottom.
+# Multiple paths per story = the story touches multiple independent flows.
+#
+# Fields:
+#   id:        user story ID (matches userstories_v0.md)
+#   label:     short name for legend
+#   colour:    hex colour for edges/highlighting
+#   pattern:   line style (solid, dashed, dotted, bold)
+#   data_use:  test | demo | both
+#   paths:     list of node-ID lists (each list = one path through the DAG)
+#   demo_paths: (optional) subset of paths used in the GIF demo
+# -----------------------------------------------------------------------------
+stories:
+
+  # =========================================================================
+  # Step 1a: Configuration
+  # =========================================================================
+  - id: US-1a.1
+    label: "Single bank + CSV"
+    colour: "#2196F3"
+    pattern: solid
+    data_use: both
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+    demo_paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+
+  - id: US-1a.2
+    label: "Multiple banks"
+    colour: "#1565C0"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_multi_bank, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+      - [cfg_multi_bank, cat_basic, match_default, start_2024_1000eur, csv_ing_rent_800, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_csv_only_classify, jrnl_rent_ing]
+
+  - id: US-1a.3
+    label: "Cash wallet (no CSV)"
+    colour: "#4CAF50"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
+
+  - id: US-1a.4
+    label: "Crypto exchange"
+    colour: "#9C27B0"
+    pattern: dashed
+    data_use: test
+    paths:
+      - [cfg_crypto, cat_extended, match_default, start_2024_multi]
+
+  - id: US-1a.5
+    label: "Matching params"
+    colour: "#FF9800"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_per_bank_match, cat_basic, match_default, start_2024_1000eur]
+
+  - id: US-1a.6
+    label: "Base currency"
+    colour: "#00BCD4"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
+
+  # =========================================================================
+  # Step 1b: Categories
+  # =========================================================================
+  - id: US-1b.1
+    label: "Hierarchical categories"
+    colour: "#8BC34A"
+    pattern: solid
+    data_use: both
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+
+  - id: US-1b.3
+    label: "Income categories"
+    colour: "#CDDC39"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_with_income, match_default, start_2024_1000eur, csv_salary_3000, lbl_salary_credit, out_csv_only_classify, jrnl_income_salary]
+
+  # =========================================================================
+  # Step 2b: Receipt Labelling
+  # =========================================================================
+  - id: US-2b.1
+    label: "Label card receipt (EUR)"
+    colour: "#E91E63"
+    pattern: solid
+    data_use: both
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+    demo_paths:
+      - [cfg_1b1w, cat_basic, img_ekoplaza_card, lbl_ekoplaza_card_eur]
+
+  - id: US-2b.2
+    label: "Label cash receipt"
+    colour: "#F44336"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
+
+  - id: US-2b.3
+    label: "Label foreign-currency receipt"
+    colour: "#FF5722"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp, jrnl_triodos_debit_gbp]
+
+  - id: US-2b.4
+    label: "Label split-payment receipt"
+    colour: "#795548"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_extended, match_default, start_2024_1000eur, csv_split_dinner_30, img_split_dinner, lbl_dinner_split, out_auto_1hit, jrnl_dinner_split_card]
+      - [cfg_1b1w, cat_extended, match_default, start_2024_1000eur, img_split_dinner, lbl_dinner_split, out_skip_cash, jrnl_dinner_split_cash]
+
+  - id: US-2b.5
+    label: "Label receipt with returns"
+    colour: "#607D8B"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_return_item, lbl_return_item, out_auto_1hit, jrnl_return_net]
+
+  # =========================================================================
+  # Step 3: Receipt-to-CSV Matching
+  # =========================================================================
+  - id: US-3.1
+    label: "Auto-match same currency"
+    colour: "#4CAF50"
+    pattern: bold
+    data_use: both
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+    demo_paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+
+  - id: US-3.2
+    label: "Foreign currency match"
+    colour: "#FF6F00"
+    pattern: bold
+    data_use: both
+    paths:
+      - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
+      - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_triodos_debit_gbp]
+    demo_paths:
+      - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
+
+  - id: US-3.3
+    label: "Widen date range"
+    colour: "#F57C00"
+    pattern: dashed
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_narrow, start_2024_1000eur, csv_delayed_jan18, img_delayed_shop, lbl_delayed_shop, out_widen_date, jrnl_delayed_shop]
+
+  - id: US-3.4
+    label: "Widen amount range"
+    colour: "#EF6C00"
+    pattern: dashed
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_rounded_5000, img_rounded_shop, lbl_rounded_shop, out_widen_amount, jrnl_rounded_shop]
+
+  - id: US-3.5
+    label: "Swap DD/MM"
+    colour: "#E65100"
+    pattern: dashed
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_swapped_date, img_swapped_date, lbl_swapped_date, out_swap_dd_mm, jrnl_swapped_shop]
+
+  - id: US-3.6
+    label: "Disambiguate 2-14 matches"
+    colour: "#BF360C"
+    pattern: dashed
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
+      - [cfg_1b1w, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4217_jan14, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
+      - [cfg_1b1w, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4300_jan16, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
+
+  - id: US-3.7
+    label: "Too many matches (15+)"
+    colour: "#D84315"
+    pattern: dotted
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_wide_both, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_too_many_reduce]
+
+  - id: US-3.8
+    label: "Correct receipt inline"
+    colour: "#DD2C00"
+    pattern: dashed
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_correct_receipt, out_auto_1hit, jrnl_groceries_ekoplaza]
+
+  - id: US-3.9
+    label: "Direct asset purchase (gold)"
+    colour: "#FFD600"
+    pattern: bold
+    data_use: test
+    paths:
+      - [cfg_1b5a, cat_extended, match_default, start_2024_1000eur, csv_gold_dealer_580, img_gold, lbl_gold_10g, out_asset_convert, jrnl_asset_gold]
+      - [cfg_1b5a, cat_extended, match_default, start_2024_1000eur, csv_gold_dealer_580, img_gold, lbl_gold_10g, out_asset_convert, jrnl_triodos_debit_gold]
+
+  - id: US-3.10
+    label: "Skip cash-only receipt"
+    colour: "#66BB6A"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_bike_repair, lbl_bike_cash, out_skip_cash, jrnl_repairs_bike]
+
+  - id: US-3.11
+    label: "Withdrawal + fees"
+    colour: "#FF8F00"
+    pattern: dotted
+    data_use: test
+    paths:
+      - [cfg_1b5a, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_wallet_gbp_200]
+      - [cfg_1b5a, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_bankfees]
+
+  - id: US-3.14
+    label: "Duplicate blocked"
+    colour: "#B71C1C"
+    pattern: dotted
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_duplicate_blocked]
+
+  # =========================================================================
+  # Step 4: Pipeline + Step 5: Visualisation
+  # =========================================================================
+  - id: US-4.1
+    label: "Full pipeline"
+    colour: "#3F51B5"
+    pattern: bold
+    data_use: both
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey]
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_treemap]
+    demo_paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey]
+
+  - id: US-5.1
+    label: "Sankey diagram"
+    colour: "#673AB7"
+    pattern: bold
+    data_use: both
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, jrnl_groceries_ekoplaza, viz_sankey]
+
+  - id: US-5.2
+    label: "Treemap plot"
+    colour: "#9C27B0"
+    pattern: bold
+    data_use: both
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, jrnl_groceries_ekoplaza, viz_treemap]
+
+  # =========================================================================
+  # Transaction Classification
+  # =========================================================================
+  - id: US-C.1
+    label: "Rule-based classification"
+    colour: "#009688"
+    pattern: solid
+    data_use: test
+    paths:
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, out_csv_only_classify, jrnl_groceries_ekoplaza]
+
+  # =========================================================================
+  # Cross-cutting
+  # =========================================================================
+  - id: US-X.6
+    label: "1 image per receipt"
+    colour: "#455A64"
+    pattern: solid
+    data_use: test
+    paths:
+      - [img_ekoplaza_card, lbl_ekoplaza_card_eur]
