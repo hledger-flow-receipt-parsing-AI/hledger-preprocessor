@@ -1,0 +1,45 @@
+{
+  "ai_receipt_categorisation": null,
+  "net_bought_items": {
+    "account_transactions": [
+      {
+        "account": {
+          "account_holder": "at",
+          "account_type": "checking",
+          "bank": "triodos",
+          "base_currency": "EUR"
+        },
+        "change_returned": 0,
+        "currency": "GOLD",
+        "tendered_amount_out": 5.0
+      }
+    ],
+    "category": null,
+    "description": "assets:gold",
+    "group_discount": 0,
+    "quantity": 5,
+    "round_amount": null,
+    "tax_per_unit": 0,
+    "the_date": "2025-05-10T10:00:00",
+    "unit_price": 65.0
+  },
+  "net_returned_items": null,
+  "raw_img_filepath": "/home/a/finance/receipt_images_input/gold_dealer.jpg",
+  "receipt_category": "assets:gold",
+  "receipt_owner_address": null,
+  "shop_identifier": {
+    "address": {
+      "city": "Amsterdam",
+      "country": "Netherlands",
+      "house_nr": "1",
+      "street": "Dam",
+      "zipcode": "1012JS"
+    },
+    "name": "Amsterdam Gold",
+    "shop_account_nr": null
+  },
+  "subtotal": null,
+  "the_date": "2025-05-10T10:00:00",
+  "total_tax": 0,
+  "transaction_hash": null
+}
