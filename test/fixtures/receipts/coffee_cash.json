@@ -1,0 +1,45 @@
+{
+  "ai_receipt_categorisation": null,
+  "net_bought_items": {
+    "account_transactions": [
+      {
+        "account": {
+          "account_holder": "at",
+          "account_type": "physical",
+          "bank": "wallet",
+          "base_currency": "EUR"
+        },
+        "change_returned": 15.0,
+        "currency": "EUR",
+        "tendered_amount_out": 20.0
+      }
+    ],
+    "category": null,
+    "description": "food:coffee",
+    "group_discount": 0,
+    "quantity": 1,
+    "round_amount": null,
+    "tax_per_unit": 0,
+    "the_date": "2025-02-10T08:15:00",
+    "unit_price": null
+  },
+  "net_returned_items": null,
+  "raw_img_filepath": "/home/a/finance/receipt_images_input/coffee_cash.jpg",
+  "receipt_category": "food:coffee",
+  "receipt_owner_address": null,
+  "shop_identifier": {
+    "address": {
+      "city": "Utrecht",
+      "country": "Netherlands",
+      "house_nr": "12",
+      "street": "Oudegracht",
+      "zipcode": "3511AB"
+    },
+    "name": "Koffie Leute",
+    "shop_account_nr": null
+  },
+  "subtotal": null,
+  "the_date": "2025-02-10T08:15:00",
+  "total_tax": 0.87,
+  "transaction_hash": null
+}
