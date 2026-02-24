@@ -1,8 +1,5 @@
 import logging
 
-from hledger_preprocessor.generics.GenericTransactionWithCsv import (
-    GenericCsvTransaction,
-)
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.matching.ask_user_action import ActionDataset
 from hledger_preprocessor.matching.linking.helper import (
