@@ -1,0 +1,45 @@
+{
+  "ai_receipt_categorisation": null,
+  "net_bought_items": {
+    "account_transactions": [
+      {
+        "account": {
+          "account_holder": "at",
+          "account_type": "checking",
+          "bank": "triodos",
+          "base_currency": "EUR"
+        },
+        "change_returned": 0,
+        "currency": "EUR",
+        "tendered_amount_out": 49.99
+      }
+    ],
+    "category": null,
+    "description": "household:blokker",
+    "group_discount": 0,
+    "quantity": 1,
+    "round_amount": null,
+    "tax_per_unit": 0,
+    "the_date": "2025-02-20T13:00:00",
+    "unit_price": null
+  },
+  "net_returned_items": null,
+  "raw_img_filepath": "/home/a/finance/receipt_images_input/rounded_shop.jpg",
+  "receipt_category": "household:blokker",
+  "receipt_owner_address": null,
+  "shop_identifier": {
+    "address": {
+      "city": "Amsterdam",
+      "country": "Netherlands",
+      "house_nr": "33",
+      "street": "Ferdinand Bolstraat",
+      "zipcode": "1072LH"
+    },
+    "name": "Blokker",
+    "shop_account_nr": null
+  },
+  "subtotal": null,
+  "the_date": "2025-02-20T13:00:00",
+  "total_tax": 8.68,
+  "transaction_hash": null
+}
