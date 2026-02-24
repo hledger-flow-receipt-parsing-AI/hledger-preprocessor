@@ -6,7 +6,7 @@ import subprocess
 import time
 from typing import Optional
 
-from .core import Colors, Screen, get_conda_base
+from .core import Colors, Screen, emit_node_marker, get_conda_base
 
 
 def run_command_with_display(
@@ -160,6 +160,10 @@ def run_start_sh_demo(config_path: str) -> None:
     Screen.clear()
 
     # Title
+    emit_node_marker("cfg_1b1w")
+    emit_node_marker("cat_basic")
+    emit_node_marker("match_default")
+    emit_node_marker("start_2024_1000eur")
     show_header("hledger-preprocessor: Full Pipeline Demo")
     print()
     print(
@@ -180,6 +184,10 @@ def run_start_sh_demo(config_path: str) -> None:
     # =========================================================================
     # Step 1: Preprocess Assets
     # =========================================================================
+    emit_node_marker("img_ekoplaza_card")
+    emit_node_marker("lbl_ekoplaza_card_eur")
+    emit_node_marker("csv_ekoplaza_4217_jan15")
+    emit_node_marker("out_auto_1hit")
     show_step(1, "Preprocessing Assets")
     print(
         f"{Colors.GRAY}Converting receipt data to CSV files for"
@@ -220,6 +228,7 @@ def run_start_sh_demo(config_path: str) -> None:
     # =========================================================================
     # Step 2: Run hledger-flow import
     # =========================================================================
+    emit_node_marker("jrnl_groceries_ekoplaza")
     show_step(2, "Running hledger-flow import")
     print(
         f"{Colors.GRAY}Converting CSV files to hledger journal"
@@ -274,6 +283,8 @@ def run_start_sh_demo(config_path: str) -> None:
     # =========================================================================
     # Step 3: Generate plots with hledger_plot
     # =========================================================================
+    emit_node_marker("viz_sankey")
+    emit_node_marker("viz_treemap")
     show_step(3, "Generating Financial Plots")
     print(
         f"{Colors.GRAY}Creating SVG visualizations of financial"

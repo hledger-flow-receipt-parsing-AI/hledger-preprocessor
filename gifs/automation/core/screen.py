@@ -3,6 +3,20 @@
 from .colors import Colors
 
 
+def emit_node_marker(node_id: str) -> None:
+    """Emit a machine-readable marker into the terminal stream.
+
+    The marker ``@@NODE:<node_id>@@`` is captured by asciinema in the
+    ``.cast`` file with an exact timestamp.  ``generate_site.py`` parses
+    these markers to build per-node video timestamps for the interactive
+    DAG viewer.
+
+    The marker is printed as dim text so it is nearly invisible in the
+    terminal and the resulting GIF, but fully present in the cast data.
+    """
+    print(f"\x1b[2m@@NODE:{node_id}@@\x1b[0m", flush=True)
+
+
 class Screen:
     """Terminal screen manipulation utilities."""
 
