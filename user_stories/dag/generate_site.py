@@ -44,20 +44,25 @@ SECTION_TO_GIF_DIR: Dict[str, Optional[str]] = {
 }
 
 # Header patterns to search for in .cast files, mapped to DAG layer names.
+# These must be specific enough to avoid false-positive substring matches.
 LAYER_HEADER_PATTERNS: Dict[str, List[str]] = {
-    "config": ["Setting up demo environment", "Step 1:"],
-    "categories": ["categories", "Step 2: Define"],
-    "receipt_img": ["Input: Receipt Image", "Receipt Image"],
-    "receipt_lbl": ["Input: Receipt Label", "Receipt Label"],
-    "csv_txn": ["Input: Bank CSV", "Bank CSV"],
-    "matching_cfg": ["Matching Parameters", "matching"],
+    "config": ["Step 1: Set up your bank", "Setting up demo environment"],
+    "categories": ["Step 2: Define your spending categories", "Categories saved"],
+    "receipt_img": ["Input: Receipt Image"],
+    "receipt_lbl": ["Input: Receipt Label"],
+    "csv_txn": ["Input: Bank CSV"],
+    "matching_cfg": ["Matching Parameters"],
     "matching_out": [
         "Running: hledger_preprocessor",
-        "Running:",
         "Preprocessing Assets",
+        "Running: --link-receipts",
     ],
     "journal_out": ["Result:", "Pipeline Complete", "Diff:"],
-    "visualization": ["Visualiz", "SVG", "sankey", "treemap"],
+    "visualization": [
+        "Bonus: Visualize",
+        "Generating Financial Plots",
+        "Visualization demo",
+    ],
 }
 
 DEFAULT_THEME = "dracula"
@@ -425,6 +430,7 @@ a:hover { text-decoration: underline; }
 
 /* DAG node highlighting */
 .dag-node { cursor: pointer; transition: opacity 0.2s; }
+.dag-node.unreachable { cursor: default; opacity: 0.25; pointer-events: none; }
 .dag-node.active polygon,
 .dag-node.active ellipse,
 .dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }
@@ -464,9 +470,15 @@ a:hover { text-decoration: underline; }
   align-items: center; margin-bottom: 1rem;
 }
 .dag-path .path-node {
-  font-size: 0.75rem; padding: 0.2rem 0.5rem;
+  font-size: 0.75rem; padding: 0.3rem 0.5rem;
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: 4px; cursor: pointer; transition: all 0.15s;
+  display: flex; flex-direction: column; text-align: center;
+}
+.dag-path .path-node .path-layer-name {
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text-muted); display: block; margin-bottom: 0.1rem;
+  font-weight: 600;
 }
 .dag-path .path-node:hover { border-color: var(--accent); }
 .dag-path .path-node.active {
@@ -617,6 +629,16 @@ def generate_js() -> str:
     });
   });
 
+  // Gray out unreachable nodes (not on this story's path)
+  if (typeof NODE_PATH !== 'undefined') {
+    nodes.forEach(function(n) {
+      var nid = n.getAttribute('data-node');
+      if (!NODE_PATH.includes(nid)) {
+        n.classList.add('unreachable');
+      }
+    });
+  }
+
   // Initialize with first layer
   highlightLayer(layers[0]);
 })();
@@ -764,11 +786,14 @@ def generate_story_html(
         for i, nid in enumerate(node_path):
             info = node_index.get(nid, {})
             layer = info.get("layer", "")
-            label = info.get("label", nid).split("\n")[0]
+            layer_label = info.get("layer_label", layer.replace("_", " ").title())
+            node_label = info.get("label", nid).split("\n")[0]
             has_ts = layer in timestamps
             cls = "path-node" + (" clickable" if has_ts else "")
             main += f'<span class="{cls}" data-layer="{layer}" data-node="{nid}"'
-            main += f' title="{_esc(info.get("desc", ""))}">{_esc(label)}</span>\n'
+            main += f' title="{_esc(info.get("desc", ""))}">'
+            main += f'<span class="path-layer-name">{_esc(layer_label)}</span>'
+            main += f'{_esc(node_label)}</span>\n'
             if i < len(node_path) - 1:
                 main += '<span class="path-arrow">→</span>\n'
         main += "</div>\n"
@@ -976,13 +1001,21 @@ def main() -> None:
         video_filename = vid.name if vid else None
         is_gif = video_filename.endswith(".gif") if video_filename else False
 
-        # Timestamps
-        timestamps = get_timestamps_for_section(
-            section=section, cast_map=cast_map
-        )
-
         # Node path (first path)
         node_path = story.get("paths", [[]])[0] if story.get("paths") else []
+
+        # Timestamps — filter to only layers on this story's path
+        all_timestamps = get_timestamps_for_section(
+            section=section, cast_map=cast_map
+        )
+        path_layers = set()
+        for nid in node_path:
+            info = node_index.get(nid)
+            if info:
+                path_layers.add(info["layer"])
+        timestamps = {
+            k: v for k, v in all_timestamps.items() if k in path_layers
+        }
 
         # SVG
         safe = story_id_to_safe(story_id=story["id"])
