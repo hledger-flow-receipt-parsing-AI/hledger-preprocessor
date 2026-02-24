@@ -145,7 +145,9 @@ def ask_questions(
 
 
 @typechecked
-def export_human_label(*, receipt: "Receipt", label_filepath: str, verbose: bool = True) -> None:
+def export_human_label(
+    *, receipt: "Receipt", label_filepath: str, verbose: bool = True
+) -> None:
     """
     Stores the manually generated Receipt object to a JSON file.
 

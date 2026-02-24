@@ -12,15 +12,13 @@ This uses real code from the hledger-preprocessor codebase.
 
 import hashlib
 import json
-import os
 import shutil
 import sys
 import tempfile
 import textwrap
 import time
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import yaml
 
@@ -142,7 +140,9 @@ def create_test_environment() -> Dict[str, Any]:
     }
 
     config_path = root / "config.yaml"
-    config_path.write_text(yaml.safe_dump(config_dict, default_flow_style=False))
+    config_path.write_text(
+        yaml.safe_dump(config_dict, default_flow_style=False)
+    )
 
     # Create categories.yaml
     categories = {"groceries": {"ekoplaza": {}}}
@@ -152,18 +152,21 @@ def create_test_environment() -> Dict[str, Any]:
     # NOTE: Amounts use European format (comma as decimal separator) per parse_generic_tnx_with_csv.py
     # NOTE: For matching to work, both receipt and CSV amounts must have the same sign (positive for outgoing payments)
     csv_content = (
-        '15-01-2025,NL123,"42,17",debit,Ekoplaza,NL456,IC,groceries payment,"1000,00"\n'
-        '14-01-2025,NL234,"15,50",debit,AH,NL789,IC,groceries ah,"1042,17"\n'
+        '15-01-2025,NL123,"42,17",debit,Ekoplaza,NL456,IC,groceries'
+        ' payment,"1000,00"\n14-01-2025,NL234,"15,50",debit,AH,NL789,IC,groceries'
+        ' ah,"1042,17"\n'
     )
     csv_path = root / "triodos_2025.csv"
     csv_path.write_text(csv_content)
 
     # Create start journal
-    journal_content = textwrap.dedent("""\
+    journal_content = textwrap.dedent(
+        """\
         2024/01/01 Opening Balances
             Assets:Checking:Triodos          EUR 1000.00
             Equity:Opening Balances
-    """)
+    """
+    )
     (root / "start_pos" / "2024.journal").write_text(journal_content)
 
     # Create receipt images
@@ -287,7 +290,10 @@ def show_inputs(env: Dict[str, Any]) -> None:
     print_subheader("Input: Receipt Label - net_bought_items (from Step 2b)")
     label_path = env["label_path"]
 
-    print(f"{Colors.BOLD_WHITE}$ jq '.net_bought_items' {label_path}{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_WHITE}$ jq '.net_bought_items'"
+        f" {label_path}{Colors.RESET}"
+    )
     print()
     time.sleep(0.3)
 
@@ -326,9 +332,11 @@ def run_matching_demo(env: Dict[str, Any]) -> bool:
     """Run the actual --link-receipts-to-transactions CLI command using pexpect."""
     import pexpect
 
-    from .tui_navigator import Keys, TuiNavigator
+    from .tui_navigator import TuiNavigator
 
-    print_subheader("Running: hledger_preprocessor --link-receipts-to-transactions")
+    print_subheader(
+        "Running: hledger_preprocessor --link-receipts-to-transactions"
+    )
 
     config_path = env["config_path"]
     root = env["root"]
@@ -340,7 +348,8 @@ def run_matching_demo(env: Dict[str, Any]) -> bool:
     )
 
     display_cmd = (
-        f"hledger_preprocessor --config config.yaml --link-receipts-to-transactions"
+        f"hledger_preprocessor --config config.yaml"
+        f" --link-receipts-to-transactions"
     )
     print(f"{Colors.BOLD_WHITE}$ {display_cmd}{Colors.RESET}")
     print()
@@ -367,7 +376,12 @@ def run_matching_demo(env: Dict[str, Any]) -> bool:
             try:
                 # Wait for any of: ignore_keys prompt, EXPORTING prompt, or EOF
                 index = nav.child.expect(
-                    ["ignore_keys=", "EXPORTING to:", pexpect.EOF, pexpect.TIMEOUT],
+                    [
+                        "ignore_keys=",
+                        "EXPORTING to:",
+                        pexpect.EOF,
+                        pexpect.TIMEOUT,
+                    ],
                     timeout=30,
                 )
                 if index == 0:
@@ -401,6 +415,7 @@ def run_matching_demo(env: Dict[str, Any]) -> bool:
     except Exception as e:
         print(f"{Colors.RED}Error: {e}{Colors.RESET}")
         import traceback
+
         traceback.print_exc()
         return False
     finally:
@@ -417,13 +432,19 @@ def show_result(env: Dict[str, Any]) -> None:
 
     # Verify file exists
     if not label_path.exists():
-        print(f"{Colors.RED}Error: Label file not found at {label_path}{Colors.RESET}")
+        print(
+            f"{Colors.RED}Error: Label file not found at"
+            f" {label_path}{Colors.RESET}"
+        )
         return
 
     print_subheader("Result: Receipt net_bought_items After Linking")
 
     # Show jq of the updated receipt net_bought_items
-    print(f"{Colors.BOLD_WHITE}$ jq '.net_bought_items' {label_path}{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_WHITE}$ jq '.net_bought_items'"
+        f" {label_path}{Colors.RESET}"
+    )
     print()
     time.sleep(0.3)
 
@@ -470,7 +491,10 @@ def show_result(env: Dict[str, Any]) -> None:
             ).stdout
         )
 
-        print(f"{Colors.BOLD_WHITE}$ diff before_net_bought_items.json after_net_bought_items.json{Colors.RESET}")
+        print(
+            f"{Colors.BOLD_WHITE}$ diff before_net_bought_items.json"
+            f" after_net_bought_items.json{Colors.RESET}"
+        )
         print()
         time.sleep(0.3)
 
@@ -482,10 +506,10 @@ def show_result(env: Dict[str, Any]) -> None:
         # diff returns 1 if files differ, which is expected
         if result.stdout:
             # Color the diff output
-            for line in result.stdout.split('\n'):
-                if line.startswith('<'):
+            for line in result.stdout.split("\n"):
+                if line.startswith("<"):
                     print(f"{Colors.RED}{line}{Colors.RESET}")
-                elif line.startswith('>'):
+                elif line.startswith(">"):
                     print(f"{Colors.GREEN}{line}{Colors.RESET}")
                 else:
                     print(line)
@@ -495,7 +519,10 @@ def show_result(env: Dict[str, Any]) -> None:
         time.sleep(3)
 
     print()
-    print(f"{Colors.BOLD_GREEN}✓ Receipt successfully linked to CSV transaction!{Colors.RESET}")
+    print(
+        f"{Colors.BOLD_GREEN}✓ Receipt successfully linked to CSV"
+        f" transaction!{Colors.RESET}"
+    )
     print()
     time.sleep(2)
 
@@ -513,8 +540,14 @@ def run_link_receipts_demo() -> None:
 
     print_header("Step 3: Match Receipt to Bank Transaction")
 
-    print(f"{Colors.WHITE}After labelling receipts (Step 2b), link them to bank CSV transactions.{Colors.RESET}")
-    print(f"{Colors.WHITE}This prevents duplicate entries when importing to hledger.{Colors.RESET}")
+    print(
+        f"{Colors.WHITE}After labelling receipts (Step 2b), link them to bank"
+        f" CSV transactions.{Colors.RESET}"
+    )
+    print(
+        f"{Colors.WHITE}This prevents duplicate entries when importing to"
+        f" hledger.{Colors.RESET}"
+    )
     print()
     time.sleep(2)
 
@@ -539,9 +572,15 @@ def run_link_receipts_demo() -> None:
 
         print()
         if success:
-            print(f"{Colors.BOLD_GREEN}✓ Matching completed successfully!{Colors.RESET}")
+            print(
+                f"{Colors.BOLD_GREEN}✓ Matching completed"
+                f" successfully!{Colors.RESET}"
+            )
         else:
-            print(f"{Colors.BOLD_YELLOW}⚠ Check output above for details{Colors.RESET}")
+            print(
+                f"{Colors.BOLD_YELLOW}⚠ Check output above for"
+                f" details{Colors.RESET}"
+            )
         print()
         time.sleep(1)
 
@@ -549,7 +588,10 @@ def run_link_receipts_demo() -> None:
         show_result(env)
 
         # Next step
-        print(f"{Colors.BOLD_CYAN}Next step:{Colors.RESET} Run ./start.sh to import transactions to hledger")
+        print(
+            f"{Colors.BOLD_CYAN}Next step:{Colors.RESET} Run ./start.sh to"
+            " import transactions to hledger"
+        )
         print()
         time.sleep(2)
 

@@ -1,6 +1,5 @@
 @startuml
 actor User
-
 participant "Bash Script" as Bash
 participant "process_bank_config" as ProcessBank
 participant "hledger_preprocessor" as Preprocessor
