@@ -22,7 +22,7 @@ from typing import Any, Dict
 
 import yaml
 
-from .core import Colors, Screen
+from .core import Colors, Screen, emit_node_marker
 
 
 def print_header(title: str) -> None:
@@ -273,6 +273,7 @@ def show_inputs(env: Dict[str, Any]) -> None:
     import cv2
 
     # 0. Show the receipt image (like in crop workflow)
+    emit_node_marker("img_ekoplaza_card")
     print_subheader("Input: Receipt Image")
     img_path = env["img_path"]
     print(f"{Colors.BOLD_WHITE}Displaying: {img_path.name}{Colors.RESET}")
@@ -287,6 +288,7 @@ def show_inputs(env: Dict[str, Any]) -> None:
     time.sleep(0.5)
 
     # 1. Show the net_bought_items from the receipt JSON (using jq)
+    emit_node_marker("lbl_ekoplaza_card_eur")
     print_subheader("Input: Receipt Label - net_bought_items (from Step 2b)")
     label_path = env["label_path"]
 
@@ -309,6 +311,7 @@ def show_inputs(env: Dict[str, Any]) -> None:
     time.sleep(2)
 
     # 2. Show the CSV file (cat command)
+    emit_node_marker("csv_ekoplaza_4217_jan15")
     print_subheader("Input: Bank CSV Transactions")
     csv_path = env["csv_path"]
 
@@ -334,6 +337,7 @@ def run_matching_demo(env: Dict[str, Any]) -> bool:
 
     from .tui_navigator import TuiNavigator
 
+    emit_node_marker("out_auto_1hit")
     print_subheader(
         "Running: hledger_preprocessor --link-receipts-to-transactions"
     )
@@ -438,6 +442,7 @@ def show_result(env: Dict[str, Any]) -> None:
         )
         return
 
+    emit_node_marker("jrnl_groceries_ekoplaza")
     print_subheader("Result: Receipt net_bought_items After Linking")
 
     # Show jq of the updated receipt net_bought_items
@@ -553,6 +558,10 @@ def run_link_receipts_demo() -> None:
 
     env = None
     try:
+        emit_node_marker("cfg_1b1w")
+        emit_node_marker("cat_basic")
+        emit_node_marker("match_default")
+        emit_node_marker("start_2024_1000eur")
         print(f"{Colors.GRAY}Setting up demo environment...{Colors.RESET}")
         env = create_test_environment()
         print(f"{Colors.GRAY}Done.{Colors.RESET}")
