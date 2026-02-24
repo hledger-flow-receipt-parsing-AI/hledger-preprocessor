@@ -7,7 +7,7 @@ import time
 
 import yaml
 
-from .core import Colors, Screen, get_conda_base
+from .core import Colors, Screen, emit_node_marker, get_conda_base
 
 
 def print_header(title: str) -> None:
@@ -129,6 +129,7 @@ def show_dashboard_command(config_path: str, journal_path: str) -> None:
 
 def show_sankey_diagram() -> None:
     """Show ASCII representation of Sankey diagram."""
+    emit_node_marker("viz_sankey")
     print_subheader("Sankey Diagram: Money Flow")
 
     print(
@@ -183,6 +184,7 @@ def show_sankey_diagram() -> None:
 
 def show_treemap_diagram() -> None:
     """Show ASCII representation of Treemap."""
+    emit_node_marker("viz_treemap")
     print_subheader("Treemap: Spending Breakdown")
 
     print(
@@ -366,6 +368,11 @@ def run_show_plots_demo(config_path: str) -> None:
     """Run the show plots demo."""
     Screen.clear()
 
+    emit_node_marker("cfg_1b1w")
+    emit_node_marker("cat_basic")
+    emit_node_marker("match_default")
+    emit_node_marker("start_2024_1000eur")
+    emit_node_marker("jrnl_groceries_ekoplaza")
     print_header("Bonus: Visualize Your Finances")
 
     # Parse config to find paths
