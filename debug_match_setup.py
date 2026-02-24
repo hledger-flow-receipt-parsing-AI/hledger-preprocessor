@@ -15,7 +15,6 @@ The script will print the command to run manually.
 
 import hashlib
 import json
-import sys
 import tempfile
 import textwrap
 from pathlib import Path
@@ -136,7 +135,9 @@ def create_test_environment() -> dict:
     }
 
     config_path = root / "config.yaml"
-    config_path.write_text(yaml.safe_dump(config_dict, default_flow_style=False))
+    config_path.write_text(
+        yaml.safe_dump(config_dict, default_flow_style=False)
+    )
 
     # Create categories.yaml
     categories = {"groceries": {"ekoplaza": {}}}
@@ -145,18 +146,21 @@ def create_test_environment() -> dict:
     # Create bank CSV with the Ekoplaza transaction (15-01-2025, 42.17 EUR)
     # NOTE: Amounts use European format (comma as decimal separator)
     csv_content = (
-        '15-01-2025,NL123,"42,17",debit,Ekoplaza,NL456,IC,groceries payment,"1000,00"\n'
-        '14-01-2025,NL234,"15,50",debit,AH,NL789,IC,groceries ah,"1042,17"\n'
+        '15-01-2025,NL123,"42,17",debit,Ekoplaza,NL456,IC,groceries'
+        ' payment,"1000,00"\n14-01-2025,NL234,"15,50",debit,AH,NL789,IC,groceries'
+        ' ah,"1042,17"\n'
     )
     csv_path = root / "triodos_2025.csv"
     csv_path.write_text(csv_content)
 
     # Create start journal
-    journal_content = textwrap.dedent("""\
+    journal_content = textwrap.dedent(
+        """\
         2024/01/01 Opening Balances
             Assets:Checking:Triodos          EUR 1000.00
             Equity:Opening Balances
-    """)
+    """
+    )
     (root / "start_pos" / "2024.journal").write_text(journal_content)
 
     # Create receipt images
@@ -297,10 +301,19 @@ def main():
     print()
     label_data = json.loads(label_path.read_text())
     print(f"  Date:             {label_data['the_date']}")
-    print(f"  Amount:           {label_data['net_bought_items']['account_transactions'][0]['tendered_amount_out']} EUR")
-    print(f"  Account:          {label_data['net_bought_items']['account_transactions'][0]['account']}")
+    print(
+        "  Amount:          "
+        f" {label_data['net_bought_items']['account_transactions'][0]['tendered_amount_out']} EUR"
+    )
+    print(
+        "  Account:         "
+        f" {label_data['net_bought_items']['account_transactions'][0]['account']}"
+    )
     print(f"  Category:         {label_data['receipt_category']}")
-    print(f"  Transaction hash: {label_data['transaction_hash']} (should be None before matching)")
+    print(
+        f"  Transaction hash: {label_data['transaction_hash']} (should be None"
+        " before matching)"
+    )
     print()
 
     print("=" * 70)
@@ -310,16 +323,26 @@ def main():
     print("  To run the link command manually:")
     print()
     print(f"    cd {root}")
-    print(f"    python -m hledger_preprocessor --config {config_path} --link-receipts-to-transactions")
+    print(
+        "    python -m hledger_preprocessor --config"
+        f" {config_path} --link-receipts-to-transactions"
+    )
     print()
     print("  Or as a single command:")
     print()
-    cmd = f"cd {root} && python -m hledger_preprocessor --config {config_path} --link-receipts-to-transactions"
+    cmd = (
+        f"cd {root} && python -m hledger_preprocessor --config"
+        f" {config_path} --link-receipts-to-transactions"
+    )
     print(f"    {cmd}")
     print()
     print("  To suppress TensorFlow/CUDA warnings (for GIF recording):")
     print()
-    cmd_filtered = f"cd {root} && python -m hledger_preprocessor --config {config_path} --link-receipts-to-transactions 2>&1 | grep -v -E 'cuda_|cuDNN|cuBLAS|cuFFT|absl::|E0000|WARNING.*absl|frozen runpy'"
+    cmd_filtered = (
+        f"cd {root} && python -m hledger_preprocessor --config"
+        f" {config_path} --link-receipts-to-transactions 2>&1 | grep -v -E"
+        " 'cuda_|cuDNN|cuBLAS|cuFFT|absl::|E0000|WARNING.*absl|frozen runpy'"
+    )
     print(f"    {cmd_filtered}")
     print()
 
@@ -339,10 +362,15 @@ def main():
     print("  AFTER RUNNING - CHECK RESULT")
     print("-" * 70)
     print()
-    print(f"  jq '.net_bought_items.account_transactions[0].original_transaction' \\")
+    print(
+        f"  jq"
+        f" '.net_bought_items.account_transactions[0].original_transaction' \\"
+    )
     print(f"    {label_path}")
     print()
-    print("  If original_transaction is no longer null, the receipt was linked.")
+    print(
+        "  If original_transaction is no longer null, the receipt was linked."
+    )
     print()
 
     print("=" * 70)

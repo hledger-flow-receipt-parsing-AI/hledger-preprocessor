@@ -106,10 +106,10 @@ def filter_transactions_by_amount(
     )
 
     amount_range: float = action_dataset.config.matching_algo.amount_range
-    currency = action_dataset.search_receipt_account_transaction.account.base_currency.value
-    print(
-        f"\nSearching for: {currency} {target_amount:.2f}"
+    currency = (
+        action_dataset.search_receipt_account_transaction.account.base_currency.value
     )
+    print(f"\nSearching for: {currency} {target_amount:.2f}")
     for transaction in yearly_transactions:
         net_out = transaction.tendered_amount_out - transaction.change_returned
         if is_amount_within_margin(
@@ -117,7 +117,10 @@ def filter_transactions_by_amount(
             receipt_amount=target_amount,
             margin=amount_range,
         ):
-            print(f"  ✓ Match: {transaction.the_date.strftime('%Y-%m-%d')}  {currency} {net_out:.2f}")
+            print(
+                f"  ✓ Match: {transaction.the_date.strftime('%Y-%m-%d')} "
+                f" {currency} {net_out:.2f}"
+            )
             filtered_transactions.append(transaction)
     return filtered_transactions
 

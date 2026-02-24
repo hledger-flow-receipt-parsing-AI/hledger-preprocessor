@@ -10,9 +10,9 @@ cross-cutting concerns. Stories marked *[NOT YET IMPLEMENTED]* describe
 functionality that does not yet exist in the codebase.
 
 *This file is auto-generated from `user_stories/dag/userstory_dag_data.yaml`.*
-*Edit the YAML, then run `python user_stories/dag/generate_userstories_md.py`.*
+*Edit the YAML, then run `python user_stories/dag/generate_userstory_artifacts.py -a`.*
 
----
+______________________________________________________________________
 
 ## Step 1a: Account Configuration
 
@@ -27,7 +27,7 @@ functionality that does not yet exist in the codebase.
 - `config.yaml` contains an entry under `accounts:` with `account_holder`, `bank`, `account_type`, `input_csv_filename`, and `csv_column_mapping`.
 - Running `hledger_preprocessor --config config.yaml --new-setup` successfully parses the CSV and creates the hledger-flow import directory structure (`import/{account_holder}/{bank}/{account_type}/{year}/`).
 
----
+______________________________________________________________________
 
 ### US-1a.2 — Configure multiple bank accounts
 
@@ -41,7 +41,7 @@ functionality that does not yet exist in the codebase.
 - Each account produces its own import subdirectory.
 - All accounts are included in the final `all-years.journal`.
 
----
+______________________________________________________________________
 
 ### US-1a.3 — Configure a cash wallet (no CSV)
 
@@ -57,7 +57,7 @@ functionality that does not yet exist in the codebase.
 - Multiple wallets of the same type can be configured (e.g. a portemonnaie, a piggy bank, and a sock above the fireplace), each as a separate account entry in `config.yaml`.
 - During receipt labelling (Step 2b), the TUI presents all wallet accounts so the user can pick which physical wallet the cash came from.
 
----
+______________________________________________________________________
 
 ### US-1a.4 — Configure a cryptocurrency exchange account
 
@@ -71,7 +71,7 @@ functionality that does not yet exist in the codebase.
 - Transactions are recorded in the correct commodity (e.g. BTC, ETH, XMR).
 - The journal balance report can show crypto holdings converted to a base currency (e.g. EUR) using exchange rates.
 
----
+______________________________________________________________________
 
 ### US-1a.5 — Configure matching algorithm parameters
 
@@ -87,7 +87,7 @@ functionality that does not yet exist in the codebase.
 - `matching_algo.multiple_receipts_per_transaction` controls whether one CSV transaction can be linked to multiple receipts.
 - Per-account overrides: each account entry in `config.yaml` can optionally specify its own `matching_algo` section that overrides the global defaults (e.g. a bank that posts 3 days late gets `days: 4` while the default is 2). *[NOT YET IMPLEMENTED]*
 
----
+______________________________________________________________________
 
 ### US-1a.6 — Configure base currency for reporting
 
@@ -100,7 +100,7 @@ functionality that does not yet exist in the codebase.
 - Each account has a `base_currency` field (e.g. `EUR`, `USD`, `POUND`).
 - The matching algorithm uses the base currency when comparing receipt amounts to CSV amounts.
 
----
+______________________________________________________________________
 
 ## Step 1b: Category Configuration
 
@@ -116,7 +116,7 @@ functionality that does not yet exist in the codebase.
 - Category names are used as hledger account path segments.
 - The TUI receipt labeller shows these categories as suggestions.
 
----
+______________________________________________________________________
 
 ### US-1b.2 — Add a new category after initial setup
 
@@ -129,7 +129,7 @@ functionality that does not yet exist in the codebase.
 - Adding a new leaf or branch to `categories.yaml` does not invalidate previously labelled receipts or classified transactions.
 - The new category appears in the TUI labeller and the rule-based classifier.
 
----
+______________________________________________________________________
 
 ### US-1b.3 — Use categories for income as well as expenses
 
@@ -142,7 +142,7 @@ functionality that does not yet exist in the codebase.
 - The rule-based classifier distinguishes debit (expense) from credit (income) transactions and applies the correct category tree.
 - The journal contains both `Expenses:*` and `Income:*` postings.
 
----
+______________________________________________________________________
 
 ## Step 2a: Receipt Image Processing
 
@@ -159,7 +159,7 @@ functionality that does not yet exist in the codebase.
 - Pressing `Enter` saves the rotated image and a metadata JSON with the rotation angle.
 - Pressing `q` skips the image without saving.
 
----
+______________________________________________________________________
 
 ### US-2a.2 — Crop a receipt image
 
@@ -177,7 +177,7 @@ functionality that does not yet exist in the codebase.
 - Crop coordinates are stored as normalised [0-1] values.
 - The arrow key step size (default 10%) should be configurable in `config.yaml`. *[NOT YET IMPLEMENTED]*
 
----
+______________________________________________________________________
 
 ### US-2a.3 — Process a batch of receipt images
 
@@ -191,7 +191,7 @@ functionality that does not yet exist in the codebase.
 - The user can go back to the previous image to re-do it.
 - Already-processed images are skipped (metadata file exists).
 
----
+______________________________________________________________________
 
 ## Step 2b: Receipt Labelling
 
@@ -210,7 +210,7 @@ functionality that does not yet exist in the codebase.
 - Given a receipt label JSON, the system can locate the corresponding receipt photograph (via `raw_img_filepath`).
 - Given a receipt photograph, the system can locate any existing receipt label JSON that references it.
 
----
+______________________________________________________________________
 
 ### US-2b.2 — Label a cash receipt
 
@@ -224,7 +224,7 @@ functionality that does not yet exist in the codebase.
 - The receipt JSON references the wallet account.
 - During matching (Step 3), receipts on wallet accounts are skipped (no CSV to match against).
 
----
+______________________________________________________________________
 
 ### US-2b.3 — Label a foreign-currency receipt
 
@@ -238,7 +238,7 @@ functionality that does not yet exist in the codebase.
 - The receipt JSON has `currency: POUND` in the account transaction.
 - The account's `base_currency` (EUR) differs from the receipt currency (GBP), which triggers the alternate currency matching flow.
 
----
+______________________________________________________________________
 
 ### US-2b.4 — Label a split-payment receipt (card + cash)
 
@@ -254,7 +254,7 @@ functionality that does not yet exist in the codebase.
 - During matching, only the card portion is matched to the bank CSV; the wallet portion is recorded directly.
 - The system can list/identify all receipts that used combined payments (i.e. receipts with 2+ account transactions), so the user can review split payments. *[NOT YET IMPLEMENTED]*
 
----
+______________________________________________________________________
 
 ### US-2b.5 — Label a receipt with returned items
 
@@ -268,7 +268,7 @@ functionality that does not yet exist in the codebase.
 - The receipt JSON contains separate `net_bought_items` and `net_returned_items` ExchangedItem entries.
 - The net exchange amount used for matching is the difference between bought and returned.
 
----
+______________________________________________________________________
 
 ### US-2b.6 — Use AI suggestions during manual labelling
 
@@ -283,7 +283,7 @@ functionality that does not yet exist in the codebase.
 - Pressing `Ctrl+U` applies the top history suggestion (from previously entered values).
 - Tab auto-completes if there is exactly one matching suggestion.
 
----
+______________________________________________________________________
 
 ### US-2b.7 — Edit an existing receipt label
 
@@ -297,7 +297,7 @@ functionality that does not yet exist in the codebase.
 - Only changed fields are updated in the saved JSON.
 - The old receipt label is replaced (not duplicated).
 
----
+______________________________________________________________________
 
 ### US-2b.8 — Fully automated AI receipt labelling *[NOT YET IMPLEMENTED]*
 
@@ -311,7 +311,7 @@ functionality that does not yet exist in the codebase.
 - The AI output is converted into a `Receipt` object.
 - A confidence threshold determines whether the result is auto-saved or flagged for human review.
 
----
+______________________________________________________________________
 
 ## Step 3: Receipt-to-CSV Transaction Matching
 
@@ -329,7 +329,7 @@ functionality that does not yet exist in the codebase.
 - The CSV transaction is updated with the receipt reference.
 - No TUI is shown (auto-link path: `len(matches) == 1`).
 
----
+______________________________________________________________________
 
 ### US-3.2 — Match a foreign-currency withdrawal receipt to a bank CSV in a different currency
 
@@ -347,7 +347,7 @@ functionality that does not yet exist in the codebase.
 - The original CSV transaction (117.50 EUR from Triodos).
 - A foreign-currency asset transaction (100 GBP).
 
----
+______________________________________________________________________
 
 ### US-3.3 — Match when no candidates are found (widen date range)
 
@@ -362,7 +362,7 @@ functionality that does not yet exist in the codebase.
 - The matcher re-searches with the wider window.
 - The transaction is found and linked.
 
----
+______________________________________________________________________
 
 ### US-3.4 — Match when no candidates are found (widen amount range)
 
@@ -377,22 +377,22 @@ functionality that does not yet exist in the codebase.
 - The matcher re-searches with amount +/- 0.02.
 - The rounding-affected transaction is found and linked.
 
----
+______________________________________________________________________
 
 ### US-3.5 — Match when DD-MM and MM-DD date formats are swapped
 
-**As a** user whose receipt has date 05-01-2025 but I accidentally entered it as January 5th instead of May 1st (or vice versa, because the day and month are both <= 12),
+**As a** user whose receipt has date 05-01-2025 but I accidentally entered it as January 5th instead of May 1st (or vice versa, because the day and month are both \<= 12),
 **I want to** matching algorithm to automatically try swapping day and month when no match is found on the original date,
 **so that** a common date format mistake does not prevent matching.
 
 **Acceptance criteria:**
 
 - The config option `matching_algo.days_month_swap: true` is set.
-- If no match is found on the original date and day <= 12, the matcher retries with day and month swapped.
+- If no match is found on the original date and day \<= 12, the matcher retries with day and month swapped.
 - Alternatively, the matching TUI presents option "6. Swap day and month" for manual activation.
 - The swap can only be applied as the first modification (before any other adjustments).
 
----
+______________________________________________________________________
 
 ### US-3.6 — Disambiguate when multiple matches are found (2-14 candidates)
 
@@ -407,7 +407,7 @@ functionality that does not yet exist in the codebase.
 - The user selects one by number.
 - The selected transaction is linked; the others remain unlinked.
 
----
+______________________________________________________________________
 
 ### US-3.7 — Reduce search scope when too many matches are found (15+)
 
@@ -421,7 +421,7 @@ functionality that does not yet exist in the codebase.
 - After adjustment, the matcher re-searches with tighter parameters.
 - The resulting candidate count is manageable (< 15).
 
----
+______________________________________________________________________
 
 ### US-3.8 — Correct a receipt label during matching
 
@@ -435,7 +435,7 @@ functionality that does not yet exist in the codebase.
 - After saving corrections, the matcher retries with the updated receipt data.
 - The corrected receipt JSON is persisted.
 
----
+______________________________________________________________________
 
 ### US-3.9 — Match a receipt for a direct asset purchase (e.g. gold)
 
@@ -449,7 +449,7 @@ functionality that does not yet exist in the codebase.
 - The matching algorithm supports `DirectAssetPurchases` as a "from_currency" for the alternate currency conversion.
 - The journal contains a posting pair: debit `Assets:Gold` / credit `Assets:Bank:Triodos:Checking`.
 
----
+______________________________________________________________________
 
 ### US-3.10 — Skip matching for cash-only receipts
 
@@ -462,7 +462,7 @@ functionality that does not yet exist in the codebase.
 - Receipts where all `account_transactions` reference accounts without `input_csv_filename` are skipped during matching.
 - These receipts are still included in the journal as wallet expenses.
 
----
+______________________________________________________________________
 
 ### US-3.11 — Handle a receipt with withdrawal fees *[NOT YET IMPLEMENTED]*
 
@@ -476,7 +476,7 @@ functionality that does not yet exist in the codebase.
 - The matcher searches for the receipt amount * conversion rate + fee.
 - The journal posting splits the CSV debit into: the converted amount (to `Assets:Wallet:GBP`) and the fee (to `Expenses:BankFees`).
 
----
+______________________________________________________________________
 
 ### US-3.12 — Handle multiple transactions on the same account in one receipt *[WONTFIX]*
 
@@ -493,7 +493,7 @@ functionality that does not yet exist in the codebase.
 - The system raises a clear error if a receipt has two `AccountTransaction` entries referencing the same account, guiding the user to split the receipt into two labels.
 - Currently raises `NotImplementedError("Did not yet support multiple transactions on single account for a receipt.")`.
 
----
+______________________________________________________________________
 
 ### US-3.13 — Handle a foreign-currency receipt with returned items *[NOT YET IMPLEMENTED]*
 
@@ -507,7 +507,7 @@ functionality that does not yet exist in the codebase.
 - The matcher computes the net GBP amount, converts to EUR, and searches the CSV.
 - Currently raises `NotImplementedError("Do not yet know how to handle the scenario of multiple transacted items per receipt for foreign currency withdrawl receipts.")`.
 
----
+______________________________________________________________________
 
 ### US-3.14 — Prevent linking the same CSV transaction to two receipts
 
@@ -522,7 +522,7 @@ functionality that does not yet exist in the codebase.
 - The user is informed which receipt already claims this transaction.
 - This covers both the case of genuinely different receipts and the case of duplicate photos of the same receipt being labelled separately.
 
----
+______________________________________________________________________
 
 ### US-3.15 — Verify transaction data is up to date *[NOT YET IMPLEMENTED]*
 
@@ -535,7 +535,7 @@ functionality that does not yet exist in the codebase.
 - The TUI shows the date of the most recent transaction in the CSV for the relevant account.
 - Currently raises `NotImplementedError("Did not implement this yet.")`.
 
----
+______________________________________________________________________
 
 ## Step 4: Pipeline Execution
 
@@ -552,7 +552,7 @@ functionality that does not yet exist in the codebase.
 - The starting position journal (`start_journal_filepath`) is included.
 - Plot SVGs are generated in the output directory.
 
----
+______________________________________________________________________
 
 ### US-4.2 — Run the pipeline with randomised/scrambled data for demos
 
@@ -566,7 +566,7 @@ functionality that does not yet exist in the codebase.
 - The Sankey and Treemap plots use scrambled data.
 - The scrambled output is deterministic for the same seed (reproducible demos).
 
----
+______________________________________________________________________
 
 ### US-4.3 — Generate hledger rules files for a bank
 
@@ -580,7 +580,7 @@ functionality that does not yet exist in the codebase.
 - The rules file maps CSV columns to hledger fields (date, amount, description).
 - The rules file includes categorisation logic (if rule-based classification is enabled).
 
----
+______________________________________________________________________
 
 ### US-4.4 — Optional incremental pipeline runs *[NOT YET IMPLEMENTED]*
 
@@ -597,7 +597,7 @@ functionality that does not yet exist in the codebase.
 - The journal output is identical whether run incrementally or from scratch.
 - If a hash mismatch is detected (file changed), the pipeline re-processes that file and warns the user.
 
----
+______________________________________________________________________
 
 ### US-4.5 — Include opening balances from a starting journal
 
@@ -610,7 +610,7 @@ functionality that does not yet exist in the codebase.
 - The starting journal is appended as an `include` directive in `all-years.journal`.
 - `hledger bal` shows the correct total balances including the opening position.
 
----
+______________________________________________________________________
 
 ## Step 5: Visualisation
 
@@ -627,7 +627,7 @@ functionality that does not yet exist in the codebase.
 - Flow widths are proportional to amounts.
 - The diagram is interactive (Plotly: hover shows amounts, links are clickable).
 
----
+______________________________________________________________________
 
 ### US-5.2 — Generate a Treemap of spending by category
 
@@ -642,7 +642,7 @@ functionality that does not yet exist in the codebase.
 - Rectangle size = amount; colour = category group.
 - Hover shows exact amount and percentage.
 
----
+______________________________________________________________________
 
 ### US-5.3 — Launch an interactive Dash dashboard
 
@@ -656,7 +656,7 @@ functionality that does not yet exist in the codebase.
 - The dashboard shows both Sankey and Treemap plots.
 - The `SKIP_DASH=true` environment variable disables the dashboard (for headless/test environments).
 
----
+______________________________________________________________________
 
 ### US-5.4 — Filter visualisations by time period *[NOT YET IMPLEMENTED]*
 
@@ -670,7 +670,7 @@ functionality that does not yet exist in the codebase.
 - Only transactions within the date range are included in the plots.
 - The dashboard title shows the filtered date range.
 
----
+______________________________________________________________________
 
 ### US-5.5 — Generate monthly/quarterly/yearly reports *[NOT YET IMPLEMENTED]*
 
@@ -684,7 +684,7 @@ functionality that does not yet exist in the codebase.
 - Time periods: monthly (last 6 months), quarterly (last year), yearly (last 5 years).
 - Reports show expenses as a percentage of income.
 
----
+______________________________________________________________________
 
 ### US-5.6 — Calculate personal inflation rate *[NOT YET IMPLEMENTED]*
 
@@ -698,7 +698,7 @@ functionality that does not yet exist in the codebase.
 - Output shows percentage change per category per year.
 - Categories with insufficient data are excluded.
 
----
+______________________________________________________________________
 
 ### US-5.7 — Show a correlation matrix of combined-account payments *[NOT YET IMPLEMENTED]*
 
@@ -714,7 +714,7 @@ functionality that does not yet exist in the codebase.
 - A fractional matrix variant shows the percentage of total spending per account (e.g. "for receipts involving both Triodos and Wallet, 65% came from Triodos and 35% from Wallet").
 - Diagonal cells show the total spent from each account across all receipts (including single-account payments).
 
----
+______________________________________________________________________
 
 ## Transaction Classification
 
@@ -731,7 +731,7 @@ functionality that does not yet exist in the codebase.
 - Multiple rules can match (first match wins or most specific match wins).
 - Uncategorised transactions prompt the user for manual classification.
 
----
+______________________________________________________________________
 
 ### US-C.2 — Classify transactions using a self-hosted AI *[NOT YET IMPLEMENTED]*
 
@@ -746,7 +746,7 @@ functionality that does not yet exist in the codebase.
 - The user can accept or override AI suggestions.
 - Multiple AI models can be configured and compared.
 
----
+______________________________________________________________________
 
 ### US-C.3 — Train a classification model on my own categorised data *[NOT YET IMPLEMENTED]*
 
@@ -761,7 +761,7 @@ functionality that does not yet exist in the codebase.
 - The model can be retrained as more data accumulates.
 - Performance metrics (accuracy, precision, recall per category) are reported.
 
----
+______________________________________________________________________
 
 ### US-C.4 — Classify receipt images by category using AI *[NOT YET IMPLEMENTED]*
 
@@ -775,7 +775,7 @@ functionality that does not yet exist in the codebase.
 - The prediction is shown as an AI suggestion in the labelling TUI.
 - The model runs locally (self-hosted).
 
----
+______________________________________________________________________
 
 ## Cross-cutting Concerns
 
@@ -791,7 +791,7 @@ functionality that does not yet exist in the codebase.
 - AI models are downloaded once and cached locally.
 - The tool works fully offline after initial model download.
 
----
+______________________________________________________________________
 
 ### US-X.2 — Reproducible pipeline output
 
@@ -805,7 +805,7 @@ functionality that does not yet exist in the codebase.
 - Transaction hashes are deterministic.
 - Journal file content is identical across runs with the same input.
 
----
+______________________________________________________________________
 
 ### US-X.3 — Multi-bank, multi-currency support
 
@@ -819,7 +819,7 @@ functionality that does not yet exist in the codebase.
 - The journal contains postings in EUR, USD, and BTC.
 - `hledger bal -X EUR` converts all holdings to EUR using exchange rates.
 
----
+______________________________________________________________________
 
 ### US-X.4 — Unique transaction hashes prevent duplicates
 
@@ -833,7 +833,7 @@ functionality that does not yet exist in the codebase.
 - Importing the same CSV twice does not create duplicate journal entries.
 - Duplicate detection works across both CSV transactions and receipt-linked transactions.
 
----
+______________________________________________________________________
 
 ### US-X.5 — GIF demos are auto-generated from integration tests
 
@@ -848,7 +848,7 @@ functionality that does not yet exist in the codebase.
 - GIFs are generated via asciinema recordings converted with agg/gifsicle.
 - Themed variants (dracula, monokai, etc.) are generated from the same recording.
 
----
+______________________________________________________________________
 
 ### US-X.6 — Enforce one receipt image per transaction
 
@@ -863,4 +863,4 @@ functionality that does not yet exist in the codebase.
 - If a user has multiple photos of the same receipt (e.g. front and back), they should crop/combine them into a single image before labelling, or label only the most complete photo.
 - For the edge case where a single purchase produces two card swipes (see US-3.12 WONTFIX), the user duplicates the photo and creates two separate receipt labels.
 
----
+______________________________________________________________________

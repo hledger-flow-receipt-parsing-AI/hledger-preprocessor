@@ -32,4 +32,3 @@ It uses:
 - Green rectangle for crop boundaries
 - Red crosshair for active corner indicator
 - Arrow keys (10% steps), Alt (switch corners), Enter (save)
-
