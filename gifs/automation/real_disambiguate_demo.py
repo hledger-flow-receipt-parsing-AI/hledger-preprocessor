@@ -19,7 +19,7 @@ from typing import Any, Dict
 
 import yaml
 
-from .core import Colors, Screen
+from .core import Colors, Screen, emit_node_marker
 
 
 def print_header(title: str) -> None:
@@ -269,6 +269,8 @@ def show_inputs(*, env: Dict[str, Any]) -> None:
     import subprocess
 
     # Show receipt label
+    emit_node_marker("img_ekoplaza_card")
+    emit_node_marker("lbl_ekoplaza_card_eur")
     print_subheader("Input: Receipt Label — Ekoplaza Centrum (from Step 2b)")
     label_path = env["label_path"]
     print(
@@ -293,6 +295,7 @@ def show_inputs(*, env: Dict[str, Any]) -> None:
     time.sleep(1.5)
 
     # Show CSV file — 3 similar transactions
+    emit_node_marker("csv_ekoplaza_4217_jan15")
     print_subheader("Input: Bank CSV — 3 Similar Ekoplaza Transactions")
     csv_path = env["csv_path"]
     print(f"{Colors.BOLD_WHITE}$ cat {csv_path}{Colors.RESET}")
@@ -338,6 +341,7 @@ def run_matching_demo(*, env: Dict[str, Any]) -> bool:
 
     from .tui_navigator import TuiNavigator
 
+    emit_node_marker("out_disambiguate_3")
     print_subheader(
         "Running: hledger_preprocessor --link-receipts-to-transactions"
     )
@@ -426,6 +430,7 @@ def show_result(*, env: Dict[str, Any]) -> None:
         )
         return
 
+    emit_node_marker("jrnl_groceries_ekoplaza")
     print_subheader("Result: Receipt After Disambiguation")
     print(
         f"{Colors.BOLD_WHITE}$ jq '.net_bought_items'"
@@ -478,6 +483,10 @@ def run_disambiguate_demo() -> None:
 
     env = None
     try:
+        emit_node_marker("cfg_1b1w")
+        emit_node_marker("cat_basic")
+        emit_node_marker("match_wide_date")
+        emit_node_marker("start_2024_1000eur")
         print(f"{Colors.GRAY}Setting up demo environment...{Colors.RESET}")
         env = create_test_environment()
         print(f"{Colors.GRAY}Done.{Colors.RESET}")

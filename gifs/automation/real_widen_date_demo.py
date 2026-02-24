@@ -19,7 +19,7 @@ from typing import Any, Dict
 
 import yaml
 
-from .core import Colors, Screen
+from .core import Colors, Screen, emit_node_marker
 
 
 def print_header(title: str) -> None:
@@ -266,6 +266,8 @@ def show_inputs(*, env: Dict[str, Any]) -> None:
     import subprocess
 
     # Show receipt label — date Jan 15
+    emit_node_marker("img_delayed_shop")
+    emit_node_marker("lbl_delayed_shop")
     print_subheader("Input: Receipt Label — MediaMarkt Jan 15 (from Step 2b)")
     label_path = env["label_path"]
     print(
@@ -290,6 +292,7 @@ def show_inputs(*, env: Dict[str, Any]) -> None:
     time.sleep(1.5)
 
     # Show CSV file — date Jan 18
+    emit_node_marker("csv_delayed_jan18")
     print_subheader("Input: Bank CSV Transaction (posted Jan 18)")
     csv_path = env["csv_path"]
     print(f"{Colors.BOLD_WHITE}$ cat {csv_path}{Colors.RESET}")
@@ -327,6 +330,7 @@ def run_matching_demo(*, env: Dict[str, Any]) -> bool:
 
     from .tui_navigator import TuiNavigator
 
+    emit_node_marker("out_widen_date")
     print_subheader(
         "Running: hledger_preprocessor --link-receipts-to-transactions"
     )
@@ -415,6 +419,7 @@ def show_result(*, env: Dict[str, Any]) -> None:
         )
         return
 
+    emit_node_marker("jrnl_delayed_shop")
     print_subheader("Result: Receipt After Date-Widened Matching")
     print(
         f"{Colors.BOLD_WHITE}$ jq '.net_bought_items'"
@@ -467,6 +472,10 @@ def run_widen_date_demo() -> None:
 
     env = None
     try:
+        emit_node_marker("cfg_1b1w")
+        emit_node_marker("cat_basic")
+        emit_node_marker("match_narrow")
+        emit_node_marker("start_2024_1000eur")
         print(f"{Colors.GRAY}Setting up demo environment...{Colors.RESET}")
         env = create_test_environment()
         print(f"{Colors.GRAY}Done.{Colors.RESET}")

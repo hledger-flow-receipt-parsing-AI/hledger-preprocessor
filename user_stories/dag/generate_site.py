@@ -44,20 +44,25 @@ SECTION_TO_GIF_DIR: Dict[str, Optional[str]] = {
 }
 
 # Header patterns to search for in .cast files, mapped to DAG layer names.
+# These must be specific enough to avoid false-positive substring matches.
 LAYER_HEADER_PATTERNS: Dict[str, List[str]] = {
-    "config": ["Setting up demo environment", "Step 1:"],
-    "categories": ["categories", "Step 2: Define"],
-    "receipt_img": ["Input: Receipt Image", "Receipt Image"],
-    "receipt_lbl": ["Input: Receipt Label", "Receipt Label"],
-    "csv_txn": ["Input: Bank CSV", "Bank CSV"],
-    "matching_cfg": ["Matching Parameters", "matching"],
+    "config": ["Step 1: Set up your bank", "Setting up demo environment"],
+    "categories": ["Step 2: Define your spending categories", "Categories saved"],
+    "receipt_img": ["Input: Receipt Image"],
+    "receipt_lbl": ["Input: Receipt Label"],
+    "csv_txn": ["Input: Bank CSV"],
+    "matching_cfg": ["Matching Parameters"],
     "matching_out": [
         "Running: hledger_preprocessor",
-        "Running:",
         "Preprocessing Assets",
+        "Running: --link-receipts",
     ],
     "journal_out": ["Result:", "Pipeline Complete", "Diff:"],
-    "visualization": ["Visualiz", "SVG", "sankey", "treemap"],
+    "visualization": [
+        "Bonus: Visualize",
+        "Generating Financial Plots",
+        "Visualization demo",
+    ],
 }
 
 DEFAULT_THEME = "dracula"
@@ -156,10 +161,37 @@ def discover_cast_files(*, gifs_root: Path) -> Dict[str, Path]:
     return result
 
 
+NODE_MARKER_RE = re.compile(r"@@NODE:(\w+)@@")
+
+
+def parse_cast_node_markers(*, cast_path: Path) -> Dict[str, float]:
+    """Parse @@NODE:node_id@@ markers from a .cast file.
+
+    Returns {node_id: first_timestamp_seconds} for each unique node marker.
+    """
+    markers: Dict[str, float] = {}
+    try:
+        with open(cast_path) as f:
+            f.readline()  # skip header
+            for line in f:
+                row = json.loads(line)
+                ts, _evt, data = row[0], row[1], row[2]
+                for m in NODE_MARKER_RE.finditer(data):
+                    nid = m.group(1)
+                    if nid not in markers:
+                        markers[nid] = round(ts, 2)
+    except (json.JSONDecodeError, OSError):
+        pass
+    return markers
+
+
 def parse_cast_timestamps(
     *, cast_path: Path, layer_patterns: Dict[str, List[str]]
 ) -> Dict[str, float]:
-    """Parse a .cast file and extract {layer_name: timestamp_seconds}."""
+    """Parse a .cast file and extract {layer_name: timestamp_seconds}.
+
+    Fallback for cast files that lack @@NODE:xxx@@ markers.
+    """
     timestamps: Dict[str, float] = {}
     try:
         with open(cast_path) as f:
@@ -192,12 +224,24 @@ def get_video_for_section(
     return None
 
 
+def get_node_markers_for_section(
+    *,
+    section: str,
+    cast_map: Dict[str, Path],
+) -> Dict[str, float]:
+    """Get per-node timestamps from @@NODE:xxx@@ markers in a cast file."""
+    gif_dir = SECTION_TO_GIF_DIR.get(section)
+    if gif_dir and gif_dir in cast_map:
+        return parse_cast_node_markers(cast_path=cast_map[gif_dir])
+    return {}
+
+
 def get_timestamps_for_section(
     *,
     section: str,
     cast_map: Dict[str, Path],
 ) -> Dict[str, float]:
-    """Get timestamps for a story section from its cast file."""
+    """Get layer-level timestamps for a story section (fallback)."""
     gif_dir = SECTION_TO_GIF_DIR.get(section)
     if gif_dir and gif_dir in cast_map:
         return parse_cast_timestamps(
@@ -425,6 +469,7 @@ a:hover { text-decoration: underline; }
 
 /* DAG node highlighting */
 .dag-node { cursor: pointer; transition: opacity 0.2s; }
+.dag-node.unreachable { cursor: default; opacity: 0.25; pointer-events: none; }
 .dag-node.active polygon,
 .dag-node.active ellipse,
 .dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }
@@ -464,9 +509,15 @@ a:hover { text-decoration: underline; }
   align-items: center; margin-bottom: 1rem;
 }
 .dag-path .path-node {
-  font-size: 0.75rem; padding: 0.2rem 0.5rem;
+  font-size: 0.75rem; padding: 0.3rem 0.5rem;
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: 4px; cursor: pointer; transition: all 0.15s;
+  display: flex; flex-direction: column; text-align: center;
+}
+.dag-path .path-node .path-layer-name {
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text-muted); display: block; margin-bottom: 0.1rem;
+  font-weight: 600;
 }
 .dag-path .path-node:hover { border-color: var(--accent); }
 .dag-path .path-node.active {
@@ -502,91 +553,99 @@ a:hover { text-decoration: underline; }
 
 
 def generate_js() -> str:
-    """Generate the video-DAG synchronization JavaScript module."""
+    """Generate the video-DAG synchronization JavaScript module.
+
+    TIMESTAMPS is keyed by node_id (e.g. {"cfg_1b1w": 0.05, ...}).
+    NODE_PATH lists the ordered node IDs for this story's DAG path.
+    """
     return """\
 (function() {
   'use strict';
-  const video = document.getElementById('demo-video');
-  const svgContainer = document.querySelector('.dag-section');
+  var video = document.getElementById('demo-video');
+  var svgContainer = document.querySelector('.dag-section');
   if (!video || !svgContainer || typeof TIMESTAMPS === 'undefined') return;
 
-  const layers = Object.keys(TIMESTAMPS)
-    .filter(k => TIMESTAMPS[k] !== null)
-    .sort((a, b) => TIMESTAMPS[a] - TIMESTAMPS[b]);
-  if (layers.length === 0) return;
+  // Build ordered list of timestamped node IDs (sorted by time)
+  var tsKeys = Object.keys(TIMESTAMPS)
+    .filter(function(k) { return TIMESTAMPS[k] !== null; })
+    .sort(function(a, b) { return TIMESTAMPS[a] - TIMESTAMPS[b]; });
+  if (tsKeys.length === 0) return;
 
-  let currentIdx = 0;
-  const nodes = svgContainer.querySelectorAll('.dag-node');
-  const clusters = svgContainer.querySelectorAll('.dag-cluster');
-  const pathNodes = document.querySelectorAll('.path-node');
-  const layerIndicator = document.getElementById('layer-indicator-name');
+  var currentIdx = 0;
+  var allNodes = svgContainer.querySelectorAll('.dag-node');
+  var clusters = svgContainer.querySelectorAll('.dag-cluster');
+  var pathChips = document.querySelectorAll('.path-node');
+  var layerIndicator = document.getElementById('layer-indicator-name');
 
-  function highlightLayer(layerName) {
-    nodes.forEach(n => n.classList.remove('active'));
-    clusters.forEach(c => c.classList.remove('active-cluster'));
-    pathNodes.forEach(n => n.classList.remove('active'));
+  // Build a lookup: node_id -> layer name (from SVG data attributes)
+  var nodeToLayer = {};
+  allNodes.forEach(function(n) {
+    var nid = n.getAttribute('data-node');
+    var lay = n.getAttribute('data-layer');
+    if (nid && lay) nodeToLayer[nid] = lay;
+  });
 
-    // Highlight nodes in this layer that are on the story path
-    if (typeof NODE_PATH !== 'undefined') {
-      nodes.forEach(n => {
-        const nid = n.getAttribute('data-node');
-        const nLayer = n.getAttribute('data-layer');
-        if (nLayer === layerName && NODE_PATH.includes(nid)) {
-          n.classList.add('active');
-        }
-      });
-    } else {
-      svgContainer.querySelectorAll('[data-layer="' + layerName + '"]').forEach(n => {
-        if (n.classList.contains('dag-node')) n.classList.add('active');
-      });
-    }
+  function highlightNode(nodeId) {
+    allNodes.forEach(function(n) { n.classList.remove('active'); });
+    clusters.forEach(function(c) { c.classList.remove('active-cluster'); });
+    pathChips.forEach(function(n) { n.classList.remove('active'); });
 
-    // Highlight cluster
-    clusters.forEach(c => {
-      if (c.getAttribute('data-layer') === layerName) {
-        c.classList.add('active-cluster');
+    // Highlight the specific node in the SVG
+    var targetLayer = nodeToLayer[nodeId] || '';
+    allNodes.forEach(function(n) {
+      if (n.getAttribute('data-node') === nodeId) {
+        n.classList.add('active');
       }
     });
 
-    // Highlight path node chip
-    pathNodes.forEach(n => {
-      if (n.getAttribute('data-layer') === layerName) {
-        n.classList.add('active');
+    // Highlight the cluster for this node's layer
+    if (targetLayer) {
+      clusters.forEach(function(c) {
+        if (c.getAttribute('data-layer') === targetLayer) {
+          c.classList.add('active-cluster');
+        }
+      });
+    }
+
+    // Highlight the matching path chip
+    pathChips.forEach(function(chip) {
+      if (chip.getAttribute('data-node') === nodeId) {
+        chip.classList.add('active');
       }
     });
 
     // Update indicator
     if (layerIndicator) {
-      layerIndicator.textContent = layerName.replace(/_/g, ' ');
+      layerIndicator.textContent = targetLayer.replace(/_/g, ' ') || nodeId;
     }
 
     // Update currentIdx
-    const idx = layers.indexOf(layerName);
+    var idx = tsKeys.indexOf(nodeId);
     if (idx >= 0) currentIdx = idx;
   }
 
-  // Sync: video time -> DAG highlight
+  // Sync: video time -> node highlight
   video.addEventListener('timeupdate', function() {
-    const t = video.currentTime;
-    let active = layers[0];
-    for (const layer of layers) {
-      if (TIMESTAMPS[layer] <= t) active = layer;
+    var t = video.currentTime;
+    var active = tsKeys[0];
+    for (var i = 0; i < tsKeys.length; i++) {
+      if (TIMESTAMPS[tsKeys[i]] <= t) active = tsKeys[i];
     }
-    highlightLayer(active);
+    highlightNode(active);
   });
 
-  // Keyboard: Up/Down jump between layers
+  // Keyboard: Up/Down jump between timestamped nodes
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === 'ArrowDown' || e.key === 'j') {
       e.preventDefault();
-      currentIdx = Math.min(currentIdx + 1, layers.length - 1);
-      video.currentTime = TIMESTAMPS[layers[currentIdx]];
+      currentIdx = Math.min(currentIdx + 1, tsKeys.length - 1);
+      video.currentTime = TIMESTAMPS[tsKeys[currentIdx]];
       video.play();
     } else if (e.key === 'ArrowUp' || e.key === 'k') {
       e.preventDefault();
       currentIdx = Math.max(currentIdx - 1, 0);
-      video.currentTime = TIMESTAMPS[layers[currentIdx]];
+      video.currentTime = TIMESTAMPS[tsKeys[currentIdx]];
       video.play();
     } else if (e.key === ' ' && e.target === document.body) {
       e.preventDefault();
@@ -596,29 +655,39 @@ def generate_js() -> str:
   });
 
   // Click DAG node -> jump video
-  nodes.forEach(function(node) {
+  allNodes.forEach(function(node) {
     node.addEventListener('click', function() {
-      const layer = node.getAttribute('data-layer');
-      if (layer && TIMESTAMPS[layer] !== undefined) {
-        video.currentTime = TIMESTAMPS[layer];
+      var nid = node.getAttribute('data-node');
+      if (nid && TIMESTAMPS[nid] !== undefined) {
+        video.currentTime = TIMESTAMPS[nid];
         video.play();
       }
     });
   });
 
-  // Click path node chip -> jump video
-  pathNodes.forEach(function(chip) {
+  // Click path chip -> jump video
+  pathChips.forEach(function(chip) {
     chip.addEventListener('click', function() {
-      const layer = chip.getAttribute('data-layer');
-      if (layer && TIMESTAMPS[layer] !== undefined) {
-        video.currentTime = TIMESTAMPS[layer];
+      var nid = chip.getAttribute('data-node');
+      if (nid && TIMESTAMPS[nid] !== undefined) {
+        video.currentTime = TIMESTAMPS[nid];
         video.play();
       }
     });
   });
 
-  // Initialize with first layer
-  highlightLayer(layers[0]);
+  // Gray out unreachable nodes (not on this story's path)
+  if (typeof NODE_PATH !== 'undefined') {
+    allNodes.forEach(function(n) {
+      var nid = n.getAttribute('data-node');
+      if (!NODE_PATH.includes(nid)) {
+        n.classList.add('unreachable');
+      }
+    });
+  }
+
+  // Initialize with first timestamped node
+  highlightNode(tsKeys[0]);
 })();
 """
 
@@ -764,11 +833,14 @@ def generate_story_html(
         for i, nid in enumerate(node_path):
             info = node_index.get(nid, {})
             layer = info.get("layer", "")
-            label = info.get("label", nid).split("\n")[0]
-            has_ts = layer in timestamps
+            layer_label = info.get("layer_label", layer.replace("_", " ").title())
+            node_label = info.get("label", nid).split("\n")[0]
+            has_ts = nid in timestamps
             cls = "path-node" + (" clickable" if has_ts else "")
             main += f'<span class="{cls}" data-layer="{layer}" data-node="{nid}"'
-            main += f' title="{_esc(info.get("desc", ""))}">{_esc(label)}</span>\n'
+            main += f' title="{_esc(info.get("desc", ""))}">'
+            main += f'<span class="path-layer-name">{_esc(layer_label)}</span>'
+            main += f'{_esc(node_label)}</span>\n'
             if i < len(node_path) - 1:
                 main += '<span class="path-arrow">→</span>\n'
         main += "</div>\n"
@@ -976,13 +1048,30 @@ def main() -> None:
         video_filename = vid.name if vid else None
         is_gif = video_filename.endswith(".gif") if video_filename else False
 
-        # Timestamps
-        timestamps = get_timestamps_for_section(
-            section=section, cast_map=cast_map
-        )
-
         # Node path (first path)
         node_path = story.get("paths", [[]])[0] if story.get("paths") else []
+        path_set = set(node_path)
+
+        # Timestamps — prefer per-node markers, fall back to layer patterns
+        node_markers = get_node_markers_for_section(
+            section=section, cast_map=cast_map
+        )
+        # Filter to nodes on this story's path
+        timestamps = {
+            nid: ts for nid, ts in node_markers.items() if nid in path_set
+        }
+
+        if not timestamps:
+            # Fallback: layer-based timestamps → map to first path node
+            layer_ts = get_timestamps_for_section(
+                section=section, cast_map=cast_map
+            )
+            for nid in node_path:
+                info = node_index.get(nid)
+                if info and info["layer"] in layer_ts:
+                    layer = info["layer"]
+                    if layer in layer_ts:
+                        timestamps[nid] = layer_ts.pop(layer)
 
         # SVG
         safe = story_id_to_safe(story_id=story["id"])
