@@ -1,7 +1,6 @@
 """Contains the project versioning."""
 
 import os
-import sys
 import warnings
 
 # Suppress TensorFlow/CUDA/absl/transformers warnings early
