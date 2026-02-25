@@ -29,26 +29,61 @@ layers:
         label: "1 bank + 1 wallet"
         desc: "Triodos checking (EUR CSV) + EUR cash wallet (no CSV)"
         used_by: [test, demo]
+        components:
+          - {id: bank_csv, label: "Bank account with CSV input"}
+          - {id: eur_wallet, label: "EUR physical wallet"}
+          - {id: dir_paths, label: "Dir paths"}
+          - {id: file_names, label: "Filenames"}
+          - {id: categorisation, label: "Categorisation"}
+          - {id: matching_algo, label: "Matching algo"}
 
       - id: cfg_1b5a
         label: "1 bank + 5 assets"
         desc: "Triodos checking + EUR/GBP/BTC/GOLD/SILVER wallets"
         used_by: [test]
+        components:
+          - {id: bank_csv, label: "Bank account with CSV input"}
+          - {id: eur_wallet, label: "EUR physical wallet"}
+          - {id: dir_paths, label: "Dir paths"}
+          - {id: file_names, label: "Filenames"}
+          - {id: categorisation, label: "Categorisation"}
+          - {id: matching_algo, label: "Matching algo"}
 
       - id: cfg_multi_bank
         label: "2 banks + 1 wallet"
         desc: "Triodos (EUR) + ING (EUR) + EUR cash wallet"
         used_by: [test]
+        components:
+          - {id: bank_csv, label: "Bank account with CSV input"}
+          - {id: eur_wallet, label: "EUR physical wallet"}
+          - {id: dir_paths, label: "Dir paths"}
+          - {id: file_names, label: "Filenames"}
+          - {id: categorisation, label: "Categorisation"}
+          - {id: matching_algo, label: "Matching algo"}
 
       - id: cfg_crypto
         label: "1 bank + crypto"
         desc: "Triodos (EUR) + Kraken exchange (BTC/ETH)"
         used_by: [test]
+        components:
+          - {id: bank_csv, label: "Bank account with CSV input"}
+          - {id: eur_wallet, label: "EUR physical wallet"}
+          - {id: dir_paths, label: "Dir paths"}
+          - {id: file_names, label: "Filenames"}
+          - {id: categorisation, label: "Categorisation"}
+          - {id: matching_algo, label: "Matching algo"}
 
       - id: cfg_per_bank_match
         label: "per-bank matching"
         desc: "Triodos (days:4) + ING (days:2) override global default"
         used_by: [test]
+        components:
+          - {id: bank_csv, label: "Bank account with CSV input"}
+          - {id: eur_wallet, label: "EUR physical wallet"}
+          - {id: dir_paths, label: "Dir paths"}
+          - {id: file_names, label: "Filenames"}
+          - {id: categorisation, label: "Categorisation"}
+          - {id: matching_algo, label: "Matching algo"}
 
   - name: categories
     label: "Categories"
@@ -57,16 +92,31 @@ layers:
         label: "basic categories"
         desc: "groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}"
         used_by: [test, demo]
+        components:
+          - {id: groceries, label: "Groceries"}
+          - {id: withdrawl, label: "Withdrawal"}
 
       - id: cat_with_income
         label: "categories + income"
         desc: "basic + income:{salary,freelance}"
         used_by: [test]
+        components:
+          - {id: groceries, label: "Groceries"}
+          - {id: withdrawl, label: "Withdrawal"}
+          - {id: salary, label: "Income: Salary"}
+          - {id: freelance, label: "Income: Freelance"}
 
       - id: cat_extended
         label: "extended categories"
         desc: "basic + dining, transport, bankfees, investments:{gold,silver}"
         used_by: [test]
+        components:
+          - {id: groceries, label: "Groceries"}
+          - {id: transport, label: "Transport"}
+          - {id: dining, label: "Dining"}
+          - {id: utilities, label: "Utilities"}
+          - {id: gold, label: "Investments: Gold"}
+          - {id: silver, label: "Investments: Silver"}
 
   - name: matching_cfg
     label: "Matching Parameters"
@@ -75,26 +125,51 @@ layers:
         label: "default (±2d, exact)"
         desc: "days:2, amount_range:0, days_month_swap:true"
         used_by: [test, demo]
+        components:
+          - {id: days, label: "Date tolerance (days)"}
+          - {id: amount_range, label: "Amount tolerance"}
+          - {id: days_month_swap, label: "DD/MM swap"}
+          - {id: multi_receipts, label: "Multiple receipts per txn"}
 
       - id: match_wide_date
         label: "wide date (±5d)"
         desc: "days:5, amount_range:0"
         used_by: [test]
+        components:
+          - {id: days, label: "Date tolerance (days)"}
+          - {id: amount_range, label: "Amount tolerance"}
+          - {id: days_month_swap, label: "DD/MM swap"}
+          - {id: multi_receipts, label: "Multiple receipts per txn"}
 
       - id: match_wide_amount
         label: "wide amount (±0.02)"
         desc: "days:2, amount_range:0.02"
         used_by: [test]
+        components:
+          - {id: days, label: "Date tolerance (days)"}
+          - {id: amount_range, label: "Amount tolerance"}
+          - {id: days_month_swap, label: "DD/MM swap"}
+          - {id: multi_receipts, label: "Multiple receipts per txn"}
 
       - id: match_wide_both
         label: "wide both (±5d, ±0.05)"
         desc: "days:5, amount_range:0.05 — triggers 15+ matches"
         used_by: [test]
+        components:
+          - {id: days, label: "Date tolerance (days)"}
+          - {id: amount_range, label: "Amount tolerance"}
+          - {id: days_month_swap, label: "DD/MM swap"}
+          - {id: multi_receipts, label: "Multiple receipts per txn"}
 
       - id: match_narrow
         label: "narrow (±1d, exact)"
         desc: "days:1, amount_range:0 — initially too tight"
         used_by: [test]
+        components:
+          - {id: days, label: "Date tolerance (days)"}
+          - {id: amount_range, label: "Amount tolerance"}
+          - {id: days_month_swap, label: "DD/MM swap"}
+          - {id: multi_receipts, label: "Multiple receipts per txn"}
 
   - name: start_journal
     label: "Starting Journal"
@@ -103,11 +178,18 @@ layers:
         label: "2024: 1000 EUR"
         desc: "Opening balance: Assets:Triodos:Checking 1000 EUR"
         used_by: [test, demo]
+        components:
+          - {id: opening_balance, label: "Opening balance"}
+          - {id: base_currency, label: "Base currency (EUR)"}
 
       - id: start_2024_multi
         label: "2024: multi-currency"
         desc: "1000 EUR + 500 USD + 0.05 BTC"
         used_by: [test]
+        components:
+          - {id: opening_eur, label: "Opening balance EUR"}
+          - {id: opening_usd, label: "Opening balance USD"}
+          - {id: opening_btc, label: "Opening balance BTC"}
 
   - name: csv_txn
     label: "Bank CSV Transactions"
@@ -254,71 +336,91 @@ layers:
         label: "ekoplaza_card\nEUR 42.17 card"
         desc: "Triodos account, 2025-01-15, groceries:ekoplaza"
         used_by: [test, demo]
+        components: &lbl_components
+          - {id: date_time, label: "Receipt date & time"}
+          - {id: category, label: "Expense category"}
+          - {id: bank_account, label: "Bank / wallet"}
+          - {id: currency, label: "Currency"}
+          - {id: amount, label: "Amount paid"}
+          - {id: shop, label: "Shop address"}
 
       - id: lbl_ekoplaza_cash_eur
         label: "ekoplaza_cash\nEUR 28.95 cash"
         desc: "EUR wallet, 2025-05-20, groceries:ekoplaza, 50 tendered 21.05 change"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_london_lunch_gbp
         label: "london_lunch\nGBP 12.50 card"
         desc: "Triodos account, receipt in GBP, account in EUR"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_atm_100gbp
         label: "atm_100gbp\nGBP 100 withdrawal"
         desc: "Triodos account, GBP withdrawal receipt"
         used_by: [test, demo]
+        components: *lbl_components
 
       - id: lbl_atm_200gbp_fee
         label: "atm_200gbp\nGBP 200 + fee"
         desc: "Triodos account, GBP withdrawal with bank fee"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_gold_10g
         label: "gold_10g\n10 GRAMS"
         desc: "Triodos account, DirectAssetPurchases.GOLD"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_bike_cash
         label: "bike_repair\nEUR 14.50 cash"
         desc: "EUR wallet, repairs:bike"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_coffee_cash
         label: "coffee_cash\nEUR 3.50 cash"
         desc: "EUR wallet, dining:coffee"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_dinner_split
         label: "dinner_split\n30 card + 20 cash"
         desc: "Triodos 30 EUR + wallet 20 EUR"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_return_item
         label: "return_item\nbought 3, returned 1"
         desc: "Net EUR 28.50 (bought 42.50 - returned 14.00)"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_delayed_shop
         label: "delayed_shop\nEUR 49.99 card"
         desc: "Triodos account, receipt dated Jan 15"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_rounded_shop
         label: "rounded_shop\nEUR 49.99 card"
         desc: "Triodos account, bank will show 50.00"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_swapped_date
         label: "bookshop\nEUR 25.00 card"
         desc: "Triodos account, date entered as 01-05-2025"
         used_by: [test]
+        components: *lbl_components
 
       - id: lbl_salary_credit
         label: "salary_credit\nEUR 3000 income"
         desc: "Income:Salary, no receipt image"
         used_by: [test]
+        components: *lbl_components
 
   - name: matching_out
     label: "Matching Outcome"
@@ -488,11 +590,17 @@ layers:
         label: "Sankey Diagram"
         desc: "Interactive Plotly Sankey of all flows"
         used_by: [test, demo]
+        components:
+          - {id: money_flow, label: "Money flow diagram"}
+          - {id: svg_export, label: "SVG export"}
 
       - id: viz_treemap
         label: "Treemap Plot"
         desc: "Interactive Plotly Treemap of spending"
         used_by: [test, demo]
+        components:
+          - {id: expense_breakdown, label: "Expense breakdown"}
+          - {id: dash_dashboard, label: "Interactive dashboard"}
 
 # -----------------------------------------------------------------------------
 # Edges — directed connections between layers (shared by all stories)
@@ -551,6 +659,12 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
     demo_paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+    component_filter:
+      cfg_1b1w: [bank_csv, dir_paths, file_names, categorisation, matching_algo]
+      cat_basic: [groceries]
+      match_default: [days, amount_range, days_month_swap]
+      start_2024_1000eur: [opening_balance, base_currency]
+      lbl_ekoplaza_card_eur: [date_time, category, bank_account, currency, amount, shop]
 
   - id: US-1a.2
     title: "Configure multiple bank accounts"
@@ -577,6 +691,12 @@ stories:
     paths:
       - [cfg_multi_bank, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
       - [cfg_multi_bank, cat_basic, match_default, start_2024_1000eur, csv_ing_rent_800, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_csv_only_classify, jrnl_rent_ing]
+    component_filter:
+      cfg_multi_bank: [bank_csv, dir_paths, file_names, categorisation, matching_algo]
+      cat_basic: [groceries]
+      match_default: [days, amount_range, days_month_swap]
+      start_2024_1000eur: [opening_balance, base_currency]
+      lbl_ekoplaza_card_eur: [date_time, category, bank_account, currency, amount, shop]
 
   - id: US-1a.3
     title: "Configure a cash wallet (no CSV)"
@@ -611,6 +731,12 @@ stories:
     data_use: test
     paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
+    component_filter:
+      cfg_1b1w: [eur_wallet, dir_paths, file_names, categorisation]
+      cat_basic: [groceries]
+      match_default: [days, amount_range]
+      start_2024_1000eur: [opening_balance, base_currency]
+      lbl_coffee_cash: [date_time, category, bank_account, currency, amount, shop]
 
   - id: US-1a.4
     title: "Configure a cryptocurrency exchange account"
@@ -1126,6 +1252,12 @@ stories:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
     demo_paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+    component_filter:
+      cfg_1b1w: [bank_csv, dir_paths, file_names, categorisation, matching_algo]
+      cat_basic: [groceries]
+      match_default: [days, amount_range, days_month_swap]
+      start_2024_1000eur: [opening_balance, base_currency]
+      lbl_ekoplaza_card_eur: [date_time, category, bank_account, currency, amount, shop]
 
   - id: US-3.2
     title: "Match a foreign-currency withdrawal receipt to a bank CSV in a different currency"

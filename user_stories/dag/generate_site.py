@@ -20,9 +20,15 @@ import subprocess
 import tempfile
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import yaml
+
+from story_components import (
+    build_node_index,
+    get_filtered_components,
+    get_marker_sequence,
+)
 
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
@@ -41,28 +47,6 @@ SECTION_TO_GIF_DIR: Dict[str, Optional[str]] = {
     "Step 5: Visualisation": "5_show_plots",
     "Transaction Classification": None,
     "Cross-cutting Concerns": None,
-}
-
-# Header patterns to search for in .cast files, mapped to DAG layer names.
-# These must be specific enough to avoid false-positive substring matches.
-LAYER_HEADER_PATTERNS: Dict[str, List[str]] = {
-    "config": ["Step 1: Set up your bank", "Setting up demo environment"],
-    "categories": ["Step 2: Define your spending categories", "Categories saved"],
-    "receipt_img": ["Input: Receipt Image"],
-    "receipt_lbl": ["Input: Receipt Label"],
-    "csv_txn": ["Input: Bank CSV"],
-    "matching_cfg": ["Matching Parameters"],
-    "matching_out": [
-        "Running: hledger_preprocessor",
-        "Preprocessing Assets",
-        "Running: --link-receipts",
-    ],
-    "journal_out": ["Result:", "Pipeline Complete", "Diff:"],
-    "visualization": [
-        "Bonus: Visualize",
-        "Generating Financial Plots",
-        "Visualization demo",
-    ],
 }
 
 DEFAULT_THEME = "dracula"
@@ -96,20 +80,6 @@ def group_stories_by_section(
         sec = s.get("section", "Other")
         groups.setdefault(sec, []).append(s)
     return groups
-
-
-def build_node_index(*, data: Dict) -> Dict[str, Dict]:
-    """Build {node_id: {layer, label, desc}} from layers."""
-    idx: Dict[str, Dict] = {}
-    for layer in data.get("layers", []):
-        for node in layer.get("nodes", []):
-            idx[node["id"]] = {
-                "layer": layer["name"],
-                "layer_label": layer["label"],
-                "label": node["label"],
-                "desc": node.get("desc", ""),
-            }
-    return idx
 
 
 # ---------------------------------------------------------------------------
@@ -162,6 +132,8 @@ def discover_cast_files(*, gifs_root: Path) -> Dict[str, Path]:
 
 
 NODE_MARKER_RE = re.compile(r"@@NODE:(\w+)@@")
+# Comprehensive ANSI escape stripper: SGR, cursor movement, clear screen, etc.
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]|\x1b\].*?\x07")
 
 
 def parse_cast_node_markers(*, cast_path: Path) -> Dict[str, float]:
@@ -185,33 +157,6 @@ def parse_cast_node_markers(*, cast_path: Path) -> Dict[str, float]:
     return markers
 
 
-def parse_cast_timestamps(
-    *, cast_path: Path, layer_patterns: Dict[str, List[str]]
-) -> Dict[str, float]:
-    """Parse a .cast file and extract {layer_name: timestamp_seconds}.
-
-    Fallback for cast files that lack @@NODE:xxx@@ markers.
-    """
-    timestamps: Dict[str, float] = {}
-    try:
-        with open(cast_path) as f:
-            f.readline()  # skip header
-            for line in f:
-                row = json.loads(line)
-                ts, _evt, data = row[0], row[1], row[2]
-                clean = re.sub(r"\x1b\[[0-9;]*m", "", data)
-                for layer, patterns in layer_patterns.items():
-                    if layer in timestamps:
-                        continue
-                    for pat in patterns:
-                        if pat in clean:
-                            timestamps[layer] = round(ts, 2)
-                            break
-    except (json.JSONDecodeError, OSError):
-        pass
-    return timestamps
-
-
 def get_video_for_section(
     *,
     section: str,
@@ -233,21 +178,6 @@ def get_node_markers_for_section(
     gif_dir = SECTION_TO_GIF_DIR.get(section)
     if gif_dir and gif_dir in cast_map:
         return parse_cast_node_markers(cast_path=cast_map[gif_dir])
-    return {}
-
-
-def get_timestamps_for_section(
-    *,
-    section: str,
-    cast_map: Dict[str, Path],
-) -> Dict[str, float]:
-    """Get layer-level timestamps for a story section (fallback)."""
-    gif_dir = SECTION_TO_GIF_DIR.get(section)
-    if gif_dir and gif_dir in cast_map:
-        return parse_cast_timestamps(
-            cast_path=cast_map[gif_dir],
-            layer_patterns=LAYER_HEADER_PATTERNS,
-        )
     return {}
 
 
@@ -506,7 +436,7 @@ a:hover { text-decoration: underline; }
 /* DAG path display */
 .dag-path {
   display: flex; flex-wrap: wrap; gap: 0.3rem;
-  align-items: center; margin-bottom: 1rem;
+  align-items: flex-start; margin-bottom: 1rem;
 }
 .dag-path .path-node {
   font-size: 0.75rem; padding: 0.3rem 0.5rem;
@@ -524,7 +454,27 @@ a:hover { text-decoration: underline; }
   border-color: #ff6600; background: rgba(255, 102, 0, 0.15);
   font-weight: 600;
 }
-.dag-path .path-arrow { color: var(--text-muted); font-size: 0.7rem; }
+.dag-path .path-arrow { color: var(--text-muted); font-size: 0.7rem; align-self: center; }
+
+/* Tree chip groups */
+.path-node-group { display: inline-flex; flex-direction: column; }
+.path-children {
+  display: none; flex-direction: column; gap: 0.15rem;
+  margin-top: 0.2rem; padding-left: 0.5rem;
+}
+.path-children.expanded { display: flex; }
+.path-child {
+  font-size: 0.65rem; padding: 0.2rem 0.4rem;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 3px; cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+}
+.path-child:hover { border-color: var(--accent); }
+.path-child.active {
+  border-color: #ff6600; background: rgba(255, 102, 0, 0.15);
+  font-weight: 600;
+}
+.expand-indicator { font-size: 0.6rem; margin-left: 0.3rem; }
 
 /* Navigation */
 .nav-links {
@@ -556,18 +506,54 @@ def generate_js() -> str:
     """Generate the video-DAG synchronization JavaScript module.
 
     TIMESTAMPS is keyed by node_id (e.g. {"cfg_1b1w": 0.05, ...}).
+    Sub-component keys use double-underscore: "cfg_1b1w__bank_csv".
     NODE_PATH lists the ordered node IDs for this story's DAG path.
     """
     return """\
 (function() {
   'use strict';
-  var video = document.getElementById('demo-video');
   var svgContainer = document.querySelector('.dag-section');
+
+  // Phase 1: Gray out unreachable nodes (runs even without video)
+  if (svgContainer && typeof NODE_PATH !== 'undefined') {
+    svgContainer.querySelectorAll('.dag-node').forEach(function(n) {
+      var nid = n.getAttribute('data-node');
+      if (nid && !NODE_PATH.includes(nid)) {
+        n.classList.add('unreachable');
+      }
+    });
+  }
+
+  // Phase 2: Tree fold/unfold for path chip navigation
+  document.querySelectorAll('.path-node-group').forEach(function(group) {
+    var parentChip = group.querySelector('.path-node');
+    var children = group.querySelector('.path-children');
+    var indicator = group.querySelector('.expand-indicator');
+    if (!parentChip || !children) return;
+
+    parentChip.addEventListener('click', function(e) {
+      var isExpanded = children.classList.contains('expanded');
+      // Collapse all other groups first
+      document.querySelectorAll('.path-children.expanded').forEach(function(c) {
+        c.classList.remove('expanded');
+        var ind = c.parentElement.querySelector('.expand-indicator');
+        if (ind) ind.textContent = '\\u25b8';
+      });
+      if (!isExpanded) {
+        children.classList.add('expanded');
+        if (indicator) indicator.textContent = '\\u25be';
+      }
+      e.stopPropagation();
+    });
+  });
+
+  // Phase 3: Video synchronization (only when <video> element exists)
+  var video = document.getElementById('demo-video');
   if (!video || !svgContainer || typeof TIMESTAMPS === 'undefined') return;
 
-  // Build ordered list of timestamped node IDs (sorted by time)
+  // Build ordered list of parent-node timestamp keys (exclude sub-component keys)
   var tsKeys = Object.keys(TIMESTAMPS)
-    .filter(function(k) { return TIMESTAMPS[k] !== null; })
+    .filter(function(k) { return TIMESTAMPS[k] !== null && k.indexOf('__') === -1; })
     .sort(function(a, b) { return TIMESTAMPS[a] - TIMESTAMPS[b]; });
   if (tsKeys.length === 0) return;
 
@@ -589,6 +575,9 @@ def generate_js() -> str:
     allNodes.forEach(function(n) { n.classList.remove('active'); });
     clusters.forEach(function(c) { c.classList.remove('active-cluster'); });
     pathChips.forEach(function(n) { n.classList.remove('active'); });
+    document.querySelectorAll('.path-child.active').forEach(function(c) {
+      c.classList.remove('active');
+    });
 
     // Highlight the specific node in the SVG
     var targetLayer = nodeToLayer[nodeId] || '';
@@ -624,7 +613,15 @@ def generate_js() -> str:
     if (idx >= 0) currentIdx = idx;
   }
 
-  // Sync: video time -> node highlight
+  function highlightSubComponent(subKey) {
+    document.querySelectorAll('.path-child.active').forEach(function(c) {
+      c.classList.remove('active');
+    });
+    var el = document.querySelector('.path-child[data-sub=\"' + subKey + '\"]');
+    if (el) el.classList.add('active');
+  }
+
+  // Sync: video time -> node highlight (+ sub-component highlight)
   video.addEventListener('timeupdate', function() {
     var t = video.currentTime;
     var active = tsKeys[0];
@@ -632,9 +629,21 @@ def generate_js() -> str:
       if (TIMESTAMPS[tsKeys[i]] <= t) active = tsKeys[i];
     }
     highlightNode(active);
+
+    // Find the best matching sub-component for current time
+    var bestSub = null;
+    var bestSubTs = -1;
+    var prefix = active + '__';
+    Object.keys(TIMESTAMPS).forEach(function(k) {
+      if (k.indexOf(prefix) === 0 && TIMESTAMPS[k] <= t && TIMESTAMPS[k] > bestSubTs) {
+        bestSub = k;
+        bestSubTs = TIMESTAMPS[k];
+      }
+    });
+    if (bestSub) highlightSubComponent(bestSub);
   });
 
-  // Keyboard: Up/Down jump between timestamped nodes
+  // Keyboard: Up/Down jump between parent timestamped nodes
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === 'ArrowDown' || e.key === 'j') {
@@ -665,8 +674,8 @@ def generate_js() -> str:
     });
   });
 
-  // Click path chip -> jump video
-  pathChips.forEach(function(chip) {
+  // Click parent path chip -> jump video + toggle children
+  document.querySelectorAll('.path-node-group .path-node').forEach(function(chip) {
     chip.addEventListener('click', function() {
       var nid = chip.getAttribute('data-node');
       if (nid && TIMESTAMPS[nid] !== undefined) {
@@ -676,15 +685,28 @@ def generate_js() -> str:
     });
   });
 
-  // Gray out unreachable nodes (not on this story's path)
-  if (typeof NODE_PATH !== 'undefined') {
-    allNodes.forEach(function(n) {
-      var nid = n.getAttribute('data-node');
-      if (!NODE_PATH.includes(nid)) {
-        n.classList.add('unreachable');
+  // Click path chip (nodes without children) -> jump video
+  document.querySelectorAll('.path-node:not(.path-node-group .path-node)').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      var nid = chip.getAttribute('data-node');
+      if (nid && TIMESTAMPS[nid] !== undefined) {
+        video.currentTime = TIMESTAMPS[nid];
+        video.play();
       }
     });
-  }
+  });
+
+  // Click child chip -> jump video to sub-timestamp
+  document.querySelectorAll('.path-child').forEach(function(child) {
+    child.addEventListener('click', function(e) {
+      var subKey = child.getAttribute('data-sub');
+      if (subKey && TIMESTAMPS[subKey] !== undefined) {
+        video.currentTime = TIMESTAMPS[subKey];
+        video.play();
+      }
+      e.stopPropagation();
+    });
+  });
 
   // Initialize with first timestamped node
   highlightNode(tsKeys[0]);
@@ -772,6 +794,7 @@ def generate_story_html(
     timestamps: Dict[str, float],
     node_path: List[str],
     node_index: Dict[str, Dict],
+    filtered_components_map: Optional[Dict[str, List[Dict]]] = None,
 ) -> str:
     sid = story["id"]
     head = _html_head(title=f"{sid}: {story['title']} — hledger-preprocessor")
@@ -827,7 +850,7 @@ def generate_story_html(
         main += 'Current layer: <span class="layer-name" id="layer-indicator-name">—</span>\n'
         main += "</div>\n"
 
-    # DAG path chips
+    # DAG path chips (tree structure with expandable sub-components)
     if node_path:
         main += '<div class="dag-path">\n'
         for i, nid in enumerate(node_path):
@@ -836,13 +859,41 @@ def generate_story_html(
             layer_label = info.get("layer_label", layer.replace("_", " ").title())
             node_label = info.get("label", nid).split("\n")[0]
             has_ts = nid in timestamps
-            cls = "path-node" + (" clickable" if has_ts else "")
-            main += f'<span class="{cls}" data-layer="{layer}" data-node="{nid}"'
-            main += f' title="{_esc(info.get("desc", ""))}">'
-            main += f'<span class="path-layer-name">{_esc(layer_label)}</span>'
-            main += f'{_esc(node_label)}</span>\n'
+            if filtered_components_map is not None and nid in filtered_components_map:
+                components = filtered_components_map[nid]
+            else:
+                components = info.get("components", [])
+
+            if components:
+                # Tree node: parent chip with expandable children
+                main += f'<div class="path-node-group" data-node="{nid}">\n'
+                cls = "path-node" + (" clickable" if has_ts else "")
+                main += f'<span class="{cls}" data-layer="{layer}" data-node="{nid}"'
+                main += f' title="{_esc(info.get("desc", ""))}">'
+                main += f'<span class="path-layer-name">{_esc(layer_label)}</span>'
+                main += f"{_esc(node_label)}"
+                main += ' <span class="expand-indicator">\u25b8</span>'
+                main += "</span>\n"
+                # Children (hidden by default)
+                main += '<div class="path-children">\n'
+                for comp in components:
+                    sub_key = f"{nid}__{comp['id']}"
+                    has_sub_ts = sub_key in timestamps
+                    ccls = "path-child" + (" clickable" if has_sub_ts else "")
+                    main += f'<span class="{ccls}" data-sub="{sub_key}">'
+                    main += f'{_esc(comp["label"])}</span>\n'
+                main += "</div>\n"
+                main += "</div>\n"
+            else:
+                # Flat chip (no children)
+                cls = "path-node" + (" clickable" if has_ts else "")
+                main += f'<span class="{cls}" data-layer="{layer}" data-node="{nid}"'
+                main += f' title="{_esc(info.get("desc", ""))}">'
+                main += f'<span class="path-layer-name">{_esc(layer_label)}</span>'
+                main += f"{_esc(node_label)}</span>\n"
+
             if i < len(node_path) - 1:
-                main += '<span class="path-arrow">→</span>\n'
+                main += '<span class="path-arrow">\u2192</span>\n'
         main += "</div>\n"
 
     # SVG DAG diagram
@@ -896,16 +947,14 @@ def generate_story_html(
     main += "</div>\n"
     main += "</div>\n"
 
-    # Timestamp manifest + JS
-    js_block = ""
-    if video_filename and not is_gif:
-        ts_json = json.dumps(timestamps)
-        path_json = json.dumps(node_path)
-        js_block = (
-            f"<script>\nconst TIMESTAMPS = {ts_json};\n"
-            f"const NODE_PATH = {path_json};\n</script>\n"
-            f'<script src="../assets/js/dag-sync.js"></script>\n'
-        )
+    # Timestamp manifest + JS (always emit so unreachable graying works)
+    ts_json = json.dumps(timestamps)
+    path_json = json.dumps(node_path)
+    js_block = (
+        f"<script>\nconst TIMESTAMPS = {ts_json};\n"
+        f"const NODE_PATH = {path_json};\n</script>\n"
+        f'<script src="../assets/js/dag-sync.js"></script>\n'
+    )
 
     return head + sidebar + main + js_block + "</body>\n</html>\n"
 
@@ -1050,28 +1099,35 @@ def main() -> None:
 
         # Node path (first path)
         node_path = story.get("paths", [[]])[0] if story.get("paths") else []
-        path_set = set(node_path)
 
-        # Timestamps — prefer per-node markers, fall back to layer patterns
-        node_markers = get_node_markers_for_section(
+        # YAML-driven marker sequence (node + sub-component interleaved)
+        marker_sequence = get_marker_sequence(
+            story=story, node_index=node_index
+        )
+
+        # Read @@NODE markers from cast file (if available)
+        raw_markers = get_node_markers_for_section(
             section=section, cast_map=cast_map
         )
-        # Filter to nodes on this story's path
-        timestamps = {
-            nid: ts for nid, ts in node_markers.items() if nid in path_set
-        }
 
-        if not timestamps:
-            # Fallback: layer-based timestamps → map to first path node
-            layer_ts = get_timestamps_for_section(
-                section=section, cast_map=cast_map
+        # Build timestamps using YAML ordering, populated from cast where
+        # available.  This replaces the old ANSI pattern-matching approach.
+        timestamps: Dict[str, float] = {}
+        for marker_id in marker_sequence:
+            if marker_id in raw_markers:
+                timestamps[marker_id] = raw_markers[marker_id]
+
+        # If no cast-derived timestamps, interpolate evenly across markers
+        if not timestamps and marker_sequence:
+            for idx_m, mid in enumerate(marker_sequence):
+                timestamps[mid] = round(idx_m * 2.0, 2)
+
+        # Build per-node filtered component map from YAML component_filter
+        filtered_components_map: Dict[str, List[Dict]] = {}
+        for nid in node_path:
+            filtered_components_map[nid] = get_filtered_components(
+                story=story, node_id=nid, node_index=node_index
             )
-            for nid in node_path:
-                info = node_index.get(nid)
-                if info and info["layer"] in layer_ts:
-                    layer = info["layer"]
-                    if layer in layer_ts:
-                        timestamps[nid] = layer_ts.pop(layer)
 
         # SVG
         safe = story_id_to_safe(story_id=story["id"])
@@ -1092,6 +1148,7 @@ def main() -> None:
             timestamps=timestamps,
             node_path=node_path,
             node_index=node_index,
+            filtered_components_map=filtered_components_map,
         )
         (output_dir / "stories" / f"{story['id']}.html").write_text(
             story_html

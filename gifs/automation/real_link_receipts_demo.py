@@ -22,7 +22,7 @@ from typing import Any, Dict
 
 import yaml
 
-from .core import Colors, Screen, emit_node_marker
+from .core import Colors, Screen, StoryMarkerEmitter
 
 
 def print_header(title: str) -> None:
@@ -266,14 +266,14 @@ def create_test_environment() -> Dict[str, Any]:
     }
 
 
-def show_inputs(env: Dict[str, Any]) -> None:
+def show_inputs(env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     """Show the input files: receipt image, receipt JSON, and CSV file."""
     import subprocess
 
     import cv2
 
     # 0. Show the receipt image (like in crop workflow)
-    emit_node_marker("img_ekoplaza_card")
+    emitter.emit_until("img_ekoplaza_card")
     print_subheader("Input: Receipt Image")
     img_path = env["img_path"]
     print(f"{Colors.BOLD_WHITE}Displaying: {img_path.name}{Colors.RESET}")
@@ -288,7 +288,7 @@ def show_inputs(env: Dict[str, Any]) -> None:
     time.sleep(0.5)
 
     # 1. Show the net_bought_items from the receipt JSON (using jq)
-    emit_node_marker("lbl_ekoplaza_card_eur")
+    emitter.emit_until("lbl_ekoplaza_card_eur")
     print_subheader("Input: Receipt Label - net_bought_items (from Step 2b)")
     label_path = env["label_path"]
 
@@ -311,7 +311,7 @@ def show_inputs(env: Dict[str, Any]) -> None:
     time.sleep(2)
 
     # 2. Show the CSV file (cat command)
-    emit_node_marker("csv_ekoplaza_4217_jan15")
+    emitter.emit_until("csv_ekoplaza_4217_jan15")
     print_subheader("Input: Bank CSV Transactions")
     csv_path = env["csv_path"]
 
@@ -331,13 +331,13 @@ def show_inputs(env: Dict[str, Any]) -> None:
     time.sleep(2)
 
 
-def run_matching_demo(env: Dict[str, Any]) -> bool:
+def run_matching_demo(env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
     """Run the actual --link-receipts-to-transactions CLI command using pexpect."""
     import pexpect
 
     from .tui_navigator import TuiNavigator
 
-    emit_node_marker("out_auto_1hit")
+    emitter.emit_until("out_auto_1hit")
     print_subheader(
         "Running: hledger_preprocessor --link-receipts-to-transactions"
     )
@@ -427,7 +427,7 @@ def run_matching_demo(env: Dict[str, Any]) -> bool:
         nav.clear_key_display()
 
 
-def show_result(env: Dict[str, Any]) -> None:
+def show_result(env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     """Show the result: diff between before and after receipt JSON."""
     import subprocess
 
@@ -442,7 +442,7 @@ def show_result(env: Dict[str, Any]) -> None:
         )
         return
 
-    emit_node_marker("jrnl_groceries_ekoplaza")
+    emitter.emit_until("jrnl_groceries_ekoplaza")
     print_subheader("Result: Receipt net_bought_items After Linking")
 
     # Show jq of the updated receipt net_bought_items
@@ -556,12 +556,11 @@ def run_link_receipts_demo() -> None:
     print()
     time.sleep(2)
 
+    emitter = StoryMarkerEmitter("US-3.1")
+
     env = None
     try:
-        emit_node_marker("cfg_1b1w")
-        emit_node_marker("cat_basic")
-        emit_node_marker("match_default")
-        emit_node_marker("start_2024_1000eur")
+        emitter.emit_until("start_2024_1000eur")
         print(f"{Colors.GRAY}Setting up demo environment...{Colors.RESET}")
         env = create_test_environment()
         print(f"{Colors.GRAY}Done.{Colors.RESET}")
@@ -574,10 +573,10 @@ def run_link_receipts_demo() -> None:
         env["before_label_path"] = before_label_path
 
         # Show inputs
-        show_inputs(env)
+        show_inputs(env, emitter)
 
         # Run the matching demo using real code
-        success = run_matching_demo(env)
+        success = run_matching_demo(env, emitter)
 
         print()
         if success:
@@ -594,7 +593,7 @@ def run_link_receipts_demo() -> None:
         time.sleep(1)
 
         # Show result with before/after comparison
-        show_result(env)
+        show_result(env, emitter)
 
         # Next step
         print(
