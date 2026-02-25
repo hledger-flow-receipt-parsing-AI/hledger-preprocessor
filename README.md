@@ -80,6 +80,21 @@ ______________________________________________________________________
 
 \<TODO: add gif>
 
+## User Story DAG Explorer (local preview)
+
+Browse user stories with synchronized video + interactive DAG diagrams:
+
+```bash
+# Generate the site
+python user_stories/dag/generate_site.py --output /tmp/site/
+
+# Serve locally and open in browser
+python -m http.server 8080 --directory /tmp/site/
+# Then open http://localhost:8080
+```
+
+Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Click a node to seek.
+
 ## Getting Started
 
 This is a HELPER-MODULE for `hledger-flow`.
