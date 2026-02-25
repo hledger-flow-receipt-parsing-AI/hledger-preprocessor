@@ -1,0 +1,8 @@
+  # Bitcoin digital wallet — no CSV, derived from receipts
+  - input_csv_filename: null
+    base_currency: BTC
+    account_holder: at
+    bank: wallet
+    account_type: digital
+    csv_column_mapping: null
+    tnx_date_columns: null

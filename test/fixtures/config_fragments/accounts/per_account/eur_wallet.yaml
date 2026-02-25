@@ -1,0 +1,8 @@
+  # EUR physical wallet (cash) — no CSV, derived from receipts
+  - input_csv_filename: null
+    base_currency: EUR
+    account_holder: at
+    bank: wallet
+    csv_column_mapping: null
+    tnx_date_columns: null
+    account_type: physical

@@ -8,11 +8,18 @@ Based on nano_example.py approach - uses PIL to render frames directly
 instead of asciinema recording.
 
 Usage:
+    # Single file mode:
     python -m gifs.automation.yaml_typing_gif --input config.yaml --output config.gif
-    python -m gifs.automation.yaml_typing_gif --input categories.yaml --output categories.gif --title "categories.yaml"
+
+    # Segmented mode (multiple fragments with per-section timestamps):
+    python -m gifs.automation.yaml_typing_gif \\
+        --segments accounts/1_bank.yaml=cfg_1b__bank_csv \\
+                   shared/dir_paths.yaml=cfg_1b__dir_paths \\
+        --output config.gif --markers-output config_markers.json
 """
 
 import argparse
+import json
 import re
 from pathlib import Path
 
@@ -345,16 +352,174 @@ def make_typing_gif(
         print(f"Generated: {output_path}")
 
 
+def make_segmented_typing_gif(
+    segments: list[tuple[str | Path, str]],
+    output_file: str | Path,
+    markers_output: str | Path,
+    title: str | None = None,
+    rows: int = DEFAULT_ROWS,
+    cols: int = DEFAULT_COLS,
+) -> None:
+    """Generate a typing GIF from multiple YAML fragments with marker timestamps.
+
+    Types all fragments sequentially as one smooth file, recording the frame
+    index where each fragment begins. Writes a sidecar JSON with timestamps.
+
+    Args:
+        segments: List of (filepath, marker_id) tuples.
+        output_file: Path for the output GIF.
+        markers_output: Path for the sidecar markers JSON file.
+        title: Title to show in header.
+        rows: Terminal height in rows.
+        cols: Terminal width in columns.
+    """
+    output_path = Path(output_file)
+    markers_path = Path(markers_output)
+
+    # Load and concatenate all fragment lines with blank-line separators
+    all_lines: list[str] = []
+    # Map: marker_id -> line index where fragment starts
+    marker_line_indices: list[tuple[str, int]] = []
+
+    for fpath, marker_id in segments:
+        fpath = Path(fpath)
+        if not fpath.exists():
+            raise FileNotFoundError(f"Segment file not found: {fpath}")
+        fragment_lines = load_yaml_lines(fpath)
+        if all_lines:
+            all_lines.append("")  # blank-line separator between sections
+        marker_line_indices.append((marker_id, len(all_lines)))
+        all_lines.extend(fragment_lines)
+
+    if title is None and segments:
+        title = Path(segments[0][0]).name
+
+    try:
+        font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
+    except OSError:
+        font = ImageFont.load_default()
+
+    frames: list[Image.Image] = []
+    scroll_offset = 0
+    content_rows = rows - 3
+
+    # Track frame index for each marker
+    marker_frame_indices: dict[str, int] = {}
+    # Build a set of line indices where markers start for quick lookup
+    marker_line_set: dict[int, str] = {
+        line_idx: mid for mid, line_idx in marker_line_indices
+    }
+
+    for line_idx, full_line in enumerate(all_lines):
+        # Record frame index at the start of each fragment's first line
+        if line_idx in marker_line_set:
+            mid = marker_line_set[line_idx]
+            marker_frame_indices[mid] = len(frames)
+
+        char_idx = 0
+        while char_idx <= len(full_line):
+            screen_lines = get_wrapped_lines_up_to(
+                all_lines, line_idx, char_idx, cols
+            )
+
+            cursor_screen_row = len(screen_lines) - 1
+            last_wrapped = wrap_line(full_line[:char_idx], cols)
+            cursor_col_in_row = len(last_wrapped[-1])
+
+            img = create_frame(
+                screen_lines,
+                cursor_screen_row,
+                cursor_col_in_row,
+                scroll_offset,
+                font,
+                title or "config.yaml",
+                rows,
+                cols,
+            )
+            frames.append(img)
+            char_idx += 1
+
+        # Handle scrolling
+        current_height = len(
+            get_wrapped_lines_up_to(all_lines, line_idx, len(full_line), cols)
+        )
+        while current_height - scroll_offset > content_rows - 2:
+            scroll_offset += 1
+            wrapped = wrap_line(full_line, cols)
+            for _ in range(3):
+                frames.append(
+                    create_frame(
+                        get_wrapped_lines_up_to(
+                            all_lines, line_idx, len(full_line), cols
+                        ),
+                        current_height - 1,
+                        len(wrapped[-1]),
+                        scroll_offset,
+                        font,
+                        title or "config.yaml",
+                        rows,
+                        cols,
+                    )
+                )
+
+    # Add pause at end
+    if frames:
+        for _ in range(PAUSE_FRAMES):
+            frames.append(frames[-1])
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        frames[0].save(
+            output_path,
+            save_all=True,
+            append_images=frames[1:],
+            duration=FRAME_DURATION,
+            loop=0,
+            optimize=False,
+        )
+        print(f"Generated: {output_path}")
+
+    # Write sidecar markers JSON
+    total_frames = len(frames)
+    markers_dict: dict[str, float] = {}
+    for mid, frame_idx in marker_frame_indices.items():
+        markers_dict[mid] = round(frame_idx * FRAME_DURATION / 1000.0, 2)
+
+    sidecar = {
+        "markers": markers_dict,
+        "total_duration": round(total_frames * FRAME_DURATION / 1000.0, 2),
+        "frame_duration_ms": FRAME_DURATION,
+    }
+
+    markers_path.parent.mkdir(parents=True, exist_ok=True)
+    markers_path.write_text(json.dumps(sidecar, indent=2) + "\n")
+    print(f"Markers: {markers_path}")
+
+
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Generate typing animation GIF for YAML files"
     )
-    parser.add_argument(
-        "--input", "-i", required=True, help="Input YAML file path"
+
+    # Mutually exclusive: --input (single file) or --segments (multiple fragments)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--input", "-i", help="Input YAML file path (single file mode)"
     )
+    group.add_argument(
+        "--segments",
+        nargs="+",
+        metavar="FILE=MARKER_ID",
+        help="Segment files as filepath=marker_id pairs",
+    )
+
     parser.add_argument(
         "--output", "-o", required=True, help="Output GIF file path"
+    )
+    parser.add_argument(
+        "--markers-output",
+        help="Output path for sidecar markers JSON (segments mode only)",
     )
     parser.add_argument(
         "--title",
@@ -370,17 +535,41 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if not Path(args.input).exists():
-        print(f"Error: Input file not found: {args.input}")
-        exit(1)
+    if args.input:
+        # Single file mode (backward compat)
+        if not Path(args.input).exists():
+            print(f"Error: Input file not found: {args.input}")
+            exit(1)
 
-    make_typing_gif(
-        input_file=args.input,
-        output_file=args.output,
-        title=args.title,
-        rows=args.rows,
-        cols=args.cols,
-    )
+        make_typing_gif(
+            input_file=args.input,
+            output_file=args.output,
+            title=args.title,
+            rows=args.rows,
+            cols=args.cols,
+        )
+    else:
+        # Segments mode
+        if not args.markers_output:
+            print("Error: --markers-output is required with --segments")
+            exit(1)
+
+        parsed_segments: list[tuple[str, str]] = []
+        for seg in args.segments:
+            if "=" not in seg:
+                print(f"Error: Segment must be filepath=marker_id, got: {seg}")
+                exit(1)
+            filepath, marker_id = seg.rsplit("=", 1)
+            parsed_segments.append((filepath, marker_id))
+
+        make_segmented_typing_gif(
+            segments=parsed_segments,
+            output_file=args.output,
+            markers_output=args.markers_output,
+            title=args.title,
+            rows=args.rows,
+            cols=args.cols,
+        )
 
 
 if __name__ == "__main__":

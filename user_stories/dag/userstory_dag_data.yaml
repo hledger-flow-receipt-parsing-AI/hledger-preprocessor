@@ -25,12 +25,47 @@ layers:
   - name: config
     label: "Configuration"
     nodes:
+      # --- Single-concern config nodes (one account type) ---
+      - id: cfg_1b
+        label: "1 bank account"
+        desc: "Triodos checking (EUR CSV) — single bank, no wallet"
+        used_by: [test, demo]
+        components:
+          - {id: triodos_csv, label: "Triodos checking (EUR CSV)"}
+          - {id: dir_paths, label: "Dir paths"}
+          - {id: file_names, label: "Filenames"}
+          - {id: categorisation, label: "Categorisation"}
+          - {id: matching_algo, label: "Matching algo"}
+
+      - id: cfg_1w
+        label: "1 cash wallet"
+        desc: "EUR cash wallet (no CSV) — wallet only, no bank account"
+        used_by: [test]
+        components:
+          - {id: eur_wallet, label: "EUR physical wallet"}
+          - {id: dir_paths, label: "Dir paths"}
+          - {id: file_names, label: "Filenames"}
+          - {id: categorisation, label: "Categorisation"}
+
+      - id: cfg_2b
+        label: "2 bank accounts"
+        desc: "Triodos (EUR) + ING (EUR) — multiple banks, no wallet"
+        used_by: [test]
+        components:
+          - {id: triodos_csv, label: "Triodos checking (EUR CSV)"}
+          - {id: ing_csv, label: "ING checking (EUR CSV)"}
+          - {id: dir_paths, label: "Dir paths"}
+          - {id: file_names, label: "Filenames"}
+          - {id: categorisation, label: "Categorisation"}
+          - {id: matching_algo, label: "Matching algo"}
+
+      # --- Combined config nodes (bank + wallet/assets) ---
       - id: cfg_1b1w
         label: "1 bank + 1 wallet"
         desc: "Triodos checking (EUR CSV) + EUR cash wallet (no CSV)"
         used_by: [test, demo]
         components:
-          - {id: bank_csv, label: "Bank account with CSV input"}
+          - {id: triodos_csv, label: "Triodos checking (EUR CSV)"}
           - {id: eur_wallet, label: "EUR physical wallet"}
           - {id: dir_paths, label: "Dir paths"}
           - {id: file_names, label: "Filenames"}
@@ -42,8 +77,12 @@ layers:
         desc: "Triodos checking + EUR/GBP/BTC/GOLD/SILVER wallets"
         used_by: [test]
         components:
-          - {id: bank_csv, label: "Bank account with CSV input"}
+          - {id: triodos_csv, label: "Triodos checking (EUR CSV)"}
           - {id: eur_wallet, label: "EUR physical wallet"}
+          - {id: gbp_wallet, label: "GBP physical wallet"}
+          - {id: btc_wallet, label: "BTC digital wallet"}
+          - {id: gold_wallet, label: "GOLD physical wallet"}
+          - {id: silver_wallet, label: "SILVER physical wallet"}
           - {id: dir_paths, label: "Dir paths"}
           - {id: file_names, label: "Filenames"}
           - {id: categorisation, label: "Categorisation"}
@@ -54,7 +93,8 @@ layers:
         desc: "Triodos (EUR) + ING (EUR) + EUR cash wallet"
         used_by: [test]
         components:
-          - {id: bank_csv, label: "Bank account with CSV input"}
+          - {id: triodos_csv, label: "Triodos checking (EUR CSV)"}
+          - {id: ing_csv, label: "ING checking (EUR CSV)"}
           - {id: eur_wallet, label: "EUR physical wallet"}
           - {id: dir_paths, label: "Dir paths"}
           - {id: file_names, label: "Filenames"}
@@ -66,8 +106,8 @@ layers:
         desc: "Triodos (EUR) + Kraken exchange (BTC/ETH)"
         used_by: [test]
         components:
-          - {id: bank_csv, label: "Bank account with CSV input"}
-          - {id: eur_wallet, label: "EUR physical wallet"}
+          - {id: triodos_csv, label: "Triodos checking (EUR CSV)"}
+          - {id: btc_wallet, label: "BTC digital wallet"}
           - {id: dir_paths, label: "Dir paths"}
           - {id: file_names, label: "Filenames"}
           - {id: categorisation, label: "Categorisation"}
@@ -78,7 +118,8 @@ layers:
         desc: "Triodos (days:4) + ING (days:2) override global default"
         used_by: [test]
         components:
-          - {id: bank_csv, label: "Bank account with CSV input"}
+          - {id: triodos_csv, label: "Triodos checking (EUR CSV)"}
+          - {id: ing_csv, label: "ING checking (EUR CSV)"}
           - {id: eur_wallet, label: "EUR physical wallet"}
           - {id: dir_paths, label: "Dir paths"}
           - {id: file_names, label: "Filenames"}
@@ -655,15 +696,11 @@ stories:
     colour: "#2196F3"
     pattern: solid
     data_use: both
+    gif_video: cfg_1b
     paths:
-      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur]
+      - [cfg_1b]
     demo_paths:
-      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur]
-    component_filter:
-      cfg_1b1w: [bank_csv, dir_paths, file_names, categorisation, matching_algo]
-      cat_basic: [groceries]
-      match_default: [days, amount_range, days_month_swap]
-      start_2024_1000eur: [opening_balance, base_currency]
+      - [cfg_1b]
 
   - id: US-1a.2
     title: "Configure multiple bank accounts"
@@ -687,13 +724,9 @@ stories:
     colour: "#1565C0"
     pattern: solid
     data_use: test
+    gif_video: cfg_2b
     paths:
-      - [cfg_multi_bank, cat_basic, match_default, start_2024_1000eur]
-    component_filter:
-      cfg_multi_bank: [bank_csv, dir_paths, file_names, categorisation, matching_algo]
-      cat_basic: [groceries]
-      match_default: [days, amount_range, days_month_swap]
-      start_2024_1000eur: [opening_balance, base_currency]
+      - [cfg_2b]
 
   - id: US-1a.3
     title: "Configure a cash wallet (no CSV)"
@@ -726,13 +759,9 @@ stories:
     colour: "#4CAF50"
     pattern: solid
     data_use: test
+    gif_video: cfg_1w
     paths:
-      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur]
-    component_filter:
-      cfg_1b1w: [eur_wallet, dir_paths, file_names, categorisation]
-      cat_basic: [groceries]
-      match_default: [days, amount_range]
-      start_2024_1000eur: [opening_balance, base_currency]
+      - [cfg_1w]
 
   - id: US-1a.4
     title: "Configure a cryptocurrency exchange account"
@@ -758,8 +787,9 @@ stories:
     colour: "#9C27B0"
     pattern: dashed
     data_use: test
+    gif_video: cfg_crypto
     paths:
-      - [cfg_crypto, cat_extended, match_default, start_2024_multi]
+      - [cfg_crypto]
 
   - id: US-1a.5
     title: "Configure matching algorithm parameters"
@@ -794,8 +824,9 @@ stories:
     colour: "#FF9800"
     pattern: solid
     data_use: test
+    gif_video: cfg_per_bank_match
     paths:
-      - [cfg_per_bank_match, cat_basic, match_default, start_2024_1000eur]
+      - [cfg_per_bank_match]
 
   - id: US-1a.6
     title: "Configure base currency for reporting"
@@ -819,8 +850,9 @@ stories:
     colour: "#00BCD4"
     pattern: solid
     data_use: test
+    gif_video: cfg_1b5a
     paths:
-      - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
+      - [cfg_1b5a]
 
 
   # =========================================================================
@@ -849,6 +881,7 @@ stories:
     colour: "#8BC34A"
     pattern: solid
     data_use: both
+    gif_video: cat_basic
     paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
 
@@ -894,6 +927,7 @@ stories:
     colour: "#CDDC39"
     pattern: solid
     data_use: test
+    gif_video: cat_with_income
     paths:
       - [cfg_1b1w, cat_with_income, match_default, start_2024_1000eur, csv_salary_3000, lbl_salary_credit, out_csv_only_classify, jrnl_income_salary]
 
@@ -1245,11 +1279,10 @@ stories:
     pattern: bold
     data_use: both
     paths:
-      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+      - [cfg_1b, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
     demo_paths:
-      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+      - [cfg_1b, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
     component_filter:
-      cfg_1b1w: [bank_csv, dir_paths, file_names, categorisation, matching_algo]
       cat_basic: [groceries]
       match_default: [days, amount_range, days_month_swap]
       start_2024_1000eur: [opening_balance, base_currency]

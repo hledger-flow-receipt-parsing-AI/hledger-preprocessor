@@ -91,6 +91,8 @@ python user_stories/dag/generate_site.py --output /tmp/site/
 # Serve locally and open in browser
 python -m http.server 8059 --directory /tmp/site/
 # Then open http://localhost:8059
+
+python user_stories/dag/generate_site.py --output /tmp/site/ && python -m http.server 8059 --directory /tmp/site/
 ```
 
 Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Click a node to seek.

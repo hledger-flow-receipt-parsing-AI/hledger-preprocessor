@@ -2,8 +2,9 @@
 # =============================================================================
 # Add Category Demo - GIF Generator
 #
-# Demonstrates how to add spending categories to categories.yaml
-# Uses yaml_typing_gif.py to render actual YAML file with typing animation
+# Generates one GIF per category node variant (cat_basic, cat_with_income).
+# Each GIF types the matching category fragments with per-section timestamps.
+# Uses yaml_typing_gif.py --segments to record per-section timestamps.
 # =============================================================================
 
 set -euo pipefail
@@ -11,12 +12,8 @@ set -euo pipefail
 # ================================ Config =====================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DEMO_NAME="1b_add_category"
 OUTPUT_DIR="${SCRIPT_DIR}/output"
-
-# Input YAML file - use the test fixture
-INPUT_YAML="${PROJECT_ROOT}/test/fixtures/categories/example_categories.yaml"
-OUTPUT_GIF="${OUTPUT_DIR}/${DEMO_NAME}.gif"
+FRAG_DIR="${PROJECT_ROOT}/test/fixtures/config_fragments/categories"
 
 # ================================ Colors =====================================
 GREEN="$(tput setaf 2 2>/dev/null || echo '')"
@@ -25,35 +22,8 @@ RESET="$(tput sgr0 2>/dev/null || echo '')"
 
 log() { echo -e "${BOLD}${GREEN}[+]${RESET} $*"; }
 
-# ================================ Main =======================================
+# ================================ Helpers ====================================
 
-# Create output directory
-mkdir -p "$OUTPUT_DIR"
-
-# Check input file exists
-if [[ ! -f "$INPUT_YAML" ]]; then
-    echo "Error: Input YAML not found: $INPUT_YAML"
-    exit 1
-fi
-
-log "Generating categories.yaml typing animation..."
-log "  Input: $INPUT_YAML"
-log "  Output: $OUTPUT_GIF"
-
-# Ensure PYTHONPATH includes project root
-export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
-
-# Generate the GIF using yaml_typing_gif.py
-python -m gifs.automation.yaml_typing_gif \
-    --input "$INPUT_YAML" \
-    --output "$OUTPUT_GIF" \
-    --title "categories.yaml" \
-    --rows 35 \
-    --cols 85
-
-log "Done! GIF created at: $OUTPUT_GIF"
-
-# Convert GIF to MP4 for pausable GitHub README videos
 convert_gif_to_mp4() {
     local gif_file="$1"
     local mp4_file="${gif_file%.gif}.mp4"
@@ -78,6 +48,43 @@ convert_gif_to_mp4() {
     fi
 }
 
-convert_gif_to_mp4 "$OUTPUT_GIF"
+# ================================ Main =======================================
 
+mkdir -p "$OUTPUT_DIR"
+
+if [[ ! -d "$FRAG_DIR" ]]; then
+    echo "Error: Category fragments directory not found: $FRAG_DIR"
+    exit 1
+fi
+
+export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
+
+# --- cat_basic: groceries + withdrawl ---
+log "Generating cat_basic categories typing animation..."
+python -m gifs.automation.yaml_typing_gif \
+    --segments \
+        "${FRAG_DIR}/groceries.yaml=cat_basic__groceries" \
+        "${FRAG_DIR}/withdrawl.yaml=cat_basic__withdrawl" \
+    --output "${OUTPUT_DIR}/cat_basic.gif" \
+    --markers-output "${OUTPUT_DIR}/cat_basic_markers.json" \
+    --title "categories.yaml" \
+    --rows 35 \
+    --cols 85
+convert_gif_to_mp4 "${OUTPUT_DIR}/cat_basic.gif"
+
+# --- cat_with_income: groceries + withdrawl + salary/freelance ---
+log "Generating cat_with_income categories typing animation..."
+python -m gifs.automation.yaml_typing_gif \
+    --segments \
+        "${FRAG_DIR}/groceries.yaml=cat_with_income__groceries" \
+        "${FRAG_DIR}/withdrawl.yaml=cat_with_income__withdrawl" \
+        "${FRAG_DIR}/salary.yaml=cat_with_income__salary" \
+    --output "${OUTPUT_DIR}/cat_with_income.gif" \
+    --markers-output "${OUTPUT_DIR}/cat_with_income_markers.json" \
+    --title "categories.yaml" \
+    --rows 35 \
+    --cols 85
+convert_gif_to_mp4 "${OUTPUT_DIR}/cat_with_income.gif"
+
+log "All category GIFs generated!"
 exit 0

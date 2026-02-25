@@ -1,0 +1,13 @@
+  # ING checking account (EUR CSV)
+  - base_currency: EUR
+    account_holder: at
+    bank: ing
+    account_type: checking
+    input_csv_filename: "ing_2025.csv"
+    csv_column_mapping: [
+        ["the_date", "date"],
+        ["tendered_amount_out", "amount"],
+        ["description", "description"],
+        ["other_party_name", "payee"],
+      ]
+    tnx_date_columns: [["the_date", "date"]]

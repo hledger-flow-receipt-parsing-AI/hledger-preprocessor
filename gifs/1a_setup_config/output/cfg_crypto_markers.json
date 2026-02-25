@@ -1,0 +1,12 @@
+{
+  "markers": {
+    "cfg_crypto__triodos_csv": 0.0,
+    "cfg_crypto__btc_wallet": 23.16,
+    "cfg_crypto__dir_paths": 32.52,
+    "cfg_crypto__file_names": 49.76,
+    "cfg_crypto__categorisation": 65.2,
+    "cfg_crypto__matching_algo": 67.92
+  },
+  "total_duration": 74.52,
+  "frame_duration_ms": 40
+}

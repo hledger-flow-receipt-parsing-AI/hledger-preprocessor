@@ -1,0 +1,33 @@
+account_configs:
+  # Bank account 1: Triodos (EUR)
+  - base_currency: EUR
+    account_holder: at
+    bank: triodos
+    account_type: checking
+    input_csv_filename: "triodos_2025.csv"
+    csv_column_mapping: [
+        ["the_date", "date"],
+        ["", ""],
+        ["tendered_amount_out", "amount"],
+        ["transaction_code", ""],
+        ["other_party_name", ""],
+        ["other_party_account_name", ""],
+        ["", ""],
+        ["description", "description"],
+        ["", ""],
+      ]
+    tnx_date_columns: [["the_date", "date"], ["description", "description"]]
+
+  # Bank account 2: ING (EUR)
+  - base_currency: EUR
+    account_holder: at
+    bank: ing
+    account_type: checking
+    input_csv_filename: "ing_2025.csv"
+    csv_column_mapping: [
+        ["the_date", "date"],
+        ["tendered_amount_out", "amount"],
+        ["description", "description"],
+        ["other_party_name", "payee"],
+      ]
+    tnx_date_columns: [["the_date", "date"]]
