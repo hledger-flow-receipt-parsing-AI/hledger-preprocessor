@@ -435,8 +435,9 @@ a:hover { text-decoration: underline; }
 
 /* DAG path display */
 .dag-path {
-  display: flex; flex-wrap: wrap; gap: 0.3rem;
+  display: flex; flex-wrap: nowrap; gap: 0.3rem;
   align-items: flex-start; margin-bottom: 1rem;
+  overflow-x: auto;
 }
 .dag-path .path-node {
   font-size: 0.75rem; padding: 0.3rem 0.5rem;
@@ -454,10 +455,11 @@ a:hover { text-decoration: underline; }
   border-color: #ff6600; background: rgba(255, 102, 0, 0.15);
   font-weight: 600;
 }
-.dag-path .path-arrow { color: var(--text-muted); font-size: 0.7rem; align-self: center; }
+.dag-path .path-arrow { color: var(--text-muted); font-size: 0.7rem; align-self: center; flex-shrink: 0; }
+.dag-path > .path-node { flex-shrink: 0; }
 
 /* Tree chip groups */
-.path-node-group { display: inline-flex; flex-direction: column; }
+.path-node-group { display: inline-flex; flex-direction: column; flex-shrink: 0; }
 .path-children {
   display: none; flex-direction: column; gap: 0.15rem;
   margin-top: 0.2rem; padding-left: 0.5rem;

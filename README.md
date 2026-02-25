@@ -89,8 +89,8 @@ Browse user stories with synchronized video + interactive DAG diagrams:
 python user_stories/dag/generate_site.py --output /tmp/site/
 
 # Serve locally and open in browser
-python -m http.server 8080 --directory /tmp/site/
-# Then open http://localhost:8080
+python -m http.server 8059 --directory /tmp/site/
+# Then open http://localhost:8059
 ```
 
 Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Click a node to seek.
