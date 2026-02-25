@@ -112,6 +112,31 @@ def discover_videos(*, gifs_root: Path, theme: str) -> Dict[str, Path]:
     return result
 
 
+def discover_all_videos(
+    *, gifs_root: Path
+) -> Dict[str, Dict[str, Path]]:
+    """Find ALL MP4/GIF files per GIF directory.
+
+    Returns {dir_name: {stem: path}} — e.g.
+    {"1a_setup_config": {"cfg_1b": Path(...cfg_1b.mp4), "cfg_2b": ...}}.
+    Prefers .mp4 over .gif when both exist for the same stem.
+    """
+    result: Dict[str, Dict[str, Path]] = {}
+    for gif_dir in sorted(gifs_root.iterdir()):
+        out = gif_dir / "output"
+        if not out.is_dir():
+            continue
+        name = gif_dir.name
+        stem_map: Dict[str, Path] = {}
+        # Collect GIFs first, then MP4s override (so MP4 wins)
+        for ext in ["*.gif", "*.mp4"]:
+            for f in sorted(out.glob(ext)):
+                stem_map[f.stem] = f
+        if stem_map:
+            result[name] = stem_map
+    return result
+
+
 def discover_cast_files(*, gifs_root: Path) -> Dict[str, Path]:
     """Find best .cast file per GIF directory. Returns {dir_name: path}."""
     result: Dict[str, Path] = {}
@@ -169,6 +194,62 @@ def get_video_for_section(
     return None
 
 
+def get_video_for_story(
+    *,
+    story: Dict,
+    section: str,
+    video_map: Dict[str, Path],
+    all_videos: Dict[str, Dict[str, Path]],
+) -> Optional[Path]:
+    """Get the video path for a specific story.
+
+    Uses the story's ``gif_video`` field to find a per-story video in the
+    section's GIF directory.  Falls back to the section-level video.
+    """
+    gif_dir = SECTION_TO_GIF_DIR.get(section)
+    gif_video = story.get("gif_video")
+    if gif_dir and gif_video and gif_dir in all_videos:
+        dir_videos = all_videos[gif_dir]
+        if gif_video in dir_videos:
+            return dir_videos[gif_video]
+    # Fallback to section-level default
+    return get_video_for_section(section=section, video_map=video_map)
+
+
+def get_markers_for_story(
+    *,
+    story: Dict,
+    section: str,
+    marker_json_map: Dict[str, Dict[str, Path]],
+) -> Dict[str, float]:
+    """Get marker timestamps for a specific story.
+
+    Uses the story's ``gif_video`` field to find the matching sidecar
+    markers JSON.  Returns empty dict if none found.
+    """
+    gif_dir = SECTION_TO_GIF_DIR.get(section)
+    gif_video = story.get("gif_video")
+    if gif_dir and gif_video and gif_dir in marker_json_map:
+        dir_markers = marker_json_map[gif_dir]
+        if gif_video in dir_markers:
+            return parse_marker_json(json_path=dir_markers[gif_video])
+    return {}
+
+
+def get_cast_duration(*, cast_path: Path) -> float:
+    """Return the timestamp of the last event in a .cast file (i.e. its duration)."""
+    last_ts = 0.0
+    try:
+        with open(cast_path) as f:
+            f.readline()  # skip header
+            for line in f:
+                row = json.loads(line)
+                last_ts = row[0]
+    except (json.JSONDecodeError, OSError):
+        pass
+    return round(last_ts, 2)
+
+
 def get_node_markers_for_section(
     *,
     section: str,
@@ -179,6 +260,55 @@ def get_node_markers_for_section(
     if gif_dir and gif_dir in cast_map:
         return parse_cast_node_markers(cast_path=cast_map[gif_dir])
     return {}
+
+
+def get_cast_duration_for_section(
+    *,
+    section: str,
+    cast_map: Dict[str, Path],
+) -> float:
+    """Get the duration in seconds of the cast file for a section."""
+    gif_dir = SECTION_TO_GIF_DIR.get(section)
+    if gif_dir and gif_dir in cast_map:
+        return get_cast_duration(cast_path=cast_map[gif_dir])
+    return 0.0
+
+
+# ---------------------------------------------------------------------------
+# Sidecar marker JSON discovery (from segmented GIF generation)
+# ---------------------------------------------------------------------------
+def discover_marker_json_files(
+    *, gifs_root: Path
+) -> Dict[str, Dict[str, Path]]:
+    """Find ALL *_markers.json sidecar files in GIF output directories.
+
+    Returns {dir_name: {stem: json_path}} — stem is the markers file name
+    without the ``_markers.json`` suffix, e.g. ``{"1a_setup_config":
+    {"cfg_1b": Path(...cfg_1b_markers.json), "cfg_2b": ...}}``.
+    """
+    result: Dict[str, Dict[str, Path]] = {}
+    for gif_dir in sorted(gifs_root.iterdir()):
+        out = gif_dir / "output"
+        if not out.is_dir():
+            continue
+        name = gif_dir.name
+        stem_map: Dict[str, Path] = {}
+        for mf in sorted(out.glob("*_markers.json")):
+            # e.g. cfg_1b_markers.json → stem = cfg_1b
+            stem = mf.name.replace("_markers.json", "")
+            stem_map[stem] = mf
+        if stem_map:
+            result[name] = stem_map
+    return result
+
+
+def parse_marker_json(*, json_path: Path) -> Dict[str, float]:
+    """Read a sidecar markers JSON file and return {marker_id: timestamp_seconds}."""
+    try:
+        data = json.loads(json_path.read_text())
+        return data.get("markers", {})
+    except (json.JSONDecodeError, OSError):
+        return {}
 
 
 # ---------------------------------------------------------------------------
@@ -859,7 +989,8 @@ def generate_story_html(
             info = node_index.get(nid, {})
             layer = info.get("layer", "")
             layer_label = info.get("layer_label", layer.replace("_", " ").title())
-            node_label = info.get("label", nid).split("\n")[0]
+            label_overrides = story.get("node_label_override", {})
+            node_label = label_overrides.get(nid, info.get("label", nid)).split("\n")[0]
             has_ts = nid in timestamps
             if filtered_components_map is not None and nid in filtered_components_map:
                 components = filtered_components_map[nid]
@@ -979,6 +1110,7 @@ def copy_assets(
     *,
     output_dir: Path,
     video_map: Dict[str, Path],
+    all_videos: Dict[str, Dict[str, Path]],
     sections: "OrderedDict[str, List[Dict]]",
 ) -> None:
     """Copy images and videos into the output directory."""
@@ -1003,8 +1135,15 @@ def copy_assets(
         for png in iso_src.glob("*.png"):
             shutil.copy2(png, iso_dir / png.name)
 
-    # Copy videos (one per section)
+    # Copy all per-story videos
     copied: set = set()
+    for _dir_name, stem_map in all_videos.items():
+        for _stem, vid_path in stem_map.items():
+            if vid_path.name not in copied:
+                shutil.copy2(vid_path, vid_dir / vid_path.name)
+                copied.add(vid_path.name)
+
+    # Also copy section-level videos (for sections without per-story GIFs)
     for section in sections:
         vid = get_video_for_section(section=section, video_map=video_map)
         if vid and vid.name not in copied:
@@ -1046,16 +1185,25 @@ def main() -> None:
 
     print(f"Found {len(stories)} stories with DAG paths in {len(sections)} sections.")
 
-    # Discover videos and cast files
+    # Discover videos, cast files, and sidecar marker JSON files
     video_map = discover_videos(gifs_root=GIFS_ROOT, theme=DEFAULT_THEME)
+    all_videos = discover_all_videos(gifs_root=GIFS_ROOT)
     cast_map = discover_cast_files(gifs_root=GIFS_ROOT)
-    print(f"Found {len(video_map)} video dirs, {len(cast_map)} cast files.")
+    marker_json_map = discover_marker_json_files(gifs_root=GIFS_ROOT)
+    total_videos = sum(len(v) for v in all_videos.values())
+    total_markers = sum(len(v) for v in marker_json_map.values())
+    print(
+        f"Found {len(video_map)} video dirs ({total_videos} videos), "
+        f"{len(cast_map)} cast files, "
+        f"{total_markers} marker JSON files."
+    )
 
     # Copy assets
     print(f"Copying assets to {output_dir}...")
     copy_assets(
         output_dir=output_dir,
         video_map=video_map,
+        all_videos=all_videos,
         sections=sections,
     )
 
@@ -1094,8 +1242,13 @@ def main() -> None:
         next_s = flat[i + 1] if i < len(flat) - 1 else None
         section = story.get("section", "")
 
-        # Video
-        vid = get_video_for_section(section=section, video_map=video_map)
+        # Video: prefer per-story video (gif_video), fall back to section
+        vid = get_video_for_story(
+            story=story,
+            section=section,
+            video_map=video_map,
+            all_videos=all_videos,
+        )
         video_filename = vid.name if vid else None
         is_gif = video_filename.endswith(".gif") if video_filename else False
 
@@ -1107,22 +1260,50 @@ def main() -> None:
             story=story, node_index=node_index
         )
 
-        # Read @@NODE markers from cast file (if available)
-        raw_markers = get_node_markers_for_section(
-            section=section, cast_map=cast_map
+        # Check per-story sidecar marker JSON first, then fall back to
+        # .cast @@NODE markers
+        raw_markers: Dict[str, float] = get_markers_for_story(
+            story=story,
+            section=section,
+            marker_json_map=marker_json_map,
         )
+        if not raw_markers:
+            raw_markers = get_node_markers_for_section(
+                section=section, cast_map=cast_map
+            )
 
-        # Build timestamps using YAML ordering, populated from cast where
-        # available.  This replaces the old ANSI pattern-matching approach.
+        # Build timestamps using YAML ordering, populated from markers
         timestamps: Dict[str, float] = {}
         for marker_id in marker_sequence:
             if marker_id in raw_markers:
                 timestamps[marker_id] = raw_markers[marker_id]
 
-        # If no cast-derived timestamps, interpolate evenly across markers
+        # Infer missing parent-node timestamps from their first child.
+        # Sidecar JSON may only contain sub-component keys (e.g.
+        # cfg_1b__bank_csv) without the parent (cfg_1b).  If the parent
+        # appears in the marker sequence but has no timestamp, set it to
+        # the minimum timestamp of its children.
+        for marker_id in marker_sequence:
+            if "__" not in marker_id and marker_id not in timestamps:
+                prefix = marker_id + "__"
+                child_ts = [
+                    timestamps[k]
+                    for k in timestamps
+                    if k.startswith(prefix)
+                ]
+                if child_ts:
+                    timestamps[marker_id] = min(child_ts)
+
+        # If no marker-derived timestamps, interpolate evenly across the
+        # cast file duration (or fall back to 2s spacing).
         if not timestamps and marker_sequence:
+            cast_dur = get_cast_duration_for_section(
+                section=section, cast_map=cast_map
+            )
+            n = len(marker_sequence)
+            step = (cast_dur / n) if cast_dur and n > 1 else 2.0
             for idx_m, mid in enumerate(marker_sequence):
-                timestamps[mid] = round(idx_m * 2.0, 2)
+                timestamps[mid] = round(idx_m * step, 2)
 
         # Build per-node filtered component map from YAML component_filter
         filtered_components_map: Dict[str, List[Dict]] = {}

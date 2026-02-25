@@ -1,0 +1,11 @@
+file_names:
+  start_journal_filepath: "start_pos/2024_complete.journal"
+  root_journal_filename: "all-years.journal"
+  tui_label_filename: "receipt_image_to_obj_label"
+  categories_filename: "categories.yaml"
+  receipt_img:
+    processing_metadata_ext: ".json"
+    rotate: "_rotated"
+    rotate_ext: ".jpg"
+    crop: "_cropped"
+    crop_ext: ".jpg"

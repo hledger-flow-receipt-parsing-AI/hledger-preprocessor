@@ -1,0 +1,53 @@
+account_configs:
+  - base_currency: EUR
+    account_holder: at
+    bank: triodos
+    account_type: checking
+    input_csv_filename: "triodos_2024-2025.csv"
+    csv_column_mapping: [
+        ["the_date", "date"],
+        ["", ""],
+        ["tendered_amount_out", "amount"],
+        ["transaction_code", ""],
+        ["other_party_name", ""],
+        ["other_party_account_name", ""],
+        ["", ""],
+        ["description", "description"],
+        ["", ""],
+      ]
+    tnx_date_columns: [["the_date", "date"], ["description", "description"]]
+  - input_csv_filename: null
+    base_currency: EUR
+    account_holder: at
+    bank: wallet
+    csv_column_mapping: null
+    tnx_date_columns: null
+    account_type: physical
+  - input_csv_filename: null
+    base_currency: POUND
+    account_holder: at
+    bank: wallet
+    csv_column_mapping: null
+    tnx_date_columns: null
+    account_type: physical
+  - input_csv_filename: null
+    base_currency: BTC
+    account_holder: at
+    bank: wallet
+    account_type: digital
+    csv_column_mapping: null
+    tnx_date_columns: null
+  - input_csv_filename: null
+    base_currency: GOLD
+    account_holder: at
+    bank: wallet
+    account_type: physical
+    csv_column_mapping: null
+    tnx_date_columns: null
+  - input_csv_filename: null
+    base_currency: SILVER
+    account_holder: at
+    bank: wallet
+    account_type: physical
+    csv_column_mapping: null
+    tnx_date_columns: null

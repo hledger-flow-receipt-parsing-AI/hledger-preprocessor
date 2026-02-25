@@ -1,0 +1,12 @@
+{
+  "markers": {
+    "cfg_2b__triodos_csv": 0.0,
+    "cfg_2b__ing_csv": 23.16,
+    "cfg_2b__dir_paths": 39.36,
+    "cfg_2b__file_names": 56.72,
+    "cfg_2b__categorisation": 72.16,
+    "cfg_2b__matching_algo": 74.88
+  },
+  "total_duration": 81.48,
+  "frame_duration_ms": 40
+}

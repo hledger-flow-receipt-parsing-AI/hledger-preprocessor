@@ -1,0 +1,5 @@
+matching_algo:
+  days: 2
+  amount_range: 0
+  days_month_swap: true
+  multiple_receipts_per_transaction: false

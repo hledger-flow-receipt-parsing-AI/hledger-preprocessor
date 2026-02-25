@@ -1,0 +1,11 @@
+{
+  "markers": {
+    "cfg_1b__bank_csv": 0.0,
+    "cfg_1b__dir_paths": 33.36,
+    "cfg_1b__file_names": 49.88,
+    "cfg_1b__categorisation": 65.32,
+    "cfg_1b__matching_algo": 68.04
+  },
+  "total_duration": 74.64,
+  "frame_duration_ms": 40
+}

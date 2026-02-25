@@ -1,0 +1,8 @@
+  # GOLD physical wallet
+  - input_csv_filename: null
+    base_currency: GOLD
+    account_holder: at
+    bank: wallet
+    account_type: physical
+    csv_column_mapping: null
+    tnx_date_columns: null
