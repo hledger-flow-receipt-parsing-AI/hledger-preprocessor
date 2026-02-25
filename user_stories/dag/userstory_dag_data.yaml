@@ -656,15 +656,14 @@ stories:
     pattern: solid
     data_use: both
     paths:
-      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur]
     demo_paths:
-      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur]
     component_filter:
       cfg_1b1w: [bank_csv, dir_paths, file_names, categorisation, matching_algo]
       cat_basic: [groceries]
       match_default: [days, amount_range, days_month_swap]
       start_2024_1000eur: [opening_balance, base_currency]
-      lbl_ekoplaza_card_eur: [date_time, category, bank_account, currency, amount, shop]
 
   - id: US-1a.2
     title: "Configure multiple bank accounts"
@@ -689,14 +688,12 @@ stories:
     pattern: solid
     data_use: test
     paths:
-      - [cfg_multi_bank, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
-      - [cfg_multi_bank, cat_basic, match_default, start_2024_1000eur, csv_ing_rent_800, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_csv_only_classify, jrnl_rent_ing]
+      - [cfg_multi_bank, cat_basic, match_default, start_2024_1000eur]
     component_filter:
       cfg_multi_bank: [bank_csv, dir_paths, file_names, categorisation, matching_algo]
       cat_basic: [groceries]
       match_default: [days, amount_range, days_month_swap]
       start_2024_1000eur: [opening_balance, base_currency]
-      lbl_ekoplaza_card_eur: [date_time, category, bank_account, currency, amount, shop]
 
   - id: US-1a.3
     title: "Configure a cash wallet (no CSV)"
@@ -730,13 +727,12 @@ stories:
     pattern: solid
     data_use: test
     paths:
-      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
+      - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur]
     component_filter:
       cfg_1b1w: [eur_wallet, dir_paths, file_names, categorisation]
       cat_basic: [groceries]
       match_default: [days, amount_range]
       start_2024_1000eur: [opening_balance, base_currency]
-      lbl_coffee_cash: [date_time, category, bank_account, currency, amount, shop]
 
   - id: US-1a.4
     title: "Configure a cryptocurrency exchange account"
