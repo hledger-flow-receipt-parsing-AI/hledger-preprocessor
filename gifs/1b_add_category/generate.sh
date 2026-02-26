@@ -2,7 +2,7 @@
 # =============================================================================
 # Add Category Demo - GIF Generator
 #
-# Generates one GIF per category node variant (cat_basic, cat_with_income).
+# Generates one GIF per category node variant (cat_basic, cat_with_income, cat_extended).
 # Each GIF types the matching category fragments with per-section timestamps.
 # Uses yaml_typing_gif.py --segments to record per-section timestamps.
 # =============================================================================
@@ -79,12 +79,30 @@ python -m gifs.automation.yaml_typing_gif \
         "${FRAG_DIR}/groceries.yaml=cat_with_income__groceries" \
         "${FRAG_DIR}/withdrawl.yaml=cat_with_income__withdrawl" \
         "${FRAG_DIR}/salary.yaml=cat_with_income__salary" \
+        "${FRAG_DIR}/freelance.yaml=cat_with_income__freelance" \
     --output "${OUTPUT_DIR}/cat_with_income.gif" \
     --markers-output "${OUTPUT_DIR}/cat_with_income_markers.json" \
     --title "categories.yaml" \
     --rows 35 \
     --cols 85
 convert_gif_to_mp4 "${OUTPUT_DIR}/cat_with_income.gif"
+
+# --- cat_extended: groceries + transport + dining + utilities + gold + silver ---
+log "Generating cat_extended categories typing animation..."
+python -m gifs.automation.yaml_typing_gif \
+    --segments \
+        "${FRAG_DIR}/groceries.yaml=cat_extended__groceries" \
+        "${FRAG_DIR}/transport.yaml=cat_extended__transport" \
+        "${FRAG_DIR}/dining.yaml=cat_extended__dining" \
+        "${FRAG_DIR}/utilities.yaml=cat_extended__utilities" \
+        "${FRAG_DIR}/gold.yaml=cat_extended__gold" \
+        "${FRAG_DIR}/silver.yaml=cat_extended__silver" \
+    --output "${OUTPUT_DIR}/cat_extended.gif" \
+    --markers-output "${OUTPUT_DIR}/cat_extended_markers.json" \
+    --title "categories.yaml" \
+    --rows 35 \
+    --cols 85
+convert_gif_to_mp4 "${OUTPUT_DIR}/cat_extended.gif"
 
 log "All category GIFs generated!"
 exit 0
