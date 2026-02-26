@@ -639,15 +639,17 @@ a:hover { text-decoration: underline; }
 .dag-path .path-node {
   font-size: 0.75rem; padding: 0.3rem 0.5rem;
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 4px; cursor: pointer; transition: all 0.15s;
+  border-radius: 4px; cursor: default; transition: all 0.15s;
   display: flex; flex-direction: column; text-align: center;
 }
+.dag-path .path-node:not(.clickable) { opacity: 0.45; }
+.dag-path .path-node.clickable { cursor: pointer; }
 .dag-path .path-node .path-layer-name {
   font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em;
   color: var(--text-muted); display: block; margin-bottom: 0.1rem;
   font-weight: 600;
 }
-.dag-path .path-node:hover { border-color: var(--accent); }
+.dag-path .path-node.clickable:hover { border-color: var(--accent); }
 .dag-path .path-node.active {
   border-color: #ff6600; background: rgba(255, 102, 0, 0.15);
   font-weight: 600;
@@ -665,10 +667,12 @@ a:hover { text-decoration: underline; }
 .path-child {
   font-size: 0.65rem; padding: 0.2rem 0.4rem;
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 3px; cursor: pointer; transition: all 0.15s;
+  border-radius: 3px; cursor: default; transition: all 0.15s;
   white-space: nowrap;
 }
-.path-child:hover { border-color: var(--accent); }
+.path-child:not(.clickable) { opacity: 0.45; }
+.path-child.clickable { cursor: pointer; }
+.path-child.clickable:hover { border-color: var(--accent); }
 .path-child.active {
   border-color: #ff6600; background: rgba(255, 102, 0, 0.15);
   font-weight: 600;
