@@ -739,8 +739,8 @@ a:hover { text-decoration: underline; }
 .explorer-status .story-title {
   flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.explorer-status .story-colour-dot {
-  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+.explorer-status .story-line-swatch {
+  flex-shrink: 0; width: 32px; height: 14px;
 }
 .explorer-status .hints {
   font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;
@@ -986,7 +986,7 @@ def generate_explorer_js() -> str:
   var statusEl = document.getElementById('explorer-status');
   var counterEl = document.getElementById('explorer-counter');
   var titleEl = document.getElementById('explorer-title');
-  var dotEl = document.getElementById('explorer-dot');
+  var swatchEl = document.getElementById('explorer-swatch');
   var hintsEl = document.getElementById('explorer-hints');
 
   // --- State ---
@@ -1075,10 +1075,17 @@ def generate_explorer_js() -> str:
         n.classList.add('dimmed');
       }
     });
+    // Match edges by stroke colour — each story has a unique colour on its edges
+    var storyColour = story.colour.toLowerCase();
     allEdges.forEach(function(e) {
-      var src = e.getAttribute('data-source');
-      var tgt = e.getAttribute('data-target');
-      if (!(src && ns[src] && tgt && ns[tgt])) {
+      var path = e.querySelector('path');
+      var poly = e.querySelector('polygon');
+      var edgeColour = '';
+      if (path) edgeColour = (path.getAttribute('stroke') || '').toLowerCase();
+      if (!edgeColour && poly) edgeColour = (poly.getAttribute('stroke') || '').toLowerCase();
+      if (edgeColour === storyColour) {
+        // This edge belongs to the current story — keep visible
+      } else {
         e.classList.add('dimmed');
       }
     });
@@ -1089,7 +1096,15 @@ def generate_explorer_js() -> str:
     statusEl.style.display = '';
     counterEl.textContent = (idx + 1) + ' / ' + STORIES.length;
     titleEl.textContent = story.id + ' \u2014 ' + story.title;
-    dotEl.style.background = story.colour;
+    // Update swatch line with story colour + dash pattern
+    var swLine = swatchEl.querySelector('line');
+    if (swLine) {
+      swLine.setAttribute('stroke', story.colour);
+      var dashMap = {dashed: '5,3', dotted: '2,3', bold: '', solid: ''};
+      var da = dashMap[story.pattern] || '';
+      swLine.setAttribute('stroke-dasharray', da);
+      swLine.setAttribute('stroke-width', story.pattern === 'bold' ? '4' : '2.5');
+    }
 
     document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
       a.classList.remove('explorer-active');
@@ -1258,6 +1273,20 @@ def _html_head(*, title: str) -> str:
 """
 
 
+def _line_swatch_svg(*, colour: str, pattern: str) -> str:
+    """Return an inline SVG showing a short line with the story's colour and dash pattern."""
+    dash_map = {"dashed": '5,3', "dotted": '2,3', "bold": '', "solid": ''}
+    da = dash_map.get(pattern, '')
+    sw = '3.5' if pattern == 'bold' else '2'
+    da_attr = f' stroke-dasharray="{da}"' if da else ''
+    return (
+        f'<svg class="sidebar-swatch" viewBox="0 0 22 10" '
+        f'style="width:22px;height:10px;vertical-align:middle;margin-right:4px;flex-shrink:0">'
+        f'<line x1="1" y1="5" x2="21" y2="5" stroke="{colour}" '
+        f'stroke-width="{sw}"{da_attr}/></svg>'
+    )
+
+
 def _sidebar_html(
     *,
     sections: "OrderedDict[str, List[Dict]]",
@@ -1280,8 +1309,14 @@ def _sidebar_html(
         for s in stories:
             active = ' class="active"' if s["id"] == current_story_id else ""
             play_icon = " &#x25b6;" if s["id"] in swv else ""
+            swatch = _line_swatch_svg(
+                colour=s.get("colour", "#7aa2f7"),
+                pattern=s.get("pattern", "solid"),
+            )
             html += (
-                f'<li><a href="{{STORIES_PATH}}/{s["id"]}.html"{active}>'
+                f'<li><a href="{{STORIES_PATH}}/{s["id"]}.html"{active}'
+                f' style="display:inline-flex;align-items:center">'
+                f'{swatch}'
                 f'{s["id"]}: {_esc(s["title"])}{play_icon}</a></li>\n'
             )
         html += "</ul>\n</details>\n"
@@ -1317,7 +1352,9 @@ def generate_index_html(
         main += '<div class="dag-explorer">\n'
         main += overview_svg + "\n"
         main += '<div class="explorer-status" id="explorer-status">\n'
-        main += '<span class="story-colour-dot" id="explorer-dot"></span>\n'
+        main += '<svg class="story-line-swatch" id="explorer-swatch" viewBox="0 0 32 14">'
+        main += '<line x1="2" y1="7" x2="30" y2="7" stroke="#888" stroke-width="2.5"/>'
+        main += '</svg>\n'
         main += '<span class="story-counter" id="explorer-counter"></span>\n'
         main += '<span class="story-title" id="explorer-title"></span>\n'
         main += '<span class="hints" id="explorer-hints"></span>\n'
@@ -1696,6 +1733,7 @@ def main() -> None:
             "id": s["id"],
             "title": s.get("title", ""),
             "colour": s.get("colour", "#7aa2f7"),
+            "pattern": s.get("pattern", "solid"),
             "paths": s.get("paths", []),
             "url": f"stories/{s['id']}.html",
         })
