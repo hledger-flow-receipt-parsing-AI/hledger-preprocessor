@@ -13,6 +13,7 @@ Usage:
 """
 
 import argparse
+import html as html_mod
 import json
 import re
 import shutil
@@ -406,8 +407,57 @@ def add_data_attributes_to_svg(
                     )
                 svg = svg[:g_start] + new_g + svg[g_end + 1 :]
 
-    # Make SVG responsive
-    svg = svg.replace('width="', 'class="dag-svg" width="', 1)
+    # Add data attributes to edges for JS targeting
+    # Edges have <title>source&#45;&gt;target</title> inside <g class="edge">
+    edge_title_re = re.compile(r"<title>([^<]+&#45;&gt;[^<]+)</title>")
+    search_start = 0
+    while True:
+        m = edge_title_re.search(svg, search_start)
+        if not m:
+            break
+        title_text = html_mod.unescape(m.group(1))  # e.g. "cfg_1b1w->cat_basic"
+        parts = title_text.split("->")
+        if len(parts) == 2:
+            src, tgt = parts[0].strip(), parts[1].strip()
+            pos = m.start()
+            g_start = svg.rfind("<g ", 0, pos)
+            if g_start >= 0:
+                g_end = svg.index(">", g_start)
+                g_tag = svg[g_start : g_end + 1]
+                if 'class="' in g_tag:
+                    new_g = re.sub(
+                        r'class="([^"]*)"',
+                        f'class="\\1 dag-edge" data-source="{src}"'
+                        f' data-target="{tgt}"',
+                        g_tag,
+                        count=1,
+                    )
+                else:
+                    new_g = g_tag.replace(
+                        ">",
+                        f' class="dag-edge" data-source="{src}"'
+                        f' data-target="{tgt}">',
+                        1,
+                    )
+                len_diff = len(new_g) - len(g_tag)
+                svg = svg[:g_start] + new_g + svg[g_end + 1 :]
+                search_start = m.end() + len_diff
+                continue
+        search_start = m.end()
+
+    # Make the SVG background transparent (first polygon is usually the bg)
+    svg = re.sub(
+        r'(<polygon fill=")white(" stroke="transparent")',
+        r'\1none\2',
+        svg,
+        count=1,
+    )
+
+    # Make SVG responsive: strip fixed width/height (in pt), keep viewBox,
+    # and add class. The viewBox is already set by PlantUML/Graphviz.
+    svg = re.sub(r'\s*width="[^"]*"', '', svg, count=1)
+    svg = re.sub(r'\s*height="[^"]*"', '', svg, count=1)
+    svg = svg.replace("<svg", '<svg class="dag-svg"', 1)
 
     return svg
 
@@ -517,7 +567,7 @@ a:hover { text-decoration: underline; }
 /* DAG diagram */
 .dag-section { margin-bottom: 1.5rem; }
 .dag-svg {
-  max-width: 100%; height: auto;
+  width: 100%; height: auto;
   background: transparent;
 }
 .dag-fallback-img {
@@ -653,15 +703,16 @@ a:hover { text-decoration: underline; }
 .dag-explorer {
   position: relative; overflow: hidden; cursor: grab;
   border: 1px solid var(--border); border-radius: 8px;
-  background: var(--bg-card);
+  background: transparent;
   min-height: 70vh;
 }
 .dag-explorer:active { cursor: grabbing; }
 .dag-explorer .dag-svg {
   transform-origin: 0 0; transition: transform 0.15s ease-out;
-  max-width: none;
+  width: 100%; height: auto;
 }
 .dag-explorer .dag-node.dimmed { opacity: 0.12; transition: opacity 0.3s; }
+.dag-explorer .dag-edge.dimmed { opacity: 0.08; transition: opacity 0.3s; }
 .dag-explorer .dag-node.story-hl polygon,
 .dag-explorer .dag-node.story-hl ellipse,
 .dag-explorer .dag-node.story-hl rect {
@@ -930,6 +981,7 @@ def generate_explorer_js() -> str:
   if (!explorer || !svg || typeof STORIES === 'undefined') return;
 
   var allNodes = explorer.querySelectorAll('.dag-node');
+  var allEdges = explorer.querySelectorAll('.dag-edge');
   var clusters = explorer.querySelectorAll('.dag-cluster');
   var statusEl = document.getElementById('explorer-status');
   var counterEl = document.getElementById('explorer-counter');
@@ -954,13 +1006,7 @@ def generate_explorer_js() -> str:
   }
 
   function resetView() {
-    var cw = explorer.clientWidth;
-    var sw = svg.getBBox ? svg.getBBox().width : svg.viewBox.baseVal.width;
-    if (sw > 0) {
-      scale = Math.min(cw / sw, 1.5);
-    } else {
-      scale = 1;
-    }
+    scale = 1;
     panX = 0; panY = 0;
     applyTransform();
   }
@@ -1001,6 +1047,7 @@ def generate_explorer_js() -> str:
         el.style.removeProperty('stroke');
       });
     });
+    allEdges.forEach(function(e) { e.classList.remove('dimmed'); });
     clusters.forEach(function(c) { c.classList.remove('cluster-hl'); });
   }
 
@@ -1026,6 +1073,13 @@ def generate_explorer_js() -> str:
         });
       } else {
         n.classList.add('dimmed');
+      }
+    });
+    allEdges.forEach(function(e) {
+      var src = e.getAttribute('data-source');
+      var tgt = e.getAttribute('data-target');
+      if (!(src && ns[src] && tgt && ns[tgt])) {
+        e.classList.add('dimmed');
       }
     });
     clusters.forEach(function(c) {
@@ -1167,7 +1221,19 @@ def generate_explorer_js() -> str:
 
   // --- Init ---
   resetView();
-  statusEl.style.display = 'none';
+
+  // Start with US-3.5 highlighted (full chain, most intuitive)
+  var defaultIdx = -1;
+  for (var di = 0; di < STORIES.length; di++) {
+    if (STORIES[di].id === 'US-3.5') { defaultIdx = di; break; }
+  }
+  if (defaultIdx >= 0) {
+    storyIdx = defaultIdx;
+    highlightStory(storyIdx);
+  } else {
+    statusEl.style.display = 'none';
+  }
+
   hintsEl.innerHTML =
     '<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle stories \u00b7 ' +
     '<kbd>Enter</kbd> open \u00b7 ' +
