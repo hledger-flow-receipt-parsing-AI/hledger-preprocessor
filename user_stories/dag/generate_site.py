@@ -504,22 +504,8 @@ a:hover { text-decoration: underline; }
 .badge-not-impl { background: var(--warning); color: #000; }
 .badge-wontfix { background: var(--error); color: #fff; }
 
-/* Video + DAG side-by-side grid */
-.video-dag-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-@media (max-width: 900px) {
-  .video-dag-row { grid-template-columns: 1fr; }
-  .video-dag-row .dag-section { grid-column: 1; grid-row: auto; }
-  .video-dag-row .below-row { grid-column: 1; }
-}
-
 /* Video player */
-.video-dag-row .video-section { grid-column: 1; grid-row: 1; min-width: 0; }
+.video-section { margin-bottom: 1.5rem; }
 .video-section video, .video-section img {
   width: 100%; border-radius: 8px; border: 1px solid var(--border);
 }
@@ -529,18 +515,33 @@ a:hover { text-decoration: underline; }
 }
 
 /* DAG diagram */
-.video-dag-row .dag-section { grid-column: 2; grid-row: 1 / 3; min-width: 0; }
 .dag-section { margin-bottom: 1.5rem; }
-
-/* Below-row: layer indicator + path chips sit under video, beside DAG */
-.video-dag-row .below-row { grid-column: 1; grid-row: 2; }
 .dag-svg {
   max-width: 100%; height: auto;
-  background: transparent; border-radius: 8px;
+  background: transparent;
 }
 .dag-fallback-img {
   max-width: 100%; height: auto;
-  background: transparent; border-radius: 8px;
+  background: transparent;
+}
+
+/* Side-by-side video + DAG grid */
+.video-dag-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.video-dag-row .video-section {
+  grid-column: 1; grid-row: 1;
+  margin-bottom: 0;
+}
+.video-dag-row .dag-section {
+  grid-column: 2; grid-row: 1 / span 3;
+  margin-bottom: 0;
+}
+.video-dag-row .below-row {
+  grid-column: 1; grid-row: 2;
 }
 
 /* DAG node highlighting */
@@ -653,13 +654,12 @@ a:hover { text-decoration: underline; }
   position: relative; overflow: hidden; cursor: grab;
   border: 1px solid var(--border); border-radius: 8px;
   background: var(--bg-card);
-  /* fill available height */
   min-height: 70vh;
 }
 .dag-explorer:active { cursor: grabbing; }
 .dag-explorer .dag-svg {
   transform-origin: 0 0; transition: transform 0.15s ease-out;
-  max-width: none; /* override the 100% cap so zoom works */
+  max-width: none;
 }
 .dag-explorer .dag-node.dimmed { opacity: 0.12; transition: opacity 0.3s; }
 .dag-explorer .dag-node.story-hl polygon,
@@ -725,13 +725,14 @@ def generate_js() -> str:
   }
 
   // Phase 2: Tree fold/unfold for path chip navigation
+  // Auto-expand all children on page load
   document.querySelectorAll('.path-node-group').forEach(function(group) {
     var parentChip = group.querySelector('.path-node');
     var children = group.querySelector('.path-children');
     var indicator = group.querySelector('.expand-indicator');
     if (!parentChip || !children) return;
 
-    // Auto-expand all children on page load
+    // Start expanded
     children.classList.add('expanded');
     if (indicator) indicator.textContent = '\\u25be';
 
@@ -953,7 +954,6 @@ def generate_explorer_js() -> str:
   }
 
   function resetView() {
-    // Fit SVG to container width
     var cw = explorer.clientWidth;
     var sw = svg.getBBox ? svg.getBBox().width : svg.viewBox.baseVal.width;
     if (sw > 0) {
@@ -968,14 +968,12 @@ def generate_explorer_js() -> str:
   function zoom(delta, cx, cy) {
     var oldScale = scale;
     scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, scale + delta));
-    // Zoom toward the point (cx, cy) in container coords
     var ratio = scale / oldScale;
     panX = cx - ratio * (cx - panX);
     panY = cy - ratio * (cy - panY);
     applyTransform();
   }
 
-  // Collect all unique node IDs across all paths of a story
   function storyNodeSet(story) {
     var s = {};
     (story.paths || []).forEach(function(p) {
@@ -984,7 +982,6 @@ def generate_explorer_js() -> str:
     return s;
   }
 
-  // Collect unique layer names for a set of nodes
   function layersForNodes(nodeSet) {
     var layers = {};
     allNodes.forEach(function(n) {
@@ -1000,7 +997,6 @@ def generate_explorer_js() -> str:
   function clearHighlights() {
     allNodes.forEach(function(n) {
       n.classList.remove('dimmed', 'story-hl');
-      // Remove inline stroke colour
       n.querySelectorAll('polygon, ellipse, rect').forEach(function(el) {
         el.style.removeProperty('stroke');
       });
@@ -1011,9 +1007,7 @@ def generate_explorer_js() -> str:
   function highlightStory(idx) {
     clearHighlights();
     if (idx < 0 || idx >= STORIES.length) {
-      // Overview mode
       statusEl.style.display = 'none';
-      // Also clear sidebar active
       document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
         a.classList.remove('explorer-active');
       });
@@ -1027,7 +1021,6 @@ def generate_explorer_js() -> str:
       var nid = n.getAttribute('data-node');
       if (nid && ns[nid]) {
         n.classList.add('story-hl');
-        // Tint with story colour
         n.querySelectorAll('polygon, ellipse, rect').forEach(function(el) {
           el.style.stroke = story.colour;
         });
@@ -1039,20 +1032,17 @@ def generate_explorer_js() -> str:
       if (ls[c.getAttribute('data-layer')]) c.classList.add('cluster-hl');
     });
 
-    // Update status bar
     statusEl.style.display = '';
     counterEl.textContent = (idx + 1) + ' / ' + STORIES.length;
-    titleEl.textContent = story.id + ' — ' + story.title;
+    titleEl.textContent = story.id + ' \u2014 ' + story.title;
     dotEl.style.background = story.colour;
 
-    // Highlight matching sidebar link
     document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
       a.classList.remove('explorer-active');
     });
     document.querySelectorAll('.sidebar li a').forEach(function(a) {
       if (a.textContent.indexOf(story.id + ':') === 0) {
         a.classList.add('explorer-active');
-        // Scroll into view
         a.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
@@ -1082,7 +1072,6 @@ def generate_explorer_js() -> str:
           storyIdx--;
           highlightStory(storyIdx);
         } else if (storyIdx === 0) {
-          // Back to overview
           storyIdx = -1;
           highlightStory(-1);
         }
@@ -1149,7 +1138,6 @@ def generate_explorer_js() -> str:
     node.addEventListener('click', function(e) {
       var nid = node.getAttribute('data-node');
       if (!nid) return;
-      // Find the first story whose paths contain this node
       for (var i = 0; i < STORIES.length; i++) {
         var ns = storyNodeSet(STORIES[i]);
         if (ns[nid]) {
@@ -1181,11 +1169,11 @@ def generate_explorer_js() -> str:
   resetView();
   statusEl.style.display = 'none';
   hintsEl.innerHTML =
-    '<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle stories &middot; ' +
-    '<kbd>Enter</kbd> open &middot; ' +
-    '<kbd>Esc</kbd> overview &middot; ' +
-    '<kbd>+</kbd><kbd>-</kbd> zoom &middot; ' +
-    '<kbd>0</kbd> reset &middot; scroll to zoom &middot; drag to pan';
+    '<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle stories \u00b7 ' +
+    '<kbd>Enter</kbd> open \u00b7 ' +
+    '<kbd>Esc</kbd> overview \u00b7 ' +
+    '<kbd>+</kbd><kbd>-</kbd> zoom \u00b7 ' +
+    '<kbd>0</kbd> reset \u00b7 scroll to zoom \u00b7 drag to pan';
 })();
 """
 
@@ -1210,26 +1198,25 @@ def _sidebar_html(
     current_story_id: Optional[str] = None,
     stories_with_video: Optional[set] = None,
 ) -> str:
-    if stories_with_video is None:
-        stories_with_video = set()
     html = '<nav class="sidebar">\n'
     html += '<h1><a href="{INDEX_PATH}">hledger-preprocessor</a></h1>\n'
     html += "<p style=\"font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem\">"
     html += "User Story DAG Explorer</p>\n"
+    swv = stories_with_video or set()
     for section, stories in sections.items():
         is_current = current_story_id and any(
             s["id"] == current_story_id for s in stories
         )
-        has_playable = any(s["id"] in stories_with_video for s in stories)
+        has_playable = any(s["id"] in swv for s in stories)
         open_attr = " open" if (is_current or has_playable) else ""
         html += f"<details{open_attr}>\n"
         html += f"<summary>{_esc(section)}</summary>\n<ul>\n"
         for s in stories:
             active = ' class="active"' if s["id"] == current_story_id else ""
-            demo_icon = " &#x25b6;" if s["id"] in stories_with_video else ""
+            play_icon = " &#x25b6;" if s["id"] in swv else ""
             html += (
                 f'<li><a href="{{STORIES_PATH}}/{s["id"]}.html"{active}>'
-                f'{s["id"]}: {_esc(s["title"])}{demo_icon}</a></li>\n'
+                f'{s["id"]}: {_esc(s["title"])}{play_icon}</a></li>\n'
             )
         html += "</ul>\n</details>\n"
     html += "</nav>\n"
@@ -1240,9 +1227,9 @@ def generate_index_html(
     *,
     sections: "OrderedDict[str, List[Dict]]",
     has_overview_img: bool,
-    stories_with_video: Optional[set] = None,
     overview_svg: Optional[str] = None,
     stories_json: str = "[]",
+    stories_with_video: Optional[set] = None,
 ) -> str:
     head = _html_head(title="User Story DAG — hledger-preprocessor")
     head = head.replace("{CSS_PATH}", "assets/css/style.css")
@@ -1305,8 +1292,7 @@ def generate_story_html(
     head = _html_head(title=f"{sid}: {story['title']} — hledger-preprocessor")
     head = head.replace("{CSS_PATH}", "../assets/css/style.css")
     sidebar = _sidebar_html(
-        sections=sections,
-        current_story_id=sid,
+        sections=sections, current_story_id=sid,
         stories_with_video=stories_with_video,
     )
     sidebar = sidebar.replace("{INDEX_PATH}", "../index.html")
@@ -1329,7 +1315,7 @@ def generate_story_html(
     main += f"<h1>{_esc(story['title'])}</h1>\n"
     main += "</div>\n"
 
-    # BDD narrative (moved above video/DAG)
+    # BDD narrative (above video/DAG)
     main += '<h2>User Story</h2>\n<dl class="bdd">\n'
     if story.get("as_a"):
         main += f"<dt>As a</dt><dd>{_esc(story['as_a'])}</dd>\n"
@@ -1339,7 +1325,7 @@ def generate_story_html(
         main += f"<dt>So that</dt><dd>{_esc(story['so_that'])}</dd>\n"
     main += "</dl>\n"
 
-    # Acceptance criteria (moved above video/DAG)
+    # Acceptance criteria (above video/DAG)
     criteria = story.get("acceptance_criteria", [])
     if criteria:
         main += '<h2>Acceptance Criteria</h2>\n<ul class="criteria">\n'
@@ -1347,10 +1333,10 @@ def generate_story_html(
             main += f"<li>{_esc(c)}</li>\n"
         main += "</ul>\n"
 
-    # Video + DAG side-by-side
+    # Side-by-side video + DAG grid
     main += '<div class="video-dag-row">\n'
 
-    # Video section (left)
+    # Video section (left column)
     main += '<div class="video-section">\n'
     if video_filename:
         if is_gif:
@@ -1373,7 +1359,7 @@ def generate_story_html(
         main += '<div class="coming-soon">Demo video coming soon</div>\n'
     main += "</div>\n"
 
-    # SVG DAG diagram (right, beside video)
+    # DAG diagram (right column, spans rows)
     main += '<div class="dag-section">\n'
     main += "<h2>DAG Diagram</h2>\n"
     if svg_content:
@@ -1387,10 +1373,8 @@ def generate_story_html(
         )
     main += "</div>\n"
 
-    # Below-row: layer indicator + path chips (inside grid, under video)
-    has_below_content = bool(timestamps) or bool(node_path)
-    if has_below_content:
-        main += '<div class="below-row">\n'
+    # Below-row: layer indicator + path chips (under the shorter column)
+    main += '<div class="below-row">\n'
 
     # Layer indicator
     if timestamps:
@@ -1424,7 +1408,7 @@ def generate_story_html(
                 main += f"{_esc(node_label)}"
                 main += ' <span class="expand-indicator">\u25b8</span>'
                 main += "</span>\n"
-                # Children (hidden by default)
+                # Children (hidden by default, auto-expanded by JS)
                 main += '<div class="path-children">\n'
                 for comp in components:
                     sub_key = f"{nid}__{comp['id']}"
@@ -1446,10 +1430,8 @@ def generate_story_html(
                 main += '<span class="path-arrow">\u2192</span>\n'
         main += "</div>\n"
 
-    if has_below_content:
-        main += "</div>\n"  # end .below-row
-
-    main += "</div>\n"  # end .video-dag-row
+    main += "</div>\n"  # close below-row
+    main += "</div>\n"  # close video-dag-row
 
     # Prev / Next
     main += '<div class="nav-links">\n'
@@ -1589,6 +1571,17 @@ def main() -> None:
         f"{total_markers} marker JSON files."
     )
 
+    # Pre-compute which stories have videos
+    stories_with_video: set = set()
+    for s in stories:
+        section = s.get("section", "")
+        vid = get_video_for_story(
+            story=s, section=section,
+            video_map=video_map, all_videos=all_videos,
+        )
+        if vid:
+            stories_with_video.add(s["id"])
+
     # Copy assets
     print(f"Copying assets to {output_dir}...")
     copy_assets(
@@ -1616,19 +1609,6 @@ def main() -> None:
 
     # Check overview image
     has_overview = (output_dir / "assets" / "images" / "dag_all_stories.png").exists()
-
-    # Pre-compute which stories have video demos (for sidebar expansion)
-    stories_with_video: set = set()
-    for s in stories:
-        section = s.get("section", "")
-        vid = get_video_for_story(
-            story=s,
-            section=section,
-            video_map=video_map,
-            all_videos=all_videos,
-        )
-        if vid:
-            stories_with_video.add(s["id"])
 
     # Generate overview SVG for the interactive explorer
     overview_svg: Optional[str] = None
@@ -1660,9 +1640,9 @@ def main() -> None:
     index_html = generate_index_html(
         sections=sections,
         has_overview_img=has_overview,
-        stories_with_video=stories_with_video,
         overview_svg=overview_svg,
         stories_json=stories_json,
+        stories_with_video=stories_with_video,
     )
     (output_dir / "index.html").write_text(index_html)
 
