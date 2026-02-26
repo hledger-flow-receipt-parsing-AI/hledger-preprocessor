@@ -159,5 +159,16 @@ generate_gif cfg_1b5a \
     "${SHARED}/categorisation.yaml=cfg_1b5a__categorisation" \
     "${SHARED}/matching_algo.yaml=cfg_1b5a__matching_algo"
 
+# ---------------------------------------------------------------------------
+# cfg_1b1w: Triodos + EUR wallet
+# ---------------------------------------------------------------------------
+generate_gif cfg_1b1w \
+    "${ACCTS}/triodos.yaml=cfg_1b1w__triodos_csv" \
+    "${ACCTS}/eur_wallet.yaml=cfg_1b1w__eur_wallet" \
+    "${SHARED}/dir_paths.yaml=cfg_1b1w__dir_paths" \
+    "${SHARED}/file_names.yaml=cfg_1b1w__file_names" \
+    "${SHARED}/categorisation.yaml=cfg_1b1w__categorisation" \
+    "${SHARED}/matching_algo.yaml=cfg_1b1w__matching_algo"
+
 log "All config GIFs generated!"
 exit 0
