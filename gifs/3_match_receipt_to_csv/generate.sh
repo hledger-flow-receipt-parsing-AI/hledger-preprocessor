@@ -6,7 +6,7 @@
 # This runs the REAL --link-receipts-to-transactions command against
 # a test environment to show authentic CLI output.
 #
-# Based on the Ekoplaza receipt from gifs/assets/example_receipt_cropped.png:
+# Based on the Ekoplaza receipt from gifs/assets/receipts/ekoplaza_card.png:
 # - Store: EKOPLAZA (Amsterdam, NL)
 # - Date: 2025-01-15
 # - Total: EUR 42.17
