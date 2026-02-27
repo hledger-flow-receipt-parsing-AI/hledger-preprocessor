@@ -18,7 +18,7 @@ digraph userstory_dag {
     label="Categories";
     style=filled; fillcolor="#E8F5E9";
     rank=same;
-    cat_extended [label="extended categories", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
+    cat_extended [label="extended categories", shape=box3d, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
   }
 
   subgraph cluster_matching_cfg {
@@ -61,7 +61,7 @@ digraph userstory_dag {
     style=filled; fillcolor="#FFF8E1";
     rank=same;
     out_auto_1hit [label="AUTO-LINK\n1 match found", shape=diamond, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Exact date+amount, no TUI needed"];
-    out_skip_cash [label="SKIP\nno CSV for wallet", shape=diamond, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Cash receipt, no bank CSV to match against"];
+    out_skip_cash [label="SKIP\nno CSV for wallet", shape=diamond, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Cash receipt, no bank CSV to match against"];
   }
 
   subgraph cluster_journal_out {

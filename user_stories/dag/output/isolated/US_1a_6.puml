@@ -14,81 +14,33 @@ digraph userstory_dag {
     cfg_1b5a [label="1 bank + 5 assets", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking + EUR/GBP/BTC/GOLD/SILVER wallets"];
   }
 
-  subgraph cluster_categories {
-    label="Categories";
-    style=filled; fillcolor="#E8F5E9";
-    rank=same;
-    cat_basic [label="basic categories", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}"];
-  }
+  _skip_categories [label="Categories", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_matching_cfg {
-    label="Matching Parameters";
-    style=filled; fillcolor="#FFF3E0";
-    rank=same;
-    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
-  }
+  _skip_matching_cfg [label="Matching Parameters", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_start_journal {
-    label="Starting Journal";
-    style=filled; fillcolor="#F3E5F5";
-    rank=same;
-    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
-  }
+  _skip_start_journal [label="Starting Journal", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_csv_txn {
-    label="Bank CSV Transactions";
-    style=filled; fillcolor="#E0F7FA";
-    rank=same;
-    csv_atm_gbp_11750 [label="Triodos -117.50 EUR\n2025-01-15 ATM London", shape=cylinder, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Foreign ATM withdrawal: 100 GBP * 1.175"];
-  }
+  _skip_csv_txn [label="Bank CSV Transactions", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_receipt_img {
-    label="Receipt Images";
-    style=filled; fillcolor="#FBE9E7";
-    rank=same;
-    img_atm_gbp [label="atm_london.jpg", shape=folder, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="ATM withdrawal slip, 100 GBP"];
-  }
+  _skip_receipt_img [label="Receipt Images", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
-    style=filled; fillcolor="#FCE4EC";
-    rank=same;
-    lbl_atm_100gbp [label="atm_100gbp\nGBP 100 withdrawal", shape=tab, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Triodos account, GBP withdrawal receipt"];
-  }
+  _skip_receipt_lbl [label="Receipt Labels (JSON)", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_matching_out {
-    label="Matching Outcome";
-    style=filled; fillcolor="#FFF8E1";
-    rank=same;
-    out_currency_convert [label="CURRENCY CONVERT\nuser enters rate", shape=diamond, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Receipt GBP != CSV EUR, user provides conversion ratio"];
-  }
+  _skip_matching_out [label="Matching Outcome", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_journal_out {
-    label="Journal Output";
-    style=filled; fillcolor="#E8EAF6";
-    rank=same;
-    jrnl_wallet_gbp [label="Assets:Wallet:\nGBP 100", shape=box, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Foreign currency asset from ATM withdrawal"];
-  }
+  _skip_journal_out [label="Journal Output", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
   _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  cfg_1b5a -> cat_basic [style=invis];
-  cat_basic -> match_default [style=invis];
-  match_default -> start_2024_1000eur [style=invis];
-  start_2024_1000eur -> csv_atm_gbp_11750 [style=invis];
-  csv_atm_gbp_11750 -> img_atm_gbp [style=invis];
-  img_atm_gbp -> lbl_atm_100gbp [style=invis];
-  lbl_atm_100gbp -> out_currency_convert [style=invis];
-  out_currency_convert -> jrnl_wallet_gbp [style=invis];
-  jrnl_wallet_gbp -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
+  cfg_1b5a -> _skip_categories [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_categories -> _skip_matching_cfg [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_matching_cfg -> _skip_start_journal [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_start_journal -> _skip_csv_txn [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_csv_txn -> _skip_receipt_img [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_receipt_img -> _skip_receipt_lbl [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_receipt_lbl -> _skip_matching_out [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_matching_out -> _skip_journal_out [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_journal_out -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
 
-  cat_basic -> match_default [color="#00BCD4", penwidth=2.5, style=solid];
-  cfg_1b5a -> cat_basic [color="#00BCD4", penwidth=2.5, style=solid];
-  csv_atm_gbp_11750 -> img_atm_gbp [color="#00BCD4", penwidth=2.5, style=solid];
-  img_atm_gbp -> lbl_atm_100gbp [color="#00BCD4", penwidth=2.5, style=solid];
-  lbl_atm_100gbp -> out_currency_convert [color="#00BCD4", penwidth=2.5, style=solid];
-  match_default -> start_2024_1000eur [color="#00BCD4", penwidth=2.5, style=solid];
-  out_currency_convert -> jrnl_wallet_gbp [color="#00BCD4", penwidth=2.5, style=solid];
-  start_2024_1000eur -> csv_atm_gbp_11750 [color="#00BCD4", penwidth=2.5, style=solid];
 }
 @enddot

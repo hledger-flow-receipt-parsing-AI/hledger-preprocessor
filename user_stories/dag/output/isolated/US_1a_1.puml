@@ -11,84 +11,36 @@ digraph userstory_dag {
     label="Configuration";
     style=filled; fillcolor="#E3F2FD";
     rank=same;
-    cfg_1b1w [label="1 bank + 1 wallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking (EUR CSV) + EUR cash wallet (no CSV)"];
+    cfg_1b [label="1 bank account", shape=box3d, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Triodos checking (EUR CSV) — single bank, no wallet"];
   }
 
-  subgraph cluster_categories {
-    label="Categories";
-    style=filled; fillcolor="#E8F5E9";
-    rank=same;
-    cat_basic [label="basic categories", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}"];
-  }
+  _skip_categories [label="Categories", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_matching_cfg {
-    label="Matching Parameters";
-    style=filled; fillcolor="#FFF3E0";
-    rank=same;
-    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
-  }
+  _skip_matching_cfg [label="Matching Parameters", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_start_journal {
-    label="Starting Journal";
-    style=filled; fillcolor="#F3E5F5";
-    rank=same;
-    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
-  }
+  _skip_start_journal [label="Starting Journal", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_csv_txn {
-    label="Bank CSV Transactions";
-    style=filled; fillcolor="#E0F7FA";
-    rank=same;
-    csv_ekoplaza_4217_jan15 [label="Triodos -42.17 EUR\n2025-01-15 Ekoplaza", shape=cylinder, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Debit card purchase at Ekoplaza, exact date match"];
-  }
+  _skip_csv_txn [label="Bank CSV Transactions", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_receipt_img {
-    label="Receipt Images";
-    style=filled; fillcolor="#FBE9E7";
-    rank=same;
-    img_ekoplaza_card [label="ekoplaza_card.jpg", shape=folder, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Ekoplaza receipt, paid by card"];
-  }
+  _skip_receipt_img [label="Receipt Images", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
-    style=filled; fillcolor="#FCE4EC";
-    rank=same;
-    lbl_ekoplaza_card_eur [label="ekoplaza_card\nEUR 42.17 card", shape=tab, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, 2025-01-15, groceries:ekoplaza"];
-  }
+  _skip_receipt_lbl [label="Receipt Labels (JSON)", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_matching_out {
-    label="Matching Outcome";
-    style=filled; fillcolor="#FFF8E1";
-    rank=same;
-    out_auto_1hit [label="AUTO-LINK\n1 match found", shape=diamond, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Exact date+amount, no TUI needed"];
-  }
+  _skip_matching_out [label="Matching Outcome", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_journal_out {
-    label="Journal Output";
-    style=filled; fillcolor="#E8EAF6";
-    rank=same;
-    jrnl_groceries_ekoplaza [label="Expenses:Groceries:\nEkoplaza 42.17 EUR", shape=box, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Debit groceries, credit Triodos checking"];
-  }
+  _skip_journal_out [label="Journal Output", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
   _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  cfg_1b1w -> cat_basic [style=invis];
-  cat_basic -> match_default [style=invis];
-  match_default -> start_2024_1000eur [style=invis];
-  start_2024_1000eur -> csv_ekoplaza_4217_jan15 [style=invis];
-  csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [style=invis];
-  img_ekoplaza_card -> lbl_ekoplaza_card_eur [style=invis];
-  lbl_ekoplaza_card_eur -> out_auto_1hit [style=invis];
-  out_auto_1hit -> jrnl_groceries_ekoplaza [style=invis];
-  jrnl_groceries_ekoplaza -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
+  cfg_1b -> _skip_categories [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_categories -> _skip_matching_cfg [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_matching_cfg -> _skip_start_journal [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_start_journal -> _skip_csv_txn [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_csv_txn -> _skip_receipt_img [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_receipt_img -> _skip_receipt_lbl [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_receipt_lbl -> _skip_matching_out [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_matching_out -> _skip_journal_out [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_journal_out -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
 
-  cat_basic -> match_default [color="#2196F3", penwidth=2.5, style=solid];
-  cfg_1b1w -> cat_basic [color="#2196F3", penwidth=2.5, style=solid];
-  csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [color="#2196F3", penwidth=2.5, style=solid];
-  img_ekoplaza_card -> lbl_ekoplaza_card_eur [color="#2196F3", penwidth=2.5, style=solid];
-  lbl_ekoplaza_card_eur -> out_auto_1hit [color="#2196F3", penwidth=2.5, style=solid];
-  match_default -> start_2024_1000eur [color="#2196F3", penwidth=2.5, style=solid];
-  out_auto_1hit -> jrnl_groceries_ekoplaza [color="#2196F3", penwidth=2.5, style=solid];
-  start_2024_1000eur -> csv_ekoplaza_4217_jan15 [color="#2196F3", penwidth=2.5, style=solid];
 }
 @enddot

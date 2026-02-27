@@ -18,7 +18,7 @@ digraph userstory_dag {
     label="Categories";
     style=filled; fillcolor="#E8F5E9";
     rank=same;
-    cat_extended [label="extended categories", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
+    cat_extended [label="extended categories", shape=box3d, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
   }
 
   subgraph cluster_matching_cfg {

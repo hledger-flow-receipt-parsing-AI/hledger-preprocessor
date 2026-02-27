@@ -1068,6 +1068,8 @@ stories:
     data_use: test
     paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
+    demo_paths:
+      - [cfg_1b1w, cat_basic, img_coffee_cash, lbl_coffee_cash]
 
   - id: US-2b.3
     title: "Label a foreign-currency receipt"
@@ -1095,6 +1097,8 @@ stories:
     data_use: test
     paths:
       - [cfg_1b5a, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp, jrnl_triodos_debit_gbp]
+    demo_paths:
+      - [cfg_1b5a, cat_basic, img_atm_gbp, lbl_atm_100gbp]
 
   - id: US-2b.4
     title: "Label a split-payment receipt (card + cash)"
@@ -1131,6 +1135,8 @@ stories:
     paths:
       - [cfg_1b1w, cat_extended, match_default, start_2024_1000eur, csv_split_dinner_30, img_split_dinner, lbl_dinner_split, out_auto_1hit, jrnl_dinner_split_card]
       - [cfg_1b1w, cat_extended, match_default, start_2024_1000eur, img_split_dinner, lbl_dinner_split, out_skip_cash, jrnl_dinner_split_cash]
+    demo_paths:
+      - [cfg_1b1w, cat_extended, img_split_dinner, lbl_dinner_split]
 
   - id: US-2b.5
     title: "Label a receipt with returned items"
@@ -1158,6 +1164,8 @@ stories:
     data_use: test
     paths:
       - [cfg_1b1w, cat_basic, match_default, start_2024_1000eur, img_return_item, lbl_return_item, out_auto_1hit, jrnl_return_net]
+    demo_paths:
+      - [cfg_1b1w, cat_basic, img_return_item, lbl_return_item]
 
   - id: US-2b.6
     title: "Use AI suggestions during manual labelling"

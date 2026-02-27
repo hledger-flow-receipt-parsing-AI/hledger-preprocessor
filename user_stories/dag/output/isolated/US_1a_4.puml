@@ -14,26 +14,11 @@ digraph userstory_dag {
     cfg_crypto [label="1 bank + crypto", shape=box3d, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos (EUR) + Kraken exchange (BTC/ETH)"];
   }
 
-  subgraph cluster_categories {
-    label="Categories";
-    style=filled; fillcolor="#E8F5E9";
-    rank=same;
-    cat_extended [label="extended categories", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="basic + dining, transport, bankfees, investments:{gold,silver}"];
-  }
+  _skip_categories [label="Categories", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_matching_cfg {
-    label="Matching Parameters";
-    style=filled; fillcolor="#FFF3E0";
-    rank=same;
-    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
-  }
+  _skip_matching_cfg [label="Matching Parameters", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  subgraph cluster_start_journal {
-    label="Starting Journal";
-    style=filled; fillcolor="#F3E5F5";
-    rank=same;
-    start_2024_multi [label="2024: multi-currency", shape=note, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="1000 EUR + 500 USD + 0.05 BTC"];
-  }
+  _skip_start_journal [label="Starting Journal", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
   _skip_csv_txn [label="Bank CSV Transactions", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
@@ -47,18 +32,15 @@ digraph userstory_dag {
 
   _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  cfg_crypto -> cat_extended [style=invis];
-  cat_extended -> match_default [style=invis];
-  match_default -> start_2024_multi [style=invis];
-  start_2024_multi -> _skip_csv_txn [style=dotted, color="#CCCCCC", arrowhead=none];
+  cfg_crypto -> _skip_categories [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_categories -> _skip_matching_cfg [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_matching_cfg -> _skip_start_journal [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_start_journal -> _skip_csv_txn [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_csv_txn -> _skip_receipt_img [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_receipt_img -> _skip_receipt_lbl [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_receipt_lbl -> _skip_matching_out [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_matching_out -> _skip_journal_out [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_journal_out -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
 
-  cat_extended -> match_default [color="#9C27B0", penwidth=2.5, style=dashed];
-  cfg_crypto -> cat_extended [color="#9C27B0", penwidth=2.5, style=dashed];
-  match_default -> start_2024_multi [color="#9C27B0", penwidth=2.5, style=dashed];
 }
 @enddot
