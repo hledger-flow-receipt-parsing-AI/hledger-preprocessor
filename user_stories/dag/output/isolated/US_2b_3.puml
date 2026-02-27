@@ -7,11 +7,44 @@ digraph userstory_dag {
   newrank=true;
   compound=true;
 
-  subgraph cluster_config {
-    label="Configuration";
+  subgraph cluster_config_accounts {
+    label="Account Configuration";
     style=filled; fillcolor="#E3F2FD";
     rank=same;
-    cfg_1b5a [label="1 bank + 5 assets", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking + EUR/GBP/BTC/GOLD/SILVER wallets"];
+    acct_btc_wallet [label="BTC digital\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="BTC digital wallet / exchange"];
+    acct_eur_wallet [label="EUR physical\nwallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="EUR cash wallet — no CSV import"];
+    acct_gbp_wallet [label="GBP physical\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="GBP cash wallet — foreign currency"];
+    acct_gold_wallet [label="GOLD physical\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="GOLD physical asset wallet"];
+    acct_silver_wallet [label="SILVER physical\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="SILVER physical asset wallet"];
+    acct_triodos_csv [label="Triodos checking\n(EUR CSV)", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking account — imports from CSV"];
+  }
+
+  subgraph cluster_config_dir_paths {
+    label="Directory Paths";
+    style=filled; fillcolor="#BBDEFB";
+    rank=same;
+    dirp_default [label="Default dir paths", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard directory layout: import/{holder}/{bank}/{type}/{year}/"];
+  }
+
+  subgraph cluster_config_file_names {
+    label="Filename Convention";
+    style=filled; fillcolor="#90CAF9";
+    rank=same;
+    fnames_default [label="Default filenames", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard filename conventions for CSV, rules, and journal files"];
+  }
+
+  subgraph cluster_config_categorisation {
+    label="Categorisation Config";
+    style=filled; fillcolor="#64B5F6";
+    rank=same;
+    catcfg_default [label="Default categorisation", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard categorisation settings from config.yaml"];
+  }
+
+  subgraph cluster_config_matching_algo {
+    label="Matching Algo Config";
+    style=filled; fillcolor="#42A5F5";
+    rank=same;
+    malgo_default [label="Default matching algo", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard matching algorithm settings from config.yaml"];
   }
 
   subgraph cluster_categories {
@@ -73,7 +106,11 @@ digraph userstory_dag {
 
   _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  cfg_1b5a -> cat_basic [style=invis];
+  acct_btc_wallet -> dirp_default [style=invis];
+  dirp_default -> fnames_default [style=invis];
+  fnames_default -> catcfg_default [style=invis];
+  catcfg_default -> malgo_default [style=invis];
+  malgo_default -> cat_basic [style=invis];
   cat_basic -> match_default [style=invis];
   match_default -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> csv_atm_gbp_11750 [style=invis];
@@ -83,12 +120,21 @@ digraph userstory_dag {
   out_currency_convert -> jrnl_triodos_debit_gbp [style=invis];
   jrnl_triodos_debit_gbp -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
 
+  acct_btc_wallet -> acct_gold_wallet [color="#FF5722", penwidth=2.5, style=solid];
+  acct_eur_wallet -> acct_gbp_wallet [color="#FF5722", penwidth=2.5, style=solid];
+  acct_gbp_wallet -> acct_btc_wallet [color="#FF5722", penwidth=2.5, style=solid];
+  acct_gold_wallet -> acct_silver_wallet [color="#FF5722", penwidth=2.5, style=solid];
+  acct_silver_wallet -> dirp_default [color="#FF5722", penwidth=2.5, style=solid];
+  acct_triodos_csv -> acct_eur_wallet [color="#FF5722", penwidth=2.5, style=solid];
   cat_basic -> match_default [color="#FF5722", penwidth=2.5, style=solid];
-  cfg_1b5a -> cat_basic [color="#FF5722", penwidth=2.5, style=solid];
+  catcfg_default -> malgo_default [color="#FF5722", penwidth=2.5, style=solid];
   csv_atm_gbp_11750 -> img_atm_gbp [color="#FF5722", penwidth=2.5, style=solid];
+  dirp_default -> fnames_default [color="#FF5722", penwidth=2.5, style=solid];
+  fnames_default -> catcfg_default [color="#FF5722", penwidth=2.5, style=solid];
   img_atm_gbp -> lbl_atm_100gbp [color="#FF5722", penwidth=2.5, style=solid];
   jrnl_wallet_gbp -> jrnl_triodos_debit_gbp [color="#FF5722", penwidth=2.5, style=solid];
   lbl_atm_100gbp -> out_currency_convert [color="#FF5722", penwidth=2.5, style=solid];
+  malgo_default -> cat_basic [color="#FF5722", penwidth=2.5, style=solid];
   match_default -> start_2024_1000eur [color="#FF5722", penwidth=2.5, style=solid];
   out_currency_convert -> jrnl_wallet_gbp [color="#FF5722", penwidth=2.5, style=solid];
   start_2024_1000eur -> csv_atm_gbp_11750 [color="#FF5722", penwidth=2.5, style=solid];

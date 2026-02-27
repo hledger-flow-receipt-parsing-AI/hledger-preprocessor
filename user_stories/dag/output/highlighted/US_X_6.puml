@@ -7,17 +7,45 @@ digraph userstory_dag {
   newrank=true;
   compound=true;
 
-  subgraph cluster_config {
-    label="Configuration";
+  subgraph cluster_config_accounts {
+    label="Account Configuration";
     style=filled; fillcolor="#E3F2FD";
     rank=same;
-    cfg_1b [label="1 bank account", shape=box3d, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos checking (EUR CSV) — single bank, no wallet"];
-    cfg_1b1w [label="1 bank + 1 wallet", shape=box3d, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos checking (EUR CSV) + EUR cash wallet (no CSV)"];
-    cfg_1b5a [label="1 bank + 5 assets", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos checking + EUR/GBP/BTC/GOLD/SILVER wallets"];
-    cfg_1w [label="1 cash wallet", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="EUR cash wallet (no CSV) — wallet only, no bank account"];
-    cfg_2b [label="2 bank accounts", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos (EUR) + ING (EUR) — multiple banks, no wallet"];
-    cfg_crypto [label="1 bank + crypto", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos (EUR) + Kraken exchange (BTC/ETH)"];
-    cfg_per_bank_match [label="per-bank matching", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos (days:4) + ING (days:2) override global default"];
+    acct_btc_wallet [label="BTC digital\nwallet", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="BTC digital wallet / exchange"];
+    acct_eur_wallet [label="EUR physical\nwallet", shape=box3d, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="EUR cash wallet — no CSV import"];
+    acct_gbp_wallet [label="GBP physical\nwallet", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="GBP cash wallet — foreign currency"];
+    acct_gold_wallet [label="GOLD physical\nwallet", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="GOLD physical asset wallet"];
+    acct_ing_csv [label="ING checking\n(EUR CSV)", shape=box3d, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="ING checking account — imports from CSV"];
+    acct_silver_wallet [label="SILVER physical\nwallet", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="SILVER physical asset wallet"];
+    acct_triodos_csv [label="Triodos checking\n(EUR CSV)", shape=box3d, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos checking account — imports from CSV"];
+  }
+
+  subgraph cluster_config_dir_paths {
+    label="Directory Paths";
+    style=filled; fillcolor="#BBDEFB";
+    rank=same;
+    dirp_default [label="Default dir paths", shape=box3d, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Standard directory layout: import/{holder}/{bank}/{type}/{year}/"];
+  }
+
+  subgraph cluster_config_file_names {
+    label="Filename Convention";
+    style=filled; fillcolor="#90CAF9";
+    rank=same;
+    fnames_default [label="Default filenames", shape=box3d, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Standard filename conventions for CSV, rules, and journal files"];
+  }
+
+  subgraph cluster_config_categorisation {
+    label="Categorisation Config";
+    style=filled; fillcolor="#64B5F6";
+    rank=same;
+    catcfg_default [label="Default categorisation", shape=box3d, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Standard categorisation settings from config.yaml"];
+  }
+
+  subgraph cluster_config_matching_algo {
+    label="Matching Algo Config";
+    style=filled; fillcolor="#42A5F5";
+    rank=same;
+    malgo_default [label="Default matching algo", shape=box3d, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Standard matching algorithm settings from config.yaml"];
   }
 
   subgraph cluster_categories {
@@ -147,18 +175,26 @@ digraph userstory_dag {
     viz_treemap [label="Treemap Plot", shape=octagon, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Interactive Plotly Treemap of spending"];
   }
 
+  acct_btc_wallet -> acct_gold_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_btc_wallet -> dirp_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_eur_wallet -> acct_gbp_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_eur_wallet -> dirp_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_gbp_wallet -> acct_btc_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_gold_wallet -> acct_silver_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_ing_csv -> acct_eur_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_ing_csv -> dirp_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_silver_wallet -> dirp_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_triodos_csv -> acct_btc_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_triodos_csv -> acct_eur_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_triodos_csv -> acct_ing_csv [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_triodos_csv -> dirp_default [color="#DDDDDD", penwidth=1.0, style=solid];
   cat_basic -> match_default [color="#DDDDDD", penwidth=1.0, style=solid];
   cat_basic -> match_narrow [color="#DDDDDD", penwidth=1.0, style=solid];
   cat_basic -> match_wide_both [color="#DDDDDD", penwidth=1.0, style=solid];
   cat_basic -> match_wide_date [color="#DDDDDD", penwidth=1.0, style=solid];
   cat_extended -> match_default [color="#DDDDDD", penwidth=1.0, style=solid];
   cat_with_income -> match_default [color="#DDDDDD", penwidth=1.0, style=solid];
-  cfg_1b -> cat_basic [color="#DDDDDD", penwidth=1.0, style=solid];
-  cfg_1b1w -> cat_basic [color="#DDDDDD", penwidth=1.0, style=solid];
-  cfg_1b1w -> cat_extended [color="#DDDDDD", penwidth=1.0, style=solid];
-  cfg_1b1w -> cat_with_income [color="#DDDDDD", penwidth=1.0, style=solid];
-  cfg_1b5a -> cat_basic [color="#DDDDDD", penwidth=1.0, style=solid];
-  cfg_1b5a -> cat_extended [color="#DDDDDD", penwidth=1.0, style=solid];
+  catcfg_default -> malgo_default [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_atm_gbp_11750 -> img_atm_gbp [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_atm_gbp_23750_fee -> img_atm_gbp_fee [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_delayed_jan18 -> img_delayed_shop [color="#DDDDDD", penwidth=1.0, style=solid];
@@ -171,6 +207,8 @@ digraph userstory_dag {
   csv_salary_3000 -> lbl_salary_credit [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_split_dinner_30 -> img_split_dinner [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_swapped_date -> img_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
+  dirp_default -> fnames_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  fnames_default -> catcfg_default [color="#DDDDDD", penwidth=1.0, style=solid];
   img_atm_gbp -> lbl_atm_100gbp [color="#DDDDDD", penwidth=1.0, style=solid];
   img_atm_gbp_fee -> lbl_atm_200gbp_fee [color="#DDDDDD", penwidth=1.0, style=solid];
   img_bike_repair -> lbl_bike_cash [color="#DDDDDD", penwidth=1.0, style=solid];
@@ -202,6 +240,9 @@ digraph userstory_dag {
   lbl_rounded_shop -> out_widen_amount [color="#DDDDDD", penwidth=1.0, style=solid];
   lbl_salary_credit -> out_csv_only_classify [color="#DDDDDD", penwidth=1.0, style=solid];
   lbl_swapped_date -> out_swap_dd_mm [color="#DDDDDD", penwidth=1.0, style=solid];
+  malgo_default -> cat_basic [color="#DDDDDD", penwidth=1.0, style=solid];
+  malgo_default -> cat_extended [color="#DDDDDD", penwidth=1.0, style=solid];
+  malgo_default -> cat_with_income [color="#DDDDDD", penwidth=1.0, style=solid];
   match_default -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
   match_narrow -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
   match_wide_both -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];

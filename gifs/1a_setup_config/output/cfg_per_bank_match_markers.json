@@ -1,12 +1,12 @@
 {
   "markers": {
-    "cfg_per_bank_match__triodos_csv": 0.0,
-    "cfg_per_bank_match__ing_csv": 23.16,
-    "cfg_per_bank_match__eur_wallet": 39.36,
-    "cfg_per_bank_match__dir_paths": 50.0,
-    "cfg_per_bank_match__file_names": 67.36,
-    "cfg_per_bank_match__categorisation": 82.8,
-    "cfg_per_bank_match__matching_algo": 85.52
+    "acct_triodos_csv": 0.0,
+    "acct_ing_csv": 23.16,
+    "acct_eur_wallet": 39.36,
+    "dirp_default": 50.0,
+    "fnames_default": 67.36,
+    "catcfg_default": 82.8,
+    "malgo_default": 85.52
   },
   "total_duration": 92.12,
   "frame_duration_ms": 40

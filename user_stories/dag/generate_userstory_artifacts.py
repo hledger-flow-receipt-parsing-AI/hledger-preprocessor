@@ -37,7 +37,11 @@ USAGE_FLOWS_DIR = SCRIPT_DIR.parent / "usage_flows"
 
 # PlantUML layer colours (background fills for subgraph clusters)
 LAYER_COLOURS = {
-    "config": "#E3F2FD",
+    "config_accounts": "#E3F2FD",
+    "config_dir_paths": "#BBDEFB",
+    "config_file_names": "#90CAF9",
+    "config_categorisation": "#64B5F6",
+    "config_matching_algo": "#42A5F5",
     "categories": "#E8F5E9",
     "matching_cfg": "#FFF3E0",
     "start_journal": "#F3E5F5",
@@ -50,7 +54,11 @@ LAYER_COLOURS = {
 }
 
 LAYER_ORDER = [
-    "config",
+    "config_accounts",
+    "config_dir_paths",
+    "config_file_names",
+    "config_categorisation",
+    "config_matching_algo",
     "categories",
     "matching_cfg",
     "start_journal",
@@ -149,7 +157,11 @@ def pattern_to_dot(pattern: str) -> str:
 
 def node_shape(layer_name: str) -> str:
     shapes = {
-        "config": "box3d",
+        "config_accounts": "box3d",
+        "config_dir_paths": "box3d",
+        "config_file_names": "box3d",
+        "config_categorisation": "box3d",
+        "config_matching_algo": "box3d",
         "categories": "box3d",
         "matching_cfg": "component",
         "start_journal": "note",

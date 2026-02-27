@@ -20,7 +20,7 @@ Usage::
     node_index = build_node_index(data=data)
     story = get_story_by_id(data=data, story_id="US-1a.1")
     comps = get_filtered_components(
-        story=story, node_id="cfg_1b1w", node_index=node_index
+        story=story, node_id="cat_basic", node_index=node_index
     )
     markers = get_marker_sequence(story=story, node_index=node_index)
 """
@@ -99,11 +99,11 @@ def get_marker_sequence(
 
     The sequence interleaves node-level and sub-component markers::
 
-        cfg_1b1w
-        cfg_1b1w__bank_csv
-        cfg_1b1w__dir_paths
+        acct_triodos_csv
+        dirp_default
         cat_basic
         cat_basic__groceries
+        cat_basic__withdrawl
         ...
 
     Args:

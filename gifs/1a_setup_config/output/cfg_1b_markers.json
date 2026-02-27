@@ -1,10 +1,10 @@
 {
   "markers": {
-    "cfg_1b__triodos_csv": 0.0,
-    "cfg_1b__dir_paths": 23.16,
-    "cfg_1b__file_names": 39.32,
-    "cfg_1b__categorisation": 54.76,
-    "cfg_1b__matching_algo": 57.48
+    "acct_triodos_csv": 0.0,
+    "dirp_default": 23.16,
+    "fnames_default": 39.32,
+    "catcfg_default": 54.76,
+    "malgo_default": 57.48
   },
   "total_duration": 64.08,
   "frame_duration_ms": 40

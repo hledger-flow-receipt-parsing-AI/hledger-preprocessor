@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Real widen-date match demo.
+"""Real split-payment receipt labelling demo.
 
-Demonstrates US-3.3: Receipt date Jan 15, CSV date Jan 18 (3-day delay).
-Initial ±2 day window misses → user widens to ±5 days → match found.
+Demonstrates US-2b.4: Labelling a receipt paid with two accounts
+(30 EUR by card + 20 EUR in cash = 50 EUR total dinner).
+The receipt JSON contains two account_transactions in net_bought_items.
 
 This uses real code from the hledger-preprocessor codebase.
 """
@@ -10,9 +11,7 @@ This uses real code from the hledger-preprocessor codebase.
 import hashlib
 import json
 import shutil
-import sys
 import tempfile
-import textwrap
 import time
 from pathlib import Path
 from typing import Any, Dict
@@ -55,10 +54,10 @@ def get_image_content_hash(*, image_path: str) -> str:
 
 
 def create_test_environment() -> Dict[str, Any]:
-    """Create a temporary test environment with delayed-posting data."""
+    """Create a temporary test environment with split-payment receipt data."""
     from PIL import Image
 
-    root = Path(tempfile.mkdtemp(prefix="widen_date_demo_"))
+    root = Path(tempfile.mkdtemp(prefix="label_split_demo_"))
 
     # Create directory structure
     dirs = [
@@ -66,14 +65,12 @@ def create_test_environment() -> Dict[str, Any]:
         "receipt_images_processed",
         "receipt_labels",
         "working_dir/import/at/triodos/checking/1-in",
-        "working_dir/import/at/triodos/checking/2-csv",
-        "working_dir/import/at/triodos/checking/3-journal",
         "start_pos",
     ]
     for d in dirs:
         (root / d).mkdir(parents=True, exist_ok=True)
 
-    # Create config.yaml
+    # Create config.yaml — bank checking + EUR wallet
     config_dict = {
         "account_configs": [
             {
@@ -97,6 +94,12 @@ def create_test_environment() -> Dict[str, Any]:
                     ["the_date", "date"],
                     ["description", "description"],
                 ],
+            },
+            {
+                "base_currency": "EUR",
+                "account_holder": "at",
+                "bank": "wallet",
+                "account_type": "physical",
             },
         ],
         "dir_paths": {
@@ -141,41 +144,23 @@ def create_test_environment() -> Dict[str, Any]:
 
     # Create categories.yaml
     categories = {
-        "electronics": {"mediamarkt": {}},
+        "food": {"restaurant": {}},
         "groceries": {"ekoplaza": {}},
     }
     (root / "categories.yaml").write_text(yaml.safe_dump(categories))
 
-    # Create bank CSV — transaction posted 3 days later (Jan 18 instead of Jan 15)
-    csv_content = (
-        '18-01-2025,NL123,"89,99",debit,MediaMarkt,NL456,IC,electronics'
-        ' purchase,"910,01"\n'
-    )
-    csv_path = root / "triodos_2025.csv"
-    csv_path.write_text(csv_content)
-
-    # Create start journal
-    journal_content = textwrap.dedent(
-        """\
-        2024/01/01 Opening Balances
-            Assets:Checking:Triodos          EUR 1000.00
-            Equity:Opening Balances
-    """
-    )
-    (root / "start_pos" / "2024.journal").write_text(journal_content)
-
-    # Create receipt image
+    # Create receipt image (dinner receipt)
     img = Image.new("RGB", (300, 450), color=(255, 255, 253))
-    img_path = root / "receipt_images_input" / "mediamarkt.jpg"
+    img_path = root / "receipt_images_input" / "dinner_split.jpg"
     img.save(img_path, "JPEG")
 
     # Create rotated/cropped versions
     rotated_path = (
-        root / "receipt_images_processed" / "mediamarkt_rotated.jpg"
+        root / "receipt_images_processed" / "dinner_split_rotated.jpg"
     )
     img.save(rotated_path, "JPEG")
     cropped_path = (
-        root / "receipt_images_processed" / "mediamarkt_cropped.jpg"
+        root / "receipt_images_processed" / "dinner_split_cropped.jpg"
     )
     img.save(cropped_path, "JPEG")
 
@@ -193,10 +178,12 @@ def create_test_environment() -> Dict[str, Any]:
         "rotated_path": str(rotated_path),
         "cropped_path": str(cropped_path),
     }
-    metadata_path = root / "receipt_images_processed" / "mediamarkt.json"
+    metadata_path = (
+        root / "receipt_images_processed" / "dinner_split.json"
+    )
     metadata_path.write_text(json.dumps(metadata, indent=2))
 
-    # Receipt label — dated Jan 15 (3 days before CSV)
+    # Receipt label — split payment: 30 EUR card + 20 EUR cash = 50 EUR total
     cropped_hash = get_image_content_hash(image_path=str(cropped_path))
     label_folder = root / "receipt_labels" / cropped_hash
     label_folder.mkdir(parents=True, exist_ok=True)
@@ -214,36 +201,47 @@ def create_test_environment() -> Dict[str, Any]:
                     },
                     "change_returned": 0,
                     "currency": "EUR",
-                    "tendered_amount_out": 89.99,
-                }
+                    "tendered_amount_out": 30.0,
+                },
+                {
+                    "account": {
+                        "account_holder": "at",
+                        "account_type": "physical",
+                        "bank": "wallet",
+                        "base_currency": "EUR",
+                    },
+                    "change_returned": 0,
+                    "currency": "EUR",
+                    "tendered_amount_out": 20.0,
+                },
             ],
             "category": None,
-            "description": "electronics:mediamarkt",
+            "description": "food:restaurant",
             "group_discount": 0,
             "quantity": 1,
             "round_amount": None,
             "tax_per_unit": 0,
-            "the_date": "2025-01-15T16:45:00",
+            "the_date": "2025-04-05T20:30:00",
             "unit_price": None,
         },
         "net_returned_items": None,
         "raw_img_filepath": str(img_path),
-        "receipt_category": "electronics:mediamarkt",
+        "receipt_category": "food:restaurant",
         "receipt_owner_address": None,
         "shop_identifier": {
             "address": {
-                "city": "Rotterdam",
+                "city": "Amsterdam",
                 "country": "Netherlands",
-                "house_nr": "200",
-                "street": "Alexandrium",
-                "zipcode": "3068AA",
+                "house_nr": "42",
+                "street": "Leidseplein",
+                "zipcode": "1017PT",
             },
-            "name": "MediaMarkt",
+            "name": "Restaurant De Kas",
             "shop_account_nr": None,
         },
         "subtotal": None,
-        "the_date": "2025-01-15T16:45:00",
-        "total_tax": 15.62,
+        "the_date": "2025-04-05T20:30:00",
+        "total_tax": 8.73,
         "transaction_hash": None,
     }
 
@@ -253,7 +251,6 @@ def create_test_environment() -> Dict[str, Any]:
     return {
         "root": root,
         "config_path": config_path,
-        "csv_path": csv_path,
         "img_path": img_path,
         "cropped_path": cropped_path,
         "label_path": label_path,
@@ -261,165 +258,38 @@ def create_test_environment() -> Dict[str, Any]:
     }
 
 
-def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
-    """Show the input files highlighting the date mismatch."""
-    import subprocess
-
-    # Show receipt label — date Jan 15
-    emitter.emit_until("lbl_delayed_shop")
-    print_subheader("Input: Receipt Label — MediaMarkt Jan 15 (from Step 2b)")
-    label_path = env["label_path"]
-    print(
-        f"{Colors.BOLD_WHITE}$ jq '.net_bought_items.the_date,"
-        f" .net_bought_items.account_transactions[0].tendered_amount_out'"
-        f" {label_path}{Colors.RESET}"
-    )
+def show_receipt_image(
+    *, env: Dict[str, Any], emitter: StoryMarkerEmitter
+) -> None:
+    """Show the receipt image."""
+    emitter.emit_until("img_split_dinner")
+    print_subheader("Receipt Image: Restaurant Dinner (Split Payment)")
+    img_path = env["img_path"]
+    print(f"{Colors.BOLD_WHITE}Displaying: {img_path.name}{Colors.RESET}")
     print()
-    time.sleep(0.3)
-    result = subprocess.run(
-        [
-            "jq",
-            ".net_bought_items.the_date,"
-            " .net_bought_items.account_transactions[0].tendered_amount_out",
-            str(label_path),
-        ],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode == 0:
-        print(result.stdout)
-    time.sleep(1.5)
 
-    # Show CSV file — date Jan 18
-    emitter.emit_until("csv_delayed_jan18")
-    print_subheader("Input: Bank CSV Transaction (posted Jan 18)")
-    csv_path = env["csv_path"]
-    print(f"{Colors.BOLD_WHITE}$ cat {csv_path}{Colors.RESET}")
-    print()
-    time.sleep(0.3)
-    result = subprocess.run(
-        ["cat", str(csv_path)],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode == 0:
-        print(result.stdout)
-    time.sleep(2)
+    import cv2
 
-    # Highlight the date gap
-    print(
-        f"{Colors.BOLD_YELLOW}  Receipt date: Jan 15  |  CSV date: Jan 18"
-        f"  |  Gap: 3 days{Colors.RESET}"
-    )
-    print(
-        f"{Colors.BOLD_YELLOW}  Default ±2 day margin will MISS this"
-        f" transaction{Colors.RESET}"
-    )
-    print(
-        f"{Colors.BOLD_YELLOW}  Matching algo will widen the date range to"
-        f" find it{Colors.RESET}"
-    )
-    print()
-    time.sleep(2)
-
-
-def run_matching_demo(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
-    """Run the actual --link-receipts-to-transactions CLI command."""
-    import pexpect
-
-    from .tui_navigator import TuiNavigator
-
-    emitter.emit_until("out_widen_date")
-    print_subheader(
-        "Running: hledger_preprocessor --link-receipts-to-transactions"
-    )
-
-    config_path = env["config_path"]
-    root = env["root"]
-
-    cmd = (
-        f"cd {root} && {sys.executable} -m hledger_preprocessor "
-        f"--config {config_path} --link-receipts-to-transactions"
-    )
-
-    display_cmd = (
-        "hledger_preprocessor --config config.yaml"
-        " --link-receipts-to-transactions"
-    )
-    print(f"{Colors.BOLD_WHITE}$ {display_cmd}{Colors.RESET}")
-    print()
+    img = cv2.imread(str(img_path))
+    if img is not None:
+        cv2.imshow("Receipt Image", img)
+        cv2.waitKey(2000)
+        cv2.destroyAllWindows()
     time.sleep(0.5)
 
-    nav = TuiNavigator(
-        f"bash -c '{cmd}'",
-        dimensions=(50, 120),
-        timeout=60,
-        log_to_stdout=True,
-        show_keys=False,
-    )
 
-    try:
-        nav.spawn()
-
-        while True:
-            try:
-                index = nav.child.expect(
-                    [
-                        "ignore_keys=",
-                        "EXPORTING to:",
-                        pexpect.EOF,
-                        pexpect.TIMEOUT,
-                    ],
-                    timeout=30,
-                )
-                if index == 0:
-                    time.sleep(0.3)
-                    nav.press_enter(pause=0.2)
-                elif index == 1:
-                    time.sleep(0.5)
-                    nav.press_enter(pause=0.2)
-                elif index == 2:
-                    break
-                elif index == 3:
-                    if not nav.child.isalive():
-                        break
-                    continue
-            except pexpect.EOF:
-                break
-            except pexpect.TIMEOUT:
-                if not nav.child.isalive():
-                    break
-
-        nav.wait_for_exit(timeout=5)
-        print()
-        return True
-
-    except Exception as e:
-        print(f"{Colors.RED}Error: {e}{Colors.RESET}")
-        import traceback
-
-        traceback.print_exc()
-        return False
-    finally:
-        nav.terminate()
-        nav.clear_key_display()
-
-
-def show_result(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
-    """Show the result after matching with widened date range."""
+def show_label_result(
+    *, env: Dict[str, Any], emitter: StoryMarkerEmitter
+) -> None:
+    """Show the receipt label JSON highlighting the split payment fields."""
     import subprocess
+
+    emitter.emit_until("lbl_dinner_split")
+    print_subheader("Receipt Label: Split Payment (Card + Cash)")
 
     label_path = env["label_path"]
 
-    if not label_path.exists():
-        print(
-            f"{Colors.RED}Error: Label file not found at"
-            f" {label_path}{Colors.RESET}"
-        )
-        return
-
-    emitter.emit_remaining()
-    print_subheader("Result: Receipt After Date-Widened Matching")
+    # Show full net_bought_items
     print(
         f"{Colors.BOLD_WHITE}$ jq '.net_bought_items'"
         f" {label_path}{Colors.RESET}"
@@ -436,13 +306,61 @@ def show_result(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
         print(result.stdout)
     time.sleep(2)
 
-    print()
+    # Show account transactions summary
+    print_subheader("Payment Breakdown")
     print(
-        f"{Colors.BOLD_GREEN}✓ Receipt linked despite 3-day posting"
-        f" delay!{Colors.RESET}"
+        f"{Colors.BOLD_WHITE}$ jq"
+        f" '.net_bought_items.account_transactions[]"
+        f" | {{bank: .account.bank, type: .account.account_type,"
+        f" currency: .currency, amount: .tendered_amount_out}}'"
+        f" {label_path}{Colors.RESET}"
     )
     print()
+    time.sleep(0.3)
+
+    result = subprocess.run(
+        [
+            "jq",
+            ".net_bought_items.account_transactions[]"
+            " | {bank: .account.bank, type: .account.account_type,"
+            " currency: .currency, amount: .tendered_amount_out}",
+            str(label_path),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        print(result.stdout)
     time.sleep(2)
+
+    # Highlight key fields
+    print(
+        f"{Colors.BOLD_YELLOW}  Account 1: Triodos checking — 30.00"
+        f" EUR (card){Colors.RESET}"
+    )
+    print(
+        f"{Colors.BOLD_YELLOW}  Account 2: EUR wallet — 20.00"
+        f" EUR (cash){Colors.RESET}"
+    )
+    print(
+        f"{Colors.BOLD_YELLOW}  Total: 50.00"
+        f" EUR{Colors.RESET}"
+    )
+    print()
+    print(
+        f"{Colors.WHITE}  During matching (Step 3), only the card portion"
+        f" (30 EUR) is matched{Colors.RESET}"
+    )
+    print(
+        f"{Colors.WHITE}  to a bank CSV transaction. The cash portion"
+        f" (20 EUR) is recorded{Colors.RESET}"
+    )
+    print(
+        f"{Colors.WHITE}  directly as a wallet"
+        f" expense.{Colors.RESET}"
+    )
+    print()
+    time.sleep(3)
 
 
 def cleanup(*, env: Dict[str, Any]) -> None:
@@ -452,61 +370,48 @@ def cleanup(*, env: Dict[str, Any]) -> None:
         shutil.rmtree(root, ignore_errors=True)
 
 
-def run_widen_date_demo() -> None:
-    """Run the complete widen-date match demo."""
+def run_label_split_payment_demo() -> None:
+    """Run the complete split-payment receipt labelling demo."""
     Screen.clear()
 
-    print_header("Step 3c: Widen Date Range (Delayed Posting)")
+    print_header("Step 2b: Label a Split-Payment Receipt (Card + Cash)")
 
     print(
-        f"{Colors.WHITE}This demo shows matching when the bank posts a"
-        f" transaction days after purchase.{Colors.RESET}"
+        f"{Colors.WHITE}This demo shows labelling a restaurant dinner paid"
+        f" with two accounts.{Colors.RESET}"
     )
     print(
-        f"{Colors.WHITE}Receipt: Jan 15 | CSV: Jan 18 | Default margin:"
-        f" ±2 days → miss → widen → match{Colors.RESET}"
+        f"{Colors.WHITE}30 EUR by card (Triodos) + 20 EUR in cash"
+        f" (wallet) = 50 EUR total.{Colors.RESET}"
     )
     print()
     time.sleep(2)
 
-    emitter = StoryMarkerEmitter("US-3.3")
+    emitter = StoryMarkerEmitter("US-2b.4")
 
     env = None
     try:
-        emitter.emit_until("start_2024_1000eur")
+        emitter.emit_until("cat_extended")
         print(f"{Colors.GRAY}Setting up demo environment...{Colors.RESET}")
         env = create_test_environment()
         print(f"{Colors.GRAY}Done.{Colors.RESET}")
         print()
         time.sleep(0.5)
 
-        # Save "before" state
-        before_label_path = env["root"] / "before_receipt.json"
-        shutil.copy(env["label_path"], before_label_path)
-        env["before_label_path"] = before_label_path
-
-        show_inputs(env=env, emitter=emitter)
-        success = run_matching_demo(env=env, emitter=emitter)
+        show_receipt_image(env=env, emitter=emitter)
+        show_label_result(env=env, emitter=emitter)
 
         print()
-        if success:
-            print(
-                f"{Colors.BOLD_GREEN}✓ Date-widened matching"
-                f" completed!{Colors.RESET}"
-            )
-        else:
-            print(
-                f"{Colors.BOLD_YELLOW}⚠ Check output above for"
-                f" details{Colors.RESET}"
-            )
+        print(
+            f"{Colors.BOLD_GREEN}✓ Split-payment receipt labelled"
+            f" successfully!{Colors.RESET}"
+        )
         print()
         time.sleep(1)
 
-        show_result(env=env, emitter=emitter)
-
         print(
-            f"{Colors.BOLD_CYAN}Next step:{Colors.RESET} Run ./start.sh to"
-            " import transactions to hledger"
+            f"{Colors.BOLD_CYAN}Next step:{Colors.RESET} Run matching"
+            " (Step 3) to link card portion to bank CSV"
         )
         print()
         time.sleep(2)
@@ -518,7 +423,7 @@ def run_widen_date_demo() -> None:
 
 def main() -> None:
     """Main entry point."""
-    run_widen_date_demo()
+    run_label_split_payment_demo()
 
 
 if __name__ == "__main__":

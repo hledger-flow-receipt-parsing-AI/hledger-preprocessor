@@ -368,7 +368,7 @@ def run_show_plots_demo(config_path: str) -> None:
     """Run the show plots demo."""
     Screen.clear()
 
-    emit_node_marker("cfg_1b1w")
+    emit_node_marker("acct_triodos_csv")
     emit_node_marker("cat_basic")
     emit_node_marker("match_default")
     emit_node_marker("start_2024_1000eur")

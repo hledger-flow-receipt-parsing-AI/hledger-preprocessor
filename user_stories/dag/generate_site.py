@@ -204,15 +204,23 @@ def get_video_for_story(
 ) -> Optional[Path]:
     """Get the video path for a specific story.
 
-    Uses the story's ``gif_video`` field to find a per-story video in the
-    section's GIF directory.  Falls back to the section-level video.
+    Uses the story's ``gif_video`` field to find a per-story video.
+    First searches the section's GIF directory, then searches all
+    directories (so stories can have GIFs in their own directory).
+    Falls back to the section-level video.
     """
     gif_dir = SECTION_TO_GIF_DIR.get(section)
     gif_video = story.get("gif_video")
-    if gif_dir and gif_video and gif_dir in all_videos:
-        dir_videos = all_videos[gif_dir]
-        if gif_video in dir_videos:
-            return dir_videos[gif_video]
+    if gif_video:
+        # Try the section's GIF directory first
+        if gif_dir and gif_dir in all_videos:
+            dir_videos = all_videos[gif_dir]
+            if gif_video in dir_videos:
+                return dir_videos[gif_video]
+        # Search all directories for the gif_video stem
+        for _dir_name, dir_videos in all_videos.items():
+            if gif_video in dir_videos:
+                return dir_videos[gif_video]
     # Fallback to section-level default
     return get_video_for_section(section=section, video_map=video_map)
 
@@ -226,14 +234,21 @@ def get_markers_for_story(
     """Get marker timestamps for a specific story.
 
     Uses the story's ``gif_video`` field to find the matching sidecar
-    markers JSON.  Returns empty dict if none found.
+    markers JSON.  Searches the section directory first, then all
+    directories.  Returns empty dict if none found.
     """
     gif_dir = SECTION_TO_GIF_DIR.get(section)
     gif_video = story.get("gif_video")
-    if gif_dir and gif_video and gif_dir in marker_json_map:
-        dir_markers = marker_json_map[gif_dir]
-        if gif_video in dir_markers:
-            return parse_marker_json(json_path=dir_markers[gif_video])
+    if gif_video:
+        # Try the section's GIF directory first
+        if gif_dir and gif_dir in marker_json_map:
+            dir_markers = marker_json_map[gif_dir]
+            if gif_video in dir_markers:
+                return parse_marker_json(json_path=dir_markers[gif_video])
+        # Search all directories for the gif_video stem
+        for _dir_name, dir_markers in marker_json_map.items():
+            if gif_video in dir_markers:
+                return parse_marker_json(json_path=dir_markers[gif_video])
     return {}
 
 
@@ -374,7 +389,11 @@ def add_data_attributes_to_svg(
 
     # Also add data-layer to cluster groups
     for layer_name in [
-        "config",
+        "config_accounts",
+        "config_dir_paths",
+        "config_file_names",
+        "config_categorisation",
+        "config_matching_algo",
         "categories",
         "matching_cfg",
         "start_journal",
@@ -415,7 +434,7 @@ def add_data_attributes_to_svg(
         m = edge_title_re.search(svg, search_start)
         if not m:
             break
-        title_text = html_mod.unescape(m.group(1))  # e.g. "cfg_1b1w->cat_basic"
+        title_text = html_mod.unescape(m.group(1))  # e.g. "malgo_default->cat_basic"
         parts = title_text.split("->")
         if len(parts) == 2:
             src, tgt = parts[0].strip(), parts[1].strip()
@@ -597,6 +616,7 @@ a:hover { text-decoration: underline; }
 /* DAG node highlighting */
 .dag-node { cursor: pointer; transition: opacity 0.2s; }
 .dag-node.unreachable { cursor: default; opacity: 0.25; pointer-events: none; }
+.dag-edge.unreachable { opacity: 0.15; pointer-events: none; }
 .dag-node.active polygon,
 .dag-node.active ellipse,
 .dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }
@@ -760,8 +780,8 @@ a:hover { text-decoration: underline; }
 def generate_js() -> str:
     """Generate the video-DAG synchronization JavaScript module.
 
-    TIMESTAMPS is keyed by node_id (e.g. {"cfg_1b1w": 0.05, ...}).
-    Sub-component keys use double-underscore: "cfg_1b1w__bank_csv".
+    TIMESTAMPS is keyed by node_id (e.g. {"acct_triodos_csv": 0.05, ...}).
+    Sub-component keys use double-underscore: "cat_basic__groceries".
     NODE_PATH lists the ordered node IDs for this story's DAG path.
     """
     return """\
@@ -769,12 +789,20 @@ def generate_js() -> str:
   'use strict';
   var svgContainer = document.querySelector('.dag-section');
 
-  // Phase 1: Gray out unreachable nodes (runs even without video)
+  // Phase 1: Gray out unreachable nodes and edges (runs even without video)
   if (svgContainer && typeof NODE_PATH !== 'undefined') {
     svgContainer.querySelectorAll('.dag-node').forEach(function(n) {
       var nid = n.getAttribute('data-node');
       if (nid && !NODE_PATH.includes(nid)) {
         n.classList.add('unreachable');
+      }
+    });
+    // Hide edges where source or target is not in the story path
+    svgContainer.querySelectorAll('.dag-edge').forEach(function(e) {
+      var src = e.getAttribute('data-source');
+      var tgt = e.getAttribute('data-target');
+      if ((src && !NODE_PATH.includes(src)) || (tgt && !NODE_PATH.includes(tgt))) {
+        e.classList.add('unreachable');
       }
     });
   }
@@ -1772,8 +1800,16 @@ def main() -> None:
         video_filename = vid.name if vid else None
         is_gif = video_filename.endswith(".gif") if video_filename else False
 
-        # Node path (first path)
-        node_path = story.get("paths", [[]])[0] if story.get("paths") else []
+        # Node path — union of all paths (preserving order from path[0],
+        # then appending any extra nodes from subsequent paths)
+        all_paths = story.get("paths", [])
+        seen_nodes: set = set()
+        node_path: List[str] = []
+        for p in all_paths:
+            for nid in p:
+                if nid not in seen_nodes:
+                    seen_nodes.add(nid)
+                    node_path.append(nid)
 
         # YAML-driven marker sequence (node + sub-component interleaved)
         marker_sequence = get_marker_sequence(
@@ -1800,7 +1836,7 @@ def main() -> None:
 
         # Infer missing parent-node timestamps from their first child.
         # Sidecar JSON may only contain sub-component keys (e.g.
-        # cfg_1b__bank_csv) without the parent (cfg_1b).  If the parent
+        # cat_basic__groceries) without the parent (cat_basic).  If the parent
         # appears in the marker sequence but has no timestamp, set it to
         # the minimum timestamp of its children.
         for marker_id in marker_sequence:
