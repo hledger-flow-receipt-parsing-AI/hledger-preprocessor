@@ -15,17 +15,26 @@ python -m pytest
 Run a specific test:
 
 ```sh
- cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_03_crop_receipt.py::test_gif_03_crop_receipt -v
- cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_04_label_receipt.py::test_gif_04_label_receipt -v
- cd /home/a/git/git/hledger/hledger-preprocessor && python -m pytest test/e2e/test_gif_3_match_receipt_to_csv.py::test_gif_3_match_receipt_to_csv -v
-
+python -m pytest test/e2e/test_gif_1a_setup_config.py -v
+python -m pytest test/e2e/test_gif_2a_crop_receipt.py -v
+python -m pytest test/e2e/test_gif_2b_label_receipt.py -v
+python -m pytest test/e2e/test_gif_3_match_receipt_to_csv.py -v
 ```
 
-## Gifs
+The e2e tests also regenerate GIFs — see `test/e2e/test_gif_*.py`.
+
+## GIFs & User Stories Site
+
+Use the build script to regenerate everything:
 
 ```sh
-for gif in gifs/*/output/*.gif; do   mp4="${gif%.gif}.mp4";   ffmpeg -y -i "$gif" -movflags faststart -pix_fmt yuv420p     -vf "scale=trunc(iw/2)
+./build_userstories.sh              # Full rebuild (artifacts + site)
+./build_userstories.sh --serve      # Build + serve at http://localhost:8059
+./build_userstories.sh --gifs       # Re-record all GIFs
+./build_userstories.sh --dry-run    # Preview what would run
 ```
+
+See `./build_userstories.sh --help` for all options.
 
 ## Developer
 
