@@ -30,6 +30,10 @@ def run_demo_script(
 ) -> subprocess.CompletedProcess:
     """Run a demo generation script and return the result.
 
+    When pytest is run with ``-s`` (no capture), stdout/stderr are streamed
+    live so the user can see per-GIF progress.  Otherwise output is captured
+    and only printed on failure.
+
     Args:
         script_path: Path to the generate.sh script
         env: Environment variables dict

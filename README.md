@@ -100,9 +100,9 @@ Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Clic
 
 ```bash
 ./build_userstories.sh                     # Full rebuild (artifacts + site)
+./build_userstories.sh --site              # Site generation only (needs artifacts)
 ./build_userstories.sh --serve [port]      # Build + serve (default port: 8059)
 ./build_userstories.sh --artifacts         # DAG diagrams + markdown only
-./build_userstories.sh --site              # Site generation only (needs artifacts)
 ./build_userstories.sh --gifs              # Re-record all GIFs
 ./build_userstories.sh --gifs-standalone   # Re-record self-contained GIFs only
 ./build_userstories.sh --gifs-config       # Re-record config-dependent GIFs (requires --config)
