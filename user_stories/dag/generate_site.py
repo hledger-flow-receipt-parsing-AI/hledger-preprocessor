@@ -35,6 +35,7 @@ SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DATA_FILE = SCRIPT_DIR / "userstory_dag_data.yaml"
 GIFS_ROOT = PROJECT_ROOT / "gifs"
+RECEIPTS_ROOT = GIFS_ROOT / "assets" / "receipts"
 OUTPUT_DIR_DEFAULT = SCRIPT_DIR / "site"
 
 # Map story sections to GIF directories and cast file directories.
@@ -48,6 +49,28 @@ SECTION_TO_GIF_DIR: Dict[str, Optional[str]] = {
     "Step 5: Visualisation": "5_show_plots",
     "Transaction Classification": None,
     "Cross-cutting Concerns": None,
+}
+
+# Map story sections to the DAG layers that represent the section's primary
+# work area (used for section boxing in the full-path DAG view).
+SECTION_PRIMARY_LAYERS: Dict[str, List[str]] = {
+    "Step 1a: Account Configuration": [
+        "config_accounts",
+        "config_dir_paths",
+        "config_file_names",
+        "config_categorisation",
+        "config_matching_algo",
+    ],
+    "Step 1b: Category Configuration": ["categories"],
+    "Step 2a: Receipt Image Processing": ["receipt_img"],
+    "Step 2b: Receipt Labelling": ["receipt_img", "receipt_lbl"],
+    "Step 3: Receipt-to-CSV Transaction Matching": [
+        "csv_txn",
+        "matching_out",
+    ],
+    "Step 4: Pipeline Execution": ["journal_out"],
+    "Step 5: Visualisation": ["visualization"],
+    "Transaction Classification": ["csv_txn", "journal_out"],
 }
 
 DEFAULT_THEME = "dracula"
@@ -573,6 +596,19 @@ a:hover { text-decoration: underline; }
 .badge-not-impl { background: var(--warning); color: #000; }
 .badge-wontfix { background: var(--error); color: #fff; }
 
+/* Receipt image (shown alongside TUI demo for Step 2b) */
+.receipt-image-section {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+.receipt-image {
+  max-height: 350px;
+  width: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
 /* Video player */
 .video-section { margin-bottom: 1.5rem; }
 .video-section video, .video-section img {
@@ -585,6 +621,23 @@ a:hover { text-decoration: underline; }
 
 /* DAG diagram */
 .dag-section { margin-bottom: 1.5rem; }
+.dag-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.5rem;
+}
+.dag-header h2 { margin: 0; }
+.dag-view-toggle { display: flex; gap: 0; }
+.toggle-btn {
+  font-size: 0.75rem; padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border); background: var(--bg-card);
+  color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+}
+.toggle-btn:first-child { border-radius: 4px 0 0 4px; }
+.toggle-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+.toggle-btn.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.toggle-btn:hover:not(.active) { color: var(--text); }
 .dag-svg {
   width: 100%; height: auto;
   background: transparent;
@@ -622,6 +675,15 @@ a:hover { text-decoration: underline; }
 .dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }
 .dag-node.active text { font-weight: bold !important; }
 .dag-cluster.active-cluster > polygon { stroke: #ff6600 !important; stroke-width: 2 !important; }
+
+/* Section boxing in full-path view */
+.dag-cluster.section-box > polygon,
+.dag-cluster.section-box > path {
+  stroke: var(--accent) !important;
+  stroke-width: 2.5 !important;
+  stroke-dasharray: 8 4 !important;
+  fill: rgba(122, 162, 247, 0.06) !important;
+}
 
 /* Layer indicator */
 .layer-indicator {
@@ -832,6 +894,65 @@ def generate_js() -> str:
     });
   });
 
+  // Phase 2b: Segment / Full-path view toggle (works even without video)
+  var btnSegment = document.getElementById('btn-segment-view');
+  var btnFull = document.getElementById('btn-full-view');
+  var segmentView = document.getElementById('dag-segment-view');
+  var fullView = document.getElementById('dag-full-view');
+
+  if (btnSegment && btnFull && segmentView && fullView) {
+    // Apply unreachable graying to the full-view SVG as well
+    fullView.querySelectorAll('.dag-node').forEach(function(n) {
+      var nid = n.getAttribute('data-node');
+      if (nid && NODE_PATH && !NODE_PATH.includes(nid)) n.classList.add('unreachable');
+    });
+    fullView.querySelectorAll('.dag-edge').forEach(function(e) {
+      var src = e.getAttribute('data-source');
+      var tgt = e.getAttribute('data-target');
+      if (NODE_PATH && ((src && !NODE_PATH.includes(src)) || (tgt && !NODE_PATH.includes(tgt)))) {
+        e.classList.add('unreachable');
+      }
+    });
+
+    // Section layers for boxing in full-path view
+    var sectionLayers = (typeof SECTION_LAYERS !== 'undefined') ? SECTION_LAYERS : [];
+    var fullClusters = fullView.querySelectorAll('.dag-cluster');
+
+    // _setView is defined here but called from Phase 3 when video is available
+    window._dagSetView = function(mode) {
+      if (mode === 'full') {
+        segmentView.style.display = 'none';
+        fullView.style.display = '';
+        btnFull.classList.add('active');
+        btnSegment.classList.remove('active');
+        // Apply section boxing to primary layers
+        fullClusters.forEach(function(c) {
+          var layer = c.getAttribute('data-layer');
+          if (layer && sectionLayers.indexOf(layer) >= 0) {
+            c.classList.add('section-box');
+          }
+        });
+      } else {
+        segmentView.style.display = '';
+        fullView.style.display = 'none';
+        btnSegment.classList.add('active');
+        btnFull.classList.remove('active');
+        // Remove section boxing
+        fullClusters.forEach(function(c) { c.classList.remove('section-box'); });
+      }
+      try { localStorage.setItem('dag-view-mode', mode); } catch(e) {}
+    };
+
+    btnSegment.addEventListener('click', function() { window._dagSetView('segment'); });
+    btnFull.addEventListener('click', function() { window._dagSetView('full'); });
+
+    // Restore saved preference
+    try {
+      var saved = localStorage.getItem('dag-view-mode');
+      if (saved === 'full') window._dagSetView('full');
+    } catch(e) {}
+  }
+
   // Phase 3: Video synchronization (only when <video> element exists)
   var video = document.getElementById('demo-video');
   if (!video || !svgContainer || typeof TIMESTAMPS === 'undefined') return;
@@ -995,6 +1116,42 @@ def generate_js() -> str:
 
   // Initialize with first timestamped node
   highlightNode(tsKeys[0]);
+
+  // Phase 5: Extend view toggle with video-aware behaviour
+  if (typeof fullView !== 'undefined' && fullView) {
+    // Wire click-to-seek on full-view DAG nodes
+    fullView.querySelectorAll('.dag-node').forEach(function(node) {
+      node.addEventListener('click', function() {
+        var nid = node.getAttribute('data-node');
+        if (nid && TIMESTAMPS[nid] !== undefined) {
+          video.currentTime = TIMESTAMPS[nid];
+          video.play();
+        }
+      });
+    });
+
+    // Enhance _dagSetView with highlight re-binding
+    var origSetView = window._dagSetView;
+    window._dagSetView = function(mode) {
+      origSetView(mode);
+      var activeView = mode === 'full' ? fullView : segmentView;
+      allNodes = activeView.querySelectorAll('.dag-node');
+      clusters = activeView.querySelectorAll('.dag-cluster');
+      nodeToLayer = {};
+      allNodes.forEach(function(n) {
+        var nid = n.getAttribute('data-node');
+        var lay = n.getAttribute('data-layer');
+        if (nid && lay) nodeToLayer[nid] = lay;
+      });
+      if (tsKeys.length > 0) highlightNode(tsKeys[currentIdx]);
+    };
+
+    // Re-apply saved preference now that video highlight works
+    try {
+      var saved = localStorage.getItem('dag-view-mode');
+      if (saved === 'full') window._dagSetView('full');
+    } catch(e) {}
+  }
 })();
 """
 
@@ -1422,6 +1579,8 @@ def generate_story_html(
     node_index: Dict[str, Dict],
     filtered_components_map: Optional[Dict[str, List[Dict]]] = None,
     stories_with_video: Optional[set] = None,
+    receipt_image: Optional[str] = None,
+    full_svg_content: Optional[str] = None,
 ) -> str:
     sid = story["id"]
     head = _html_head(title=f"{sid}: {story['title']} — hledger-preprocessor")
@@ -1468,6 +1627,17 @@ def generate_story_html(
             main += f"<li>{_esc(c)}</li>\n"
         main += "</ul>\n"
 
+    # Receipt image (shown for Step 2b stories that have one)
+    if receipt_image:
+        main += '<div class="receipt-image-section">\n'
+        main += "<h2>Receipt Image</h2>\n"
+        main += (
+            f'<img class="receipt-image" '
+            f'src="../assets/receipts/{_esc(receipt_image)}" '
+            f'alt="Receipt: {_esc(story["title"])}">\n'
+        )
+        main += "</div>\n"
+
     # Side-by-side video + DAG grid
     main += '<div class="video-dag-row">\n'
 
@@ -1496,15 +1666,41 @@ def generate_story_html(
 
     # DAG diagram (right column, spans rows)
     main += '<div class="dag-section">\n'
-    main += "<h2>DAG Diagram</h2>\n"
+    has_both_views = bool(svg_content and full_svg_content)
+    if has_both_views:
+        main += '<div class="dag-header">\n'
+        main += "<h2>DAG Diagram</h2>\n"
+        main += '<div class="dag-view-toggle">\n'
+        main += (
+            '<button id="btn-segment-view" class="toggle-btn active"'
+            ' title="Show only this story\'s segment">'
+            "Segment</button>\n"
+        )
+        main += (
+            '<button id="btn-full-view" class="toggle-btn"'
+            ' title="Show full end-to-end path">'
+            "Full path</button>\n"
+        )
+        main += "</div>\n"
+        main += "</div>\n"
+    else:
+        main += "<h2>DAG Diagram</h2>\n"
+
     if svg_content:
-        main += svg_content + "\n"
+        main += f'<div id="dag-segment-view">\n{svg_content}\n</div>\n'
     elif has_png_fallback:
         safe = story_id_to_safe(story_id=sid)
         main += (
+            f'<div id="dag-segment-view">\n'
             f'<img class="dag-fallback-img" '
             f'src="../assets/images/isolated/{safe}.png" '
             f'alt="DAG for {_esc(sid)}">\n'
+            f"</div>\n"
+        )
+    if full_svg_content:
+        main += (
+            f'<div id="dag-full-view" style="display:none">\n'
+            f"{full_svg_content}\n</div>\n"
         )
     main += "</div>\n"
 
@@ -1590,9 +1786,14 @@ def generate_story_html(
     # Timestamp manifest + JS (always emit so unreachable graying works)
     ts_json = json.dumps(timestamps)
     path_json = json.dumps(node_path)
+    section = story.get("section", "")
+    section_layers_json = json.dumps(
+        SECTION_PRIMARY_LAYERS.get(section, [])
+    )
     js_block = (
         f"<script>\nconst TIMESTAMPS = {ts_json};\n"
-        f"const NODE_PATH = {path_json};\n</script>\n"
+        f"const NODE_PATH = {path_json};\n"
+        f"const SECTION_LAYERS = {section_layers_json};\n</script>\n"
         f'<script src="../assets/js/dag-sync.js"></script>\n'
     )
 
@@ -1656,6 +1857,14 @@ def copy_assets(
         if vid and vid.name not in copied:
             shutil.copy2(vid, vid_dir / vid.name)
             copied.add(vid.name)
+
+    # Copy receipt images
+    receipt_dir = output_dir / "assets" / "receipts"
+    receipt_dir.mkdir(parents=True, exist_ok=True)
+    if RECEIPTS_ROOT.is_dir():
+        for img_file in RECEIPTS_ROOT.iterdir():
+            if img_file.suffix.lower() in (".png", ".jpg", ".jpeg"):
+                shutil.copy2(img_file, receipt_dir / img_file.name)
 
     # Write CSS and JS
     (css_dir / "style.css").write_text(generate_css())
@@ -1875,6 +2084,11 @@ def main() -> None:
             output_dir / "assets" / "images" / "isolated" / f"{safe}.png"
         ).exists()
 
+        # Receipt image (from YAML receipt_image field)
+        receipt_img = story.get("receipt_image")
+        if receipt_img and not (RECEIPTS_ROOT / receipt_img).exists():
+            receipt_img = None  # skip if image file doesn't exist
+
         story_html = generate_story_html(
             story=story,
             sections=sections,
@@ -1889,6 +2103,8 @@ def main() -> None:
             node_index=node_index,
             filtered_components_map=filtered_components_map,
             stories_with_video=stories_with_video,
+            receipt_image=receipt_img,
+            full_svg_content=overview_svg,
         )
         (output_dir / "stories" / f"{story['id']}.html").write_text(
             story_html

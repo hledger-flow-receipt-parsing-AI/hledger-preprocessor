@@ -1026,6 +1026,7 @@ stories:
     colour: "#E91E63"
     pattern: solid
     data_use: both
+    receipt_image: "ekoplaza_card.png"
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
     demo_paths:
@@ -1054,6 +1055,7 @@ stories:
     colour: "#F44336"
     pattern: solid
     data_use: test
+    receipt_image: "coffee_cash.png"
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
     demo_paths:
@@ -1082,6 +1084,7 @@ stories:
     label: "Label foreign-currency receipt"
     colour: "#FF5722"
     pattern: solid
+    receipt_image: "atm_london.png"
     data_use: test
     gif_video: 2b_label_foreign_currency
     paths:
@@ -1121,6 +1124,7 @@ stories:
     colour: "#795548"
     pattern: solid
     data_use: test
+    receipt_image: "split_dinner.png"
     gif_video: 2b_label_split_payment
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_split_dinner_30, img_split_dinner, lbl_dinner_split, out_auto_1hit, jrnl_dinner_split_card]
@@ -1152,6 +1156,7 @@ stories:
     colour: "#607D8B"
     pattern: solid
     data_use: test
+    receipt_image: "return_item.png"
     gif_video: 2b_label_returned_items
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_return_item, lbl_return_item, out_auto_1hit, jrnl_return_net]
