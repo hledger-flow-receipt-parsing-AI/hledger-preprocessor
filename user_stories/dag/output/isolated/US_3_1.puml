@@ -11,7 +11,7 @@ digraph userstory_dag {
     label="Configuration";
     style=filled; fillcolor="#E3F2FD";
     rank=same;
-    cfg_1b1w [label="1 bank + 1 wallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking (EUR CSV) + EUR cash wallet (no CSV)"];
+    cfg_1b [label="1 bank account", shape=box3d, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Triodos checking (EUR CSV) — single bank, no wallet"];
   }
 
   subgraph cluster_categories {
@@ -72,7 +72,7 @@ digraph userstory_dag {
 
   _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  cfg_1b1w -> cat_basic [style=invis];
+  cfg_1b -> cat_basic [style=invis];
   cat_basic -> match_default [style=invis];
   match_default -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> csv_ekoplaza_4217_jan15 [style=invis];
@@ -83,7 +83,7 @@ digraph userstory_dag {
   jrnl_groceries_ekoplaza -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
 
   cat_basic -> match_default [color="#4CAF50", penwidth=2.5, style=bold];
-  cfg_1b1w -> cat_basic [color="#4CAF50", penwidth=2.5, style=bold];
+  cfg_1b -> cat_basic [color="#4CAF50", penwidth=2.5, style=bold];
   csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [color="#4CAF50", penwidth=2.5, style=bold];
   img_ekoplaza_card -> lbl_ekoplaza_card_eur [color="#4CAF50", penwidth=2.5, style=bold];
   lbl_ekoplaza_card_eur -> out_auto_1hit [color="#4CAF50", penwidth=2.5, style=bold];
