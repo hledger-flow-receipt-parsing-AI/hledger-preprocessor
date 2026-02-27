@@ -7,15 +7,22 @@ digraph userstory_dag {
   newrank=true;
   compound=true;
 
-  _skip_config_accounts [label="Account Configuration", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+  subgraph cluster_config_group {
+    label="Configuration";
+    labeljust=l;
+    style="dashed"; color="#888888";
+    penwidth=1.5;
+    _skip_config_accounts [label="Account Configuration", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  _skip_config_dir_paths [label="Directory Paths", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+    _skip_config_dir_paths [label="Directory Paths", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  _skip_config_file_names [label="Filename Convention", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+    _skip_config_file_names [label="Filename Convention", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  _skip_config_categorisation [label="Categorisation Config", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+    _skip_config_categorisation [label="Categorisation Config", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  _skip_config_matching_algo [label="Matching Algo Config", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+    _skip_config_matching_algo [label="Matching Algo Config", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  }
 
   _skip_categories [label="Categories", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 

@@ -70,6 +70,15 @@ LAYER_ORDER = [
     "visualization",
 ]
 
+# Layers that belong to the "Configuration" parent group
+CONFIG_GROUP_LAYERS = {
+    "config_accounts",
+    "config_dir_paths",
+    "config_file_names",
+    "config_categorisation",
+    "config_matching_algo",
+}
+
 
 def load_data() -> Dict[str, Any]:
     with open(DATA_FILE) as f:
@@ -346,56 +355,98 @@ def generate_dot_full(
         elif only_story_id and layer_name in all_layer_labels:
             ordered_layers.append((layer_name, None))  # placeholder
 
-    # Emit layer subgraphs and placeholder nodes
+    # Emit layer subgraphs and placeholder nodes.
+    # Config layers are wrapped in a parent cluster_config_group.
     chain_nodes: List[str] = []  # ordered anchor nodes for vertical chain
+    config_group_open = False  # track whether parent config cluster is open
+    # Determine indent level (extra indent when inside config group)
+    base_indent = "  "
+
     for layer_name, nids in ordered_layers:
+        # Open the config group parent cluster before the first config layer
+        if layer_name in CONFIG_GROUP_LAYERS and not config_group_open:
+            lines.append(f"{base_indent}subgraph cluster_config_group {{")
+            lines.append(f'{base_indent}  label="Configuration";')
+            lines.append(f"{base_indent}  labeljust=l;")
+            lines.append(f'{base_indent}  style="dashed"; color="#888888";')
+            lines.append(f"{base_indent}  penwidth=1.5;")
+            config_group_open = True
+
+        indent = base_indent + "  " if config_group_open else base_indent
+        node_indent = indent + "  "
+
         if nids is None:
             # Placeholder for a skipped layer
             lbl = all_layer_labels[layer_name]
             placeholder_id = f"_skip_{layer_name}"
             lines.append(
-                f'  {placeholder_id} [label="{lbl}",'
+                f'{indent}{placeholder_id} [label="{lbl}",'
                 " shape=plaintext, fontsize=9,"
                 ' fontcolor="#AAAAAA"];'
             )
             chain_nodes.append(placeholder_id)
             lines.append("")
-            continue
+        else:
+            layer_label = node_index[nids[0]]["layer_label"]
+            fill = LAYER_COLOURS.get(layer_name, "#FFFFFF")
 
-        layer_label = node_index[nids[0]]["layer_label"]
-        fill = LAYER_COLOURS.get(layer_name, "#FFFFFF")
+            lines.append(f"{indent}subgraph cluster_{layer_name} {{")
+            lines.append(f'{indent}  label="{layer_label}";')
+            lines.append(f'{indent}  style=filled; fillcolor="{fill}";')
+            lines.append(f"{indent}  rank=same;")
 
-        lines.append(f"  subgraph cluster_{layer_name} {{")
-        lines.append(f'    label="{layer_label}";')
-        lines.append(f'    style=filled; fillcolor="{fill}";')
-        lines.append("    rank=same;")
+            for idx, nid in enumerate(nids):
+                info = node_index[nid]
+                shape = node_shape(layer_name)
+                pw = penwidth_for_count(node_usage.get(nid, 1))
+                label = info["label"].replace("\n", "\\n")
+                tooltip = info["desc"].replace('"', '\\"')
 
-        for nid in nids:
-            info = node_index[nid]
-            shape = node_shape(layer_name)
-            pw = penwidth_for_count(node_usage.get(nid, 1))
-            label = info["label"].replace("\n", "\\n")
-            tooltip = info["desc"].replace('"', '\\"')
+                # Greyed-out if highlighting a different story
+                if highlight_story_id and nid not in _get_story_nodes(
+                    stories, highlight_story_id
+                ):
+                    colour = "#CCCCCC"
+                    fontcolour = "#999999"
+                else:
+                    colour = "#333333"
+                    fontcolour = "#000000"
 
-            # Greyed-out if highlighting a different story
-            if highlight_story_id and nid not in _get_story_nodes(
-                stories, highlight_story_id
-            ):
-                colour = "#CCCCCC"
-                fontcolour = "#999999"
-            else:
-                colour = "#333333"
-                fontcolour = "#000000"
+                # The first node of each layer gets group="_left" so dot
+                # tries to vertically align them, left-aligning clusters.
+                group_attr = ""
+                if idx == 0 and not only_story_id:
+                    group_attr = ' group="_left",'
 
-            lines.append(
-                f'    {nid} [label="{label}", shape={shape},'
-                f' penwidth={pw}, color="{colour}",'
-                f' fontcolor="{fontcolour}",'
-                f' tooltip="{tooltip}"];'
+                lines.append(
+                    f'{node_indent}{nid} [label="{label}", shape={shape},'
+                    f' penwidth={pw}, color="{colour}",'
+                    f' fontcolor="{fontcolour}",{group_attr}'
+                    f' tooltip="{tooltip}"];'
+                )
+            lines.append(f"{indent}}}")
+            chain_nodes.append(nids[0])
+            lines.append("")
+
+        # Close the config group parent cluster after the last config layer
+        if config_group_open and layer_name not in CONFIG_GROUP_LAYERS:
+            # We've moved past the config layers — should not happen due to
+            # ordering, but guard anyway
+            pass
+        if (
+            config_group_open
+            and layer_name in CONFIG_GROUP_LAYERS
+        ):
+            # Check if the next layer is still a config layer
+            idx = [ln for ln, _ in ordered_layers].index(layer_name)
+            next_is_config = (
+                idx + 1 < len(ordered_layers)
+                and ordered_layers[idx + 1][0] in CONFIG_GROUP_LAYERS
             )
-        lines.append("  }")
-        chain_nodes.append(nids[0])
-        lines.append("")
+            if not next_is_config:
+                lines.append(f"{base_indent}}}")
+                lines.append("")
+                config_group_open = False
 
     # For isolated views, chain all layers (real and placeholder) with
     # invisible edges to enforce correct vertical ordering.
@@ -412,6 +463,18 @@ def generate_dot_full(
                 )
             else:
                 lines.append(f"  {src} -> {dst} [style=invis];")
+        lines.append("")
+
+    # Left-alignment backbone: invisible edges between the grouped first
+    # nodes of each cluster with high weight.  Together with group="_left"
+    # on these nodes, this creates a strong vertical alignment column that
+    # pulls all cluster left edges to the same x-position.
+    if not only_story_id and len(chain_nodes) > 1:
+        for i in range(len(chain_nodes) - 1):
+            lines.append(
+                f"  {chain_nodes[i]} -> {chain_nodes[i + 1]}"
+                " [style=invis, weight=100];"
+            )
         lines.append("")
 
     # Edges

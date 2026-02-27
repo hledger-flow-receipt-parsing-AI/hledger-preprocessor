@@ -55,11 +55,7 @@ SECTION_TO_GIF_DIR: Dict[str, Optional[str]] = {
 # work area (used for section boxing in the full-path DAG view).
 SECTION_PRIMARY_LAYERS: Dict[str, List[str]] = {
     "Step 1a: Account Configuration": [
-        "config_accounts",
-        "config_dir_paths",
-        "config_file_names",
-        "config_categorisation",
-        "config_matching_algo",
+        "config_group",
     ],
     "Step 1b: Category Configuration": ["categories"],
     "Step 2a: Receipt Image Processing": ["receipt_img"],
@@ -410,8 +406,9 @@ def add_data_attributes_to_svg(
                     )
                 svg = svg[:g_start] + new_g + svg[g_end + 1 :]
 
-    # Also add data-layer to cluster groups
+    # Also add data-layer to cluster groups (including config parent group)
     for layer_name in [
+        "config_group",
         "config_accounts",
         "config_dir_paths",
         "config_file_names",
@@ -507,9 +504,21 @@ def add_data_attributes_to_svg(
 # ---------------------------------------------------------------------------
 # HTML / CSS / JS generation
 # ---------------------------------------------------------------------------
-def generate_css() -> str:
-    """Generate the site stylesheet."""
-    return """\
+def generate_css(*, dim_opacity: Optional[float] = None) -> str:
+    """Generate the site stylesheet.
+
+    Args:
+        dim_opacity: Opacity for non-used/unreachable nodes (0.0–1.0).
+                     Defaults to 0.18.  Edge opacity is derived as
+                     ``dim_opacity * 0.6``.  Explorer dimmed values use
+                     ``dim_opacity * 0.5`` for nodes and ``dim_opacity * 0.33``
+                     for edges.
+    """
+    node_op = dim_opacity if dim_opacity is not None else 0.18
+    edge_op = round(node_op * 0.6, 2)
+    explorer_node_op = round(node_op * 0.5, 2)
+    explorer_edge_op = round(node_op * 0.33, 2)
+    css = """\
 :root {
   --sidebar-width: 260px;
   --bg: #1a1b26;
@@ -668,8 +677,8 @@ a:hover { text-decoration: underline; }
 
 /* DAG node highlighting */
 .dag-node { cursor: pointer; transition: opacity 0.2s; }
-.dag-node.unreachable { cursor: default; opacity: 0.25; pointer-events: none; }
-.dag-edge.unreachable { opacity: 0.15; pointer-events: none; }
+.dag-node.unreachable { cursor: default; opacity: __NODE_OP__; pointer-events: none; }
+.dag-edge.unreachable { opacity: __EDGE_OP__; pointer-events: none; }
 .dag-node.active polygon,
 .dag-node.active ellipse,
 .dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }
@@ -790,15 +799,15 @@ a:hover { text-decoration: underline; }
   position: relative; overflow: hidden; cursor: grab;
   border: 1px solid var(--border); border-radius: 8px;
   background: transparent;
-  min-height: 70vh;
+  min-height: calc(100vh - 8rem);
 }
 .dag-explorer:active { cursor: grabbing; }
 .dag-explorer .dag-svg {
   transform-origin: 0 0; transition: transform 0.15s ease-out;
   width: 100%; height: auto;
 }
-.dag-explorer .dag-node.dimmed { opacity: 0.12; transition: opacity 0.3s; }
-.dag-explorer .dag-edge.dimmed { opacity: 0.08; transition: opacity 0.3s; }
+.dag-explorer .dag-node.dimmed { opacity: __EXPLORER_NODE_OP__; transition: opacity 0.3s; }
+.dag-explorer .dag-edge.dimmed { opacity: __EXPLORER_EDGE_OP__; transition: opacity 0.3s; }
 .dag-explorer .dag-node.story-hl polygon,
 .dag-explorer .dag-node.story-hl ellipse,
 .dag-explorer .dag-node.story-hl rect {
@@ -837,6 +846,12 @@ a:hover { text-decoration: underline; }
   border-radius: 3px; font-size: 0.65rem; font-family: inherit;
 }
 """
+    return (
+        css.replace("__NODE_OP__", str(node_op))
+        .replace("__EDGE_OP__", str(edge_op))
+        .replace("__EXPLORER_NODE_OP__", str(explorer_node_op))
+        .replace("__EXPLORER_EDGE_OP__", str(explorer_edge_op))
+    )
 
 
 def generate_js() -> str:
@@ -1194,9 +1209,43 @@ def generate_explorer_js() -> str:
     svg.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
   }
 
+  function contentBBox() {
+    // Compute a bounding box from clusters and nodes only
+    // (skipping the background polygon that spans the full viewBox).
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    var items = svg.querySelectorAll('.dag-cluster, .dag-node, .dag-edge');
+    for (var i = 0; i < items.length; i++) {
+      try {
+        var b = items[i].getBBox();
+        if (b.width > 0 && b.height > 0) {
+          if (b.x < minX) minX = b.x;
+          if (b.y < minY) minY = b.y;
+          if (b.x + b.width > maxX) maxX = b.x + b.width;
+          if (b.y + b.height > maxY) maxY = b.y + b.height;
+        }
+      } catch(e) {}
+    }
+    if (minX === Infinity) return svg.getBBox();
+    return {x: minX, y: minY, width: maxX - minX, height: maxY - minY};
+  }
+
   function resetView() {
-    scale = 1;
-    panX = 0; panY = 0;
+    // Fit the DAG content (clusters + nodes) into the explorer container,
+    // positioned at the top-left.  We use contentBBox() instead of
+    // svg.getBBox() because the latter includes the invisible background
+    // polygon that spans the entire viewBox.
+    var bbox = contentBBox();
+    var containerW = explorer.clientWidth;
+    var containerH = explorer.clientHeight;
+    if (bbox.width > 0 && bbox.height > 0 && containerW > 0 && containerH > 0) {
+      var scaleH = containerH / bbox.height;
+      var scaleW = containerW / bbox.width;
+      scale = Math.min(scaleH, scaleW, 1.5);
+      panX = -bbox.x * scale;
+      panY = -bbox.y * scale;
+    } else {
+      scale = 1; panX = 0; panY = 0;
+    }
     applyTransform();
   }
 
@@ -1820,6 +1869,7 @@ def copy_assets(
     video_map: Dict[str, Path],
     all_videos: Dict[str, Dict[str, Path]],
     sections: "OrderedDict[str, List[Dict]]",
+    dim_opacity: Optional[float] = None,
 ) -> None:
     """Copy images and videos into the output directory."""
     img_dir = output_dir / "assets" / "images"
@@ -1867,7 +1917,7 @@ def copy_assets(
                 shutil.copy2(img_file, receipt_dir / img_file.name)
 
     # Write CSS and JS
-    (css_dir / "style.css").write_text(generate_css())
+    (css_dir / "style.css").write_text(generate_css(dim_opacity=dim_opacity))
     (js_dir / "dag-sync.js").write_text(generate_js())
     (js_dir / "dag-explorer.js").write_text(generate_explorer_js())
 
@@ -1889,6 +1939,12 @@ def main() -> None:
         "--no-svg",
         action="store_true",
         help="Skip PlantUML SVG generation, use PNG fallbacks",
+    )
+    parser.add_argument(
+        "--dim-opacity",
+        type=float,
+        default=None,
+        help="Opacity for non-used/unreachable DAG nodes (0.0–1.0, default: 0.18)",
     )
     args = parser.parse_args()
     output_dir = args.output
@@ -1933,6 +1989,7 @@ def main() -> None:
         video_map=video_map,
         all_videos=all_videos,
         sections=sections,
+        dim_opacity=args.dim_opacity,
     )
 
     # Generate SVGs (or skip)

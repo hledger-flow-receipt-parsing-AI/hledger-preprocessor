@@ -2,8 +2,9 @@
   "markers": {
     "cat_with_income__groceries": 0.0,
     "cat_with_income__withdrawl": 2.6,
-    "cat_with_income__salary": 3.96
+    "cat_with_income__salary": 3.96,
+    "cat_with_income__freelance": 5.48
   },
-  "total_duration": 7.04,
+  "total_duration": 8.04,
   "frame_duration_ms": 40
 }
