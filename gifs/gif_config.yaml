@@ -79,15 +79,7 @@ themes:
 # -----------------------------------------------------------------------------
 # Each demo can be enabled/disabled and have custom settings
 demos:
-  # Edit receipt TUI demo
-  edit_receipt:
-    enabled: true
-    # Override terminal dimensions for this demo (optional)
-    # terminal:
-    #   rows: 50
-    #   cols: 120
-
-  # Label receipt TUI demo (04_label_receipt)
+  # Label receipt TUI demo (2b_label_receipt)
   04_label_receipt:
     enabled: true
     terminal:
