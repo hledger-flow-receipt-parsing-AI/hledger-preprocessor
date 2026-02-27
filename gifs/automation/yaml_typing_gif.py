@@ -13,8 +13,8 @@ Usage:
 
     # Segmented mode (multiple fragments with per-section timestamps):
     python -m gifs.automation.yaml_typing_gif \\
-        --segments accounts/1_bank.yaml=cfg_1b__bank_csv \\
-                   shared/dir_paths.yaml=cfg_1b__dir_paths \\
+        --segments accounts/1_bank.yaml=acct_triodos_csv \\
+                   shared/dir_paths.yaml=dirp_default \\
         --output config.gif --markers-output config_markers.json
 """
 

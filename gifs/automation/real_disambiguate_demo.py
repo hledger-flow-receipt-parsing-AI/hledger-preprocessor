@@ -19,7 +19,7 @@ from typing import Any, Dict
 
 import yaml
 
-from .core import Colors, Screen, emit_node_marker
+from .core import Colors, Screen, StoryMarkerEmitter
 
 
 def print_header(title: str) -> None:
@@ -264,13 +264,12 @@ def create_test_environment() -> Dict[str, Any]:
     }
 
 
-def show_inputs(*, env: Dict[str, Any]) -> None:
+def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     """Show the input files highlighting the ambiguity."""
     import subprocess
 
     # Show receipt label
-    emit_node_marker("img_ekoplaza_card")
-    emit_node_marker("lbl_ekoplaza_card_eur")
+    emitter.emit_until("lbl_ekoplaza_card_eur")
     print_subheader("Input: Receipt Label — Ekoplaza Centrum (from Step 2b)")
     label_path = env["label_path"]
     print(
@@ -295,7 +294,7 @@ def show_inputs(*, env: Dict[str, Any]) -> None:
     time.sleep(1.5)
 
     # Show CSV file — 3 similar transactions
-    emit_node_marker("csv_ekoplaza_4217_jan15")
+    emitter.emit_until("csv_ekoplaza_4217_jan15")
     print_subheader("Input: Bank CSV — 3 Similar Ekoplaza Transactions")
     csv_path = env["csv_path"]
     print(f"{Colors.BOLD_WHITE}$ cat {csv_path}{Colors.RESET}")
@@ -335,13 +334,13 @@ def show_inputs(*, env: Dict[str, Any]) -> None:
     time.sleep(2)
 
 
-def run_matching_demo(*, env: Dict[str, Any]) -> bool:
+def run_matching_demo(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
     """Run the actual --link-receipts-to-transactions CLI command."""
     import pexpect
 
     from .tui_navigator import TuiNavigator
 
-    emit_node_marker("out_disambiguate_3")
+    emitter.emit_until("out_disambiguate_3")
     print_subheader(
         "Running: hledger_preprocessor --link-receipts-to-transactions"
     )
@@ -417,7 +416,7 @@ def run_matching_demo(*, env: Dict[str, Any]) -> bool:
         nav.clear_key_display()
 
 
-def show_result(*, env: Dict[str, Any]) -> None:
+def show_result(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     """Show the result after disambiguation."""
     import subprocess
 
@@ -430,7 +429,7 @@ def show_result(*, env: Dict[str, Any]) -> None:
         )
         return
 
-    emit_node_marker("jrnl_groceries_ekoplaza")
+    emitter.emit_remaining()
     print_subheader("Result: Receipt After Disambiguation")
     print(
         f"{Colors.BOLD_WHITE}$ jq '.net_bought_items'"
@@ -481,12 +480,11 @@ def run_disambiguate_demo() -> None:
     print()
     time.sleep(2)
 
+    emitter = StoryMarkerEmitter("US-3.6")
+
     env = None
     try:
-        emit_node_marker("cfg_1b1w")
-        emit_node_marker("cat_basic")
-        emit_node_marker("match_wide_date")
-        emit_node_marker("start_2024_1000eur")
+        emitter.emit_until("start_2024_1000eur")
         print(f"{Colors.GRAY}Setting up demo environment...{Colors.RESET}")
         env = create_test_environment()
         print(f"{Colors.GRAY}Done.{Colors.RESET}")
@@ -498,8 +496,8 @@ def run_disambiguate_demo() -> None:
         shutil.copy(env["label_path"], before_label_path)
         env["before_label_path"] = before_label_path
 
-        show_inputs(env=env)
-        success = run_matching_demo(env=env)
+        show_inputs(env=env, emitter=emitter)
+        success = run_matching_demo(env=env, emitter=emitter)
 
         print()
         if success:
@@ -515,7 +513,7 @@ def run_disambiguate_demo() -> None:
         print()
         time.sleep(1)
 
-        show_result(env=env)
+        show_result(env=env, emitter=emitter)
 
         print(
             f"{Colors.BOLD_CYAN}Next step:{Colors.RESET} Run ./start.sh to"

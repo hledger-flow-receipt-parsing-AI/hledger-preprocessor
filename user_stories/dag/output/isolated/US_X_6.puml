@@ -7,7 +7,15 @@ digraph userstory_dag {
   newrank=true;
   compound=true;
 
-  _skip_config [label="Configuration", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+  _skip_config_accounts [label="Account Configuration", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  _skip_config_dir_paths [label="Directory Paths", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  _skip_config_file_names [label="Filename Convention", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  _skip_config_categorisation [label="Categorisation Config", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  _skip_config_matching_algo [label="Matching Algo Config", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
   _skip_categories [label="Categories", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
@@ -37,7 +45,11 @@ digraph userstory_dag {
 
   _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  _skip_config -> _skip_categories [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_config_accounts -> _skip_config_dir_paths [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_config_dir_paths -> _skip_config_file_names [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_config_file_names -> _skip_config_categorisation [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_config_categorisation -> _skip_config_matching_algo [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_config_matching_algo -> _skip_categories [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_categories -> _skip_matching_cfg [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_matching_cfg -> _skip_start_journal [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_start_journal -> _skip_csv_txn [style=dotted, color="#CCCCCC", arrowhead=none];

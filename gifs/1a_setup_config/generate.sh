@@ -8,6 +8,13 @@
 #
 # Each account in a multi-account config gets its own segment so the site
 # can show per-account clickable nodes with accurate timestamps.
+#
+# Marker IDs use the config sublevel node IDs from userstory_dag_data.yaml:
+#   acct_triodos_csv, acct_ing_csv, acct_eur_wallet, etc. (config_accounts)
+#   dirp_default (config_dir_paths)
+#   fnames_default (config_file_names)
+#   catcfg_default (config_categorisation)
+#   malgo_default (config_matching_algo)
 # =============================================================================
 
 set -euo pipefail
@@ -54,7 +61,7 @@ convert_gif_to_mp4() {
 }
 
 # generate_gif NODE_ID SEGMENTS...
-#   NODE_ID:   e.g. cfg_1b
+#   NODE_ID:   e.g. cfg_1b (used as output filename stem)
 #   SEGMENTS:  "filepath=marker_id" pairs
 generate_gif() {
     local node_id="$1"
@@ -95,80 +102,80 @@ export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
 # cfg_1b: 1 bank (Triodos)
 # ---------------------------------------------------------------------------
 generate_gif cfg_1b \
-    "${ACCTS}/triodos.yaml=cfg_1b__triodos_csv" \
-    "${SHARED}/dir_paths.yaml=cfg_1b__dir_paths" \
-    "${SHARED}/file_names.yaml=cfg_1b__file_names" \
-    "${SHARED}/categorisation.yaml=cfg_1b__categorisation" \
-    "${SHARED}/matching_algo.yaml=cfg_1b__matching_algo"
+    "${ACCTS}/triodos.yaml=acct_triodos_csv" \
+    "${SHARED}/dir_paths.yaml=dirp_default" \
+    "${SHARED}/file_names.yaml=fnames_default" \
+    "${SHARED}/categorisation.yaml=catcfg_default" \
+    "${SHARED}/matching_algo.yaml=malgo_default"
 
 # ---------------------------------------------------------------------------
 # cfg_2b: 2 banks (Triodos + ING)
 # ---------------------------------------------------------------------------
 generate_gif cfg_2b \
-    "${ACCTS}/triodos.yaml=cfg_2b__triodos_csv" \
-    "${ACCTS}/ing.yaml=cfg_2b__ing_csv" \
-    "${SHARED}/dir_paths.yaml=cfg_2b__dir_paths" \
-    "${SHARED}/file_names.yaml=cfg_2b__file_names" \
-    "${SHARED}/categorisation.yaml=cfg_2b__categorisation" \
-    "${SHARED}/matching_algo.yaml=cfg_2b__matching_algo"
+    "${ACCTS}/triodos.yaml=acct_triodos_csv" \
+    "${ACCTS}/ing.yaml=acct_ing_csv" \
+    "${SHARED}/dir_paths.yaml=dirp_default" \
+    "${SHARED}/file_names.yaml=fnames_default" \
+    "${SHARED}/categorisation.yaml=catcfg_default" \
+    "${SHARED}/matching_algo.yaml=malgo_default"
 
 # ---------------------------------------------------------------------------
 # cfg_1w: 1 wallet (EUR cash)
 # ---------------------------------------------------------------------------
 generate_gif cfg_1w \
-    "${ACCTS}/eur_wallet_first.yaml=cfg_1w__eur_wallet" \
-    "${SHARED}/dir_paths.yaml=cfg_1w__dir_paths" \
-    "${SHARED}/file_names.yaml=cfg_1w__file_names" \
-    "${SHARED}/categorisation.yaml=cfg_1w__categorisation"
+    "${ACCTS}/eur_wallet_first.yaml=acct_eur_wallet" \
+    "${SHARED}/dir_paths.yaml=dirp_default" \
+    "${SHARED}/file_names.yaml=fnames_default" \
+    "${SHARED}/categorisation.yaml=catcfg_default"
 
 # ---------------------------------------------------------------------------
 # cfg_crypto: Triodos + BTC wallet
 # ---------------------------------------------------------------------------
 generate_gif cfg_crypto \
-    "${ACCTS}/triodos.yaml=cfg_crypto__triodos_csv" \
-    "${ACCTS}/btc_wallet.yaml=cfg_crypto__btc_wallet" \
-    "${SHARED}/dir_paths.yaml=cfg_crypto__dir_paths" \
-    "${SHARED}/file_names.yaml=cfg_crypto__file_names" \
-    "${SHARED}/categorisation.yaml=cfg_crypto__categorisation" \
-    "${SHARED}/matching_algo.yaml=cfg_crypto__matching_algo"
+    "${ACCTS}/triodos.yaml=acct_triodos_csv" \
+    "${ACCTS}/btc_wallet.yaml=acct_btc_wallet" \
+    "${SHARED}/dir_paths.yaml=dirp_default" \
+    "${SHARED}/file_names.yaml=fnames_default" \
+    "${SHARED}/categorisation.yaml=catcfg_default" \
+    "${SHARED}/matching_algo.yaml=malgo_default"
 
 # ---------------------------------------------------------------------------
 # cfg_per_bank_match: Triodos + ING + EUR wallet
 # ---------------------------------------------------------------------------
 generate_gif cfg_per_bank_match \
-    "${ACCTS}/triodos.yaml=cfg_per_bank_match__triodos_csv" \
-    "${ACCTS}/ing.yaml=cfg_per_bank_match__ing_csv" \
-    "${ACCTS}/eur_wallet.yaml=cfg_per_bank_match__eur_wallet" \
-    "${SHARED}/dir_paths.yaml=cfg_per_bank_match__dir_paths" \
-    "${SHARED}/file_names.yaml=cfg_per_bank_match__file_names" \
-    "${SHARED}/categorisation.yaml=cfg_per_bank_match__categorisation" \
-    "${SHARED}/matching_algo.yaml=cfg_per_bank_match__matching_algo"
+    "${ACCTS}/triodos.yaml=acct_triodos_csv" \
+    "${ACCTS}/ing.yaml=acct_ing_csv" \
+    "${ACCTS}/eur_wallet.yaml=acct_eur_wallet" \
+    "${SHARED}/dir_paths.yaml=dirp_default" \
+    "${SHARED}/file_names.yaml=fnames_default" \
+    "${SHARED}/categorisation.yaml=catcfg_default" \
+    "${SHARED}/matching_algo.yaml=malgo_default"
 
 # ---------------------------------------------------------------------------
 # cfg_1b5a: Triodos + 5 wallets (EUR/GBP/BTC/GOLD/SILVER)
 # ---------------------------------------------------------------------------
 generate_gif cfg_1b5a \
-    "${ACCTS}/triodos.yaml=cfg_1b5a__triodos_csv" \
-    "${ACCTS}/eur_wallet.yaml=cfg_1b5a__eur_wallet" \
-    "${ACCTS}/gbp_wallet.yaml=cfg_1b5a__gbp_wallet" \
-    "${ACCTS}/btc_wallet.yaml=cfg_1b5a__btc_wallet" \
-    "${ACCTS}/gold_wallet.yaml=cfg_1b5a__gold_wallet" \
-    "${ACCTS}/silver_wallet.yaml=cfg_1b5a__silver_wallet" \
-    "${SHARED}/dir_paths.yaml=cfg_1b5a__dir_paths" \
-    "${SHARED}/file_names.yaml=cfg_1b5a__file_names" \
-    "${SHARED}/categorisation.yaml=cfg_1b5a__categorisation" \
-    "${SHARED}/matching_algo.yaml=cfg_1b5a__matching_algo"
+    "${ACCTS}/triodos.yaml=acct_triodos_csv" \
+    "${ACCTS}/eur_wallet.yaml=acct_eur_wallet" \
+    "${ACCTS}/gbp_wallet.yaml=acct_gbp_wallet" \
+    "${ACCTS}/btc_wallet.yaml=acct_btc_wallet" \
+    "${ACCTS}/gold_wallet.yaml=acct_gold_wallet" \
+    "${ACCTS}/silver_wallet.yaml=acct_silver_wallet" \
+    "${SHARED}/dir_paths.yaml=dirp_default" \
+    "${SHARED}/file_names.yaml=fnames_default" \
+    "${SHARED}/categorisation.yaml=catcfg_default" \
+    "${SHARED}/matching_algo.yaml=malgo_default"
 
 # ---------------------------------------------------------------------------
 # cfg_1b1w: Triodos + EUR wallet
 # ---------------------------------------------------------------------------
 generate_gif cfg_1b1w \
-    "${ACCTS}/triodos.yaml=cfg_1b1w__triodos_csv" \
-    "${ACCTS}/eur_wallet.yaml=cfg_1b1w__eur_wallet" \
-    "${SHARED}/dir_paths.yaml=cfg_1b1w__dir_paths" \
-    "${SHARED}/file_names.yaml=cfg_1b1w__file_names" \
-    "${SHARED}/categorisation.yaml=cfg_1b1w__categorisation" \
-    "${SHARED}/matching_algo.yaml=cfg_1b1w__matching_algo"
+    "${ACCTS}/triodos.yaml=acct_triodos_csv" \
+    "${ACCTS}/eur_wallet.yaml=acct_eur_wallet" \
+    "${SHARED}/dir_paths.yaml=dirp_default" \
+    "${SHARED}/file_names.yaml=fnames_default" \
+    "${SHARED}/categorisation.yaml=catcfg_default" \
+    "${SHARED}/matching_algo.yaml=malgo_default"
 
 log "All config GIFs generated!"
 exit 0

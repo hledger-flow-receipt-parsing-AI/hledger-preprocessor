@@ -84,8 +84,8 @@ class StoryMarkerEmitter:
         """Emit markers up to and including *target_node*.
 
         Matches on the base node ID (ignoring ``__sub_component`` suffixes),
-        so ``emit_until("cfg_1b1w")`` will also emit all sub-component
-        markers for ``cfg_1b1w``.
+        so ``emit_until("acct_triodos_csv")`` will also emit all sub-component
+        markers for ``acct_triodos_csv``.
         """
         emitted: List[str] = []
         while self._pos < len(self._sequence):

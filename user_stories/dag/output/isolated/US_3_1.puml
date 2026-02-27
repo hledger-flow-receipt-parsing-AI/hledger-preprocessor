@@ -7,11 +7,39 @@ digraph userstory_dag {
   newrank=true;
   compound=true;
 
-  subgraph cluster_config {
-    label="Configuration";
+  subgraph cluster_config_accounts {
+    label="Account Configuration";
     style=filled; fillcolor="#E3F2FD";
     rank=same;
-    cfg_1b [label="1 bank account", shape=box3d, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Triodos checking (EUR CSV) — single bank, no wallet"];
+    acct_triodos_csv [label="Triodos checking\n(EUR CSV)", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking account — imports from CSV"];
+  }
+
+  subgraph cluster_config_dir_paths {
+    label="Directory Paths";
+    style=filled; fillcolor="#BBDEFB";
+    rank=same;
+    dirp_default [label="Default dir paths", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard directory layout: import/{holder}/{bank}/{type}/{year}/"];
+  }
+
+  subgraph cluster_config_file_names {
+    label="Filename Convention";
+    style=filled; fillcolor="#90CAF9";
+    rank=same;
+    fnames_default [label="Default filenames", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard filename conventions for CSV, rules, and journal files"];
+  }
+
+  subgraph cluster_config_categorisation {
+    label="Categorisation Config";
+    style=filled; fillcolor="#64B5F6";
+    rank=same;
+    catcfg_default [label="Default categorisation", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard categorisation settings from config.yaml"];
+  }
+
+  subgraph cluster_config_matching_algo {
+    label="Matching Algo Config";
+    style=filled; fillcolor="#42A5F5";
+    rank=same;
+    malgo_default [label="Default matching algo", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard matching algorithm settings from config.yaml"];
   }
 
   subgraph cluster_categories {
@@ -72,7 +100,11 @@ digraph userstory_dag {
 
   _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  cfg_1b -> cat_basic [style=invis];
+  acct_triodos_csv -> dirp_default [style=invis];
+  dirp_default -> fnames_default [style=invis];
+  fnames_default -> catcfg_default [style=invis];
+  catcfg_default -> malgo_default [style=invis];
+  malgo_default -> cat_basic [style=invis];
   cat_basic -> match_default [style=invis];
   match_default -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> csv_ekoplaza_4217_jan15 [style=invis];
@@ -82,11 +114,15 @@ digraph userstory_dag {
   out_auto_1hit -> jrnl_groceries_ekoplaza [style=invis];
   jrnl_groceries_ekoplaza -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
 
+  acct_triodos_csv -> dirp_default [color="#4CAF50", penwidth=2.5, style=bold];
   cat_basic -> match_default [color="#4CAF50", penwidth=2.5, style=bold];
-  cfg_1b -> cat_basic [color="#4CAF50", penwidth=2.5, style=bold];
+  catcfg_default -> malgo_default [color="#4CAF50", penwidth=2.5, style=bold];
   csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [color="#4CAF50", penwidth=2.5, style=bold];
+  dirp_default -> fnames_default [color="#4CAF50", penwidth=2.5, style=bold];
+  fnames_default -> catcfg_default [color="#4CAF50", penwidth=2.5, style=bold];
   img_ekoplaza_card -> lbl_ekoplaza_card_eur [color="#4CAF50", penwidth=2.5, style=bold];
   lbl_ekoplaza_card_eur -> out_auto_1hit [color="#4CAF50", penwidth=2.5, style=bold];
+  malgo_default -> cat_basic [color="#4CAF50", penwidth=2.5, style=bold];
   match_default -> start_2024_1000eur [color="#4CAF50", penwidth=2.5, style=bold];
   out_auto_1hit -> jrnl_groceries_ekoplaza [color="#4CAF50", penwidth=2.5, style=bold];
   start_2024_1000eur -> csv_ekoplaza_4217_jan15 [color="#4CAF50", penwidth=2.5, style=bold];

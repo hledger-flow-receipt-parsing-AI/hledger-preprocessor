@@ -1,15 +1,15 @@
 {
   "markers": {
-    "cfg_1b5a__triodos_csv": 0.0,
-    "cfg_1b5a__eur_wallet": 23.16,
-    "cfg_1b5a__gbp_wallet": 32.72,
-    "cfg_1b5a__btc_wallet": 42.04,
-    "cfg_1b5a__gold_wallet": 52.48,
-    "cfg_1b5a__silver_wallet": 61.64,
-    "cfg_1b5a__dir_paths": 70.96,
-    "cfg_1b5a__file_names": 88.32,
-    "cfg_1b5a__categorisation": 103.76,
-    "cfg_1b5a__matching_algo": 106.48
+    "acct_triodos_csv": 0.0,
+    "acct_eur_wallet": 23.16,
+    "acct_gbp_wallet": 32.72,
+    "acct_btc_wallet": 42.04,
+    "acct_gold_wallet": 52.48,
+    "acct_silver_wallet": 61.64,
+    "dirp_default": 70.96,
+    "fnames_default": 88.32,
+    "catcfg_default": 103.76,
+    "malgo_default": 106.48
   },
   "total_duration": 113.08,
   "frame_duration_ms": 40
