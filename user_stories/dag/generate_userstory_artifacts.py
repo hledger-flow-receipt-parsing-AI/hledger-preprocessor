@@ -1314,18 +1314,6 @@ def main():
                     s["paths"] = s["demo_paths"]
         stories = filter_stories(stories, args.filter)
 
-        # All-stories overlay
-        dot, legend = generate_dot_full(
-            data,
-            node_index,
-            stories,
-            info_fontsize=args.info_fontsize,
-            info_acceptance_criteria=args.info_acceptance_criteria,
-        )
-        path = write_puml("dag_all_stories.puml", dot)
-        print(f"Written: {path}")
-        render_with_legend(path, legend)
-
         # Demo-only overlay
         demo_stories = filter_stories(stories, "demo")
         if demo_stories:
