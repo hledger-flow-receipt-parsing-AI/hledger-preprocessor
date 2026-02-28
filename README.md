@@ -80,22 +80,71 @@ ______________________________________________________________________
 
 \<TODO: add gif>
 
-## User Story DAG Explorer (local preview)
+## User Story DAG Explorer
 
-Browse user stories with synchronized video + interactive DAG diagrams:
+Browse user stories with synchronized video + interactive DAG diagrams.
+Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Click a node to seek.
+
+### Quick build & serve
 
 ```bash
-# Generate the site
-python user_stories/dag/generate_site.py --output /tmp/site/
+# Full rebuild (artifacts + site) and serve locally:
+./build_userstories.sh --serve
 
-# Serve locally and open in browser
-python -m http.server 8059 --directory /tmp/site/
 # Then open http://localhost:8059
-
-python user_stories/dag/generate_site.py --output /tmp/site/ && python -m http.server 8059 --directory /tmp/site/
 ```
 
-Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Click a node to seek.
+### Build script usage
+
+`build_userstories.sh` orchestrates the full pipeline: artifacts → GIFs → site.
+
+```bash
+./build_userstories.sh                     # Full rebuild (artifacts + site)
+./build_userstories.sh --site              # Site generation only (needs artifacts)
+./build_userstories.sh --serve [port]      # Build + serve (default port: 8059)
+./build_userstories.sh --artifacts         # DAG diagrams + markdown only
+./build_userstories.sh --gifs              # Re-record all GIFs
+./build_userstories.sh --gifs-standalone   # Re-record self-contained GIFs only
+./build_userstories.sh --gifs-config       # Re-record config-dependent GIFs (requires --config)
+./build_userstories.sh --gif <dir_name>    # Re-record a single GIF (e.g. 2b_label_receipt)
+./build_userstories.sh --dry-run           # Show what would run without executing
+```
+
+Options: `--output <dir>`, `--config <path>`, `--no-svg`, `--no-render`.
+
+### Manual steps (alternative)
+
+```bash
+# 1. Generate artifacts (DAG diagrams + markdown)
+python user_stories/dag/generate_userstory_artifacts.py -a --render
+
+# 2. Generate site
+python user_stories/dag/generate_site.py --output /tmp/site/
+
+# 3. Serve
+python -m http.server 8059 --directory /tmp/site/
+```
+
+## Tests
+
+```bash
+# Run all tests
+python -m pytest
+
+# Run a specific test
+python -m pytest test/e2e/test_gif_1a_setup_config.py -v
+
+# Run only unit/integration tests (skip slow e2e GIF generation)
+python -m pytest test/unit/ test/integration/
+
+# Run only e2e tests (these also regenerate GIFs as a side effect)
+python -m pytest test/e2e/
+```
+
+The e2e tests (`test/e2e/test_gif_*.py`) call the same `generate.sh` scripts
+used by `build_userstories.sh`, so running `python -m pytest test/e2e/` will
+regenerate GIFs and validate their output (GIF/MP4 existence, marker JSON
+structure, timestamp ordering).
 
 ## Getting Started
 
