@@ -7,44 +7,51 @@ digraph userstory_dag {
   newrank=true;
   compound=true;
 
-  subgraph cluster_config_accounts {
-    label="Account Configuration";
-    style=filled; fillcolor="#E3F2FD";
-    rank=same;
-    acct_btc_wallet [label="BTC digital\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="BTC digital wallet / exchange"];
-    acct_eur_wallet [label="EUR physical\nwallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="EUR cash wallet — no CSV import"];
-    acct_gbp_wallet [label="GBP physical\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="GBP cash wallet — foreign currency"];
-    acct_gold_wallet [label="GOLD physical\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="GOLD physical asset wallet"];
-    acct_silver_wallet [label="SILVER physical\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="SILVER physical asset wallet"];
-    acct_triodos_csv [label="Triodos checking\n(EUR CSV)", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking account — imports from CSV"];
-  }
+  subgraph cluster_config_group {
+    label="Configuration";
+    labeljust=l;
+    style="dashed"; color="#888888";
+    penwidth=1.5;
+    subgraph cluster_config_accounts {
+      label="Account Configuration";
+      style=filled; fillcolor="#E3F2FD";
+      rank=same;
+      acct_btc_wallet [label="BTC digital\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="BTC digital wallet / exchange"];
+      acct_eur_wallet [label="EUR physical\nwallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="EUR cash wallet — no CSV import"];
+      acct_gbp_wallet [label="GBP physical\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="GBP cash wallet — foreign currency"];
+      acct_gold_wallet [label="GOLD physical\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="GOLD physical asset wallet"];
+      acct_silver_wallet [label="SILVER physical\nwallet", shape=box3d, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="SILVER physical asset wallet"];
+      acct_triodos_csv [label="Triodos checking\n(EUR CSV)", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking account — imports from CSV"];
+    }
 
-  subgraph cluster_config_dir_paths {
-    label="Directory Paths";
-    style=filled; fillcolor="#BBDEFB";
-    rank=same;
-    dirp_default [label="Default dir paths", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard directory layout: import/{holder}/{bank}/{type}/{year}/"];
-  }
+    subgraph cluster_config_dir_paths {
+      label="Directory Paths";
+      style=filled; fillcolor="#BBDEFB";
+      rank=same;
+      dirp_default [label="Default dir paths", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard directory layout: import/{holder}/{bank}/{type}/{year}/"];
+    }
 
-  subgraph cluster_config_file_names {
-    label="Filename Convention";
-    style=filled; fillcolor="#90CAF9";
-    rank=same;
-    fnames_default [label="Default filenames", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard filename conventions for CSV, rules, and journal files"];
-  }
+    subgraph cluster_config_file_names {
+      label="Filename Convention";
+      style=filled; fillcolor="#90CAF9";
+      rank=same;
+      fnames_default [label="Default filenames", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard filename conventions for CSV, rules, and journal files"];
+    }
 
-  subgraph cluster_config_categorisation {
-    label="Categorisation Config";
-    style=filled; fillcolor="#64B5F6";
-    rank=same;
-    catcfg_default [label="Default categorisation", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard categorisation settings from config.yaml"];
-  }
+    subgraph cluster_config_categorisation {
+      label="Categorisation Config";
+      style=filled; fillcolor="#64B5F6";
+      rank=same;
+      catcfg_default [label="Default categorisation", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard categorisation settings from config.yaml"];
+    }
 
-  subgraph cluster_config_matching_algo {
-    label="Matching Algo Config";
-    style=filled; fillcolor="#42A5F5";
-    rank=same;
-    malgo_default [label="Default matching algo", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard matching algorithm settings from config.yaml"];
+    subgraph cluster_config_matching_algo {
+      label="Matching Algo Config";
+      style=filled; fillcolor="#42A5F5";
+      rank=same;
+      malgo_default [label="Default matching algo", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard matching algorithm settings from config.yaml"];
+    }
+
   }
 
   _skip_categories [label="Categories", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];

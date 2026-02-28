@@ -17,6 +17,7 @@
 # Options:
 #   --output <dir>      Site output directory (default: /tmp/site)
 #   --config <path>     Config file for GIFs that need it (required for --gifs-config)
+#   --dim-opacity <val> Opacity for non-used DAG nodes (0.0–1.0, default: 0.18)
 #   --no-svg            Skip PlantUML SVG generation (use PNG fallbacks)
 #   --no-render         Skip plantuml PNG rendering of artifacts
 #   --dry-run           Show what would run without executing
@@ -60,6 +61,7 @@ header() { echo -e "\n${CYAN}${BOLD}══════════════�
 # ================================ Defaults ===================================
 OUTPUT_DIR="$DEFAULT_OUTPUT"
 CONFIG_PATH=""
+DIM_OPACITY=""
 SERVE_PORT=""
 NO_SVG=""
 NO_RENDER=""
@@ -115,6 +117,11 @@ parse_args() {
                 shift
                 [[ $# -gt 0 ]] || { error "--config requires a path"; exit 1; }
                 CONFIG_PATH="$1"
+                ;;
+            --dim-opacity)
+                shift
+                [[ $# -gt 0 ]] || { error "--dim-opacity requires a value (0.0–1.0)"; exit 1; }
+                DIM_OPACITY="$1"
                 ;;
             --no-svg)      NO_SVG=1 ;;
             --no-render)   NO_RENDER=1 ;;
@@ -198,6 +205,9 @@ run_site() {
     local flags=(--output "$OUTPUT_DIR")
     if [[ -n "$NO_SVG" ]]; then
         flags+=(--no-svg)
+    fi
+    if [[ -n "$DIM_OPACITY" ]]; then
+        flags+=(--dim-opacity "$DIM_OPACITY")
     fi
 
     log "Running: generate_site.py ${flags[*]}"
