@@ -422,7 +422,8 @@ def generate_overview_svg_direct(
     CLUSTER_PAD_TOP = 22   # space for cluster label
     CLUSTER_PAD_BOT = 10
     LAYER_GAP = 12     # vertical gap between layer clusters
-    CONFIG_GROUP_PAD = 8   # extra padding for config parent box
+    CONFIG_GROUP_PAD = 8   # horizontal padding for config parent box
+    CONFIG_GROUP_TOP = 22  # extra top padding for "Configuration" label
     FONT_SIZE = 10
     LABEL_FONT_SIZE = 12
 
@@ -440,6 +441,7 @@ def generate_overview_svg_direct(
     # First config layer flag for the config group box
     config_y_start = None
     config_y_end = None
+    config_max_right = 0.0   # rightmost edge among config child clusters
 
     for layer_name in ordered_layers:
         nids = layer_nodes[layer_name]
@@ -450,6 +452,10 @@ def generate_overview_svg_direct(
             200,  # minimum cluster width for label
         )
         cluster_h = CLUSTER_PAD_TOP + NODE_H + CLUSTER_PAD_BOT + NODE_PAD_Y
+
+        # Add space for the "Configuration" label above the first config layer
+        if layer_name in CONFIG_GROUP_LAYERS and config_y_start is None:
+            y_cursor += CONFIG_GROUP_TOP
 
         cluster_x = MARGIN
         cluster_y = y_cursor
@@ -473,20 +479,24 @@ def generate_overview_svg_direct(
             if config_y_start is None:
                 config_y_start = cluster_y
             config_y_end = cluster_y + cluster_h
+            right = cluster_x + cluster_w
+            if right > config_max_right:
+                config_max_right = right
 
         y_cursor += cluster_h + LAYER_GAP
 
     total_w = max_width + MARGIN * 2
     total_h = y_cursor + MARGIN
 
-    # Config group box
+    # Config group box — sized to fit its children only, not all layers
     config_group_box = None
     if config_y_start is not None and config_y_end is not None:
         config_group_box = (
             MARGIN - CONFIG_GROUP_PAD,
-            config_y_start - CONFIG_GROUP_PAD,
-            max_width + CONFIG_GROUP_PAD * 2,
-            config_y_end - config_y_start + CONFIG_GROUP_PAD * 2,
+            config_y_start - CONFIG_GROUP_TOP - CONFIG_GROUP_PAD,
+            config_max_right - MARGIN + CONFIG_GROUP_PAD * 2,
+            config_y_end - config_y_start + CONFIG_GROUP_TOP
+            + CONFIG_GROUP_PAD * 2,
         )
 
     # --- Edge routing ---
@@ -508,17 +518,35 @@ def generate_overview_svg_direct(
         ' xmlns:xlink="http://www.w3.org/1999/xlink">'
     )
 
+    # Arrowhead markers — one grey for shared edges, one per story colour.
+    # We collect all story colours and create a marker for each.
+    arrow_colours: Dict[str, str] = {"_grey": "#CCC"}
+    for s in stories:
+        c = s.get("colour", "#7aa2f7")
+        arrow_colours[c] = c
+    lines.append("<defs>")
+    for key, colour in arrow_colours.items():
+        safe_id = re.sub(r"[^a-zA-Z0-9]", "", key)
+        lines.append(
+            f'<marker id="arrow_{safe_id}" viewBox="0 0 10 6"'
+            f' refX="10" refY="3" markerWidth="8" markerHeight="6"'
+            f' orient="auto-start-reverse">'
+            f'<path d="M0,0 L10,3 L0,6 Z" fill="{colour}"/>'
+            f'</marker>'
+        )
+    lines.append("</defs>")
+
     # Config group parent box
     if config_group_box:
         gx, gy, gw, gh = config_group_box
         lines.append(
             f'<g class="cluster dag-cluster" data-layer="config_group">'
             f'<rect x="{gx:.0f}" y="{gy:.0f}" width="{gw:.0f}"'
-            f' height="{gh:.0f}" fill="none" stroke="#888888"'
+            f' height="{gh:.0f}" fill="none" stroke="#bbb"'
             f' stroke-width="1.5" stroke-dasharray="5,2" rx="4"/>'
-            f'<text x="{gx + 8:.0f}" y="{gy + 14:.0f}"'
+            f'<text x="{gx + 10:.0f}" y="{gy + 16:.0f}"'
             f' font-family="DejaVu Sans,sans-serif" font-size="{LABEL_FONT_SIZE}"'
-            f' fill="#666">Configuration</text>'
+            f' fill="#aaa">Configuration</text>'
             f'</g>'
         )
 
@@ -694,7 +722,8 @@ def generate_overview_svg_direct(
                 f'<g class="edge dag-edge" data-source="{src}"'
                 f' data-target="{dst}">'
                 f'<path d="{d}"'
-                f' fill="none" stroke="#CCC" stroke-width="{pw}"/>'
+                f' fill="none" stroke="#CCC" stroke-width="{pw}"'
+                f' marker-end="url(#arrow__grey)"/>'
                 f'</g>'
             )
 
@@ -704,6 +733,7 @@ def generate_overview_svg_direct(
         colour = s.get("colour", "#7aa2f7")
         pattern = s.get("pattern", "solid")
         dash = svg_dash(pattern)
+        arrow_id = "arrow_" + re.sub(r"[^a-zA-Z0-9]", "", colour)
         for src, dst in sorted(story_edges):
             if src in node_pos and dst in node_pos:
                 d = edge_path(src, dst, edge_lane.get((src, dst), 0))
@@ -712,7 +742,8 @@ def generate_overview_svg_direct(
                     f' data-target="{dst}">'
                     f'<path d="{d}"'
                     f' fill="none" stroke="{colour}"'
-                    f' stroke-width="1.5"{dash}/>'
+                    f' stroke-width="1.5"{dash}'
+                    f' marker-end="url(#{arrow_id})"/>'
                     f'</g>'
                 )
 
