@@ -1171,10 +1171,6 @@ a:hover { text-decoration: underline; }
 .nav-links a:hover { border-color: var(--accent); text-decoration: none; }
 
 /* Landing page */
-.overview-img {
-  width: 100%; border-radius: 8px;
-  border: 1px solid var(--border); background: #fff;
-}
 .coming-soon {
   text-align: center; padding: 2rem;
   color: var(--text-muted); font-style: italic;
@@ -1953,7 +1949,6 @@ def _sidebar_html(
 def generate_index_html(
     *,
     sections: "OrderedDict[str, List[Dict]]",
-    has_overview_img: bool,
     overview_svg: Optional[str] = None,
     stories_json: str = "[]",
     stories_with_video: Optional[set] = None,
@@ -1986,10 +1981,6 @@ def generate_index_html(
         main += '<span class="hints" id="explorer-hints"></span>\n'
         main += "</div>\n"
         main += "</div>\n"
-    elif has_overview_img:
-        # Fallback: static PNG
-        main += '<img class="overview-img" src="assets/images/dag_all_stories.png" '
-        main += 'alt="Full DAG overview">\n'
     main += "</div>\n"
 
     # Embed story data and explorer JS
@@ -2270,11 +2261,6 @@ def copy_assets(
     for d in [img_dir, iso_dir, vid_dir, css_dir, js_dir, stories_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
-    # Copy overview DAG
-    overview = SCRIPT_DIR / "output" / "dag_all_stories.png"
-    if overview.exists():
-        shutil.copy2(overview, img_dir / "dag_all_stories.png")
-
     # Copy isolated PNGs
     iso_src = SCRIPT_DIR / "output" / "isolated"
     if iso_src.is_dir():
@@ -2396,9 +2382,6 @@ def main() -> None:
                 svg_cache[safe] = svg
         print(f"  Generated {sum(1 for v in svg_cache.values() if v)} SVGs.")
 
-    # Check overview image
-    has_overview = (output_dir / "assets" / "images" / "dag_all_stories.png").exists()
-
     # Generate overview SVG for the interactive explorer (direct, no Graphviz)
     overview_svg: Optional[str] = None
     if not args.no_svg:
@@ -2425,7 +2408,6 @@ def main() -> None:
     print("Generating index.html...")
     index_html = generate_index_html(
         sections=sections,
-        has_overview_img=has_overview,
         overview_svg=overview_svg,
         stories_json=stories_json,
         stories_with_video=stories_with_video,
