@@ -395,7 +395,7 @@ def generate_dot_full(
             lines.append(f'{indent}  style=filled; fillcolor="{fill}";')
             lines.append(f"{indent}  rank=same;")
 
-            for idx, nid in enumerate(nids):
+            for nid in nids:
                 info = node_index[nid]
                 shape = node_shape(layer_name)
                 pw = penwidth_for_count(node_usage.get(nid, 1))
@@ -412,16 +412,10 @@ def generate_dot_full(
                     colour = "#333333"
                     fontcolour = "#000000"
 
-                # The first node of each layer gets group="_left" so dot
-                # tries to vertically align them, left-aligning clusters.
-                group_attr = ""
-                if idx == 0 and not only_story_id:
-                    group_attr = ' group="_left",'
-
                 lines.append(
                     f'{node_indent}{nid} [label="{label}", shape={shape},'
                     f' penwidth={pw}, color="{colour}",'
-                    f' fontcolor="{fontcolour}",{group_attr}'
+                    f' fontcolor="{fontcolour}",'
                     f' tooltip="{tooltip}"];'
                 )
             lines.append(f"{indent}}}")
@@ -463,18 +457,6 @@ def generate_dot_full(
                 )
             else:
                 lines.append(f"  {src} -> {dst} [style=invis];")
-        lines.append("")
-
-    # Left-alignment backbone: invisible edges between the grouped first
-    # nodes of each cluster with high weight.  Together with group="_left"
-    # on these nodes, this creates a strong vertical alignment column that
-    # pulls all cluster left edges to the same x-position.
-    if not only_story_id and len(chain_nodes) > 1:
-        for i in range(len(chain_nodes) - 1):
-            lines.append(
-                f"  {chain_nodes[i]} -> {chain_nodes[i + 1]}"
-                " [style=invis, weight=100];"
-            )
         lines.append("")
 
     # Edges
