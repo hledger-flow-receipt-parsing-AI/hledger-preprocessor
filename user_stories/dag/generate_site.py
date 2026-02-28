@@ -19,9 +19,9 @@ import re
 import shutil
 import subprocess
 import tempfile
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
@@ -366,6 +366,363 @@ def generate_svg(*, puml_path: Path) -> Optional[str]:
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pass
     return None
+
+
+def generate_overview_svg_direct(
+    *,
+    data: Dict,
+    node_index: Dict[str, Dict],
+    stories: List[Dict],
+) -> str:
+    """Generate the full-DAG overview SVG directly — no Graphviz.
+
+    Layers are stacked top-to-bottom, all left-aligned.  Nodes are laid
+    out horizontally within each layer.  Edges are drawn as quadratic
+    Bézier curves between node centres.
+    """
+    from collections import Counter
+    from html import escape as html_escape
+
+    # --- Import helpers from generate_userstory_artifacts ---
+    from generate_userstory_artifacts import (
+        LAYER_COLOURS,
+        LAYER_ORDER,
+        CONFIG_GROUP_LAYERS,
+        collect_edges_from_paths,
+        collect_nodes_from_paths,
+        count_edge_usage,
+        count_node_usage,
+        penwidth_for_count,
+    )
+
+    # --- Collect visible nodes / edges / usage ---
+    visible_nodes: set = set()
+    visible_edges: set = set()
+    for s in stories:
+        visible_nodes.update(collect_nodes_from_paths(s["paths"]))
+        visible_edges.update(collect_edges_from_paths(s["paths"]))
+
+    node_usage = count_node_usage(stories)
+    edge_usage = count_edge_usage(stories)
+
+    # Group visible nodes by layer
+    layer_nodes: Dict[str, List[str]] = defaultdict(list)
+    for nid in visible_nodes:
+        if nid in node_index:
+            layer_nodes[node_index[nid]["layer"]].append(nid)
+    for k in layer_nodes:
+        layer_nodes[k].sort()
+
+    # --- Layout constants ---
+    MARGIN = 16
+    NODE_W = 100       # node box width
+    NODE_H = 36        # node box height
+    NODE_PAD_X = 14    # horizontal gap between nodes
+    NODE_PAD_Y = 6     # vertical padding inside cluster above/below nodes
+    CLUSTER_PAD_TOP = 22   # space for cluster label
+    CLUSTER_PAD_BOT = 10
+    LAYER_GAP = 12     # vertical gap between layer clusters
+    CONFIG_GROUP_PAD = 8   # extra padding for config parent box
+    FONT_SIZE = 10
+    LABEL_FONT_SIZE = 12
+
+    # --- Compute positions ---
+    # node_pos[nid] = (cx, cy) — centre of the node box
+    node_pos: Dict[str, Tuple[float, float]] = {}
+    # cluster_box[layer] = (x, y, w, h)
+    cluster_box: Dict[str, Tuple[float, float, float, float]] = {}
+
+    y_cursor = MARGIN
+    max_width = 0.0
+
+    ordered_layers = [ln for ln in LAYER_ORDER if ln in layer_nodes]
+
+    # First config layer flag for the config group box
+    config_y_start = None
+    config_y_end = None
+
+    for layer_name in ordered_layers:
+        nids = layer_nodes[layer_name]
+        n_nodes = len(nids)
+
+        cluster_w = max(
+            n_nodes * NODE_W + (n_nodes - 1) * NODE_PAD_X + 2 * MARGIN,
+            200,  # minimum cluster width for label
+        )
+        cluster_h = CLUSTER_PAD_TOP + NODE_H + CLUSTER_PAD_BOT + NODE_PAD_Y
+
+        cluster_x = MARGIN
+        cluster_y = y_cursor
+
+        cluster_box[layer_name] = (cluster_x, cluster_y, cluster_w, cluster_h)
+
+        # Position nodes within the cluster, starting from the left
+        node_start_x = cluster_x + MARGIN
+        node_y = cluster_y + CLUSTER_PAD_TOP + NODE_PAD_Y
+
+        for i, nid in enumerate(nids):
+            cx = node_start_x + i * (NODE_W + NODE_PAD_X) + NODE_W / 2
+            cy = node_y + NODE_H / 2
+            node_pos[nid] = (cx, cy)
+
+        if cluster_w + MARGIN > max_width:
+            max_width = cluster_w + MARGIN
+
+        # Track config group bounds
+        if layer_name in CONFIG_GROUP_LAYERS:
+            if config_y_start is None:
+                config_y_start = cluster_y
+            config_y_end = cluster_y + cluster_h
+
+        y_cursor += cluster_h + LAYER_GAP
+
+    total_w = max_width + MARGIN * 2
+    total_h = y_cursor + MARGIN
+
+    # Config group box
+    config_group_box = None
+    if config_y_start is not None and config_y_end is not None:
+        config_group_box = (
+            MARGIN - CONFIG_GROUP_PAD,
+            config_y_start - CONFIG_GROUP_PAD,
+            max_width + CONFIG_GROUP_PAD * 2,
+            config_y_end - config_y_start + CONFIG_GROUP_PAD * 2,
+        )
+
+    # --- Edge routing ---
+    # Dash pattern for SVG
+    def svg_dash(pattern: str) -> str:
+        return {
+            "dashed": ' stroke-dasharray="8,4"',
+            "dotted": ' stroke-dasharray="2,3"',
+            "bold": "",
+            "solid": "",
+        }.get(pattern, "")
+
+    # --- Build SVG ---
+    lines: List[str] = []
+    # viewBox placeholder — replaced at end once final total_w is known.
+    lines.append(
+        '<svg class="dag-svg" viewBox="__VIEWBOX__"'
+        ' xmlns="http://www.w3.org/2000/svg"'
+        ' xmlns:xlink="http://www.w3.org/1999/xlink">'
+    )
+
+    # Config group parent box
+    if config_group_box:
+        gx, gy, gw, gh = config_group_box
+        lines.append(
+            f'<g class="cluster dag-cluster" data-layer="config_group">'
+            f'<rect x="{gx:.0f}" y="{gy:.0f}" width="{gw:.0f}"'
+            f' height="{gh:.0f}" fill="none" stroke="#888888"'
+            f' stroke-width="1.5" stroke-dasharray="5,2" rx="4"/>'
+            f'<text x="{gx + 8:.0f}" y="{gy + 14:.0f}"'
+            f' font-family="DejaVu Sans,sans-serif" font-size="{LABEL_FONT_SIZE}"'
+            f' fill="#666">Configuration</text>'
+            f'</g>'
+        )
+
+    # Layer clusters and nodes
+    for layer_name in ordered_layers:
+        nids = layer_nodes[layer_name]
+        cx, cy, cw, ch = cluster_box[layer_name]
+        fill = LAYER_COLOURS.get(layer_name, "#FFFFFF")
+        layer_label = node_index[nids[0]]["layer_label"]
+
+        lines.append(
+            f'<g class="cluster dag-cluster" data-layer="{layer_name}">'
+            f'<rect x="{cx:.0f}" y="{cy:.0f}" width="{cw:.0f}"'
+            f' height="{ch:.0f}" fill="{fill}" stroke="#888" rx="3"/>'
+            f'<text x="{cx + 8:.0f}" y="{cy + 15:.0f}"'
+            f' font-family="DejaVu Sans,sans-serif"'
+            f' font-size="{LABEL_FONT_SIZE}" fill="#333">'
+            f'{html_escape(layer_label)}</text>'
+            f'</g>'
+        )
+
+        for nid in nids:
+            info = node_index[nid]
+            ncx, ncy = node_pos[nid]
+            nx = ncx - NODE_W / 2
+            ny = ncy - NODE_H / 2
+            pw = penwidth_for_count(node_usage.get(nid, 1))
+            label = info["label"].replace("\\n", "\n")
+            tooltip = html_escape(info["desc"])
+
+            # Split multi-line label
+            label_lines = label.split("\n")
+
+            lines.append(
+                f'<g class="node dag-node" data-layer="{info["layer"]}"'
+                f' data-node="{nid}">'
+                f'<a><title>{html_escape(info["desc"])}</title>'
+                f'<rect x="{nx:.1f}" y="{ny:.1f}"'
+                f' width="{NODE_W}" height="{NODE_H}"'
+                f' fill="white" stroke="#333" stroke-width="{pw}" rx="3"/>'
+            )
+            if len(label_lines) == 1:
+                lines.append(
+                    f'<text x="{ncx:.1f}" y="{ncy + 4:.1f}"'
+                    f' text-anchor="middle"'
+                    f' font-family="DejaVu Sans,sans-serif"'
+                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'
+                )
+            else:
+                # Centre multiple lines vertically
+                total_text_h = len(label_lines) * (FONT_SIZE + 2)
+                start_y = ncy - total_text_h / 2 + FONT_SIZE
+                for j, ln in enumerate(label_lines):
+                    ty = start_y + j * (FONT_SIZE + 2)
+                    lines.append(
+                        f'<text x="{ncx:.1f}" y="{ty:.1f}"'
+                        f' text-anchor="middle"'
+                        f' font-family="DejaVu Sans,sans-serif"'
+                        f' font-size="{FONT_SIZE}">{html_escape(ln)}</text>'
+                    )
+            lines.append("</a></g>")
+
+    # --- Edge routing ---
+    # Find the rightmost edge of any cluster so we can route long edges
+    # around the outside.
+    max_cluster_right = max(
+        (cx + cw for cx, cy, cw, ch in cluster_box.values()), default=200
+    )
+
+    # Map layer_name -> index in ordered_layers for distance calculation
+    layer_idx = {ln: i for i, ln in enumerate(ordered_layers)}
+
+    # Track how many edges use each "routing lane" (right-side column)
+    # so we can spread them out horizontally to avoid overlap.
+    lane_counter: Dict[Tuple, int] = defaultdict(int)
+
+    def edge_path(
+        src: str, dst: str, lane_offset: float = 0
+    ) -> str:
+        """Build an SVG path from src node bottom to dst node top.
+
+        Adjacent layers: simple S-curve.
+        Non-adjacent: route right, then down, then left to avoid boxes.
+        """
+        sx, sy = node_pos[src]
+        tx, ty = node_pos[dst]
+        s_bot = sy + NODE_H / 2   # source bottom
+        t_top = ty - NODE_H / 2   # target top
+
+        src_layer = node_index[src]["layer"]
+        dst_layer = node_index[dst]["layer"]
+        src_idx = layer_idx.get(src_layer, 0)
+        dst_idx = layer_idx.get(dst_layer, 0)
+        layer_gap = abs(dst_idx - src_idx)
+
+        if layer_gap == 0:
+            # Same layer — arc above the cluster box so the curve
+            # doesn't pass through sibling node boxes.
+            _, cy, _, _ = cluster_box[src_layer]
+            arc_y = cy - 10 - lane_offset  # above the cluster
+            return (
+                f"M{sx:.1f},{sy - NODE_H/2:.1f}"
+                f" C{sx:.1f},{arc_y:.1f} {tx:.1f},{arc_y:.1f}"
+                f" {tx:.1f},{ty - NODE_H/2:.1f}"
+            )
+        elif layer_gap == 1:
+            # Adjacent layers — simple S-curve between the two nodes.
+            mid_y = (s_bot + t_top) / 2
+            return (
+                f"M{sx:.1f},{s_bot:.1f}"
+                f" C{sx:.1f},{mid_y:.1f} {tx:.1f},{mid_y:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
+            )
+        else:
+            # Non-adjacent: route to the right side, go down, come back.
+            route_x = max_cluster_right + 20 + lane_offset
+            # Small radius for corners
+            gap = LAYER_GAP / 2
+            return (
+                f"M{sx:.1f},{s_bot:.1f}"
+                f" L{sx:.1f},{s_bot + gap:.1f}"
+                f" C{sx:.1f},{s_bot + gap + 8:.1f}"
+                f" {route_x:.1f},{s_bot + gap + 8:.1f}"
+                f" {route_x:.1f},{s_bot + gap + 16:.1f}"
+                f" L{route_x:.1f},{t_top - gap - 16:.1f}"
+                f" C{route_x:.1f},{t_top - gap - 8:.1f}"
+                f" {tx:.1f},{t_top - gap - 8:.1f}"
+                f" {tx:.1f},{t_top - gap:.1f}"
+                f" L{tx:.1f},{t_top:.1f}"
+            )
+
+    # Collect all unique edges and assign lane offsets for long edges
+    # to prevent overlapping paths on the right side.
+    all_edges_to_draw: List[Tuple[str, str]] = []
+    for (src, dst) in sorted(visible_edges):
+        if src in node_pos and dst in node_pos:
+            all_edges_to_draw.append((src, dst))
+
+    # Assign lane offsets for non-adjacent edges (right-side routing)
+    # and same-layer edges (arc height above cluster).
+    edge_lane: Dict[Tuple[str, str], float] = {}
+    long_lane_count = 0
+    same_layer_lane: Dict[str, int] = defaultdict(int)  # per-layer counter
+    for src, dst in all_edges_to_draw:
+        src_layer = node_index[src]["layer"]
+        dst_layer = node_index[dst]["layer"]
+        src_idx = layer_idx.get(src_layer, 0)
+        dst_idx = layer_idx.get(dst_layer, 0)
+        gap = abs(dst_idx - src_idx)
+        if gap > 1:
+            edge_lane[(src, dst)] = long_lane_count * 8
+            long_lane_count += 1
+        elif gap == 0:
+            edge_lane[(src, dst)] = same_layer_lane[src_layer] * 6
+            same_layer_lane[src_layer] += 1
+        else:
+            edge_lane[(src, dst)] = 0
+    lane_count = long_lane_count
+
+    # Update total_w if long edges extend past the right side
+    if lane_count > 0:
+        needed_w = max_cluster_right + 20 + lane_count * 8 + MARGIN
+        if needed_w > total_w:
+            total_w = needed_w
+
+    # --- Edges ---
+    # First pass: grey base for shared edges
+    for (src, dst), count in sorted(edge_usage.items()):
+        if src in node_pos and dst in node_pos and count > 1:
+            pw = penwidth_for_count(count, True)
+            d = edge_path(src, dst, edge_lane.get((src, dst), 0))
+            lines.append(
+                f'<g class="edge dag-edge" data-source="{src}"'
+                f' data-target="{dst}">'
+                f'<path d="{d}"'
+                f' fill="none" stroke="#CCC" stroke-width="{pw}"/>'
+                f'</g>'
+            )
+
+    # Second pass: coloured edges per story
+    for s in stories:
+        story_edges = collect_edges_from_paths(s["paths"])
+        colour = s.get("colour", "#7aa2f7")
+        pattern = s.get("pattern", "solid")
+        dash = svg_dash(pattern)
+        for src, dst in sorted(story_edges):
+            if src in node_pos and dst in node_pos:
+                d = edge_path(src, dst, edge_lane.get((src, dst), 0))
+                lines.append(
+                    f'<g class="edge dag-edge" data-source="{src}"'
+                    f' data-target="{dst}">'
+                    f'<path d="{d}"'
+                    f' fill="none" stroke="{colour}"'
+                    f' stroke-width="1.5"{dash}/>'
+                    f'</g>'
+                )
+
+    lines.append("</svg>")
+    result = "\n".join(lines)
+    # Fill in the viewBox now that total_w is final
+    result = result.replace(
+        "__VIEWBOX__", f"0 0 {total_w:.0f} {total_h:.0f}"
+    )
+    return result
 
 
 def add_data_attributes_to_svg(
@@ -2011,18 +2368,14 @@ def main() -> None:
     # Check overview image
     has_overview = (output_dir / "assets" / "images" / "dag_all_stories.png").exists()
 
-    # Generate overview SVG for the interactive explorer
+    # Generate overview SVG for the interactive explorer (direct, no Graphviz)
     overview_svg: Optional[str] = None
     if not args.no_svg:
-        overview_puml = SCRIPT_DIR / "output" / "dag_all_stories.puml"
-        if overview_puml.exists():
-            print("Generating overview SVG...")
-            overview_svg = generate_svg(puml_path=overview_puml)
-            if overview_svg:
-                overview_svg = add_data_attributes_to_svg(
-                    svg=overview_svg, node_index=node_index
-                )
-                print("  Overview SVG ready.")
+        print("Generating overview SVG...")
+        overview_svg = generate_overview_svg_direct(
+            data=data, node_index=node_index, stories=stories
+        )
+        print("  Overview SVG ready.")
 
     # Build stories JSON for the explorer
     stories_for_json = []
