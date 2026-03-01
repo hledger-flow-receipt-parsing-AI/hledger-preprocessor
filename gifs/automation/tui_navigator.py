@@ -105,6 +105,10 @@ class TuiNavigator:
             if silent:
                 return False
             raise
+        except pexpect.EOF:
+            if silent:
+                return False
+            raise
 
     def send(self, text: str, pause: float = 0.1) -> "TuiNavigator":
         """

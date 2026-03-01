@@ -15,10 +15,11 @@ source "${SCRIPT_DIR}/../scripts/common.sh"
 # Initialize demo (sets up paths, runs preflight checks)
 init_demo "2b_label_receipt" "$@"
 
-# Run the full pipeline with the real receipt editor TUI automation
+# Run the full pipeline with the full-path receipt labelling demo
+# (shows config → categories → TUI receipt editing)
 run_full_pipeline \
-    "gifs.automation.receipt_editor" \
-    "Step 4: Label Your Receipt" \
+    "gifs.automation.real_label_simple_receipt_demo" \
+    "US-2b.1: Label a Simple Receipt (Full Path)" \
     50 \
     120
 

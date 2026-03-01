@@ -168,10 +168,21 @@
     document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
       a.classList.remove('explorer-active');
     });
+    var sidebar = document.querySelector('.sidebar');
     document.querySelectorAll('.sidebar li a').forEach(function(a) {
       if (a.textContent.indexOf(story.id + ':') === 0) {
         a.classList.add('explorer-active');
-        a.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        // Open parent <details> if collapsed so the link is visible
+        var det = a.closest('details');
+        if (det && !det.open) det.open = true;
+        // Scroll only the sidebar, not the page
+        var aRect = a.getBoundingClientRect();
+        var sRect = sidebar.getBoundingClientRect();
+        if (aRect.top < sRect.top) {
+          sidebar.scrollTop += aRect.top - sRect.top;
+        } else if (aRect.bottom > sRect.bottom) {
+          sidebar.scrollTop += aRect.bottom - sRect.bottom;
+        }
       }
     });
   }
@@ -179,6 +190,8 @@
   // --- Keyboard ---
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    // Let browser shortcuts (Ctrl+L, Ctrl+H, etc.) pass through
+    if (e.ctrlKey || e.metaKey) return;
 
     var cx = explorer.clientWidth / 2;
     var cy = explorer.clientHeight / 2;
