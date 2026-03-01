@@ -723,7 +723,7 @@ def generate_overview_svg_direct(
                 f' data-target="{dst}">'
                 f'<path d="{d}"'
                 f' fill="none" stroke="#CCC" stroke-width="{pw}"'
-                f' marker-end="url(#arrow__grey)"/>'
+                f' marker-end="url(#arrow_grey)"/>'
                 f'</g>'
             )
 
@@ -1226,6 +1226,32 @@ def add_data_attributes_to_svg(
     svg = re.sub(r'\s*height="[^"]*"', '', svg, count=1)
     svg = svg.replace("<svg", '<svg class="dag-svg"', 1)
 
+    # Inject arrowhead markers into PlantUML SVGs so edges have visible arrows.
+    # Add a <defs> block right after the opening <svg> tag.
+    arrow_defs = (
+        '<defs>'
+        '<marker id="puml-arrow" viewBox="0 0 10 6" '
+        'refX="10" refY="3" markerWidth="8" markerHeight="6" '
+        'orient="auto-start-reverse">'
+        '<path d="M0,0 L10,3 L0,6 Z" fill="#333"/>'
+        '</marker>'
+        '</defs>'
+    )
+    # Insert after the first '>' of the <svg> tag
+    svg_tag_end = svg.find(">", svg.find("<svg"))
+    if svg_tag_end >= 0:
+        svg = svg[: svg_tag_end + 1] + arrow_defs + svg[svg_tag_end + 1 :]
+
+    # Add marker-end to edge paths (edges have class "dag-edge")
+    # PlantUML edge paths are inside <g class="...dag-edge..."> groups
+    # and use <path> elements. Add marker-end to those paths.
+    svg = re.sub(
+        r'(<g[^>]*class="[^"]*dag-edge[^"]*"[^>]*>.*?<path\b[^>]*)(/>)',
+        r'\1 marker-end="url(#puml-arrow)"\2',
+        svg,
+        flags=re.DOTALL,
+    )
+
     return svg
 
 
@@ -1332,8 +1358,29 @@ a:hover { text-decoration: underline; }
 .badge-impl { background: var(--success); color: #000; }
 .badge-not-impl { background: var(--warning); color: #000; }
 .badge-wontfix { background: var(--error); color: #fff; }
+.story-title-inline {
+  font-size: 1.1rem; font-weight: 700;
+}
 
-/* Receipt image (shown alongside TUI demo for Step 2b) */
+/* Compact BDD narrative */
+.bdd-compact {
+  font-size: 0.85rem; margin-top: 0.4rem; line-height: 1.5;
+  color: var(--text);
+}
+.bdd-kw {
+  font-weight: 700; color: var(--accent); font-size: 0.8rem;
+  text-transform: lowercase;
+}
+
+/* Receipt image — floated right inside story header */
+.receipt-image-inline {
+  float: right; max-height: 160px; width: auto;
+  margin: 0 0 0.5rem 1rem;
+  border-radius: 6px; border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Legacy receipt image section (kept for compatibility) */
 .receipt-image-section {
   margin-bottom: 1.5rem;
   text-align: center;
@@ -1569,6 +1616,28 @@ a:hover { text-decoration: underline; }
   background: var(--bg); border: 1px solid var(--border);
   border-radius: 3px; font-size: 0.65rem; font-family: inherit;
 }
+
+/* Zoom panes — independently zoomable regions */
+.zoom-pane {
+  position: relative; overflow: auto; transition: outline-color 0.15s;
+  outline: 2px solid transparent; outline-offset: -2px; border-radius: 4px;
+}
+.zoom-pane.zoom-selected {
+  outline-color: var(--accent);
+}
+.zoom-pane-inner {
+  transform-origin: 0 0; transition: transform 0.1s ease-out;
+}
+.zoom-indicator {
+  position: absolute; top: 4px; right: 4px;
+  font-size: 0.65rem; padding: 0.15rem 0.4rem;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--text-muted); z-index: 5;
+  opacity: 0; transition: opacity 0.2s; pointer-events: none;
+}
+.zoom-pane.zoom-selected .zoom-indicator,
+.zoom-pane:hover .zoom-indicator { opacity: 1; }
+.sidebar.zoom-pane { overflow-y: auto; }
 """
     return (
         css.replace("__NODE_OP__", str(node_op))
@@ -2075,6 +2144,122 @@ def generate_explorer_js() -> str:
 """
 
 
+def generate_zoom_js() -> str:
+    """Generate the zoom-pane JavaScript for independently zoomable regions.
+
+    Each element with class ``zoom-pane`` becomes a zoomable region.
+    Clicking selects it (highlighted outline), and Ctrl+/- zooms only
+    the selected pane.  Ctrl+0 resets zoom.
+    """
+    return r"""
+(function() {
+  'use strict';
+  var panes = document.querySelectorAll('.zoom-pane');
+  if (!panes.length) return;
+
+  var selected = null;
+  var scaleMap = {};
+
+  // Find the innermost zoom-pane for a given element
+  function closestPane(el) {
+    while (el) {
+      if (el.classList && el.classList.contains('zoom-pane')
+          && el.getAttribute('data-zoom-id')) {
+        return el;
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  panes.forEach(function(pane) {
+    var id = pane.getAttribute('data-zoom-id');
+    if (!id) return;
+    scaleMap[id] = 1;
+
+    // Add zoom indicator
+    var indicator = document.createElement('span');
+    indicator.className = 'zoom-indicator';
+    indicator.textContent = '100%';
+    pane.appendChild(indicator);
+  });
+
+  // Single document-level listener picks the innermost zoom-pane
+  document.addEventListener('mousedown', function(e) {
+    var pane = closestPane(e.target);
+    if (pane) selectPane(pane);
+  });
+
+  function selectPane(pane) {
+    if (selected === pane) return;
+    panes.forEach(function(p) { p.classList.remove('zoom-selected'); });
+    pane.classList.add('zoom-selected');
+    selected = pane;
+  }
+
+  function applyZoom(pane) {
+    var id = pane.getAttribute('data-zoom-id');
+    var scale = scaleMap[id];
+    // Use only the DIRECT .zoom-pane-inner child, not nested ones
+    var inner = null;
+    for (var i = 0; i < pane.children.length; i++) {
+      if (pane.children[i].classList.contains('zoom-pane-inner')) {
+        inner = pane.children[i]; break;
+      }
+    }
+    if (inner) {
+      inner.style.transform = 'scale(' + scale + ')';
+      inner.style.transformOrigin = '0 0';
+    }
+    // Use only the direct zoom-indicator child
+    var indicator = null;
+    for (var j = 0; j < pane.children.length; j++) {
+      if (pane.children[j].classList.contains('zoom-indicator')) {
+        indicator = pane.children[j]; break;
+      }
+    }
+    if (indicator) {
+      indicator.textContent = Math.round(scale * 100) + '%';
+    }
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (!selected) return;
+    if (!e.ctrlKey && !e.metaKey) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    var id = selected.getAttribute('data-zoom-id');
+    if (e.key === '=' || e.key === '+') {
+      e.preventDefault();
+      scaleMap[id] = Math.min(scaleMap[id] + 0.1, 3);
+      applyZoom(selected);
+    } else if (e.key === '-') {
+      e.preventDefault();
+      scaleMap[id] = Math.max(scaleMap[id] - 0.1, 0.3);
+      applyZoom(selected);
+    } else if (e.key === '0') {
+      e.preventDefault();
+      scaleMap[id] = 1;
+      applyZoom(selected);
+    }
+  });
+
+  // Mouse wheel zoom with Ctrl held — target innermost pane
+  document.addEventListener('wheel', function(e) {
+    if (!e.ctrlKey && !e.metaKey) return;
+    var pane = closestPane(e.target);
+    if (!pane) return;
+    e.preventDefault();
+    selectPane(pane);
+    var id = pane.getAttribute('data-zoom-id');
+    var delta = e.deltaY > 0 ? -0.1 : 0.1;
+    scaleMap[id] = Math.max(0.3, Math.min(3, scaleMap[id] + delta));
+    applyZoom(pane);
+  }, {passive: false});
+})();
+"""
+
+
 def _html_head(*, title: str) -> str:
     return f"""\
 <!DOCTYPE html>
@@ -2109,7 +2294,8 @@ def _sidebar_html(
     current_story_id: Optional[str] = None,
     stories_with_video: Optional[set] = None,
 ) -> str:
-    html = '<nav class="sidebar">\n'
+    html = '<nav class="sidebar zoom-pane" data-zoom-id="sidebar">\n'
+    html += '<div class="zoom-pane-inner">\n'
     html += '<h1><a href="{INDEX_PATH}">hledger-preprocessor</a></h1>\n'
     html += "<p style=\"font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem\">"
     html += "User Story DAG Explorer</p>\n"
@@ -2136,6 +2322,7 @@ def _sidebar_html(
                 f'{s["id"]}: {_esc(s["title"])}{play_icon}</a></li>\n'
             )
         html += "</ul>\n</details>\n"
+    html += "</div>\n"  # close zoom-pane-inner
     html += "</nav>\n"
     return html
 
@@ -2181,6 +2368,7 @@ def generate_index_html(
     js_block = (
         f"<script>\nconst STORIES = {stories_json};\n</script>\n"
         f'<script src="assets/js/dag-explorer.js"></script>\n'
+        f'<script src="assets/js/zoom-pane.js"></script>\n'
     )
 
     return head + sidebar + main + js_block + "</body>\n</html>\n"
@@ -2661,47 +2849,49 @@ def generate_story_html(
     elif status is None or status == "IMPL":
         badge = '<span class="badge badge-impl">implemented</span>'
 
-    main = '<div class="main">\n'
-    # Story header
+    main = '<div class="main zoom-pane" data-zoom-id="content">\n'
+    main += '<div class="zoom-pane-inner">\n'
+
+    # -- Issue 2: Compact story header with receipt image floated right --
+    # Layout: ID + status + title on one line, BDD narrative inline,
+    # receipt image floated to the right.  No acceptance criteria.
     main += f'<div class="story-header" style="border-left-color:{colour}">\n'
-    main += f'<span class="story-id">{_esc(sid)}{badge}</span>\n'
-    main += f"<h1>{_esc(story['title'])}</h1>\n"
-    main += "</div>\n"
 
-    # BDD narrative (above video/DAG)
-    main += '<h2>User Story</h2>\n<dl class="bdd">\n'
-    if story.get("as_a"):
-        main += f"<dt>As a</dt><dd>{_esc(story['as_a'])}</dd>\n"
-    if story.get("i_want"):
-        main += f"<dt>I want to</dt><dd>{_esc(story['i_want'])}</dd>\n"
-    if story.get("so_that"):
-        main += f"<dt>So that</dt><dd>{_esc(story['so_that'])}</dd>\n"
-    main += "</dl>\n"
-
-    # Acceptance criteria (above video/DAG)
-    criteria = story.get("acceptance_criteria", [])
-    if criteria:
-        main += '<h2>Acceptance Criteria</h2>\n<ul class="criteria">\n'
-        for c in criteria:
-            main += f"<li>{_esc(c)}</li>\n"
-        main += "</ul>\n"
-
-    # Receipt image (shown for Step 2b stories that have one)
     if receipt_image:
-        main += '<div class="receipt-image-section">\n'
-        main += "<h2>Receipt Image</h2>\n"
+        # Receipt image floated right beside the header
         main += (
-            f'<img class="receipt-image" '
+            f'<img class="receipt-image-inline" '
             f'src="../assets/receipts/{_esc(receipt_image)}" '
             f'alt="Receipt: {_esc(story["title"])}">\n'
         )
-        main += "</div>\n"
+
+    main += f'<span class="story-id">{_esc(sid)}{badge}</span> '
+    main += f'<span class="story-title-inline">{_esc(story["title"])}</span>\n'
+
+    # BDD narrative — compact single-block format
+    as_a = story.get("as_a", "")
+    i_want = story.get("i_want", "")
+    so_that = story.get("so_that", "")
+    if as_a or i_want or so_that:
+        main += '<div class="bdd-compact">\n'
+        if as_a:
+            main += f'<span class="bdd-kw">As a</span> {_esc(as_a)} '
+        if i_want:
+            main += f'<span class="bdd-kw">I want</span> {_esc(i_want)} '
+        if so_that:
+            main += f'<span class="bdd-kw">so that</span> {_esc(so_that)}'
+        main += "\n</div>\n"
+
+    main += '<div style="clear:both"></div>\n'
+    main += "</div>\n"
+    # (Acceptance criteria removed from page view per Issue 2)
 
     # Side-by-side video + DAG grid
     main += '<div class="video-dag-row">\n'
 
-    # Video section (left column)
-    main += '<div class="video-section">\n'
+    # Video section (left column) — wrapped in zoom pane
+    main += '<div class="video-section zoom-pane" data-zoom-id="video">\n'
+    main += '<div class="zoom-pane-inner">\n'
     if video_filename:
         if is_gif:
             main += (
@@ -2721,10 +2911,12 @@ def generate_story_html(
         main += "</div>\n"
     else:
         main += '<div class="coming-soon">Demo video coming soon</div>\n'
-    main += "</div>\n"
+    main += "</div>\n"  # close zoom-pane-inner
+    main += "</div>\n"  # close video-section zoom-pane
 
-    # DAG diagram (right column, spans rows)
-    main += '<div class="dag-section">\n'
+    # DAG diagram (right column, spans rows) — wrapped in zoom pane
+    main += '<div class="dag-section zoom-pane" data-zoom-id="dag">\n'
+    main += '<div class="zoom-pane-inner">\n'
     has_both_views = bool(svg_content and full_svg_content)
     if has_both_views:
         main += '<div class="dag-header">\n'
@@ -2761,20 +2953,16 @@ def generate_story_html(
             f'<div id="dag-full-view" style="display:none">\n'
             f"{full_svg_content}\n</div>\n"
         )
-    main += "</div>\n"
+    main += "</div>\n"  # close zoom-pane-inner
+    main += "</div>\n"  # close dag-section zoom-pane
 
-    # Below-row: layer indicator (navigation chips removed — the DAG
-    # itself is the navigation element, highlighting the current node
-    # during video playback).
+    # Below-row: layer indicator
     main += '<div class="below-row">\n'
-
-    # Layer indicator
     if timestamps:
         main += '<div class="layer-indicator">\n'
         main += '<span class="layer-dot"></span>\n'
         main += 'Current layer: <span class="layer-name" id="layer-indicator-name">—</span>\n'
         main += "</div>\n"
-
     main += "</div>\n"  # close below-row
     main += "</div>\n"  # close video-dag-row
 
@@ -2790,9 +2978,7 @@ def generate_story_html(
         main += matching_flow_svg + "\n"
         main += "</div>\n"
 
-    # Issue 4: Journal output section
-    if journal_section_html:
-        main += journal_section_html
+    # (Issue 4: Journal output removed from page view per ui-issues_v5)
 
     # Prev / Next
     main += '<div class="nav-links">\n'
@@ -2811,13 +2997,15 @@ def generate_story_html(
     else:
         main += "<span></span>\n"
     main += "</div>\n"
-    main += "</div>\n"
+    main += "</div>\n"  # close zoom-pane-inner
+    main += "</div>\n"  # close main zoom-pane
 
     # Timestamp manifest + JS
     ts_json = json.dumps(timestamps)
     js_block = (
         f"<script>\nconst TIMESTAMPS = {ts_json};\n</script>\n"
         f'<script src="../assets/js/dag-sync.js"></script>\n'
+        f'<script src="../assets/js/zoom-pane.js"></script>\n'
     )
 
     return head + sidebar + main + js_block + "</body>\n</html>\n"
@@ -2889,6 +3077,7 @@ def copy_assets(
     (css_dir / "style.css").write_text(generate_css(dim_opacity=dim_opacity))
     (js_dir / "dag-sync.js").write_text(generate_js())
     (js_dir / "dag-explorer.js").write_text(generate_explorer_js())
+    (js_dir / "zoom-pane.js").write_text(generate_zoom_js())
 
 
 # ---------------------------------------------------------------------------
@@ -3144,15 +3333,9 @@ def main() -> None:
                     story_colour=colour,
                 )
 
-        # Issue 4: Journal output section
-        journal_html: Optional[str] = None
-        jrnl_in_path = any(nid.startswith("jrnl_") for nid in node_path)
-        if jrnl_in_path:
-            journal_html = generate_journal_section(
-                story=story,
-                node_path=node_path,
-                node_index=node_index,
-            )
+        # Issue 4 (v5): Journal output removed from story page view.
+        # The journal section generation is skipped; the data will be
+        # included at another time via the GIF demo.
 
         story_html = generate_story_html(
             story=story,
@@ -3171,7 +3354,6 @@ def main() -> None:
             receipt_image=receipt_img,
             full_svg_content=full_path_svg,
             matching_flow_svg=matching_flow,
-            journal_section_html=journal_html,
         )
         (output_dir / "stories" / f"{story['id']}.html").write_text(
             story_html
