@@ -1307,7 +1307,7 @@ a:hover { text-decoration: underline; }
 /* Sidebar */
 .sidebar {
   width: var(--sidebar-width); background: var(--bg-sidebar);
-  padding: 0.5rem 0.6rem;
+  border-right: 1px solid var(--border); padding: 0.5rem 0.6rem;
   position: fixed; top: 0; left: 0; bottom: 0;
   overflow-y: auto; z-index: 10;
 }
@@ -1334,7 +1334,7 @@ a:hover { text-decoration: underline; }
 
 /* Main content */
 .main {
-  margin-left: var(--sidebar-width); flex: 1;
+  flex: 1; min-width: 0;
   padding: 0.75rem 1rem;
 }
 .main h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
@@ -1643,7 +1643,7 @@ a:hover { text-decoration: underline; }
   outline-color: var(--accent);
 }
 .zoom-pane-inner {
-  transition: transform 0.1s ease-out;
+  transition: zoom 0.1s ease-out;
 }
 .zoom-indicator {
   position: absolute; top: 4px; right: 4px;
@@ -2225,12 +2225,7 @@ def generate_zoom_js() -> str:
       }
     }
     if (inner) {
-      // Use transform instead of zoom so the container box resizes too
-      inner.style.transform = 'scale(' + scale + ')';
-      inner.style.transformOrigin = 'top left';
-      // Adjust the pane's effective size so the box grows/shrinks with content
-      inner.style.width = (100 / scale) + '%';
-      inner.style.height = 'auto';
+      inner.style.zoom = scale;
     }
     // Use only the direct zoom-indicator child
     var indicator = null;
@@ -2296,12 +2291,6 @@ def generate_zoom_js() -> str:
     scaleMap[id] = Math.max(0.3, Math.min(3, scaleMap[id] + delta));
     applyZoom(pane);
   }, {passive: false});
-
-  // Auto-scroll sidebar so the active story link is visible on page load
-  var activeLink = document.querySelector('.sidebar li a.active');
-  if (activeLink) {
-    activeLink.scrollIntoView({block: 'nearest'});
-  }
 })();
 """
 
