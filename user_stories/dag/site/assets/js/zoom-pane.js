@@ -55,8 +55,12 @@
       }
     }
     if (inner) {
+      // Use transform instead of zoom so the container box resizes too
       inner.style.transform = 'scale(' + scale + ')';
-      inner.style.transformOrigin = '0 0';
+      inner.style.transformOrigin = 'top left';
+      // Adjust the pane's effective size so the box grows/shrinks with content
+      inner.style.width = (100 / scale) + '%';
+      inner.style.height = 'auto';
     }
     // Use only the direct zoom-indicator child
     var indicator = null;
@@ -122,4 +126,10 @@
     scaleMap[id] = Math.max(0.3, Math.min(3, scaleMap[id] + delta));
     applyZoom(pane);
   }, {passive: false});
+
+  // Auto-scroll sidebar so the active story link is visible on page load
+  var activeLink = document.querySelector('.sidebar li a.active');
+  if (activeLink) {
+    activeLink.scrollIntoView({block: 'nearest'});
+  }
 })();
