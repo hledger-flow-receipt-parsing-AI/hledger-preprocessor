@@ -2033,6 +2033,8 @@ def generate_explorer_js() -> str:
   // --- Keyboard ---
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    // Let browser shortcuts (Ctrl+L, Ctrl+H, etc.) pass through
+    if (e.ctrlKey || e.metaKey) return;
 
     var cx = explorer.clientWidth / 2;
     var cy = explorer.clientHeight / 2;
@@ -2228,9 +2230,22 @@ def generate_zoom_js() -> str:
   function applyZoom(pane) {
     var id = pane.getAttribute('data-zoom-id');
     var scale = scaleMap[id];
-    // Apply zoom to the pane itself so the entire box resizes
+    // CSS zoom changes the element's rendered size in the layout
     pane.style.zoom = scale;
-    // Counter-scale the zoom indicator so it stays readable
+
+    // If inside a video-dag-row grid, rebuild column ratios so both
+    // panes can grow/shrink independently based on their own zoom level.
+    var grid = pane.closest('.video-dag-row');
+    if (grid) {
+      var videoScale = 1, dagScale = 1;
+      var vp = grid.querySelector('.video-section.zoom-pane');
+      var dp = grid.querySelector('.dag-section.zoom-pane');
+      if (vp) videoScale = scaleMap[vp.getAttribute('data-zoom-id')] || 1;
+      if (dp) dagScale = scaleMap[dp.getAttribute('data-zoom-id')] || 1;
+      grid.style.gridTemplateColumns = videoScale + 'fr ' + dagScale + 'fr';
+    }
+
+    // Update zoom indicator
     var indicator = null;
     for (var j = 0; j < pane.children.length; j++) {
       if (pane.children[j].classList.contains('zoom-indicator')) {
@@ -2239,7 +2254,6 @@ def generate_zoom_js() -> str:
     }
     if (indicator) {
       indicator.textContent = Math.round(scale * 100) + '%';
-      indicator.style.zoom = 1 / scale;
     }
   }
 
