@@ -83,8 +83,29 @@ a:hover { text-decoration: underline; }
 .badge-impl { background: var(--success); color: #000; }
 .badge-not-impl { background: var(--warning); color: #000; }
 .badge-wontfix { background: var(--error); color: #fff; }
+.story-title-inline {
+  font-size: 1.1rem; font-weight: 700;
+}
 
-/* Receipt image (shown alongside TUI demo for Step 2b) */
+/* Compact BDD narrative */
+.bdd-compact {
+  font-size: 0.85rem; margin-top: 0.4rem; line-height: 1.5;
+  color: var(--text);
+}
+.bdd-kw {
+  font-weight: 700; color: var(--accent); font-size: 0.8rem;
+  text-transform: lowercase;
+}
+
+/* Receipt image — floated right inside story header */
+.receipt-image-inline {
+  float: right; max-height: 160px; width: auto;
+  margin: 0 0 0.5rem 1rem;
+  border-radius: 6px; border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Legacy receipt image section (kept for compatibility) */
 .receipt-image-section {
   margin-bottom: 1.5rem;
   text-align: center;
@@ -156,8 +177,8 @@ a:hover { text-decoration: underline; }
 
 /* DAG node highlighting */
 .dag-node { cursor: pointer; transition: opacity 0.2s; }
-.dag-node.unreachable { cursor: default; opacity: 0.25; pointer-events: none; }
-.dag-edge.unreachable { opacity: 0.15; pointer-events: none; }
+.dag-node.unreachable { cursor: default; opacity: 0.18; pointer-events: none; }
+.dag-edge.unreachable { opacity: 0.11; pointer-events: none; }
 .dag-node.active polygon,
 .dag-node.active ellipse,
 .dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }
@@ -262,10 +283,6 @@ a:hover { text-decoration: underline; }
 .nav-links a:hover { border-color: var(--accent); text-decoration: none; }
 
 /* Landing page */
-.overview-img {
-  width: 100%; border-radius: 8px;
-  border: 1px solid var(--border); background: #fff;
-}
 .coming-soon {
   text-align: center; padding: 2rem;
   color: var(--text-muted); font-style: italic;
@@ -278,15 +295,15 @@ a:hover { text-decoration: underline; }
   position: relative; overflow: hidden; cursor: grab;
   border: 1px solid var(--border); border-radius: 8px;
   background: transparent;
-  min-height: 70vh;
+  min-height: calc(100vh - 8rem);
 }
 .dag-explorer:active { cursor: grabbing; }
 .dag-explorer .dag-svg {
   transform-origin: 0 0; transition: transform 0.15s ease-out;
   width: 100%; height: auto;
 }
-.dag-explorer .dag-node.dimmed { opacity: 0.12; transition: opacity 0.3s; }
-.dag-explorer .dag-edge.dimmed { opacity: 0.08; transition: opacity 0.3s; }
+.dag-explorer .dag-node.dimmed { opacity: 0.09; transition: opacity 0.3s; }
+.dag-explorer .dag-edge.dimmed { opacity: 0.06; transition: opacity 0.3s; }
 .dag-explorer .dag-node.story-hl polygon,
 .dag-explorer .dag-node.story-hl ellipse,
 .dag-explorer .dag-node.story-hl rect {
@@ -325,45 +342,24 @@ a:hover { text-decoration: underline; }
   border-radius: 3px; font-size: 0.65rem; font-family: inherit;
 }
 
-/* Matching flow diagram (Issue 3) */
-.matching-flow-section {
-  margin: 2rem 0; padding: 1.5rem;
-  background: var(--bg-card); border-radius: 8px;
-  border: 1px solid var(--border);
+/* Zoom panes — independently zoomable regions */
+.zoom-pane {
+  position: relative; overflow: auto; transition: outline-color 0.15s;
+  outline: 2px solid transparent; outline-offset: -2px; border-radius: 4px;
 }
-.matching-flow-section h2 { margin-top: 0; }
-.matching-flow-desc {
-  font-size: 0.85rem; color: var(--text-muted);
-  margin-bottom: 1rem;
+.zoom-pane.zoom-selected {
+  outline-color: var(--accent);
 }
-.matching-flow-section svg { display: block; margin: 0 auto; }
-
-/* Journal output section (Issue 4) */
-.journal-output-section {
-  margin: 2rem 0; padding: 1.5rem;
-  background: var(--bg-card); border-radius: 8px;
-  border: 1px solid var(--border);
+.zoom-pane-inner {
+  transform-origin: 0 0; transition: transform 0.1s ease-out;
 }
-.journal-output-section h2 { margin-top: 0; }
-.journal-output-section h3 {
-  font-size: 0.95rem; margin: 1rem 0 0.5rem;
-  color: var(--text-muted);
+.zoom-indicator {
+  position: absolute; top: 4px; right: 4px;
+  font-size: 0.65rem; padding: 0.15rem 0.4rem;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--text-muted); z-index: 5;
+  opacity: 0; transition: opacity 0.2s; pointer-events: none;
 }
-.journal-folder-tree pre {
-  background: #f8f9fa; border: 1px solid var(--border);
-  border-radius: 6px; padding: 0.8rem 1rem;
-  font-size: 0.8rem; overflow-x: auto;
-}
-.journal-postings { margin-top: 1rem; }
-.journal-entry {
-  margin-bottom: 1rem; border-left: 3px solid var(--accent);
-  padding-left: 1rem;
-}
-.journal-entry-header {
-  font-weight: 600; font-size: 0.85rem; margin-bottom: 0.3rem;
-}
-.journal-entry pre {
-  background: #f8f9fa; border: 1px solid var(--border);
-  border-radius: 6px; padding: 0.6rem 0.8rem;
-  font-size: 0.78rem; overflow-x: auto; margin: 0;
-}
+.zoom-pane.zoom-selected .zoom-indicator,
+.zoom-pane:hover .zoom-indicator { opacity: 1; }
+.sidebar.zoom-pane { overflow-y: auto; }

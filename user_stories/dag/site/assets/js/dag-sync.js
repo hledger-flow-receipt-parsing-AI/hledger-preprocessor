@@ -45,7 +45,6 @@
   if (tsKeys.length === 0) return;
 
   var currentIdx = 0;
-  // Collect nodes from BOTH views so highlighting works in whichever is active
   var allNodes = svgContainer.querySelectorAll('.dag-node');
   var clusters = svgContainer.querySelectorAll('.dag-cluster');
   var layerIndicator = document.getElementById('layer-indicator-name');

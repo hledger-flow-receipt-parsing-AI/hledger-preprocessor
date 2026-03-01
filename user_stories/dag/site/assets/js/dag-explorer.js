@@ -30,9 +30,43 @@
     svg.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
   }
 
+  function contentBBox() {
+    // Compute a bounding box from clusters and nodes only
+    // (skipping the background polygon that spans the full viewBox).
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    var items = svg.querySelectorAll('.dag-cluster, .dag-node, .dag-edge');
+    for (var i = 0; i < items.length; i++) {
+      try {
+        var b = items[i].getBBox();
+        if (b.width > 0 && b.height > 0) {
+          if (b.x < minX) minX = b.x;
+          if (b.y < minY) minY = b.y;
+          if (b.x + b.width > maxX) maxX = b.x + b.width;
+          if (b.y + b.height > maxY) maxY = b.y + b.height;
+        }
+      } catch(e) {}
+    }
+    if (minX === Infinity) return svg.getBBox();
+    return {x: minX, y: minY, width: maxX - minX, height: maxY - minY};
+  }
+
   function resetView() {
-    scale = 1;
-    panX = 0; panY = 0;
+    // Fit the DAG content (clusters + nodes) into the explorer container,
+    // positioned at the top-left.  We use contentBBox() instead of
+    // svg.getBBox() because the latter includes the invisible background
+    // polygon that spans the entire viewBox.
+    var bbox = contentBBox();
+    var containerW = explorer.clientWidth;
+    var containerH = explorer.clientHeight;
+    if (bbox.width > 0 && bbox.height > 0 && containerW > 0 && containerH > 0) {
+      var scaleH = containerH / bbox.height;
+      var scaleW = containerW / bbox.width;
+      scale = Math.min(scaleH, scaleW, 1.5);
+      panX = -bbox.x * scale;
+      panY = -bbox.y * scale;
+    } else {
+      scale = 1; panX = 0; panY = 0;
+    }
     applyTransform();
   }
 
