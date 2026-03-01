@@ -65,14 +65,14 @@ digraph userstory_dag {
     label="Matching Parameters";
     style=filled; fillcolor="#FFF3E0";
     rank=same;
-    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+    match_default [label="default (±2d, exact)", shape=component, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
   }
 
   subgraph cluster_start_journal {
     label="Starting Journal";
     style=filled; fillcolor="#F3E5F5";
     rank=same;
-    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
+    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
   }
 
   subgraph cluster_csv_txn {
@@ -80,7 +80,7 @@ digraph userstory_dag {
     style=filled; fillcolor="#E0F7FA";
     rank=same;
     csv_atm_gbp_11750 [label="Triodos -117.50 EUR\n2025-01-15 ATM London", shape=cylinder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Foreign ATM withdrawal: 100 GBP * 1.175"];
-    csv_ekoplaza_4217_jan15 [label="Triodos -42.17 EUR\n2025-01-15 Ekoplaza", shape=cylinder, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Debit card purchase at Ekoplaza, exact date match"];
+    csv_ekoplaza_4217_jan15 [label="Triodos -42.17 EUR\n2025-01-15 Ekoplaza", shape=cylinder, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Debit card purchase at Ekoplaza, exact date match"];
   }
 
   subgraph cluster_receipt_img {
@@ -88,7 +88,7 @@ digraph userstory_dag {
     style=filled; fillcolor="#FBE9E7";
     rank=same;
     img_atm_gbp [label="atm_london.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="ATM withdrawal slip, 100 GBP"];
-    img_ekoplaza_card [label="ekoplaza_card.jpg", shape=folder, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Ekoplaza receipt, paid by card"];
+    img_ekoplaza_card [label="ekoplaza_card.jpg", shape=folder, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Ekoplaza receipt, paid by card"];
   }
 
   subgraph cluster_receipt_lbl {
@@ -96,14 +96,14 @@ digraph userstory_dag {
     style=filled; fillcolor="#FCE4EC";
     rank=same;
     lbl_atm_100gbp [label="atm_100gbp\nGBP 100 withdrawal", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, GBP withdrawal receipt"];
-    lbl_ekoplaza_card_eur [label="ekoplaza_card\nEUR 42.17 card", shape=tab, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, 2025-01-15, groceries:ekoplaza"];
+    lbl_ekoplaza_card_eur [label="ekoplaza_card\nEUR 42.17 card", shape=tab, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Triodos account, 2025-01-15, groceries:ekoplaza"];
   }
 
   subgraph cluster_matching_out {
     label="Matching Outcome";
     style=filled; fillcolor="#FFF8E1";
     rank=same;
-    out_auto_1hit [label="AUTO-LINK\n1 match found", shape=diamond, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Exact date+amount, no TUI needed"];
+    out_auto_1hit [label="AUTO-LINK\n1 match found", shape=diamond, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Exact date+amount, no TUI needed"];
     out_currency_convert [label="CURRENCY CONVERT\nuser enters rate", shape=diamond, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Receipt GBP != CSV EUR, user provides conversion ratio"];
   }
 
@@ -127,37 +127,25 @@ digraph userstory_dag {
   acct_eur_wallet -> dirp_default [color="#CCCCCC", penwidth=3.5, style=solid];
   acct_triodos_csv -> acct_eur_wallet [color="#CCCCCC", penwidth=3.5, style=solid];
   acct_triodos_csv -> dirp_default [color="#CCCCCC", penwidth=2.5, style=solid];
-  cat_basic -> match_default [color="#CCCCCC", penwidth=5.0, style=solid];
+  cat_basic -> match_default [color="#CCCCCC", penwidth=3.5, style=solid];
   catcfg_default -> malgo_default [color="#CCCCCC", penwidth=5.0, style=solid];
-  csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [color="#CCCCCC", penwidth=3.5, style=solid];
+  csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [color="#CCCCCC", penwidth=2.5, style=solid];
   dirp_default -> fnames_default [color="#CCCCCC", penwidth=5.0, style=solid];
   fnames_default -> catcfg_default [color="#CCCCCC", penwidth=5.0, style=solid];
-  img_ekoplaza_card -> lbl_ekoplaza_card_eur [color="#CCCCCC", penwidth=3.5, style=solid];
+  img_ekoplaza_card -> lbl_ekoplaza_card_eur [color="#CCCCCC", penwidth=2.5, style=solid];
   jrnl_groceries_ekoplaza -> viz_sankey [color="#CCCCCC", penwidth=2.5, style=solid];
   jrnl_groceries_ekoplaza -> viz_treemap [color="#CCCCCC", penwidth=2.5, style=solid];
-  lbl_ekoplaza_card_eur -> out_auto_1hit [color="#CCCCCC", penwidth=3.5, style=solid];
-  malgo_default -> cat_basic [color="#CCCCCC", penwidth=5.0, style=solid];
-  match_default -> start_2024_1000eur [color="#CCCCCC", penwidth=5.0, style=solid];
-  out_auto_1hit -> jrnl_groceries_ekoplaza [color="#CCCCCC", penwidth=3.5, style=solid];
-  start_2024_1000eur -> csv_ekoplaza_4217_jan15 [color="#CCCCCC", penwidth=3.5, style=solid];
+  lbl_ekoplaza_card_eur -> out_auto_1hit [color="#CCCCCC", penwidth=2.5, style=solid];
+  malgo_default -> cat_basic [color="#CCCCCC", penwidth=3.5, style=solid];
+  match_default -> start_2024_1000eur [color="#CCCCCC", penwidth=3.5, style=solid];
+  out_auto_1hit -> jrnl_groceries_ekoplaza [color="#CCCCCC", penwidth=2.5, style=solid];
+  start_2024_1000eur -> csv_ekoplaza_4217_jan15 [color="#CCCCCC", penwidth=2.5, style=solid];
   start_2024_1000eur -> jrnl_groceries_ekoplaza [color="#CCCCCC", penwidth=2.5, style=solid];
   acct_triodos_csv -> dirp_default [color="#2196F3", penwidth=1.5, style=solid, tooltip="US-1a.1"];
   catcfg_default -> malgo_default [color="#2196F3", penwidth=1.5, style=solid, tooltip="US-1a.1"];
   dirp_default -> fnames_default [color="#2196F3", penwidth=1.5, style=solid, tooltip="US-1a.1"];
   fnames_default -> catcfg_default [color="#2196F3", penwidth=1.5, style=solid, tooltip="US-1a.1"];
-  acct_eur_wallet -> dirp_default [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  acct_triodos_csv -> acct_eur_wallet [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  cat_basic -> match_default [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  catcfg_default -> malgo_default [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  dirp_default -> fnames_default [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  fnames_default -> catcfg_default [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  img_ekoplaza_card -> lbl_ekoplaza_card_eur [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  lbl_ekoplaza_card_eur -> out_auto_1hit [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  malgo_default -> cat_basic [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  match_default -> start_2024_1000eur [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  out_auto_1hit -> jrnl_groceries_ekoplaza [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
-  start_2024_1000eur -> csv_ekoplaza_4217_jan15 [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
+  catcfg_default -> cat_basic [color="#8BC34A", penwidth=1.5, style=solid, tooltip="US-1b.1"];
   acct_eur_wallet -> dirp_default [color="#E91E63", penwidth=1.5, style=solid, tooltip="US-2b.1"];
   acct_triodos_csv -> acct_eur_wallet [color="#E91E63", penwidth=1.5, style=solid, tooltip="US-2b.1"];
   cat_basic -> match_default [color="#E91E63", penwidth=1.5, style=solid, tooltip="US-2b.1"];

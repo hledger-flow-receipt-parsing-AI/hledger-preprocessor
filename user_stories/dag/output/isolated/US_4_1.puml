@@ -96,7 +96,7 @@ digraph userstory_dag {
     label="Matching Outcome";
     style=filled; fillcolor="#FFF8E1";
     rank=same;
-    out_auto_1hit [label="AUTO-LINK\n1 match found", shape=diamond, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Exact date+amount, no TUI needed"];
+    out_auto_1hit [label="AUTO-LINK\n1 match found", shape=diamond, penwidth=2.0, color="#333333", fontcolor="#000000", tooltip="Exact date+amount, no TUI needed"];
   }
 
   subgraph cluster_journal_out {
