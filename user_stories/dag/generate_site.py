@@ -1274,7 +1274,7 @@ def generate_css(*, dim_opacity: Optional[float] = None) -> str:
     explorer_edge_op = round(node_op * 0.33, 2)
     css = """\
 :root {
-  --sidebar-width: 260px;
+  --sidebar-width: 220px;
   --bg: #1a1b26;
   --bg-sidebar: #16161e;
   --bg-card: #24283b;
@@ -1307,7 +1307,7 @@ a:hover { text-decoration: underline; }
 /* Sidebar */
 .sidebar {
   width: var(--sidebar-width); background: var(--bg-sidebar);
-  border-right: 1px solid var(--border); padding: 1rem;
+  padding: 0.5rem 0.6rem;
   position: fixed; top: 0; left: 0; bottom: 0;
   overflow-y: auto; z-index: 10;
 }
@@ -1335,7 +1335,7 @@ a:hover { text-decoration: underline; }
 /* Main content */
 .main {
   margin-left: var(--sidebar-width); flex: 1;
-  padding: 2rem;
+  padding: 0.75rem 1rem;
 }
 .main h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
 .main h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
@@ -1438,8 +1438,8 @@ a:hover { text-decoration: underline; }
 .video-dag-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 .video-dag-row .video-section {
   grid-column: 1; grid-row: 1;
@@ -1636,14 +1636,14 @@ a:hover { text-decoration: underline; }
 
 /* Zoom panes — independently zoomable regions */
 .zoom-pane {
-  position: relative; overflow: auto; transition: outline-color 0.15s;
+  position: relative; transition: outline-color 0.15s;
   outline: 2px solid transparent; outline-offset: -2px; border-radius: 4px;
 }
 .zoom-pane.zoom-selected {
   outline-color: var(--accent);
 }
 .zoom-pane-inner {
-  transform-origin: 0 0; transition: transform 0.1s ease-out;
+  transition: transform 0.1s ease-out;
 }
 .zoom-indicator {
   position: absolute; top: 4px; right: 4px;
@@ -2225,8 +2225,12 @@ def generate_zoom_js() -> str:
       }
     }
     if (inner) {
+      // Use transform instead of zoom so the container box resizes too
       inner.style.transform = 'scale(' + scale + ')';
-      inner.style.transformOrigin = '0 0';
+      inner.style.transformOrigin = 'top left';
+      // Adjust the pane's effective size so the box grows/shrinks with content
+      inner.style.width = (100 / scale) + '%';
+      inner.style.height = 'auto';
     }
     // Use only the direct zoom-indicator child
     var indicator = null;
@@ -2292,6 +2296,12 @@ def generate_zoom_js() -> str:
     scaleMap[id] = Math.max(0.3, Math.min(3, scaleMap[id] + delta));
     applyZoom(pane);
   }, {passive: false});
+
+  // Auto-scroll sidebar so the active story link is visible on page load
+  var activeLink = document.querySelector('.sidebar li a.active');
+  if (activeLink) {
+    activeLink.scrollIntoView({block: 'nearest'});
+  }
 })();
 """
 
