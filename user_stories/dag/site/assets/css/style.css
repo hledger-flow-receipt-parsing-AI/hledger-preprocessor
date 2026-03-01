@@ -97,12 +97,15 @@ a:hover { text-decoration: underline; }
   text-transform: lowercase;
 }
 
-/* Receipt image — floated right inside story header */
+/* Receipt image — zoom-pane floated right inside story header */
+.receipt-pane {
+  float: right; margin: 0 0 0.5rem 1rem;
+}
 .receipt-image-inline {
-  float: right; max-height: 160px; width: auto;
-  margin: 0 0 0.5rem 1rem;
+  max-height: 280px; width: auto;
   border-radius: 6px; border: 1px solid var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: block;
 }
 
 /* Legacy receipt image section (kept for compatibility) */
@@ -205,6 +208,20 @@ a:hover { text-decoration: underline; }
   background: var(--accent); display: inline-block;
 }
 .layer-indicator .layer-name { font-weight: 600; }
+
+/* Navigation hints bar */
+.nav-hints {
+  display: flex; flex-wrap: wrap; gap: 1rem;
+  font-size: 0.72rem; color: var(--text-muted);
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.4rem 0.8rem; margin-bottom: 1rem;
+}
+.nav-hints kbd {
+  display: inline-block; padding: 0.05rem 0.3rem;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 3px; font-size: 0.65rem; font-family: inherit;
+  vertical-align: baseline;
+}
 
 /* BDD narrative */
 .bdd { background: var(--bg-card); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
