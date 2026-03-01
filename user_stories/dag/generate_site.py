@@ -1274,7 +1274,7 @@ def generate_css(*, dim_opacity: Optional[float] = None) -> str:
     explorer_edge_op = round(node_op * 0.33, 2)
     css = """\
 :root {
-  --sidebar-width: 260px;
+  --sidebar-width: 220px;
   --bg: #1a1b26;
   --bg-sidebar: #16161e;
   --bg-card: #24283b;
@@ -1307,7 +1307,7 @@ a:hover { text-decoration: underline; }
 /* Sidebar */
 .sidebar {
   width: var(--sidebar-width); background: var(--bg-sidebar);
-  border-right: 1px solid var(--border); padding: 1rem;
+  border-right: 1px solid var(--border); padding: 0.5rem 0.6rem;
   position: fixed; top: 0; left: 0; bottom: 0;
   overflow-y: auto; z-index: 10;
 }
@@ -1335,7 +1335,7 @@ a:hover { text-decoration: underline; }
 /* Main content */
 .main {
   margin-left: var(--sidebar-width); flex: 1;
-  padding: 2rem;
+  padding: 0.75rem 1rem;
 }
 .main h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
 .main h2 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
@@ -1372,12 +1372,15 @@ a:hover { text-decoration: underline; }
   text-transform: lowercase;
 }
 
-/* Receipt image — floated right inside story header */
+/* Receipt image — zoom-pane floated right inside story header */
+.receipt-pane {
+  float: right; margin: 0 0 0.5rem 1rem;
+}
 .receipt-image-inline {
-  float: right; max-height: 160px; width: auto;
-  margin: 0 0 0.5rem 1rem;
+  max-height: 280px; width: auto;
   border-radius: 6px; border: 1px solid var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: block;
 }
 
 /* Legacy receipt image section (kept for compatibility) */
@@ -1435,8 +1438,8 @@ a:hover { text-decoration: underline; }
 .video-dag-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 .video-dag-row .video-section {
   grid-column: 1; grid-row: 1;
@@ -1480,6 +1483,20 @@ a:hover { text-decoration: underline; }
   background: var(--accent); display: inline-block;
 }
 .layer-indicator .layer-name { font-weight: 600; }
+
+/* Navigation hints bar */
+.nav-hints {
+  display: flex; flex-wrap: wrap; gap: 1rem;
+  font-size: 0.72rem; color: var(--text-muted);
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.4rem 0.8rem; margin-bottom: 1rem;
+}
+.nav-hints kbd {
+  display: inline-block; padding: 0.05rem 0.3rem;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 3px; font-size: 0.65rem; font-family: inherit;
+  vertical-align: baseline;
+}
 
 /* BDD narrative */
 .bdd { background: var(--bg-card); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
@@ -1619,14 +1636,14 @@ a:hover { text-decoration: underline; }
 
 /* Zoom panes — independently zoomable regions */
 .zoom-pane {
-  position: relative; overflow: auto; transition: outline-color 0.15s;
+  position: relative; transition: outline-color 0.15s;
   outline: 2px solid transparent; outline-offset: -2px; border-radius: 4px;
 }
 .zoom-pane.zoom-selected {
   outline-color: var(--accent);
 }
 .zoom-pane-inner {
-  transform-origin: 0 0; transition: transform 0.1s ease-out;
+  transition: zoom 0.1s ease-out;
 }
 .zoom-indicator {
   position: absolute; top: 4px; right: 4px;
@@ -1637,7 +1654,7 @@ a:hover { text-decoration: underline; }
 }
 .zoom-pane.zoom-selected .zoom-indicator,
 .zoom-pane:hover .zoom-indicator { opacity: 1; }
-.sidebar.zoom-pane { overflow-y: auto; }
+.sidebar.zoom-pane { position: fixed; overflow-y: auto; }
 """
     return (
         css.replace("__NODE_OP__", str(node_op))
@@ -1994,10 +2011,21 @@ def generate_explorer_js() -> str:
     document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
       a.classList.remove('explorer-active');
     });
+    var sidebar = document.querySelector('.sidebar');
     document.querySelectorAll('.sidebar li a').forEach(function(a) {
       if (a.textContent.indexOf(story.id + ':') === 0) {
         a.classList.add('explorer-active');
-        a.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        // Open parent <details> if collapsed so the link is visible
+        var det = a.closest('details');
+        if (det && !det.open) det.open = true;
+        // Scroll only the sidebar, not the page
+        var aRect = a.getBoundingClientRect();
+        var sRect = sidebar.getBoundingClientRect();
+        if (aRect.top < sRect.top) {
+          sidebar.scrollTop += aRect.top - sRect.top;
+        } else if (aRect.bottom > sRect.bottom) {
+          sidebar.scrollTop += aRect.bottom - sRect.bottom;
+        }
       }
     });
   }
@@ -2005,6 +2033,8 @@ def generate_explorer_js() -> str:
   // --- Keyboard ---
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    // Let browser shortcuts (Ctrl+L, Ctrl+H, etc.) pass through
+    if (e.ctrlKey || e.metaKey) return;
 
     var cx = explorer.clientWidth / 2;
     var cy = explorer.clientHeight / 2;
@@ -2200,18 +2230,22 @@ def generate_zoom_js() -> str:
   function applyZoom(pane) {
     var id = pane.getAttribute('data-zoom-id');
     var scale = scaleMap[id];
-    // Use only the DIRECT .zoom-pane-inner child, not nested ones
-    var inner = null;
-    for (var i = 0; i < pane.children.length; i++) {
-      if (pane.children[i].classList.contains('zoom-pane-inner')) {
-        inner = pane.children[i]; break;
-      }
+    // CSS zoom changes the element's rendered size in the layout
+    pane.style.zoom = scale;
+
+    // If inside a video-dag-row grid, rebuild column ratios so both
+    // panes can grow/shrink independently based on their own zoom level.
+    var grid = pane.closest('.video-dag-row');
+    if (grid) {
+      var videoScale = 1, dagScale = 1;
+      var vp = grid.querySelector('.video-section.zoom-pane');
+      var dp = grid.querySelector('.dag-section.zoom-pane');
+      if (vp) videoScale = scaleMap[vp.getAttribute('data-zoom-id')] || 1;
+      if (dp) dagScale = scaleMap[dp.getAttribute('data-zoom-id')] || 1;
+      grid.style.gridTemplateColumns = videoScale + 'fr ' + dagScale + 'fr';
     }
-    if (inner) {
-      inner.style.transform = 'scale(' + scale + ')';
-      inner.style.transformOrigin = '0 0';
-    }
-    // Use only the direct zoom-indicator child
+
+    // Update zoom indicator
     var indicator = null;
     for (var j = 0; j < pane.children.length; j++) {
       if (pane.children[j].classList.contains('zoom-indicator')) {
@@ -2242,6 +2276,25 @@ def generate_zoom_js() -> str:
       scaleMap[id] = 1;
       applyZoom(selected);
     }
+  });
+
+  // Alt+Left/Right: cycle which pane is selected
+  document.addEventListener('keydown', function(e) {
+    if (!e.altKey) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    var arr = Array.prototype.slice.call(panes);
+    if (!arr.length) return;
+    var cur = selected ? arr.indexOf(selected) : -1;
+    var next;
+    if (e.key === 'ArrowRight') {
+      next = (cur + 1) % arr.length;
+    } else {
+      next = (cur - 1 + arr.length) % arr.length;
+    }
+    selectPane(arr[next]);
+    arr[next].scrollIntoView({behavior: 'smooth', block: 'nearest'});
   });
 
   // Mouse wheel zoom with Ctrl held — target innermost pane
@@ -2852,23 +2905,33 @@ def generate_story_html(
     main = '<div class="main zoom-pane" data-zoom-id="content">\n'
     main += '<div class="zoom-pane-inner">\n'
 
-    # -- Issue 2: Compact story header with receipt image floated right --
-    # Layout: ID + status + title on one line, BDD narrative inline,
-    # receipt image floated to the right.  No acceptance criteria.
+    # -- Navigation hints bar (Issue v6-A) --
+    main += '<div class="nav-hints">\n'
+    main += '<span><kbd>Alt</kbd>+<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle focus</span>\n'
+    main += '<span><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd> / <kbd>j</kbd><kbd>k</kbd> prev/next DAG node</span>\n'
+    main += '<span><kbd>Ctrl</kbd>+<kbd>+</kbd><kbd>−</kbd> zoom focused pane</span>\n'
+    main += '<span><kbd>Ctrl</kbd>+<kbd>0</kbd> reset zoom</span>\n'
+    main += '<span><kbd>Space</kbd> play/pause</span>\n'
+    main += '</div>\n'
+
+    # -- Compact story header with receipt image floated right --
     main += f'<div class="story-header" style="border-left-color:{colour}">\n'
 
     if receipt_image:
-        # Receipt image floated right beside the header
+        # Receipt image in its own zoom pane, floated right
         main += (
+            f'<div class="receipt-pane zoom-pane" data-zoom-id="receipt">\n'
+            f'<div class="zoom-pane-inner">\n'
             f'<img class="receipt-image-inline" '
             f'src="../assets/receipts/{_esc(receipt_image)}" '
             f'alt="Receipt: {_esc(story["title"])}">\n'
+            f'</div></div>\n'
         )
 
     main += f'<span class="story-id">{_esc(sid)}{badge}</span> '
     main += f'<span class="story-title-inline">{_esc(story["title"])}</span>\n'
 
-    # BDD narrative — compact single-block format
+    # BDD narrative — compact single-block, text wraps beside receipt
     as_a = story.get("as_a", "")
     i_want = story.get("i_want", "")
     so_that = story.get("so_that", "")

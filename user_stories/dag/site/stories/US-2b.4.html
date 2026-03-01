@@ -85,8 +85,18 @@
 </nav>
 <div class="main zoom-pane" data-zoom-id="content">
 <div class="zoom-pane-inner">
+<div class="nav-hints">
+<span><kbd>Alt</kbd>+<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle focus</span>
+<span><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd> / <kbd>j</kbd><kbd>k</kbd> prev/next DAG node</span>
+<span><kbd>Ctrl</kbd>+<kbd>+</kbd><kbd>−</kbd> zoom focused pane</span>
+<span><kbd>Ctrl</kbd>+<kbd>0</kbd> reset zoom</span>
+<span><kbd>Space</kbd> play/pause</span>
+</div>
 <div class="story-header" style="border-left-color:#795548">
+<div class="receipt-pane zoom-pane" data-zoom-id="receipt">
+<div class="zoom-pane-inner">
 <img class="receipt-image-inline" src="../assets/receipts/split_dinner.png" alt="Receipt: Label a split-payment receipt (card + cash)">
+</div></div>
 <span class="story-id">US-2b.4<span class="badge badge-impl">implemented</span></span> <span class="story-title-inline">Label a split-payment receipt (card + cash)</span>
 <div class="bdd-compact">
 <span class="bdd-kw">As a</span> user who paid for a 50 EUR dinner: 30 EUR by card (Triodos) and 20 EUR in cash (wallet) <span class="bdd-kw">I want</span> add two account transactions to the same receipt (one for the card, one for cash) <span class="bdd-kw">so that</span> the 30 EUR card portion is matched to my bank CSV and the 20 EUR cash portion is recorded as a wallet expense.

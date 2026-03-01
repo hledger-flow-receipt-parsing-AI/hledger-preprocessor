@@ -55,8 +55,7 @@
       }
     }
     if (inner) {
-      inner.style.transform = 'scale(' + scale + ')';
-      inner.style.transformOrigin = '0 0';
+      inner.style.zoom = scale;
     }
     // Use only the direct zoom-indicator child
     var indicator = null;
@@ -89,6 +88,25 @@
       scaleMap[id] = 1;
       applyZoom(selected);
     }
+  });
+
+  // Alt+Left/Right: cycle which pane is selected
+  document.addEventListener('keydown', function(e) {
+    if (!e.altKey) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    var arr = Array.prototype.slice.call(panes);
+    if (!arr.length) return;
+    var cur = selected ? arr.indexOf(selected) : -1;
+    var next;
+    if (e.key === 'ArrowRight') {
+      next = (cur + 1) % arr.length;
+    } else {
+      next = (cur - 1 + arr.length) % arr.length;
+    }
+    selectPane(arr[next]);
+    arr[next].scrollIntoView({behavior: 'smooth', block: 'nearest'});
   });
 
   // Mouse wheel zoom with Ctrl held — target innermost pane
