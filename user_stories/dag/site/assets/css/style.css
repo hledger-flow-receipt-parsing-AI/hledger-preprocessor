@@ -324,3 +324,46 @@ a:hover { text-decoration: underline; }
   background: var(--bg); border: 1px solid var(--border);
   border-radius: 3px; font-size: 0.65rem; font-family: inherit;
 }
+
+/* Matching flow diagram (Issue 3) */
+.matching-flow-section {
+  margin: 2rem 0; padding: 1.5rem;
+  background: var(--bg-card); border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.matching-flow-section h2 { margin-top: 0; }
+.matching-flow-desc {
+  font-size: 0.85rem; color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.matching-flow-section svg { display: block; margin: 0 auto; }
+
+/* Journal output section (Issue 4) */
+.journal-output-section {
+  margin: 2rem 0; padding: 1.5rem;
+  background: var(--bg-card); border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.journal-output-section h2 { margin-top: 0; }
+.journal-output-section h3 {
+  font-size: 0.95rem; margin: 1rem 0 0.5rem;
+  color: var(--text-muted);
+}
+.journal-folder-tree pre {
+  background: #f8f9fa; border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.8rem 1rem;
+  font-size: 0.8rem; overflow-x: auto;
+}
+.journal-postings { margin-top: 1rem; }
+.journal-entry {
+  margin-bottom: 1rem; border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+}
+.journal-entry-header {
+  font-weight: 600; font-size: 0.85rem; margin-bottom: 0.3rem;
+}
+.journal-entry pre {
+  background: #f8f9fa; border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.6rem 0.8rem;
+  font-size: 0.78rem; overflow-x: auto; margin: 0;
+}

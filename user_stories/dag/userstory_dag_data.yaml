@@ -676,6 +676,7 @@ stories:
       - [acct_triodos_csv, dirp_default, fnames_default, catcfg_default, malgo_default]
     demo_paths:
       - [acct_triodos_csv, dirp_default, fnames_default, catcfg_default, malgo_default]
+    segment_nodes: [acct_triodos_csv]
 
   - id: US-1a.2
     title: "Configure multiple bank accounts"
@@ -702,6 +703,7 @@ stories:
     gif_video: cfg_2b
     paths:
       - [acct_triodos_csv, acct_ing_csv, dirp_default, fnames_default, catcfg_default, malgo_default]
+    segment_nodes: [acct_triodos_csv, acct_ing_csv]
 
   - id: US-1a.3
     title: "Configure a cash wallet (no CSV)"
@@ -737,6 +739,7 @@ stories:
     gif_video: cfg_1w
     paths:
       - [acct_eur_wallet, dirp_default, fnames_default, catcfg_default]
+    segment_nodes: [acct_eur_wallet]
 
   - id: US-1a.4
     title: "Configure a cryptocurrency exchange account"
@@ -765,6 +768,7 @@ stories:
     gif_video: cfg_crypto
     paths:
       - [acct_triodos_csv, acct_btc_wallet, dirp_default, fnames_default, catcfg_default, malgo_default]
+    segment_nodes: [acct_btc_wallet]
 
   - id: US-1a.5
     title: "Configure matching algorithm parameters"
@@ -802,6 +806,7 @@ stories:
     gif_video: cfg_per_bank_match
     paths:
       - [acct_triodos_csv, acct_ing_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default]
+    segment_nodes: [malgo_default]
 
   - id: US-1a.6
     title: "Configure base currency for reporting"
@@ -828,6 +833,7 @@ stories:
     gif_video: cfg_1b5a
     paths:
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default]
+    segment_nodes: [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet]
 
 
   # =========================================================================
@@ -859,6 +865,7 @@ stories:
     gif_video: cat_basic
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+    segment_nodes: [cat_basic]
 
   - id: US-1b.2
     title: "Add a new category after initial setup"
@@ -905,6 +912,7 @@ stories:
     gif_video: cat_with_income
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_with_income, match_default, start_2024_1000eur, csv_salary_3000, lbl_salary_credit, out_csv_only_classify, jrnl_income_salary]
+    segment_nodes: [cat_with_income]
 
 
   # =========================================================================
@@ -1031,6 +1039,7 @@ stories:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_ekoplaza_card, lbl_ekoplaza_card_eur]
+    segment_nodes: [img_ekoplaza_card, lbl_ekoplaza_card_eur]
 
   - id: US-2b.2
     title: "Label a cash receipt"
@@ -1060,6 +1069,7 @@ stories:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_coffee_cash, lbl_coffee_cash]
+    segment_nodes: [img_coffee_cash, lbl_coffee_cash]
 
   - id: US-2b.3
     title: "Label a foreign-currency receipt"
@@ -1091,6 +1101,7 @@ stories:
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp, jrnl_triodos_debit_gbp]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_atm_gbp, lbl_atm_100gbp]
+    segment_nodes: [img_atm_gbp, lbl_atm_100gbp]
 
   - id: US-2b.4
     title: "Label a split-payment receipt (card + cash)"
@@ -1131,6 +1142,7 @@ stories:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, img_split_dinner, lbl_dinner_split, out_skip_cash, jrnl_dinner_split_cash]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, img_split_dinner, lbl_dinner_split]
+    segment_nodes: [img_split_dinner, lbl_dinner_split]
 
   - id: US-2b.5
     title: "Label a receipt with returned items"
@@ -1162,6 +1174,7 @@ stories:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_return_item, lbl_return_item, out_auto_1hit, jrnl_return_net]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_return_item, lbl_return_item]
+    segment_nodes: [img_return_item, lbl_return_item]
 
   - id: US-2b.6
     title: "Use AI suggestions during manual labelling"
@@ -1278,6 +1291,7 @@ stories:
       match_default: [days, amount_range, days_month_swap]
       start_2024_1000eur: [opening_balance, base_currency]
       lbl_ekoplaza_card_eur: [date_time, category, bank_account, currency, amount, shop]
+    segment_nodes: [csv_ekoplaza_4217_jan15, lbl_ekoplaza_card_eur, out_auto_1hit]
 
   - id: US-3.2
     title: "Match a foreign-currency withdrawal receipt to a bank CSV in a different currency"
@@ -1320,6 +1334,7 @@ stories:
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_triodos_debit_gbp]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
+    segment_nodes: [csv_atm_gbp_11750, lbl_atm_100gbp, out_currency_convert]
 
   - id: US-3.3
     title: "Match when no candidates are found (widen date range)"
@@ -1347,6 +1362,7 @@ stories:
     data_use: test
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_narrow, start_2024_1000eur, csv_delayed_jan18, img_delayed_shop, lbl_delayed_shop, out_widen_date, jrnl_delayed_shop]
+    segment_nodes: [match_narrow, csv_delayed_jan18, lbl_delayed_shop, out_widen_date]
 
   - id: US-3.4
     title: "Match when no candidates are found (widen amount range)"
@@ -1374,6 +1390,7 @@ stories:
     data_use: test
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_rounded_5000, img_rounded_shop, lbl_rounded_shop, out_widen_amount, jrnl_rounded_shop]
+    segment_nodes: [csv_rounded_5000, lbl_rounded_shop, out_widen_amount]
 
   - id: US-3.5
     title: "Match when DD-MM and MM-DD date formats are swapped"
@@ -1406,6 +1423,7 @@ stories:
     data_use: test
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_swapped_date, img_swapped_date, lbl_swapped_date, out_swap_dd_mm, jrnl_swapped_shop]
+    segment_nodes: [csv_swapped_date, lbl_swapped_date, out_swap_dd_mm]
 
   - id: US-3.6
     title: "Disambiguate when multiple matches are found (2-14 candidates)"
@@ -1437,6 +1455,7 @@ stories:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4217_jan14, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4300_jan16, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
+    segment_nodes: [csv_ekoplaza_4217_jan15, csv_ekoplaza_4217_jan14, csv_ekoplaza_4300_jan16, lbl_ekoplaza_card_eur, out_disambiguate_3]
 
   - id: US-3.7
     title: "Reduce search scope when too many matches are found (15+)"
@@ -1463,6 +1482,7 @@ stories:
     data_use: test
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_both, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_too_many_reduce]
+    segment_nodes: [match_wide_both, csv_ekoplaza_4217_jan15, lbl_ekoplaza_card_eur, out_too_many_reduce]
 
   - id: US-3.8
     title: "Correct a receipt label during matching"
@@ -1489,6 +1509,7 @@ stories:
     data_use: test
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_correct_receipt, out_auto_1hit, jrnl_groceries_ekoplaza]
+    segment_nodes: [lbl_ekoplaza_card_eur, out_correct_receipt, out_auto_1hit]
 
   - id: US-3.9
     title: "Match a receipt for a direct asset purchase (e.g. gold)"
@@ -1519,6 +1540,7 @@ stories:
     paths:
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_gold_dealer_580, img_gold, lbl_gold_10g, out_asset_convert, jrnl_asset_gold]
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_gold_dealer_580, img_gold, lbl_gold_10g, out_asset_convert, jrnl_triodos_debit_gold]
+    segment_nodes: [csv_gold_dealer_580, lbl_gold_10g, out_asset_convert]
 
   - id: US-3.10
     title: "Skip matching for cash-only receipts"
@@ -1543,6 +1565,7 @@ stories:
     data_use: test
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_bike_repair, lbl_bike_cash, out_skip_cash, jrnl_repairs_bike]
+    segment_nodes: [lbl_bike_cash, out_skip_cash]
 
   - id: US-3.11
     title: "Handle a receipt with withdrawal fees"
@@ -1573,6 +1596,7 @@ stories:
     paths:
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_wallet_gbp_200]
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_bankfees]
+    segment_nodes: [csv_atm_gbp_23750_fee, lbl_atm_200gbp_fee, out_currency_convert_fee]
 
   - id: US-3.12
     title: "Handle multiple transactions on the same account in one receipt"
@@ -1662,6 +1686,7 @@ stories:
     data_use: test
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_duplicate_blocked]
+    segment_nodes: [csv_ekoplaza_4217_jan15, lbl_ekoplaza_card_eur, out_duplicate_blocked]
 
   - id: US-3.15
     title: "Verify transaction data is up to date"
@@ -1722,6 +1747,7 @@ stories:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_treemap]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey]
+    segment_nodes: [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey, viz_treemap]
 
   - id: US-4.2
     title: "Run the pipeline with randomised/scrambled data for demos"
@@ -1854,6 +1880,7 @@ stories:
     data_use: both
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, jrnl_groceries_ekoplaza, viz_sankey]
+    segment_nodes: [jrnl_groceries_ekoplaza, viz_sankey]
 
   - id: US-5.2
     title: "Generate a Treemap of spending by category"
@@ -1881,6 +1908,7 @@ stories:
     data_use: both
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, jrnl_groceries_ekoplaza, viz_treemap]
+    segment_nodes: [jrnl_groceries_ekoplaza, viz_treemap]
 
   - id: US-5.3
     title: "Launch an interactive Dash dashboard"
@@ -2032,6 +2060,7 @@ stories:
     data_use: test
     paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, out_csv_only_classify, jrnl_groceries_ekoplaza]
+    segment_nodes: [csv_ekoplaza_4217_jan15, out_csv_only_classify]
 
   - id: US-C.2
     title: "Classify transactions using a self-hosted AI"
@@ -2259,3 +2288,4 @@ stories:
     data_use: test
     paths:
       - [img_ekoplaza_card, lbl_ekoplaza_card_eur]
+    segment_nodes: [img_ekoplaza_card, lbl_ekoplaza_card_eur]

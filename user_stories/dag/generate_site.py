@@ -756,6 +756,346 @@ def generate_overview_svg_direct(
     return result
 
 
+def generate_story_svg_direct(
+    *,
+    node_ids: List[str],
+    node_index: Dict[str, Dict],
+    paths: List[List[str]],
+    story_colour: str = "#7aa2f7",
+    highlight_layers: Optional[List[str]] = None,
+) -> str:
+    """Generate a per-story SVG showing only the given nodes.
+
+    Uses the same layout approach as ``generate_overview_svg_direct()`` —
+    left-aligned layers, same styling, arrows, edge routing — but filtered
+    to only the supplied *node_ids*.
+
+    Args:
+        node_ids: Node IDs to include.
+        node_index: Full node index from ``build_node_index()``.
+        paths: The story's paths (used to derive edges among visible nodes).
+        story_colour: Edge colour.
+        highlight_layers: Optional list of layer names to highlight with a
+            section box in the full-path view.
+    """
+    from html import escape as html_escape
+
+    from generate_userstory_artifacts import (
+        LAYER_COLOURS,
+        LAYER_ORDER,
+        CONFIG_GROUP_LAYERS,
+        collect_edges_from_paths,
+    )
+
+    # --- Collect visible nodes / edges ---
+    visible_nodes: set = set(node_ids)
+    # Derive edges: only between consecutive nodes that are BOTH visible
+    visible_edges: set = set()
+    for path in paths:
+        filtered = [n for n in path if n in visible_nodes]
+        for i in range(len(filtered) - 1):
+            visible_edges.add((filtered[i], filtered[i + 1]))
+
+    # Group visible nodes by layer
+    layer_nodes: Dict[str, List[str]] = defaultdict(list)
+    for nid in visible_nodes:
+        if nid in node_index:
+            layer_nodes[node_index[nid]["layer"]].append(nid)
+    for k in layer_nodes:
+        layer_nodes[k].sort()
+
+    if not layer_nodes:
+        return '<svg class="dag-svg" viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg"></svg>'
+
+    # --- Layout constants ---
+    MARGIN = 16
+    NODE_W = 100
+    NODE_H = 36
+    NODE_PAD_X = 14
+    NODE_PAD_Y = 6
+    CLUSTER_PAD_TOP = 22
+    CLUSTER_PAD_BOT = 10
+    LAYER_GAP = 12
+    CONFIG_GROUP_PAD = 8
+    CONFIG_GROUP_TOP = 22
+    FONT_SIZE = 10
+    LABEL_FONT_SIZE = 12
+
+    # --- Compute positions ---
+    node_pos: Dict[str, Tuple[float, float]] = {}
+    cluster_box: Dict[str, Tuple[float, float, float, float]] = {}
+
+    y_cursor = MARGIN
+    max_width = 0.0
+
+    ordered_layers = [ln for ln in LAYER_ORDER if ln in layer_nodes]
+
+    config_y_start = None
+    config_y_end = None
+    config_max_right = 0.0
+
+    for layer_name in ordered_layers:
+        nids = layer_nodes[layer_name]
+        n_nodes = len(nids)
+
+        cluster_w = max(
+            n_nodes * NODE_W + (n_nodes - 1) * NODE_PAD_X + 2 * MARGIN,
+            200,
+        )
+        cluster_h = CLUSTER_PAD_TOP + NODE_H + CLUSTER_PAD_BOT + NODE_PAD_Y
+
+        if layer_name in CONFIG_GROUP_LAYERS and config_y_start is None:
+            y_cursor += CONFIG_GROUP_TOP
+
+        cluster_x = MARGIN
+        cluster_y = y_cursor
+
+        cluster_box[layer_name] = (cluster_x, cluster_y, cluster_w, cluster_h)
+
+        node_start_x = cluster_x + MARGIN
+        node_y = cluster_y + CLUSTER_PAD_TOP + NODE_PAD_Y
+
+        for i, nid in enumerate(nids):
+            cx = node_start_x + i * (NODE_W + NODE_PAD_X) + NODE_W / 2
+            cy = node_y + NODE_H / 2
+            node_pos[nid] = (cx, cy)
+
+        if cluster_w + MARGIN > max_width:
+            max_width = cluster_w + MARGIN
+
+        if layer_name in CONFIG_GROUP_LAYERS:
+            if config_y_start is None:
+                config_y_start = cluster_y
+            config_y_end = cluster_y + cluster_h
+            right = cluster_x + cluster_w
+            if right > config_max_right:
+                config_max_right = right
+
+        y_cursor += cluster_h + LAYER_GAP
+
+    total_w = max_width + MARGIN * 2
+    total_h = y_cursor + MARGIN
+
+    config_group_box = None
+    if config_y_start is not None and config_y_end is not None:
+        config_group_box = (
+            MARGIN - CONFIG_GROUP_PAD,
+            config_y_start - CONFIG_GROUP_TOP - CONFIG_GROUP_PAD,
+            config_max_right - MARGIN + CONFIG_GROUP_PAD * 2,
+            config_y_end - config_y_start + CONFIG_GROUP_TOP
+            + CONFIG_GROUP_PAD * 2,
+        )
+
+    # --- Edge routing helpers ---
+    def svg_dash(pattern: str) -> str:
+        return {
+            "dashed": ' stroke-dasharray="8,4"',
+            "dotted": ' stroke-dasharray="2,3"',
+            "bold": "",
+            "solid": "",
+        }.get(pattern, "")
+
+    layer_idx = {ln: i for i, ln in enumerate(ordered_layers)}
+    max_cluster_right = max(
+        (cx + cw for cx, cy, cw, ch in cluster_box.values()), default=200
+    )
+
+    def edge_path(
+        src: str, dst: str, lane_offset: float = 0
+    ) -> str:
+        sx, sy = node_pos[src]
+        tx, ty = node_pos[dst]
+        s_bot = sy + NODE_H / 2
+        t_top = ty - NODE_H / 2
+
+        src_layer = node_index[src]["layer"]
+        dst_layer = node_index[dst]["layer"]
+        src_li = layer_idx.get(src_layer, 0)
+        dst_li = layer_idx.get(dst_layer, 0)
+        layer_gap = abs(dst_li - src_li)
+
+        if layer_gap == 0:
+            _, cy, _, _ = cluster_box[src_layer]
+            arc_y = cy - 10 - lane_offset
+            return (
+                f"M{sx:.1f},{sy - NODE_H/2:.1f}"
+                f" C{sx:.1f},{arc_y:.1f} {tx:.1f},{arc_y:.1f}"
+                f" {tx:.1f},{ty - NODE_H/2:.1f}"
+            )
+        elif layer_gap == 1:
+            mid_y = (s_bot + t_top) / 2
+            return (
+                f"M{sx:.1f},{s_bot:.1f}"
+                f" C{sx:.1f},{mid_y:.1f} {tx:.1f},{mid_y:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
+            )
+        else:
+            route_x = max_cluster_right + 20 + lane_offset
+            gap = LAYER_GAP / 2
+            return (
+                f"M{sx:.1f},{s_bot:.1f}"
+                f" L{sx:.1f},{s_bot + gap:.1f}"
+                f" C{sx:.1f},{s_bot + gap + 8:.1f}"
+                f" {route_x:.1f},{s_bot + gap + 8:.1f}"
+                f" {route_x:.1f},{s_bot + gap + 16:.1f}"
+                f" L{route_x:.1f},{t_top - gap - 16:.1f}"
+                f" C{route_x:.1f},{t_top - gap - 8:.1f}"
+                f" {tx:.1f},{t_top - gap - 8:.1f}"
+                f" {tx:.1f},{t_top - gap:.1f}"
+                f" L{tx:.1f},{t_top:.1f}"
+            )
+
+    # --- Assign lane offsets ---
+    all_edges_to_draw: List[Tuple[str, str]] = []
+    for src, dst in sorted(visible_edges):
+        if src in node_pos and dst in node_pos:
+            all_edges_to_draw.append((src, dst))
+
+    edge_lane: Dict[Tuple[str, str], float] = {}
+    long_lane_count = 0
+    same_layer_lane: Dict[str, int] = defaultdict(int)
+    for src, dst in all_edges_to_draw:
+        src_layer = node_index[src]["layer"]
+        dst_layer = node_index[dst]["layer"]
+        src_li = layer_idx.get(src_layer, 0)
+        dst_li = layer_idx.get(dst_layer, 0)
+        gap = abs(dst_li - src_li)
+        if gap > 1:
+            edge_lane[(src, dst)] = long_lane_count * 8
+            long_lane_count += 1
+        elif gap == 0:
+            edge_lane[(src, dst)] = same_layer_lane[src_layer] * 6
+            same_layer_lane[src_layer] += 1
+        else:
+            edge_lane[(src, dst)] = 0
+
+    if long_lane_count > 0:
+        needed_w = max_cluster_right + 20 + long_lane_count * 8 + MARGIN
+        if needed_w > total_w:
+            total_w = needed_w
+
+    # --- Build SVG ---
+    lines: List[str] = []
+    lines.append(
+        '<svg class="dag-svg" viewBox="__VIEWBOX__"'
+        ' xmlns="http://www.w3.org/2000/svg"'
+        ' xmlns:xlink="http://www.w3.org/1999/xlink">'
+    )
+
+    # Arrow marker
+    safe_colour = re.sub(r"[^a-zA-Z0-9]", "", story_colour)
+    lines.append("<defs>")
+    lines.append(
+        f'<marker id="arrow_{safe_colour}" viewBox="0 0 10 6"'
+        f' refX="10" refY="3" markerWidth="8" markerHeight="6"'
+        f' orient="auto-start-reverse">'
+        f'<path d="M0,0 L10,3 L0,6 Z" fill="{story_colour}"/>'
+        f'</marker>'
+    )
+    lines.append("</defs>")
+
+    # Config group parent box
+    hl_layers = set(highlight_layers or [])
+    if config_group_box:
+        gx, gy, gw, gh = config_group_box
+        cfg_cls = " section-box" if "config_group" in hl_layers else ""
+        cfg_stroke = "var(--accent, #2563eb)" if "config_group" in hl_layers else "#bbb"
+        cfg_sw = "2.5" if "config_group" in hl_layers else "1.5"
+        lines.append(
+            f'<g class="cluster dag-cluster{cfg_cls}" data-layer="config_group">'
+            f'<rect x="{gx:.0f}" y="{gy:.0f}" width="{gw:.0f}"'
+            f' height="{gh:.0f}" fill="none" stroke="{cfg_stroke}"'
+            f' stroke-width="{cfg_sw}" stroke-dasharray="5,2" rx="4"/>'
+            f'<text x="{gx + 10:.0f}" y="{gy + 16:.0f}"'
+            f' font-family="DejaVu Sans,sans-serif" font-size="{LABEL_FONT_SIZE}"'
+            f' fill="#aaa">Configuration</text>'
+            f'</g>'
+        )
+
+    # Layer clusters and nodes
+    for layer_name in ordered_layers:
+        nids = layer_nodes[layer_name]
+        cx, cy, cw, ch = cluster_box[layer_name]
+        fill = LAYER_COLOURS.get(layer_name, "#FFFFFF")
+        layer_label = node_index[nids[0]]["layer_label"]
+
+        extra_cls = " section-box" if layer_name in hl_layers else ""
+        extra_style = ""
+        if layer_name in hl_layers:
+            extra_style = (
+                ' stroke-dasharray="8 4"'
+                ' stroke-width="2.5"'
+            )
+
+        lines.append(
+            f'<g class="cluster dag-cluster{extra_cls}" data-layer="{layer_name}">'
+            f'<rect x="{cx:.0f}" y="{cy:.0f}" width="{cw:.0f}"'
+            f' height="{ch:.0f}" fill="{fill}" stroke="#888" rx="3"{extra_style}/>'
+            f'<text x="{cx + 8:.0f}" y="{cy + 15:.0f}"'
+            f' font-family="DejaVu Sans,sans-serif"'
+            f' font-size="{LABEL_FONT_SIZE}" fill="#333">'
+            f'{html_escape(layer_label)}</text>'
+            f'</g>'
+        )
+
+        for nid in nids:
+            info = node_index[nid]
+            ncx, ncy = node_pos[nid]
+            nx = ncx - NODE_W / 2
+            ny = ncy - NODE_H / 2
+            label = info["label"].replace("\\n", "\n")
+            label_lines = label.split("\n")
+
+            lines.append(
+                f'<g class="node dag-node" data-layer="{info["layer"]}"'
+                f' data-node="{nid}">'
+                f'<a><title>{html_escape(info["desc"])}</title>'
+                f'<rect x="{nx:.1f}" y="{ny:.1f}"'
+                f' width="{NODE_W}" height="{NODE_H}"'
+                f' fill="white" stroke="#333" stroke-width="1" rx="3"/>'
+            )
+            if len(label_lines) == 1:
+                lines.append(
+                    f'<text x="{ncx:.1f}" y="{ncy + 4:.1f}"'
+                    f' text-anchor="middle"'
+                    f' font-family="DejaVu Sans,sans-serif"'
+                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'
+                )
+            else:
+                total_text_h = len(label_lines) * (FONT_SIZE + 2)
+                start_y = ncy - total_text_h / 2 + FONT_SIZE
+                for j, ln in enumerate(label_lines):
+                    ty = start_y + j * (FONT_SIZE + 2)
+                    lines.append(
+                        f'<text x="{ncx:.1f}" y="{ty:.1f}"'
+                        f' text-anchor="middle"'
+                        f' font-family="DejaVu Sans,sans-serif"'
+                        f' font-size="{FONT_SIZE}">{html_escape(ln)}</text>'
+                    )
+            lines.append("</a></g>")
+
+    # --- Edges ---
+    arrow_id = f"arrow_{safe_colour}"
+    for src, dst in all_edges_to_draw:
+        d = edge_path(src, dst, edge_lane.get((src, dst), 0))
+        lines.append(
+            f'<g class="edge dag-edge" data-source="{src}"'
+            f' data-target="{dst}">'
+            f'<path d="{d}"'
+            f' fill="none" stroke="{story_colour}"'
+            f' stroke-width="1.5"'
+            f' marker-end="url(#{arrow_id})"/>'
+            f'</g>'
+        )
+
+    lines.append("</svg>")
+    result = "\n".join(lines)
+    result = result.replace(
+        "__VIEWBOX__", f"0 0 {total_w:.0f} {total_h:.0f}"
+    )
+    return result
+
+
 def add_data_attributes_to_svg(
     *, svg: str, node_index: Dict[str, Dict]
 ) -> str:
@@ -1241,103 +1581,34 @@ a:hover { text-decoration: underline; }
 def generate_js() -> str:
     """Generate the video-DAG synchronization JavaScript module.
 
-    TIMESTAMPS is keyed by node_id (e.g. {"acct_triodos_csv": 0.05, ...}).
-    Sub-component keys use double-underscore: "cat_basic__groceries".
-    NODE_PATH lists the ordered node IDs for this story's DAG path.
+    Per-story SVGs are generated with only the relevant nodes, so there
+    is no need for unreachable-node graying.  The DAG itself is the
+    navigation element — clicking a node jumps the video, and the current
+    node is highlighted during playback.
     """
     return """\
 (function() {
   'use strict';
   var svgContainer = document.querySelector('.dag-section');
 
-  // Phase 1: Gray out unreachable nodes and edges (runs even without video)
-  if (svgContainer && typeof NODE_PATH !== 'undefined') {
-    svgContainer.querySelectorAll('.dag-node').forEach(function(n) {
-      var nid = n.getAttribute('data-node');
-      if (nid && !NODE_PATH.includes(nid)) {
-        n.classList.add('unreachable');
-      }
-    });
-    // Hide edges where source or target is not in the story path
-    svgContainer.querySelectorAll('.dag-edge').forEach(function(e) {
-      var src = e.getAttribute('data-source');
-      var tgt = e.getAttribute('data-target');
-      if ((src && !NODE_PATH.includes(src)) || (tgt && !NODE_PATH.includes(tgt))) {
-        e.classList.add('unreachable');
-      }
-    });
-  }
-
-  // Phase 2: Tree fold/unfold for path chip navigation
-  // Auto-expand all children on page load
-  document.querySelectorAll('.path-node-group').forEach(function(group) {
-    var parentChip = group.querySelector('.path-node');
-    var children = group.querySelector('.path-children');
-    var indicator = group.querySelector('.expand-indicator');
-    if (!parentChip || !children) return;
-
-    // Start expanded
-    children.classList.add('expanded');
-    if (indicator) indicator.textContent = '\\u25be';
-
-    parentChip.addEventListener('click', function(e) {
-      var isExpanded = children.classList.contains('expanded');
-      if (isExpanded) {
-        children.classList.remove('expanded');
-        if (indicator) indicator.textContent = '\\u25b8';
-      } else {
-        children.classList.add('expanded');
-        if (indicator) indicator.textContent = '\\u25be';
-      }
-      e.stopPropagation();
-    });
-  });
-
-  // Phase 2b: Segment / Full-path view toggle (works even without video)
+  // Phase 1: Segment / Full-path view toggle (works even without video)
   var btnSegment = document.getElementById('btn-segment-view');
   var btnFull = document.getElementById('btn-full-view');
   var segmentView = document.getElementById('dag-segment-view');
   var fullView = document.getElementById('dag-full-view');
 
   if (btnSegment && btnFull && segmentView && fullView) {
-    // Apply unreachable graying to the full-view SVG as well
-    fullView.querySelectorAll('.dag-node').forEach(function(n) {
-      var nid = n.getAttribute('data-node');
-      if (nid && NODE_PATH && !NODE_PATH.includes(nid)) n.classList.add('unreachable');
-    });
-    fullView.querySelectorAll('.dag-edge').forEach(function(e) {
-      var src = e.getAttribute('data-source');
-      var tgt = e.getAttribute('data-target');
-      if (NODE_PATH && ((src && !NODE_PATH.includes(src)) || (tgt && !NODE_PATH.includes(tgt)))) {
-        e.classList.add('unreachable');
-      }
-    });
-
-    // Section layers for boxing in full-path view
-    var sectionLayers = (typeof SECTION_LAYERS !== 'undefined') ? SECTION_LAYERS : [];
-    var fullClusters = fullView.querySelectorAll('.dag-cluster');
-
-    // _setView is defined here but called from Phase 3 when video is available
     window._dagSetView = function(mode) {
       if (mode === 'full') {
         segmentView.style.display = 'none';
         fullView.style.display = '';
         btnFull.classList.add('active');
         btnSegment.classList.remove('active');
-        // Apply section boxing to primary layers
-        fullClusters.forEach(function(c) {
-          var layer = c.getAttribute('data-layer');
-          if (layer && sectionLayers.indexOf(layer) >= 0) {
-            c.classList.add('section-box');
-          }
-        });
       } else {
         segmentView.style.display = '';
         fullView.style.display = 'none';
         btnSegment.classList.add('active');
         btnFull.classList.remove('active');
-        // Remove section boxing
-        fullClusters.forEach(function(c) { c.classList.remove('section-box'); });
       }
       try { localStorage.setItem('dag-view-mode', mode); } catch(e) {}
     };
@@ -1352,7 +1623,7 @@ def generate_js() -> str:
     } catch(e) {}
   }
 
-  // Phase 3: Video synchronization (only when <video> element exists)
+  // Phase 2: Video synchronization (only when <video> element exists)
   var video = document.getElementById('demo-video');
   if (!video || !svgContainer || typeof TIMESTAMPS === 'undefined') return;
 
@@ -1365,7 +1636,6 @@ def generate_js() -> str:
   var currentIdx = 0;
   var allNodes = svgContainer.querySelectorAll('.dag-node');
   var clusters = svgContainer.querySelectorAll('.dag-cluster');
-  var pathChips = document.querySelectorAll('.path-node');
   var layerIndicator = document.getElementById('layer-indicator-name');
 
   // Build a lookup: node_id -> layer name (from SVG data attributes)
@@ -1379,12 +1649,8 @@ def generate_js() -> str:
   function highlightNode(nodeId) {
     allNodes.forEach(function(n) { n.classList.remove('active'); });
     clusters.forEach(function(c) { c.classList.remove('active-cluster'); });
-    pathChips.forEach(function(n) { n.classList.remove('active'); });
-    document.querySelectorAll('.path-child.active').forEach(function(c) {
-      c.classList.remove('active');
-    });
 
-    // Highlight the specific node in the SVG
+    // Highlight the specific node in both SVG views
     var targetLayer = nodeToLayer[nodeId] || '';
     allNodes.forEach(function(n) {
       if (n.getAttribute('data-node') === nodeId) {
@@ -1401,14 +1667,7 @@ def generate_js() -> str:
       });
     }
 
-    // Highlight the matching path chip
-    pathChips.forEach(function(chip) {
-      if (chip.getAttribute('data-node') === nodeId) {
-        chip.classList.add('active');
-      }
-    });
-
-    // Update indicator
+    // Update layer indicator
     if (layerIndicator) {
       layerIndicator.textContent = targetLayer.replace(/_/g, ' ') || nodeId;
     }
@@ -1418,15 +1677,7 @@ def generate_js() -> str:
     if (idx >= 0) currentIdx = idx;
   }
 
-  function highlightSubComponent(subKey) {
-    document.querySelectorAll('.path-child.active').forEach(function(c) {
-      c.classList.remove('active');
-    });
-    var el = document.querySelector('.path-child[data-sub=\"' + subKey + '\"]');
-    if (el) el.classList.add('active');
-  }
-
-  // Sync: video time -> node highlight (+ sub-component highlight)
+  // Sync: video time -> node highlight
   video.addEventListener('timeupdate', function() {
     var t = video.currentTime;
     var active = tsKeys[0];
@@ -1434,18 +1685,6 @@ def generate_js() -> str:
       if (TIMESTAMPS[tsKeys[i]] <= t) active = tsKeys[i];
     }
     highlightNode(active);
-
-    // Find the best matching sub-component for current time
-    var bestSub = null;
-    var bestSubTs = -1;
-    var prefix = active + '__';
-    Object.keys(TIMESTAMPS).forEach(function(k) {
-      if (k.indexOf(prefix) === 0 && TIMESTAMPS[k] <= t && TIMESTAMPS[k] > bestSubTs) {
-        bestSub = k;
-        bestSubTs = TIMESTAMPS[k];
-      }
-    });
-    if (bestSub) highlightSubComponent(bestSub);
   });
 
   // Keyboard: Up/Down jump between parent timestamped nodes
@@ -1468,8 +1707,8 @@ def generate_js() -> str:
     }
   });
 
-  // Click DAG node -> jump video
-  allNodes.forEach(function(node) {
+  // Click DAG node -> jump video (both views)
+  svgContainer.querySelectorAll('.dag-node').forEach(function(node) {
     node.addEventListener('click', function() {
       var nid = node.getAttribute('data-node');
       if (nid && TIMESTAMPS[nid] !== undefined) {
@@ -1479,56 +1718,11 @@ def generate_js() -> str:
     });
   });
 
-  // Click parent path chip -> jump video + toggle children
-  document.querySelectorAll('.path-node-group .path-node').forEach(function(chip) {
-    chip.addEventListener('click', function() {
-      var nid = chip.getAttribute('data-node');
-      if (nid && TIMESTAMPS[nid] !== undefined) {
-        video.currentTime = TIMESTAMPS[nid];
-        video.play();
-      }
-    });
-  });
-
-  // Click path chip (nodes without children) -> jump video
-  document.querySelectorAll('.path-node:not(.path-node-group .path-node)').forEach(function(chip) {
-    chip.addEventListener('click', function() {
-      var nid = chip.getAttribute('data-node');
-      if (nid && TIMESTAMPS[nid] !== undefined) {
-        video.currentTime = TIMESTAMPS[nid];
-        video.play();
-      }
-    });
-  });
-
-  // Click child chip -> jump video to sub-timestamp
-  document.querySelectorAll('.path-child').forEach(function(child) {
-    child.addEventListener('click', function(e) {
-      var subKey = child.getAttribute('data-sub');
-      if (subKey && TIMESTAMPS[subKey] !== undefined) {
-        video.currentTime = TIMESTAMPS[subKey];
-        video.play();
-      }
-      e.stopPropagation();
-    });
-  });
-
   // Initialize with first timestamped node
   highlightNode(tsKeys[0]);
 
-  // Phase 5: Extend view toggle with video-aware behaviour
+  // Phase 3: Extend view toggle with video-aware behaviour
   if (typeof fullView !== 'undefined' && fullView) {
-    // Wire click-to-seek on full-view DAG nodes
-    fullView.querySelectorAll('.dag-node').forEach(function(node) {
-      node.addEventListener('click', function() {
-        var nid = node.getAttribute('data-node');
-        if (nid && TIMESTAMPS[nid] !== undefined) {
-          video.currentTime = TIMESTAMPS[nid];
-          video.play();
-        }
-      });
-    });
-
     // Enhance _dagSetView with highlight re-binding
     var origSetView = window._dagSetView;
     window._dagSetView = function(mode) {
@@ -1992,6 +2186,441 @@ def generate_index_html(
     return head + sidebar + main + js_block + "</body>\n</html>\n"
 
 
+# ---------------------------------------------------------------------------
+# Issue 3: Matching outcome flow diagram
+# ---------------------------------------------------------------------------
+
+# The matching algorithm retries in a loop.  Each outcome either terminates
+# (match found / blocked / skipped) or loops back for another attempt.
+_MATCHING_FLOW_OUTCOMES: List[Dict[str, str]] = [
+    {"id": "out_auto_1hit",       "short": "AUTO-LINK",      "kind": "terminal"},
+    {"id": "out_currency_convert","short": "CURRENCY\nCONVERT","kind": "terminal"},
+    {"id": "out_currency_convert_fee","short": "CURRENCY\n+ FEE","kind": "terminal"},
+    {"id": "out_widen_date",      "short": "WIDEN\nDATE",     "kind": "retry"},
+    {"id": "out_widen_amount",    "short": "WIDEN\nAMOUNT",   "kind": "retry"},
+    {"id": "out_swap_dd_mm",      "short": "SWAP\nDD/MM",     "kind": "retry"},
+    {"id": "out_correct_receipt", "short": "CORRECT\nRECEIPT","kind": "retry"},
+    {"id": "out_disambiguate_3",  "short": "DISAMBIGUATE",   "kind": "terminal"},
+    {"id": "out_too_many_reduce", "short": "TOO MANY\n(15+)", "kind": "retry"},
+    {"id": "out_skip_cash",       "short": "SKIP\n(cash)",    "kind": "terminal"},
+    {"id": "out_duplicate_blocked","short": "BLOCKED\n(dup)",  "kind": "terminal"},
+    {"id": "out_asset_convert",   "short": "ASSET\nCONVERT",  "kind": "terminal"},
+    {"id": "out_csv_only_classify","short": "CLASSIFY\n(CSV)", "kind": "terminal"},
+]
+
+
+def generate_matching_flow_svg(
+    *,
+    highlight_outcome_ids: List[str],
+    story_colour: str = "#4CAF50",
+) -> str:
+    """Return an inline SVG showing the matching retry flowchart.
+
+    The flowchart has a central "Try to match" decision node.  Outcomes branch
+    out — "retry" outcomes loop back to Try-to-match; "terminal" outcomes end
+    the flow.  Nodes whose id is in *highlight_outcome_ids* are drawn with the
+    story colour; all others are dimmed.
+    """
+    hl = set(highlight_outcome_ids)
+
+    # Layout constants
+    cx = 300          # centre-x of "Try to match" diamond
+    cy = 60           # centre-y of diamond
+    dw, dh = 140, 50  # diamond half-size
+    box_w, box_h = 110, 46
+    gap_y = 90        # vertical gap from diamond centre to outcome row
+    retry_outcomes = [o for o in _MATCHING_FLOW_OUTCOMES if o["kind"] == "retry"]
+    terminal_outcomes = [o for o in _MATCHING_FLOW_OUTCOMES if o["kind"] == "terminal"]
+
+    # Place retry outcomes (top row, looping back)
+    retry_x_start = 30
+    retry_spacing = 130
+    retry_y = cy + gap_y + 20
+
+    # Place terminal outcomes (bottom row, no loop)
+    term_y = retry_y + box_h + 80
+    term_spacing = 110
+    total_term_w = len(terminal_outcomes) * term_spacing
+    term_x_start = max(20, cx - total_term_w // 2)
+
+    svg_w = max(
+        retry_x_start + len(retry_outcomes) * retry_spacing + 40,
+        term_x_start + total_term_w + 40,
+        660,
+    )
+    svg_h = term_y + box_h + 30
+
+    lines: List[str] = []
+    lines.append(
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="0 0 {svg_w} {svg_h}" '
+        f'style="max-width:100%;height:auto;font-family:system-ui,sans-serif;font-size:11px">'
+    )
+    lines.append("<defs>")
+    lines.append(
+        '<marker id="mf-arrow" markerWidth="8" markerHeight="6" '
+        'refX="8" refY="3" orient="auto">'
+        '<path d="M0,0 L8,3 L0,6 Z" fill="#555"/></marker>'
+    )
+    lines.append(
+        '<marker id="mf-arrow-hl" markerWidth="8" markerHeight="6" '
+        f'refX="8" refY="3" orient="auto">'
+        f'<path d="M0,0 L8,3 L0,6 Z" fill="{story_colour}"/></marker>'
+    )
+    lines.append("</defs>")
+
+    # Diamond: "Try to match"
+    diamond_pts = (
+        f"{cx},{cy - dh} {cx + dw},{cy} {cx},{cy + dh} {cx - dw},{cy}"
+    )
+    lines.append(
+        f'<polygon points="{diamond_pts}" '
+        f'fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>'
+    )
+    lines.append(
+        f'<text x="{cx}" y="{cy - 6}" text-anchor="middle" '
+        f'font-weight="bold" font-size="13" fill="#1565c0">Try to</text>'
+    )
+    lines.append(
+        f'<text x="{cx}" y="{cy + 10}" text-anchor="middle" '
+        f'font-weight="bold" font-size="13" fill="#1565c0">match</text>'
+    )
+
+    # Section labels
+    lines.append(
+        f'<text x="{cx}" y="{retry_y - 28}" text-anchor="middle" '
+        f'font-size="10" fill="#888" font-style="italic">'
+        f'retry outcomes (loop back)</text>'
+    )
+    lines.append(
+        f'<text x="{cx}" y="{term_y - 12}" text-anchor="middle" '
+        f'font-size="10" fill="#888" font-style="italic">'
+        f'terminal outcomes (flow ends)</text>'
+    )
+
+    def _box(x: int, y: int, w: int, h: int, oid: str, label: str,
+             is_hl: bool, kind: str) -> None:
+        fill = "#fff" if not is_hl else "#e8f5e9"
+        stroke = story_colour if is_hl else "#bbb"
+        sw = "2.5" if is_hl else "1"
+        opacity = "1" if is_hl else "0.55"
+        rx = "8" if kind == "terminal" else "4"
+        lines.append(
+            f'<g opacity="{opacity}">'
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" '
+            f'rx="{rx}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>'
+        )
+        # Multi-line label
+        label_lines = label.split("\n")
+        if len(label_lines) == 1:
+            ty = y + h // 2 + 4
+            lines.append(
+                f'<text x="{x + w // 2}" y="{ty}" text-anchor="middle" '
+                f'font-size="10" fill="#333">{_esc(label_lines[0])}</text>'
+            )
+        else:
+            ty = y + h // 2 - 4
+            for li, lt in enumerate(label_lines):
+                lines.append(
+                    f'<text x="{x + w // 2}" y="{ty + li * 14}" '
+                    f'text-anchor="middle" font-size="10" fill="#333">'
+                    f'{_esc(lt)}</text>'
+                )
+        lines.append("</g>")
+
+    def _arrow(x1: int, y1: int, x2: int, y2: int, is_hl: bool,
+               curved: bool = False) -> None:
+        stroke = story_colour if is_hl else "#999"
+        sw = "2" if is_hl else "1"
+        marker = "mf-arrow-hl" if is_hl else "mf-arrow"
+        opacity = "1" if is_hl else "0.4"
+        if curved:
+            # S-curve from (x1,y1) to (x2,y2)
+            mid_y = (y1 + y2) // 2
+            lines.append(
+                f'<path d="M{x1},{y1} C{x1},{mid_y} {x2},{mid_y} {x2},{y2}" '
+                f'fill="none" stroke="{stroke}" stroke-width="{sw}" '
+                f'opacity="{opacity}" marker-end="url(#{marker})"/>'
+            )
+        else:
+            lines.append(
+                f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
+                f'stroke="{stroke}" stroke-width="{sw}" '
+                f'opacity="{opacity}" marker-end="url(#{marker})"/>'
+            )
+
+    # Draw retry outcomes
+    for idx, out in enumerate(retry_outcomes):
+        bx = retry_x_start + idx * retry_spacing
+        by = retry_y
+        is_hl = out["id"] in hl
+        _box(bx, by, box_w, box_h, out["id"], out["short"], is_hl, "retry")
+
+        # Arrow from diamond down to box
+        _arrow(cx, cy + dh, bx + box_w // 2, by, is_hl, curved=True)
+
+        # Loop-back arrow from box top to diamond (curved up and back)
+        lx = bx + box_w // 2
+        loop_top = cy - dh - 25
+        lines.append(
+            f'<path d="M{lx},{by} L{lx},{loop_top} L{cx},{loop_top}" '
+            f'fill="none" stroke="{"" + story_colour if is_hl else "#999"}" '
+            f'stroke-width="{"2" if is_hl else "1"}" '
+            f'stroke-dasharray="4,3" '
+            f'opacity="{"1" if is_hl else "0.35"}" '
+            f'marker-end="url(#{"mf-arrow-hl" if is_hl else "mf-arrow"})"/>'
+        )
+
+    # Draw terminal outcomes
+    for idx, out in enumerate(terminal_outcomes):
+        bx = term_x_start + idx * term_spacing
+        by = term_y
+        is_hl = out["id"] in hl
+        _box(bx, by, box_w - 10, box_h, out["id"], out["short"], is_hl,
+             "terminal")
+
+        # Arrow from diamond down to box
+        _arrow(cx, cy + dh, bx + (box_w - 10) // 2, by, is_hl, curved=True)
+
+    lines.append("</svg>")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Issue 4: Journal output section
+# ---------------------------------------------------------------------------
+
+# Folder structure implied by the YAML directory paths
+_JOURNAL_FOLDER_TEMPLATE = (
+    "import/\n"
+    "  {holder}/\n"
+    "    {bank}/\n"
+    "      {type}/\n"
+    "        {year}/\n"
+    "          {filename}.journal"
+)
+
+# Map account node IDs to human-readable account info
+_ACCOUNT_FOLDER_INFO: Dict[str, Dict[str, str]] = {
+    "acct_triodos_csv": {
+        "holder": "john",
+        "bank": "triodos",
+        "type": "checking",
+        "filename": "triodos-checking",
+    },
+    "acct_ing_csv": {
+        "holder": "john",
+        "bank": "ing",
+        "type": "checking",
+        "filename": "ing-checking",
+    },
+    "acct_eur_wallet": {
+        "holder": "john",
+        "bank": "wallet",
+        "type": "eur",
+        "filename": "eur-wallet",
+    },
+    "acct_gbp_wallet": {
+        "holder": "john",
+        "bank": "wallet",
+        "type": "gbp",
+        "filename": "gbp-wallet",
+    },
+    "acct_btc_wallet": {
+        "holder": "john",
+        "bank": "wallet",
+        "type": "btc",
+        "filename": "btc-wallet",
+    },
+    "acct_gold_wallet": {
+        "holder": "john",
+        "bank": "wallet",
+        "type": "gold",
+        "filename": "gold-wallet",
+    },
+    "acct_silver_wallet": {
+        "holder": "john",
+        "bank": "wallet",
+        "type": "silver",
+        "filename": "silver-wallet",
+    },
+}
+
+
+def generate_journal_section(
+    *,
+    story: Dict,
+    node_path: List[str],
+    node_index: Dict[str, Dict],
+) -> Optional[str]:
+    """Return HTML for the journal output section, or None if N/A.
+
+    Shows:
+    1. A folder-tree view of the .journal directory structure
+    2. The journal posting content for this story's journal nodes
+    """
+    # Find journal nodes in this story's path
+    jrnl_nodes = [nid for nid in node_path if nid.startswith("jrnl_")]
+    if not jrnl_nodes:
+        return None
+
+    # Find account nodes to determine folder structure
+    acct_nodes = [nid for nid in node_path if nid.startswith("acct_")]
+
+    html = '<div class="journal-output-section">\n'
+    html += "<h2>Journal Output</h2>\n"
+
+    # 1. Folder tree
+    if acct_nodes:
+        html += '<div class="journal-folder-tree">\n'
+        html += "<h3>Folder Structure</h3>\n"
+        html += "<pre><code>"
+        # Show the year as 2024 (from start_2024 opening balance nodes)
+        year = "2024"
+        tree_lines: List[str] = ["import/"]
+        # Group accounts by holder
+        for acct_id in acct_nodes:
+            info = _ACCOUNT_FOLDER_INFO.get(acct_id)
+            if info:
+                tree_lines.append(f"  {info['holder']}/")
+                tree_lines.append(f"    {info['bank']}/")
+                tree_lines.append(f"      {info['type']}/")
+                tree_lines.append(f"        {year}/")
+                tree_lines.append(
+                    f"          {info['filename']}.journal"
+                )
+        # De-duplicate while preserving order for the tree display
+        seen: set = set()
+        deduped: List[str] = []
+        for line in tree_lines:
+            if line not in seen:
+                seen.add(line)
+                deduped.append(line)
+        html += _esc("\n".join(deduped))
+        html += "</code></pre>\n"
+        html += "</div>\n"
+
+    # 2. Journal postings
+    html += '<div class="journal-postings">\n'
+    html += "<h3>Journal Postings</h3>\n"
+    for jnid in jrnl_nodes:
+        ninfo = node_index.get(jnid, {})
+        label = ninfo.get("label", jnid).replace("\n", " ")
+        desc = ninfo.get("desc", "")
+        html += '<div class="journal-entry">\n'
+        html += f'<div class="journal-entry-header">{_esc(label)}</div>\n'
+        # Build a simple hledger-style posting from the label
+        posting = _build_journal_posting(label=label, desc=desc)
+        if posting:
+            html += f"<pre><code>{_esc(posting)}</code></pre>\n"
+        html += "</div>\n"
+    html += "</div>\n"
+
+    html += "</div>\n"
+    return html
+
+
+def _build_journal_posting(*, label: str, desc: str) -> str:
+    """Build a minimal hledger journal posting from a node label + desc."""
+    # Label format: "Account:Sub: Description AMOUNT CURRENCY"
+    # or "Account:Sub AMOUNT CURRENCY"
+    # Desc provides context: "Debit X, credit Y" etc.
+    clean = label.replace("\n", " ").strip()
+
+    # Try to parse "Account:Path Amount Currency" from the label
+    # Examples: "Expenses:Groceries: Ekoplaza 42.17 EUR"
+    #           "Assets:Wallet: GBP 100"
+    #           "Income:Salary 3000 EUR"
+    parts = clean.split()
+    if len(parts) < 2:
+        return ""
+
+    # Find the account part (contains ':')
+    acct_parts: List[str] = []
+    rest_parts: List[str] = []
+    found_amount = False
+    for p in parts:
+        if not found_amount and ":" in p:
+            acct_parts.append(p)
+        elif not found_amount and not any(c.isdigit() for c in p):
+            acct_parts.append(p)
+        else:
+            found_amount = True
+            rest_parts.append(p)
+
+    account = " ".join(acct_parts).rstrip(":")
+    amount_str = " ".join(rest_parts)
+
+    if not account or not amount_str:
+        return f"; {clean}"
+
+    # Build a 2-line posting
+    date = "2025-01-15"  # representative date from the demo data
+    posting = f"{date} {_desc_to_payee(desc=desc)}\n"
+    posting += f"    {account}    {amount_str}\n"
+
+    # Add the counter-posting from the desc
+    counter = _desc_to_counter_account(desc=desc)
+    if counter:
+        posting += f"    {counter}"
+
+    return posting
+
+
+def _desc_to_payee(*, desc: str) -> str:
+    """Extract a short payee name from a node description."""
+    desc_lower = desc.lower()
+    if "groceries" in desc_lower or "ekoplaza" in desc_lower:
+        return "Ekoplaza groceries"
+    if "withdrawal" in desc_lower or "atm" in desc_lower:
+        return "ATM withdrawal"
+    if "salary" in desc_lower or "income" in desc_lower:
+        return "Salary deposit"
+    if "dinner" in desc_lower or "restaurant" in desc_lower:
+        return "Restaurant dinner"
+    if "coffee" in desc_lower:
+        return "Coffee purchase"
+    if "bike" in desc_lower or "repair" in desc_lower:
+        return "Bike repair"
+    if "gold" in desc_lower:
+        return "Gold purchase"
+    if "rent" in desc_lower:
+        return "Rent payment"
+    if "return" in desc_lower:
+        return "Shopping (with return)"
+    if "bank" in desc_lower and "fee" in desc_lower:
+        return "Bank fee"
+    if "delayed" in desc_lower:
+        return "Delayed shop purchase"
+    if "rounded" in desc_lower:
+        return "Shop purchase (rounded)"
+    if "swapped" in desc_lower or "dd/mm" in desc_lower:
+        return "Shop purchase (date fix)"
+    return "Transaction"
+
+
+def _desc_to_counter_account(*, desc: str) -> str:
+    """Derive the counter-posting account from a node description."""
+    d = desc.lower()
+    if "credit triodos" in d or "debit triodos" in d:
+        return "Assets:Triodos:Checking"
+    if "credit eur wallet" in d or "credit eur" in d:
+        return "Assets:Wallet:EUR"
+    if "credit ing" in d:
+        return "Assets:ING:Checking"
+    if "debit groceries" in d:
+        return "Assets:Triodos:Checking"
+    if "debit dining" in d:
+        return "Assets:Wallet:EUR"
+    if "debit repairs" in d:
+        return "Assets:Wallet:EUR"
+    if "debit income" in d or "credit income" in d:
+        return "Assets:Triodos:Checking"
+    if "bank debit" in d:
+        return ""  # already specified in the posting
+    return ""
+
+
 def generate_story_html(
     *,
     story: Dict,
@@ -2009,6 +2638,8 @@ def generate_story_html(
     stories_with_video: Optional[set] = None,
     receipt_image: Optional[str] = None,
     full_svg_content: Optional[str] = None,
+    matching_flow_svg: Optional[str] = None,
+    journal_section_html: Optional[str] = None,
 ) -> str:
     sid = story["id"]
     head = _html_head(title=f"{sid}: {story['title']} — hledger-preprocessor")
@@ -2132,7 +2763,9 @@ def generate_story_html(
         )
     main += "</div>\n"
 
-    # Below-row: layer indicator + path chips (under the shorter column)
+    # Below-row: layer indicator (navigation chips removed — the DAG
+    # itself is the navigation element, highlighting the current node
+    # during video playback).
     main += '<div class="below-row">\n'
 
     # Layer indicator
@@ -2142,55 +2775,24 @@ def generate_story_html(
         main += 'Current layer: <span class="layer-name" id="layer-indicator-name">—</span>\n'
         main += "</div>\n"
 
-    # DAG path chips (tree structure with expandable sub-components)
-    if node_path:
-        main += '<div class="dag-path">\n'
-        for i, nid in enumerate(node_path):
-            info = node_index.get(nid, {})
-            layer = info.get("layer", "")
-            layer_label = info.get("layer_label", layer.replace("_", " ").title())
-            label_overrides = story.get("node_label_override", {})
-            node_label = label_overrides.get(nid, info.get("label", nid)).split("\n")[0]
-            has_ts = nid in timestamps
-            if filtered_components_map is not None and nid in filtered_components_map:
-                components = filtered_components_map[nid]
-            else:
-                components = info.get("components", [])
-
-            if components:
-                # Tree node: parent chip with expandable children
-                main += f'<div class="path-node-group" data-node="{nid}">\n'
-                cls = "path-node" + (" clickable" if has_ts else "")
-                main += f'<span class="{cls}" data-layer="{layer}" data-node="{nid}"'
-                main += f' title="{_esc(info.get("desc", ""))}">'
-                main += f'<span class="path-layer-name">{_esc(layer_label)}</span>'
-                main += f"{_esc(node_label)}"
-                main += ' <span class="expand-indicator">\u25b8</span>'
-                main += "</span>\n"
-                # Children (hidden by default, auto-expanded by JS)
-                main += '<div class="path-children">\n'
-                for comp in components:
-                    sub_key = f"{nid}__{comp['id']}"
-                    has_sub_ts = sub_key in timestamps
-                    ccls = "path-child" + (" clickable" if has_sub_ts else "")
-                    main += f'<span class="{ccls}" data-sub="{sub_key}">'
-                    main += f'{_esc(comp["label"])}</span>\n'
-                main += "</div>\n"
-                main += "</div>\n"
-            else:
-                # Flat chip (no children)
-                cls = "path-node" + (" clickable" if has_ts else "")
-                main += f'<span class="{cls}" data-layer="{layer}" data-node="{nid}"'
-                main += f' title="{_esc(info.get("desc", ""))}">'
-                main += f'<span class="path-layer-name">{_esc(layer_label)}</span>'
-                main += f"{_esc(node_label)}</span>\n"
-
-            if i < len(node_path) - 1:
-                main += '<span class="path-arrow">\u2192</span>\n'
-        main += "</div>\n"
-
     main += "</div>\n"  # close below-row
     main += "</div>\n"  # close video-dag-row
+
+    # Issue 3: Matching outcome flow diagram (Step 3 stories)
+    if matching_flow_svg:
+        main += '<div class="matching-flow-section">\n'
+        main += "<h2>Matching Flow</h2>\n"
+        main += '<p class="matching-flow-desc">'
+        main += "The matching algorithm tries to find a CSV transaction for each "
+        main += "receipt. Retry outcomes loop back for another attempt; terminal "
+        main += "outcomes end the flow."
+        main += "</p>\n"
+        main += matching_flow_svg + "\n"
+        main += "</div>\n"
+
+    # Issue 4: Journal output section
+    if journal_section_html:
+        main += journal_section_html
 
     # Prev / Next
     main += '<div class="nav-links">\n'
@@ -2211,17 +2813,10 @@ def generate_story_html(
     main += "</div>\n"
     main += "</div>\n"
 
-    # Timestamp manifest + JS (always emit so unreachable graying works)
+    # Timestamp manifest + JS
     ts_json = json.dumps(timestamps)
-    path_json = json.dumps(node_path)
-    section = story.get("section", "")
-    section_layers_json = json.dumps(
-        SECTION_PRIMARY_LAYERS.get(section, [])
-    )
     js_block = (
-        f"<script>\nconst TIMESTAMPS = {ts_json};\n"
-        f"const NODE_PATH = {path_json};\n"
-        f"const SECTION_LAYERS = {section_layers_json};\n</script>\n"
+        f"<script>\nconst TIMESTAMPS = {ts_json};\n</script>\n"
         f'<script src="../assets/js/dag-sync.js"></script>\n'
     )
 
@@ -2500,17 +3095,64 @@ def main() -> None:
                 story=story, node_id=nid, node_index=node_index
             )
 
-        # SVG
+        # SVG — generate per-story segment and full-path SVGs directly
         safe = story_id_to_safe(story_id=story["id"])
-        svg_content = svg_cache.get(safe) if not args.no_svg else None
         has_png = (
             output_dir / "assets" / "images" / "isolated" / f"{safe}.png"
         ).exists()
+
+        segment_svg: Optional[str] = None
+        full_path_svg: Optional[str] = None
+        colour = story.get("colour", "#7aa2f7")
+
+        if not args.no_svg:
+            # Segment view: only segment_nodes
+            seg_nodes = story.get("segment_nodes", [])
+            if seg_nodes:
+                segment_svg = generate_story_svg_direct(
+                    node_ids=seg_nodes,
+                    node_index=node_index,
+                    paths=all_paths,
+                    story_colour=colour,
+                )
+
+            # Full-path view: all nodes from paths, with section-layer highlight
+            section_layers = SECTION_PRIMARY_LAYERS.get(section, [])
+            if node_path:
+                full_path_svg = generate_story_svg_direct(
+                    node_ids=node_path,
+                    node_index=node_index,
+                    paths=all_paths,
+                    story_colour=colour,
+                    highlight_layers=section_layers,
+                )
 
         # Receipt image (from YAML receipt_image field)
         receipt_img = story.get("receipt_image")
         if receipt_img and not (RECEIPTS_ROOT / receipt_img).exists():
             receipt_img = None  # skip if image file doesn't exist
+
+        # Issue 3: Matching flow diagram for Step 3 stories
+        matching_flow: Optional[str] = None
+        if section == "Step 3: Receipt-to-CSV Transaction Matching":
+            outcome_ids = [
+                nid for nid in node_path if nid.startswith("out_")
+            ]
+            if outcome_ids:
+                matching_flow = generate_matching_flow_svg(
+                    highlight_outcome_ids=outcome_ids,
+                    story_colour=colour,
+                )
+
+        # Issue 4: Journal output section
+        journal_html: Optional[str] = None
+        jrnl_in_path = any(nid.startswith("jrnl_") for nid in node_path)
+        if jrnl_in_path:
+            journal_html = generate_journal_section(
+                story=story,
+                node_path=node_path,
+                node_index=node_index,
+            )
 
         story_html = generate_story_html(
             story=story,
@@ -2519,7 +3161,7 @@ def main() -> None:
             next_story=next_s,
             video_filename=video_filename,
             is_gif=is_gif,
-            svg_content=svg_content,
+            svg_content=segment_svg,
             has_png_fallback=has_png,
             timestamps=timestamps,
             node_path=node_path,
@@ -2527,7 +3169,9 @@ def main() -> None:
             filtered_components_map=filtered_components_map,
             stories_with_video=stories_with_video,
             receipt_image=receipt_img,
-            full_svg_content=overview_svg,
+            full_svg_content=full_path_svg,
+            matching_flow_svg=matching_flow,
+            journal_section_html=journal_html,
         )
         (output_dir / "stories" / f"{story['id']}.html").write_text(
             story_html
