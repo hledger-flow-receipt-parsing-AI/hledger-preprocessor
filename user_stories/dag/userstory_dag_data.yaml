@@ -1040,6 +1040,7 @@ stories:
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_ekoplaza_card, lbl_ekoplaza_card_eur]
     segment_nodes: [img_ekoplaza_card, lbl_ekoplaza_card_eur]
+    gif_video: 2b1_full_path
 
   - id: US-2b.2
     title: "Label a cash receipt"

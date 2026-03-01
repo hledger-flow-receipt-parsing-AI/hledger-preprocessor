@@ -186,15 +186,10 @@ def run_edit_receipt_demo(
         # Confirm done
         nav.press_enter(pause=0.5)
 
-        # Wait for export prompt and confirm
-        if nav.wait_for("EXPORTING to:", timeout=10, silent=True):
-            time.sleep(2)
-            nav.press_enter()
-
+        # The TUI exits after saving (verbose=False skips the export prompt).
+        # Just wait for the process to exit.
         time.sleep(0.5)
-
-        # Wait for process to exit
-        if not nav.wait_for_exit(timeout=1):
+        if not nav.wait_for_exit(timeout=15):
             nav.terminate()
 
     finally:

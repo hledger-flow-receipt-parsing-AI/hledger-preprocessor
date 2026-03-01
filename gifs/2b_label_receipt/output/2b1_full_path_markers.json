@@ -1,0 +1,35 @@
+{
+  "markers": {
+    "acct_triodos_csv": 0.0,
+    "acct_eur_wallet": 23.16,
+    "dirp_default": 32.72,
+    "fnames_default": 49.96,
+    "catcfg_default": 65.4,
+    "malgo_default": 68.12,
+    "cat_basic__groceries": 74.72,
+    "cat_basic__withdrawl": 77.32,
+    "img_ekoplaza_card": 80.24,
+    "lbl_ekoplaza_card_eur": 105.24,
+    "lbl_ekoplaza_card_eur__date_time": 105.24,
+    "lbl_ekoplaza_card_eur__category": 105.24,
+    "lbl_ekoplaza_card_eur__bank_account": 105.24,
+    "lbl_ekoplaza_card_eur__currency": 105.24,
+    "lbl_ekoplaza_card_eur__amount": 105.24,
+    "lbl_ekoplaza_card_eur__shop": 105.24
+  },
+  "total_duration": 112.04,
+  "segments": [
+    {
+      "file": "cfg_1b1w.mp4",
+      "duration": 74.72
+    },
+    {
+      "file": "cat_basic.mp4",
+      "duration": 5.52
+    },
+    {
+      "file": "2b_label_receipt_dracula.mp4",
+      "duration": 31.8
+    }
+  ]
+}

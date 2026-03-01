@@ -47,17 +47,22 @@
   function applyZoom(pane) {
     var id = pane.getAttribute('data-zoom-id');
     var scale = scaleMap[id];
-    // Use only the DIRECT .zoom-pane-inner child, not nested ones
-    var inner = null;
-    for (var i = 0; i < pane.children.length; i++) {
-      if (pane.children[i].classList.contains('zoom-pane-inner')) {
-        inner = pane.children[i]; break;
-      }
+    // CSS zoom changes the element's rendered size in the layout
+    pane.style.zoom = scale;
+
+    // If inside a video-dag-row grid, rebuild column ratios so both
+    // panes can grow/shrink independently based on their own zoom level.
+    var grid = pane.closest('.video-dag-row');
+    if (grid) {
+      var videoScale = 1, dagScale = 1;
+      var vp = grid.querySelector('.video-section.zoom-pane');
+      var dp = grid.querySelector('.dag-section.zoom-pane');
+      if (vp) videoScale = scaleMap[vp.getAttribute('data-zoom-id')] || 1;
+      if (dp) dagScale = scaleMap[dp.getAttribute('data-zoom-id')] || 1;
+      grid.style.gridTemplateColumns = videoScale + 'fr ' + dagScale + 'fr';
     }
-    if (inner) {
-      inner.style.zoom = scale;
-    }
-    // Use only the direct zoom-indicator child
+
+    // Update zoom indicator
     var indicator = null;
     for (var j = 0; j < pane.children.length; j++) {
       if (pane.children[j].classList.contains('zoom-indicator')) {
