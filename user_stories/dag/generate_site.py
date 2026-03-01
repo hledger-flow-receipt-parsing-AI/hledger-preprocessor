@@ -1334,7 +1334,7 @@ a:hover { text-decoration: underline; }
 
 /* Main content */
 .main {
-  flex: 1; min-width: 0;
+  margin-left: var(--sidebar-width); flex: 1;
   padding: 0.75rem 1rem;
 }
 .main h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
@@ -1654,7 +1654,7 @@ a:hover { text-decoration: underline; }
 }
 .zoom-pane.zoom-selected .zoom-indicator,
 .zoom-pane:hover .zoom-indicator { opacity: 1; }
-.sidebar.zoom-pane { overflow-y: auto; }
+.sidebar.zoom-pane { position: fixed; overflow-y: auto; }
 """
     return (
         css.replace("__NODE_OP__", str(node_op))
@@ -2011,10 +2011,21 @@ def generate_explorer_js() -> str:
     document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
       a.classList.remove('explorer-active');
     });
+    var sidebar = document.querySelector('.sidebar');
     document.querySelectorAll('.sidebar li a').forEach(function(a) {
       if (a.textContent.indexOf(story.id + ':') === 0) {
         a.classList.add('explorer-active');
-        a.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        // Open parent <details> if collapsed so the link is visible
+        var det = a.closest('details');
+        if (det && !det.open) det.open = true;
+        // Scroll only the sidebar, not the page
+        var aRect = a.getBoundingClientRect();
+        var sRect = sidebar.getBoundingClientRect();
+        if (aRect.top < sRect.top) {
+          sidebar.scrollTop += aRect.top - sRect.top;
+        } else if (aRect.bottom > sRect.bottom) {
+          sidebar.scrollTop += aRect.bottom - sRect.bottom;
+        }
       }
     });
   }
@@ -2217,17 +2228,9 @@ def generate_zoom_js() -> str:
   function applyZoom(pane) {
     var id = pane.getAttribute('data-zoom-id');
     var scale = scaleMap[id];
-    // Use only the DIRECT .zoom-pane-inner child, not nested ones
-    var inner = null;
-    for (var i = 0; i < pane.children.length; i++) {
-      if (pane.children[i].classList.contains('zoom-pane-inner')) {
-        inner = pane.children[i]; break;
-      }
-    }
-    if (inner) {
-      inner.style.zoom = scale;
-    }
-    // Use only the direct zoom-indicator child
+    // Apply zoom to the pane itself so the entire box resizes
+    pane.style.zoom = scale;
+    // Counter-scale the zoom indicator so it stays readable
     var indicator = null;
     for (var j = 0; j < pane.children.length; j++) {
       if (pane.children[j].classList.contains('zoom-indicator')) {
@@ -2236,6 +2239,7 @@ def generate_zoom_js() -> str:
     }
     if (indicator) {
       indicator.textContent = Math.round(scale * 100) + '%';
+      indicator.style.zoom = 1 / scale;
     }
   }
 
