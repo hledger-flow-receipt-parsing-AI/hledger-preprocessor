@@ -1372,12 +1372,15 @@ a:hover { text-decoration: underline; }
   text-transform: lowercase;
 }
 
-/* Receipt image — floated right inside story header */
+/* Receipt image — zoom-pane floated right inside story header */
+.receipt-pane {
+  float: right; margin: 0 0 0.5rem 1rem;
+}
 .receipt-image-inline {
-  float: right; max-height: 160px; width: auto;
-  margin: 0 0 0.5rem 1rem;
+  max-height: 280px; width: auto;
   border-radius: 6px; border: 1px solid var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: block;
 }
 
 /* Legacy receipt image section (kept for compatibility) */
@@ -1480,6 +1483,20 @@ a:hover { text-decoration: underline; }
   background: var(--accent); display: inline-block;
 }
 .layer-indicator .layer-name { font-weight: 600; }
+
+/* Navigation hints bar */
+.nav-hints {
+  display: flex; flex-wrap: wrap; gap: 1rem;
+  font-size: 0.72rem; color: var(--text-muted);
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.4rem 0.8rem; margin-bottom: 1rem;
+}
+.nav-hints kbd {
+  display: inline-block; padding: 0.05rem 0.3rem;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 3px; font-size: 0.65rem; font-family: inherit;
+  vertical-align: baseline;
+}
 
 /* BDD narrative */
 .bdd { background: var(--bg-card); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
@@ -2244,6 +2261,25 @@ def generate_zoom_js() -> str:
     }
   });
 
+  // Alt+Left/Right: cycle which pane is selected
+  document.addEventListener('keydown', function(e) {
+    if (!e.altKey) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    var arr = Array.prototype.slice.call(panes);
+    if (!arr.length) return;
+    var cur = selected ? arr.indexOf(selected) : -1;
+    var next;
+    if (e.key === 'ArrowRight') {
+      next = (cur + 1) % arr.length;
+    } else {
+      next = (cur - 1 + arr.length) % arr.length;
+    }
+    selectPane(arr[next]);
+    arr[next].scrollIntoView({behavior: 'smooth', block: 'nearest'});
+  });
+
   // Mouse wheel zoom with Ctrl held — target innermost pane
   document.addEventListener('wheel', function(e) {
     if (!e.ctrlKey && !e.metaKey) return;
@@ -2852,23 +2888,33 @@ def generate_story_html(
     main = '<div class="main zoom-pane" data-zoom-id="content">\n'
     main += '<div class="zoom-pane-inner">\n'
 
-    # -- Issue 2: Compact story header with receipt image floated right --
-    # Layout: ID + status + title on one line, BDD narrative inline,
-    # receipt image floated to the right.  No acceptance criteria.
+    # -- Navigation hints bar (Issue v6-A) --
+    main += '<div class="nav-hints">\n'
+    main += '<span><kbd>Alt</kbd>+<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle focus</span>\n'
+    main += '<span><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd> / <kbd>j</kbd><kbd>k</kbd> prev/next DAG node</span>\n'
+    main += '<span><kbd>Ctrl</kbd>+<kbd>+</kbd><kbd>−</kbd> zoom focused pane</span>\n'
+    main += '<span><kbd>Ctrl</kbd>+<kbd>0</kbd> reset zoom</span>\n'
+    main += '<span><kbd>Space</kbd> play/pause</span>\n'
+    main += '</div>\n'
+
+    # -- Compact story header with receipt image floated right --
     main += f'<div class="story-header" style="border-left-color:{colour}">\n'
 
     if receipt_image:
-        # Receipt image floated right beside the header
+        # Receipt image in its own zoom pane, floated right
         main += (
+            f'<div class="receipt-pane zoom-pane" data-zoom-id="receipt">\n'
+            f'<div class="zoom-pane-inner">\n'
             f'<img class="receipt-image-inline" '
             f'src="../assets/receipts/{_esc(receipt_image)}" '
             f'alt="Receipt: {_esc(story["title"])}">\n'
+            f'</div></div>\n'
         )
 
     main += f'<span class="story-id">{_esc(sid)}{badge}</span> '
     main += f'<span class="story-title-inline">{_esc(story["title"])}</span>\n'
 
-    # BDD narrative — compact single-block format
+    # BDD narrative — compact single-block, text wraps beside receipt
     as_a = story.get("as_a", "")
     i_want = story.get("i_want", "")
     so_that = story.get("so_that", "")
