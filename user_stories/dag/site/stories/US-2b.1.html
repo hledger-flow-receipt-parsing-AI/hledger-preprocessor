@@ -85,8 +85,18 @@
 </nav>
 <div class="main zoom-pane" data-zoom-id="content">
 <div class="zoom-pane-inner">
+<div class="nav-hints">
+<span><kbd>Alt</kbd>+<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle focus</span>
+<span><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd> / <kbd>j</kbd><kbd>k</kbd> prev/next DAG node</span>
+<span><kbd>Ctrl</kbd>+<kbd>+</kbd><kbd>−</kbd> zoom focused pane</span>
+<span><kbd>Ctrl</kbd>+<kbd>0</kbd> reset zoom</span>
+<span><kbd>Space</kbd> play/pause</span>
+</div>
 <div class="story-header" style="border-left-color:#E91E63">
+<div class="receipt-pane zoom-pane" data-zoom-id="receipt">
+<div class="zoom-pane-inner">
 <img class="receipt-image-inline" src="../assets/receipts/ekoplaza_card.png" alt="Receipt: Label a simple same-currency card receipt">
+</div></div>
 <span class="story-id">US-2b.1<span class="badge badge-impl">implemented</span></span> <span class="story-title-inline">Label a simple same-currency card receipt</span>
 <div class="bdd-compact">
 <span class="bdd-kw">As a</span> user who paid for groceries at Ekoplaza with my Triodos debit card in EUR <span class="bdd-kw">I want</span> fill in the receipt date, shop, category, amount, currency, and payment account using the TUI <span class="bdd-kw">so that</span> a structured JSON receipt label is created that can later be matched to my bank CSV and imported into hledger.

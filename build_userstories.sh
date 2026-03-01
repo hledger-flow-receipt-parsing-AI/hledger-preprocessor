@@ -394,9 +394,8 @@ main() {
     if [[ -n "$SERVE_PORT" ]]; then
         run_serve
     elif [[ -n "$DO_SITE" ]]; then
-        echo
-        log "Done! Open in browser:"
-        log "  python3 -m http.server ${DEFAULT_PORT} --directory ${OUTPUT_DIR}"
+        SERVE_PORT="$DEFAULT_PORT"
+        run_serve
     fi
 }
 

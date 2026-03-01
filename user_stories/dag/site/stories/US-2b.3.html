@@ -85,8 +85,18 @@
 </nav>
 <div class="main zoom-pane" data-zoom-id="content">
 <div class="zoom-pane-inner">
+<div class="nav-hints">
+<span><kbd>Alt</kbd>+<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle focus</span>
+<span><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd> / <kbd>j</kbd><kbd>k</kbd> prev/next DAG node</span>
+<span><kbd>Ctrl</kbd>+<kbd>+</kbd><kbd>−</kbd> zoom focused pane</span>
+<span><kbd>Ctrl</kbd>+<kbd>0</kbd> reset zoom</span>
+<span><kbd>Space</kbd> play/pause</span>
+</div>
 <div class="story-header" style="border-left-color:#FF5722">
+<div class="receipt-pane zoom-pane" data-zoom-id="receipt">
+<div class="zoom-pane-inner">
 <img class="receipt-image-inline" src="../assets/receipts/atm_london.png" alt="Receipt: Label a foreign-currency receipt">
+</div></div>
 <span class="story-id">US-2b.3<span class="badge badge-impl">implemented</span></span> <span class="story-title-inline">Label a foreign-currency receipt</span>
 <div class="bdd-compact">
 <span class="bdd-kw">As a</span> user who bought lunch in London for 12.50 GBP but my bank account is in EUR <span class="bdd-kw">I want</span> label the receipt with the GBP amount and GBP currency <span class="bdd-kw">so that</span> the matching algorithm later knows to apply a currency conversion when searching my EUR bank CSV.
