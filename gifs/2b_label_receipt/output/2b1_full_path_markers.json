@@ -17,7 +17,7 @@
     "lbl_ekoplaza_card_eur__amount": 105.24,
     "lbl_ekoplaza_card_eur__shop": 105.24
   },
-  "total_duration": 112.04,
+  "total_duration": 113.19,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
@@ -29,7 +29,7 @@
     },
     {
       "file": "2b_label_receipt_dracula.mp4",
-      "duration": 31.8
+      "duration": 32.95
     }
   ]
 }
