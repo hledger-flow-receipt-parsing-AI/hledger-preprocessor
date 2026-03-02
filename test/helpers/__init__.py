@@ -6,7 +6,7 @@ from .generators import (
     generate_random_category,
     generate_random_transaction_with_n_postings,
 )
-from .seeders import seed_receipts_into_root
+from .seeders import seed_receipt_images_only, seed_receipts_into_root
 
 __all__ = [
     # Assertions
@@ -17,5 +17,6 @@ __all__ = [
     "generate_random_transaction_with_n_postings",
     "diff_credit_larger_than_debit",
     # Seeders
+    "seed_receipt_images_only",
     "seed_receipts_into_root",
 ]
