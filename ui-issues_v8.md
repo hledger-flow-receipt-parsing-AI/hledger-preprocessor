@@ -16,3 +16,4 @@ Bot segment and full story should just be typing the categorisation yaml.
 
 us2b1 - Segment: Simple receipt should show the receipt and then fill in each value of the receipt
 us2b1 - Full Story: Show the config, the categories and the receipt being labelled, then how it is matched to the bank account csv. And then how the journal is created for that configuration. Visualisation will be skipped for now.
+
