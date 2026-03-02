@@ -216,6 +216,51 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
 
 
 @typechecked
+def _seed_receipt_images(
+    *, config: Config, source_json_paths: List[Path]
+) -> None:
+    """Seed receipt images (input + cropped) into a test environment.
+
+    Creates realistic receipt images from JSON data and places them
+    in the input and processed directories. Does NOT create label JSON files.
+
+    Args:
+        config: The Config object containing directory paths.
+        source_json_paths: List of paths to JSON files containing receipt data.
+    """
+    import json
+
+    imgs_dir = Path(
+        config.dir_paths.get_path("receipt_images_input_dir", absolute=True)
+    )
+    processed_dir = Path(
+        config.dir_paths.get_path("receipt_images_processed_dir", absolute=True)
+    )
+
+    for i, src_path in enumerate(source_json_paths):
+        if not src_path.exists():
+            continue
+
+        data = json.loads(src_path.read_text())
+        img_filename = Path(data["raw_img_filepath"]).name
+        new_img_path = imgs_dir / img_filename
+
+        # Create a realistic receipt image from the JSON data
+        img = _create_receipt_image(data, i)
+        img.save(new_img_path, "JPEG")
+
+        # Also create the cropped/processed version of the image
+        img_stem = Path(img_filename).stem
+        cropped_filename = f"{img_stem}_cropped.jpg"
+        cropped_path = processed_dir / cropped_filename
+        img_cropped = _create_receipt_image(data, i + 100)
+        img_cropped.save(cropped_path, "JPEG")
+
+        print(f"seeded receipt image: {new_img_path}")
+        print(f"seeded cropped image: {cropped_path}")
+
+
+@typechecked
 def seed_receipts_into_root(
     *, config: Config, source_json_paths: List[Path]
 ) -> None:
@@ -223,6 +268,7 @@ def seed_receipts_into_root(
 
     Creates realistic receipt images from JSON data and places them
     in the appropriate directories according to the config.
+    Also creates label JSON files in receipt_labels/.
 
     Args:
         config: The Config object containing directory paths.
@@ -279,3 +325,21 @@ def seed_receipts_into_root(
         pprint(data)
         print(f"to:")
         print(dest_path)
+
+
+@typechecked
+def seed_receipt_images_only(
+    *, config: Config, source_json_paths: List[Path]
+) -> None:
+    """Seed only receipt images (no labels) into a test environment.
+
+    Creates realistic receipt images in receipt_images_input/ and
+    receipt_images_processed/ but does NOT create label JSON files
+    in receipt_labels/. This simulates having unlabelled receipts
+    that --tui-label-receipts can pick up.
+
+    Args:
+        config: The Config object containing directory paths.
+        source_json_paths: List of paths to JSON files containing receipt data.
+    """
+    _seed_receipt_images(config=config, source_json_paths=source_json_paths)

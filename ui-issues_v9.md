@@ -10,6 +10,7 @@ A. (in the future it should show the ./start running that directly goes to filli
 C. The can you see the receipt question
 D. the filling of the WHOLE receipt (not just changing the category). 
 E. and how the receipt is stored."
+F. The receipt image does not contain the address that is in the receipt label. It should. Same for the tax amount. 
 
 ## Full view
 The full view 

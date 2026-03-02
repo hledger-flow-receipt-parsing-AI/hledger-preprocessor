@@ -86,6 +86,7 @@ def manually_make_receipt_labels(
                 # TODO: determine whether this should be Transactions.Triodos or Transactions.Assets
                 hledger_account_infos=get_all_accounts(
                     config=config,
+                    labelled_receipts=labelled_receipts,
                 ),
                 receipt_nr=receipt_nr,
                 total_nr_of_receipts=len(raw_receipt_img_filepaths),
