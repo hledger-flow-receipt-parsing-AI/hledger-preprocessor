@@ -7,6 +7,10 @@
   var selected = null;
   var scaleMap = {};
 
+  // Independent mode state per grid: stores pixel widths
+  // Key = grid element, value = {video: px, dag: px}
+  var indepWidths = new WeakMap();
+
   // Find the innermost zoom-pane for a given element
   function closestPane(el) {
     while (el) {
@@ -29,6 +33,47 @@
     indicator.className = 'zoom-indicator';
     indicator.textContent = '100%';
     pane.appendChild(indicator);
+
+    // Add resize buttons for panes inside a video-dag-row grid
+    if (pane.closest('.video-dag-row')) {
+      var btnGroup = document.createElement('span');
+      btnGroup.className = 'zoom-resize-buttons';
+
+      var btnShrink = document.createElement('button');
+      btnShrink.className = 'zoom-resize-btn';
+      btnShrink.textContent = '\u2212';
+      btnShrink.title = 'Shrink this pane only';
+      btnShrink.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectPane(pane);
+        indepResize(pane, -1);
+      });
+
+      var btnGrow = document.createElement('button');
+      btnGrow.className = 'zoom-resize-btn';
+      btnGrow.textContent = '+';
+      btnGrow.title = 'Grow this pane only';
+      btnGrow.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectPane(pane);
+        indepResize(pane, +1);
+      });
+
+      var btnReset = document.createElement('button');
+      btnReset.className = 'zoom-resize-btn';
+      btnReset.textContent = '\u21ba';
+      btnReset.title = 'Reset pane size';
+      btnReset.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectPane(pane);
+        resetAll(pane);
+      });
+
+      btnGroup.appendChild(btnShrink);
+      btnGroup.appendChild(btnGrow);
+      btnGroup.appendChild(btnReset);
+      pane.appendChild(btnGroup);
+    }
   });
 
   // Single document-level listener picks the innermost zoom-pane
@@ -44,84 +89,161 @@
     selected = pane;
   }
 
-  // soloMode=true: scale the pane content without rebalancing the grid columns
-  function applyZoom(pane, soloMode) {
+  function clearTransforms(pane) {
+    var inner = pane.querySelector('.zoom-pane-inner');
+    if (inner) {
+      inner.style.transform = '';
+      inner.style.transformOrigin = '';
+      inner.style.width = '';
+      inner.style.height = '';
+    }
+    pane.style.zoom = '';
+  }
+
+  function getIndicator(pane) {
+    for (var j = 0; j < pane.children.length; j++) {
+      if (pane.children[j].classList.contains('zoom-indicator')) {
+        return pane.children[j];
+      }
+    }
+    return null;
+  }
+
+  // Independent resize: change only the target pane's pixel width.
+  // The other pane keeps its exact current pixel width.
+  // direction: -1 = shrink, +1 = grow
+  var STEP_PX = 40;  // pixels per step
+
+  function indepResize(pane, direction) {
+    var grid = pane.closest('.video-dag-row');
+    if (!grid) return;
+
+    var vp = grid.querySelector('.video-section.zoom-pane');
+    var dp = grid.querySelector('.dag-section.zoom-pane');
+    if (!vp || !dp) return;
+
+    // Clear any coupled-mode zoom first
+    clearTransforms(vp);
+    clearTransforms(dp);
+    scaleMap[vp.getAttribute('data-zoom-id')] = 1;
+    scaleMap[dp.getAttribute('data-zoom-id')] = 1;
+
+    // Snapshot current widths if not already in independent mode
+    var w = indepWidths.get(grid);
+    if (!w) {
+      w = {
+        video: vp.getBoundingClientRect().width,
+        dag: dp.getBoundingClientRect().width
+      };
+      indepWidths.set(grid, w);
+    }
+
+    // Adjust only the target pane
+    var isVideo = pane === vp;
+    var key = isVideo ? 'video' : 'dag';
+    w[key] = Math.max(100, w[key] + direction * STEP_PX);
+
+    grid.style.gridTemplateColumns = w.video + 'px ' + w.dag + 'px';
+
+    // Update indicators
+    var vInd = getIndicator(vp);
+    var dInd = getIndicator(dp);
+    if (vInd) vInd.textContent = Math.round(w.video) + 'px';
+    if (dInd) dInd.textContent = Math.round(w.dag) + 'px';
+  }
+
+  function resetAll(pane) {
+    var grid = pane.closest('.video-dag-row');
+    if (grid) {
+      grid.style.gridTemplateColumns = '';
+      indepWidths.delete(grid);
+    }
+
+    var vp = grid && grid.querySelector('.video-section.zoom-pane');
+    var dp = grid && grid.querySelector('.dag-section.zoom-pane');
+
+    if (vp) { clearTransforms(vp); scaleMap[vp.getAttribute('data-zoom-id')] = 1; }
+    if (dp) { clearTransforms(dp); scaleMap[dp.getAttribute('data-zoom-id')] = 1; }
+
+    var vInd = vp && getIndicator(vp);
+    var dInd = dp && getIndicator(dp);
+    if (vInd) vInd.textContent = '100%';
+    if (dInd) dInd.textContent = '100%';
+  }
+
+  function applyCoupledZoom(pane) {
     var id = pane.getAttribute('data-zoom-id');
     var scale = scaleMap[id];
 
-    if (soloMode) {
-      // Scale only the inner content via CSS transform, keep grid layout unchanged
-      var inner = pane.querySelector('.zoom-pane-inner');
-      if (inner) {
-        inner.style.transform = 'scale(' + scale + ')';
-        inner.style.transformOrigin = 'top left';
-        inner.style.width = (100 / scale) + '%';
-        inner.style.height = 'auto';
-      }
-      pane.style.zoom = '';
-    } else {
-      // Reset any solo-mode transform
-      var inner = pane.querySelector('.zoom-pane-inner');
-      if (inner) {
-        inner.style.transform = '';
-        inner.style.transformOrigin = '';
-        inner.style.width = '';
-        inner.style.height = '';
-      }
-      // CSS zoom changes the element's rendered size in the layout
-      pane.style.zoom = scale;
-
-      // If inside a video-dag-row grid, rebuild column ratios so both
-      // panes can grow/shrink independently based on their own zoom level.
-      var grid = pane.closest('.video-dag-row');
-      if (grid) {
-        var videoScale = 1, dagScale = 1;
-        var vp = grid.querySelector('.video-section.zoom-pane');
-        var dp = grid.querySelector('.dag-section.zoom-pane');
-        if (vp) videoScale = scaleMap[vp.getAttribute('data-zoom-id')] || 1;
-        if (dp) dagScale = scaleMap[dp.getAttribute('data-zoom-id')] || 1;
-        grid.style.gridTemplateColumns = videoScale + 'fr ' + dagScale + 'fr';
-      }
+    var inner = pane.querySelector('.zoom-pane-inner');
+    if (inner) {
+      inner.style.transform = '';
+      inner.style.transformOrigin = '';
+      inner.style.width = '';
+      inner.style.height = '';
     }
+    pane.style.zoom = scale;
 
-    // Update zoom indicator
-    var indicator = null;
-    for (var j = 0; j < pane.children.length; j++) {
-      if (pane.children[j].classList.contains('zoom-indicator')) {
-        indicator = pane.children[j]; break;
-      }
+    var grid = pane.closest('.video-dag-row');
+    if (grid) {
+      // Clear any independent pixel widths
+      indepWidths.delete(grid);
+      var videoScale = 1, dagScale = 1;
+      var vp = grid.querySelector('.video-section.zoom-pane');
+      var dp = grid.querySelector('.dag-section.zoom-pane');
+      if (vp) videoScale = scaleMap[vp.getAttribute('data-zoom-id')] || 1;
+      if (dp) dagScale = scaleMap[dp.getAttribute('data-zoom-id')] || 1;
+      grid.style.gridTemplateColumns = videoScale + 'fr ' + dagScale + 'fr';
     }
+    var indicator = getIndicator(pane);
     if (indicator) {
-      indicator.textContent = Math.round(scale * 100) + '%' + (soloMode ? ' solo' : '');
+      indicator.textContent = Math.round(scale * 100) + '%';
     }
   }
 
-  // Track which mode each pane is in
-  var modeMap = {};
-
+  // Ctrl+/- = coupled zoom
   document.addEventListener('keydown', function(e) {
     if (!selected) return;
     if (!e.ctrlKey && !e.metaKey) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.altKey || e.shiftKey) return;
 
     var id = selected.getAttribute('data-zoom-id');
-    var soloMode = e.altKey;
 
     if (e.key === '=' || e.key === '+') {
       e.preventDefault();
       scaleMap[id] = Math.min(scaleMap[id] + 0.1, 3);
-      modeMap[id] = soloMode ? 'solo' : 'coupled';
-      applyZoom(selected, soloMode);
+      applyCoupledZoom(selected);
     } else if (e.key === '-') {
       e.preventDefault();
       scaleMap[id] = Math.max(scaleMap[id] - 0.1, 0.3);
-      modeMap[id] = soloMode ? 'solo' : 'coupled';
-      applyZoom(selected, soloMode);
+      applyCoupledZoom(selected);
     } else if (e.key === '0') {
       e.preventDefault();
-      scaleMap[id] = 1;
-      modeMap[id] = 'coupled';
-      applyZoom(selected, false);
+      resetAll(selected);
+    }
+  });
+
+  // Independent resize: , (or <) to shrink, . (or >) to grow, / to reset.
+  // Also [ ] \ as alternatives.
+  document.addEventListener('keydown', function(e) {
+    if (!selected) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.target.tagName === 'BUTTON') return;
+
+    var inGrid = !!selected.closest('.video-dag-row');
+    if (!inGrid) return;
+
+    if (e.key === ',' || e.key === '<' || e.key === '[') {
+      e.preventDefault();
+      indepResize(selected, -1);
+    } else if (e.key === '.' || e.key === '>' || e.key === ']') {
+      e.preventDefault();
+      indepResize(selected, +1);
+    } else if (e.key === '/' || e.key === '\\') {
+      e.preventDefault();
+      resetAll(selected);
     }
   });
 
@@ -145,7 +267,7 @@
     arr[next].scrollIntoView({behavior: 'smooth', block: 'nearest'});
   });
 
-  // Mouse wheel zoom — Ctrl+scroll = coupled, Ctrl+Alt+scroll = solo
+  // Mouse wheel zoom — Ctrl+scroll = coupled
   document.addEventListener('wheel', function(e) {
     if (!e.ctrlKey && !e.metaKey) return;
     var pane = closestPane(e.target);
@@ -153,10 +275,8 @@
     e.preventDefault();
     selectPane(pane);
     var id = pane.getAttribute('data-zoom-id');
-    var soloMode = e.altKey;
     var delta = e.deltaY > 0 ? -0.1 : 0.1;
     scaleMap[id] = Math.max(0.3, Math.min(3, scaleMap[id] + delta));
-    modeMap[id] = soloMode ? 'solo' : 'coupled';
-    applyZoom(pane, soloMode);
+    applyCoupledZoom(pane);
   }, {passive: false});
 })();

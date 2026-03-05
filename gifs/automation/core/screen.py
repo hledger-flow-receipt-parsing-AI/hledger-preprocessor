@@ -7,7 +7,9 @@ from typing import List, Optional
 from .colors import Colors
 
 # Path to the YAML data file (resolved lazily to avoid import-time I/O)
-_DAG_DATA_DIR = Path(__file__).parent.parent.parent.parent / "user_stories" / "dag"
+_DAG_DATA_DIR = (
+    Path(__file__).parent.parent.parent.parent / "user_stories" / "dag"
+)
 
 
 def emit_node_marker(node_id: str) -> None:

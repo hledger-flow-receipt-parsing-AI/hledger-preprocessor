@@ -1,7 +1,7 @@
 {
+  "frame_duration_ms": 40,
   "markers": {
     "csv_ekoplaza_4217_jan15": 0.0
   },
-  "total_duration": 10.92,
-  "frame_duration_ms": 40
+  "total_duration": 10.92
 }

@@ -65,9 +65,7 @@ class TestFewMatches:
         )
         assert len(result) == 3
 
-    def test_amount_filter_narrows_candidates(
-        self, triodos_account
-    ) -> None:
+    def test_amount_filter_narrows_candidates(self, triodos_account) -> None:
         """3 date matches → amount filter narrows to 1-2 candidates.
         Note: is_amount_within_margin uses max(receipt_amount, 0.01) so
         positive receipt amounts work correctly with percentage margin.

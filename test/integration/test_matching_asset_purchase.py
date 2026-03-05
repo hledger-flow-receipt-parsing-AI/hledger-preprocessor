@@ -79,10 +79,10 @@ class TestCryptoConfig:
 
     def test_crypto_config_loads(self, temp_finance_root) -> None:
         """Crypto config template can be loaded."""
-        from hledger_preprocessor.config.load_config import load_config
-
         # Use 1_bank_crypto.yaml if available, else standard config
         from pathlib import Path
+
+        from hledger_preprocessor.config.load_config import load_config
 
         crypto_config = (
             Path(temp_finance_root["config_path"]).parent.parent

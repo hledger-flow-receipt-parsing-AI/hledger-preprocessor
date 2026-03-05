@@ -11,9 +11,7 @@ from typing import List
 
 import pytest
 
-from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import load_config
-from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.reading_history.load_receipts_from_dir import (
     load_receipts_from_dir,
 )
@@ -30,9 +28,9 @@ class TestLoadReceiptsFromDir:
             pre_processed_output_dir=None,
         )
         receipts: List[Receipt] = load_receipts_from_dir(config=cfg)
-        assert len(receipts) >= 1, (
-            "At least one receipt should be loaded from seeded labels"
-        )
+        assert (
+            len(receipts) >= 1
+        ), "At least one receipt should be loaded from seeded labels"
 
     def test_receipt_is_receipt_type(self, temp_finance_root) -> None:
         """Loaded objects are Receipt instances."""
@@ -71,9 +69,7 @@ class TestCardReceiptLabel:
         for field in required_fields:
             assert field in card_receipt_json, f"Missing field: {field}"
 
-    def test_card_receipt_account_is_checking(
-        self, card_receipt_json
-    ) -> None:
+    def test_card_receipt_account_is_checking(self, card_receipt_json) -> None:
         """Card receipt's account_transaction uses checking (bank) account."""
         txn = card_receipt_json["net_bought_items"]["account_transactions"][0]
         assert txn["account"]["bank"] == "triodos"
@@ -158,8 +154,7 @@ class TestReceiptCreation:
         ekoplaza = [
             r
             for r in receipts
-            if r.receipt_category
-            and "ekoplaza" in r.receipt_category.lower()
+            if r.receipt_category and "ekoplaza" in r.receipt_category.lower()
         ]
         if not ekoplaza:
             pytest.skip("Ekoplaza receipt not found in loaded receipts")

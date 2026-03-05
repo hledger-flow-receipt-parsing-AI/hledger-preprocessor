@@ -7,10 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from hledger_preprocessor.categorisation.Categories import (
-    Category,
-    CategoryNamespace,
-)
 from hledger_preprocessor.categorisation.load_categories import (
     load_categories_from_yaml,
 )
@@ -23,11 +19,7 @@ class TestCategoryEvolution:
     def original_categories(self, tmp_path) -> Path:
         yaml_file = tmp_path / "categories.yaml"
         yaml_file.write_text(
-            "groceries:\n"
-            "  ekoplaza: {}\n"
-            "  ah: {}\n"
-            "transport:\n"
-            "  ns: {}\n"
+            "groceries:\n  ekoplaza: {}\n  ah: {}\ntransport:\n  ns: {}\n"
         )
         return yaml_file
 
@@ -51,32 +43,24 @@ class TestCategoryEvolution:
         self, original_categories, evolved_categories
     ) -> None:
         """Paths from original schema are valid in evolved schema."""
-        ns_original = load_categories_from_yaml(
-            yaml_path=original_categories
-        )
+        ns_original = load_categories_from_yaml(yaml_path=original_categories)
         ns_evolved = load_categories_from_yaml(yaml_path=evolved_categories)
 
         # Original paths still work
         assert str(ns_original.groceries.ekoplaza) == "groceries:ekoplaza"
         assert str(ns_evolved.groceries.ekoplaza) == "groceries:ekoplaza"
 
-    def test_new_subcategory_available(
-        self, evolved_categories
-    ) -> None:
+    def test_new_subcategory_available(self, evolved_categories) -> None:
         """New subcategory lidl is available in evolved schema."""
         ns = load_categories_from_yaml(yaml_path=evolved_categories)
         assert str(ns.groceries.lidl) == "groceries:lidl"
 
-    def test_new_root_category_available(
-        self, evolved_categories
-    ) -> None:
+    def test_new_root_category_available(self, evolved_categories) -> None:
         """New root category clothing is available in evolved schema."""
         ns = load_categories_from_yaml(yaml_path=evolved_categories)
         assert str(ns.clothing.hm) == "clothing:hm"
 
-    def test_existing_label_string_resolves(
-        self, evolved_categories
-    ) -> None:
+    def test_existing_label_string_resolves(self, evolved_categories) -> None:
         """An existing label 'groceries:ekoplaza' still resolves."""
         ns = load_categories_from_yaml(yaml_path=evolved_categories)
         # Simulate resolving a stored label string
@@ -88,24 +72,17 @@ class TestCategoryEvolution:
         self, original_categories, evolved_categories
     ) -> None:
         """Evolved schema has more categories than original."""
-        ns_original = load_categories_from_yaml(
-            yaml_path=original_categories
-        )
+        ns_original = load_categories_from_yaml(yaml_path=original_categories)
         ns_evolved = load_categories_from_yaml(yaml_path=evolved_categories)
 
         original_roots = dir(ns_original)
         evolved_roots = dir(ns_evolved)
         assert len(evolved_roots) > len(original_roots)
 
-    def test_removing_category_breaks_label(
-        self, tmp_path
-    ) -> None:
+    def test_removing_category_breaks_label(self, tmp_path) -> None:
         """Removing a category that was in the original breaks resolution."""
         reduced = tmp_path / "categories_reduced.yaml"
-        reduced.write_text(
-            "groceries:\n"
-            "  ah: {}\n"
-        )
+        reduced.write_text("groceries:\n  ah: {}\n")
         ns = load_categories_from_yaml(yaml_path=reduced)
         with pytest.raises(ValueError):
             # ekoplaza was removed, should fail

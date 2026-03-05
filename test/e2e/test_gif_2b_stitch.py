@@ -6,8 +6,11 @@ covering every node in the full DAG path.
 """
 
 import json
-
-from test.e2e.gif_test_helpers import get_demo_env, get_project_root, run_demo_script
+from test.e2e.gif_test_helpers import (
+    get_demo_env,
+    get_project_root,
+    run_demo_script,
+)
 
 import pytest
 
@@ -61,12 +64,12 @@ def test_stitch_2b1_full_path(temp_finance_root, monkeypatch):
 
     if missing:
         pytest.skip(
-            f"Missing prerequisite segments (run segment tests first): "
+            "Missing prerequisite segments (run segment tests first): "
             f"{missing}"
         )
 
     # Run the stitch via generate.sh with SKIP_STITCH=0
-    script_path = gifs_root / "2b_label_receipt" / "generate.sh"
+    gifs_root / "2b_label_receipt" / "generate.sh"
     env = get_demo_env()
     # Override: enable stitching, skip the TUI recording (it already exists)
     env["SKIP_STITCH"] = "0"
@@ -87,13 +90,19 @@ def test_stitch_2b1_full_path(temp_finance_root, monkeypatch):
         stitch_env = env.copy()
         stitch_env["PYTHONPATH"] = str(project_root)
         segments = [str(gifs_root / s) for s in PREREQUISITE_SEGMENTS]
-        output = str(gifs_root / "2b_label_receipt" / "output" / "2b1_full_path.mp4")
+        output = str(
+            gifs_root / "2b_label_receipt" / "output" / "2b1_full_path.mp4"
+        )
 
         result = subprocess.run(
             [
-                sys.executable, "-m", "gifs.automation.stitch_full_path",
-                "--segments", *segments,
-                "--output", output,
+                sys.executable,
+                "-m",
+                "gifs.automation.stitch_full_path",
+                "--segments",
+                *segments,
+                "--output",
+                output,
             ],
             capture_output=True,
             text=True,
@@ -103,12 +112,16 @@ def test_stitch_2b1_full_path(temp_finance_root, monkeypatch):
         assert result.returncode == 0, f"Stitch failed: {result.stderr}"
 
     # Verify output
-    full_path_mp4 = gifs_root / "2b_label_receipt" / "output" / "2b1_full_path.mp4"
+    full_path_mp4 = (
+        gifs_root / "2b_label_receipt" / "output" / "2b1_full_path.mp4"
+    )
     assert full_path_mp4.exists(), "Stitched MP4 should exist"
     assert full_path_mp4.stat().st_size > 10_000, "MP4 should not be empty"
 
     # Verify merged markers JSON
-    markers_json = gifs_root / "2b_label_receipt" / "output" / "2b1_full_path_markers.json"
+    markers_json = (
+        gifs_root / "2b_label_receipt" / "output" / "2b1_full_path_markers.json"
+    )
     assert markers_json.exists(), "Merged markers JSON should exist"
 
     data = json.loads(markers_json.read_text())
@@ -130,11 +143,11 @@ def test_stitch_2b1_full_path(temp_finance_root, monkeypatch):
         )
 
     # Total duration must be sum of segments (approximately)
-    assert data["total_duration"] > 100.0, (
-        f"Total duration should be > 100s, got {data['total_duration']}"
-    )
+    assert (
+        data["total_duration"] > 100.0
+    ), f"Total duration should be > 100s, got {data['total_duration']}"
 
     # Segments list should have 6 entries
-    assert len(data["segments"]) == 6, (
-        f"Should have 6 segments, got {len(data['segments'])}"
-    )
+    assert (
+        len(data["segments"]) == 6
+    ), f"Should have 6 segments, got {len(data['segments'])}"

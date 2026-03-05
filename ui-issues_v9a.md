@@ -20,11 +20,11 @@ then converts to themed GIFs + MP4.
 The demo edits the `repairs:bike` receipt fixture. It currently:
 
 1. Selects the receipt from the list (↓ + Enter)
-2. Answers "Can you see" prompt (Enter)
-3. Skips the date field (Enter — keeps existing value)
-4. Deletes the old category `repairs:bike` and types `groceries:ekoplaza`
-5. **Arrows through all remaining fields without changing them** (15× ↓)
-6. Confirms "Done with receipt" (Enter)
+1. Answers "Can you see" prompt (Enter)
+1. Skips the date field (Enter — keeps existing value)
+1. Deletes the old category `repairs:bike` and types `groceries:ekoplaza`
+1. **Arrows through all remaining fields without changing them** (15× ↓)
+1. Confirms "Done with receipt" (Enter)
 
 This means the GIF only shows the category being changed. All other fields
 (account, currency, amount, change, shop address, subtotal, tax) are just
@@ -40,19 +40,19 @@ understand what data the TUI collects.
 
 The receipt TUI fields appear in this order after the "Can you see" prompt:
 
-| # | Field | Type | repairs_bike.json value | Target value for demo |
-|---|-------|------|------------------------|-----------------------|
-| 1 | Receipt date and time | DateTime text input | `2025-06-15T14:30:00` | `2025-01-15T10:30:00` |
-| 2 | Bookkeeping expense category | Text input | `repairs:bike` | `groceries:ekoplaza` |
-| 3 | Account (bank/wallet) | Vertical multiple choice | `at:wallet:physical` (index 1) | `at:triodos:checking` (index 0) |
-| 4 | Currency | Vertical multiple choice | `EUR` | `EUR` (keep) |
-| 5 | Amount paid | Float input | `20.0` | `42.17` |
-| 6 | Change returned | Float input | `5.5` | `0` |
-| 7 | Add another account? | Horizontal choice (y/n) | `n` | `n` (keep) |
-| 8 | Select Shop Address | Vertical multiple choice | `BikeShop` | Select `Ekoplaza` or enter new |
-| 9 | Subtotal (optional) | Float input | (empty) | (skip — Enter) |
-| 10 | Total tax (optional) | Float input | `2.55` | `7.35` |
-| 11 | Done with this receipt? | Horizontal choice | `yes` | `yes` |
+| #   | Field                        | Type                     | repairs_bike.json value        | Target value for demo           |
+| --- | ---------------------------- | ------------------------ | ------------------------------ | ------------------------------- |
+| 1   | Receipt date and time        | DateTime text input      | `2025-06-15T14:30:00`          | `2025-01-15T10:30:00`           |
+| 2   | Bookkeeping expense category | Text input               | `repairs:bike`                 | `groceries:ekoplaza`            |
+| 3   | Account (bank/wallet)        | Vertical multiple choice | `at:wallet:physical` (index 1) | `at:triodos:checking` (index 0) |
+| 4   | Currency                     | Vertical multiple choice | `EUR`                          | `EUR` (keep)                    |
+| 5   | Amount paid                  | Float input              | `20.0`                         | `42.17`                         |
+| 6   | Change returned              | Float input              | `5.5`                          | `0`                             |
+| 7   | Add another account?         | Horizontal choice (y/n)  | `n`                            | `n` (keep)                      |
+| 8   | Select Shop Address          | Vertical multiple choice | `BikeShop`                     | Select `Ekoplaza` or enter new  |
+| 9   | Subtotal (optional)          | Float input              | (empty)                        | (skip — Enter)                  |
+| 10  | Total tax (optional)         | Float input              | `2.55`                         | `7.35`                          |
+| 11  | Done with this receipt?      | Horizontal choice        | `yes`                          | `yes`                           |
 
 ## What to change
 
@@ -62,6 +62,7 @@ lines 119–193. Replace the current keypress sequence with one that fills every
 ### Key things to know
 
 - `TuiNavigator` API (defined in `gifs/automation/tui_navigator.py`):
+
   - `nav.press_enter()` — confirm/advance
   - `nav.press_down(times=N)` — navigate down in selection lists
   - `nav.press_up(times=N)` — navigate up
