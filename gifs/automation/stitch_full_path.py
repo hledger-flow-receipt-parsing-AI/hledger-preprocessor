@@ -119,11 +119,16 @@ def stitch(
     for mp4 in segments:
         inputs.extend(["-i", str(mp4)])
 
-    # Scale + pad each input to max_w x max_h, then concat
+    # Normalise fps, scale + pad each input to max_w x max_h, then concat.
+    # All streams must share the same frame rate for the concat filter;
+    # without this, mismatched rates (e.g. 25 vs 50 fps) cause ffmpeg to
+    # generate an astronomical number of frames and a corrupt output file.
+    TARGET_FPS = 25
     filter_parts = []
     for i in range(n):
         filter_parts.append(
-            f"[{i}:v]scale={max_w}:{max_h}:force_original_aspect_ratio=decrease,"
+            f"[{i}:v]fps={TARGET_FPS},"
+            f"scale={max_w}:{max_h}:force_original_aspect_ratio=decrease,"
             f"pad={max_w}:{max_h}:(ow-iw)/2:(oh-ih)/2:color=black,"
             f"setsar=1[v{i}]"
         )

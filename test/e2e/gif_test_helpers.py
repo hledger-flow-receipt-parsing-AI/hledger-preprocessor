@@ -19,6 +19,13 @@ def get_demo_env() -> dict:
     env["TERM"] = "xterm-256color"
     # Ensure the same Python is used in subprocesses
     env["PYTHON"] = sys.executable
+    # Skip conda/tool preflight checks in common.sh (test env has everything)
+    env["SKIP_PREFLIGHT"] = "1"
+    # Generate only the default theme (not all 8) to keep test runtime reasonable
+    env["GIF_GENERATE_THEMED"] = "false"
+    env["GIF_GENERATE_SHOWCASE"] = "false"
+    # Skip the video stitching step (concatenating prerequisite videos)
+    env["SKIP_STITCH"] = "1"
     return env
 
 

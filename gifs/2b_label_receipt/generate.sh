@@ -24,6 +24,9 @@ run_full_pipeline \
     120
 
 # ── Step 2: Stitch full-path video for US-2b.1 ───────────────────────
+if [[ "${SKIP_STITCH:-0}" == "1" ]]; then
+    log "Skipping stitch step (SKIP_STITCH=1)"
+else
 GIFS_ROOT="${SCRIPT_DIR}/.."
 CFG_VIDEO="${GIFS_ROOT}/1a_setup_config/output/cfg_1b1w.mp4"
 CAT_VIDEO="${GIFS_ROOT}/1b_add_category/output/cat_basic.mp4"
@@ -42,5 +45,6 @@ else
     [[ -f "$CAT_VIDEO" ]]     || warn "  Missing: $CAT_VIDEO"
     [[ -f "$RECEIPT_VIDEO" ]] || warn "  Missing: $RECEIPT_VIDEO"
 fi
+fi  # end SKIP_STITCH guard
 
 exit 0

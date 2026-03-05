@@ -13,5 +13,5 @@ def test_gif_2b_label_receipt(temp_finance_root, monkeypatch):
         monkeypatch=monkeypatch,
         demo_name="2b_label_receipt",
         gif_subdir="2b_label_receipt",
-        timeout=180,  # Real TUI recording + GIF generation needs more time
+        timeout=180,  # Recording (~42s) + single theme GIF (~24s) + MP4 conversion
     )
