@@ -2,11 +2,11 @@
   "markers": {
     "img_ekoplaza_card": 0.0,
     "lbl_ekoplaza_card_eur": 25.0,
-    "lbl_ekoplaza_card_eur__date_time": 25.0,
-    "lbl_ekoplaza_card_eur__category": 25.0,
-    "lbl_ekoplaza_card_eur__bank_account": 25.0,
-    "lbl_ekoplaza_card_eur__currency": 25.0,
     "lbl_ekoplaza_card_eur__amount": 25.0,
+    "lbl_ekoplaza_card_eur__bank_account": 25.0,
+    "lbl_ekoplaza_card_eur__category": 25.0,
+    "lbl_ekoplaza_card_eur__currency": 25.0,
+    "lbl_ekoplaza_card_eur__date_time": 25.0,
     "lbl_ekoplaza_card_eur__shop": 25.0
   },
   "total_duration": 31.9

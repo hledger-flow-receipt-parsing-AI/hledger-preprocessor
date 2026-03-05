@@ -170,13 +170,9 @@ def create_test_environment() -> Dict[str, Any]:
     img.save(img_path, "JPEG")
 
     # Create rotated/cropped versions
-    rotated_path = (
-        root / "receipt_images_processed" / "mediamarkt_rotated.jpg"
-    )
+    rotated_path = root / "receipt_images_processed" / "mediamarkt_rotated.jpg"
     img.save(rotated_path, "JPEG")
-    cropped_path = (
-        root / "receipt_images_processed" / "mediamarkt_cropped.jpg"
-    )
+    cropped_path = root / "receipt_images_processed" / "mediamarkt_cropped.jpg"
     img.save(cropped_path, "JPEG")
 
     # Create metadata
@@ -271,7 +267,7 @@ def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     label_path = env["label_path"]
     print(
         f"{Colors.BOLD_WHITE}$ jq '.net_bought_items.the_date,"
-        f" .net_bought_items.account_transactions[0].tendered_amount_out'"
+        " .net_bought_items.account_transactions[0].tendered_amount_out'"
         f" {label_path}{Colors.RESET}"
     )
     print()
@@ -279,8 +275,10 @@ def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     result = subprocess.run(
         [
             "jq",
-            ".net_bought_items.the_date,"
-            " .net_bought_items.account_transactions[0].tendered_amount_out",
+            (
+                ".net_bought_items.the_date,"
+                " .net_bought_items.account_transactions[0].tendered_amount_out"
+            ),
             str(label_path),
         ],
         capture_output=True,
@@ -323,7 +321,9 @@ def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     time.sleep(2)
 
 
-def run_matching_demo(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
+def run_matching_demo(
+    *, env: Dict[str, Any], emitter: StoryMarkerEmitter
+) -> bool:
     """Run the actual --link-receipts-to-transactions CLI command."""
     import pexpect
 

@@ -7,7 +7,7 @@ Two issues with the US-2b.1 receipt labelling demo GIF:
 1. **Missing config & categorisation steps**: The full-path GIF only showed
    the receipt editing TUI. It should show config → categories → receipt
    labelling.
-2. **pexpect EOF at receipt_editor.py line 190**: After saving, the script
+1. **pexpect EOF at receipt_editor.py line 190**: After saving, the script
    waited for `"EXPORTING to:"` but the TUI exits (verbose=False skips that
    prompt), causing EOF.
 
@@ -42,12 +42,12 @@ Sidecar marker JSONs are merged with time offsets into
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `gifs/automation/tui_navigator.py` | EOF handling in `wait_for()` |
-| `gifs/automation/receipt_editor.py` | Remove dead EXPORTING wait |
-| `gifs/automation/stitch_full_path.py` | **New** — ffmpeg concat + marker merge |
-| `user_stories/dag/userstory_dag_data.yaml` | `gif_video: 2b1_full_path` on US-2b.1 |
+| File                                       | Change                                 |
+| ------------------------------------------ | -------------------------------------- |
+| `gifs/automation/tui_navigator.py`         | EOF handling in `wait_for()`           |
+| `gifs/automation/receipt_editor.py`        | Remove dead EXPORTING wait             |
+| `gifs/automation/stitch_full_path.py`      | **New** — ffmpeg concat + marker merge |
+| `user_stories/dag/userstory_dag_data.yaml` | `gif_video: 2b1_full_path` on US-2b.1  |
 
 ## Commands
 

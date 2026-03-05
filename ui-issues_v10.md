@@ -34,27 +34,27 @@ generate_site.py                 Reads YAML, discovers videos, generates HTML
 
 ### Key files
 
-| File | Purpose |
-|------|---------|
+| File                                       | Purpose                                                         |
+| ------------------------------------------ | --------------------------------------------------------------- |
 | `user_stories/dag/userstory_dag_data.yaml` | Story metadata. `gif_video` field links a story to a video stem |
-| `user_stories/dag/generate_site.py` | Site generator — HTML, CSS, JS, asset copying |
-| `gifs/*/generate.sh` | Per-demo recording script (calls `common.sh` pipeline) |
-| `gifs/scripts/common.sh` | Shared pipeline: record → postprocess → themed GIFs → MP4 |
-| `gifs/automation/stitch_full_path.py` | Concatenates segment MP4s into a composite "full-path" video |
-| `gifs/automation/receipt_editor.py` | Automates receipt-labelling TUI for demo recording |
-| `gifs/automation/tui_navigator.py` | Pexpect wrapper for TUI keyboard automation |
-| `build_userstories.sh` | Top-level build script (artifacts, site, GIFs, serve) |
+| `user_stories/dag/generate_site.py`        | Site generator — HTML, CSS, JS, asset copying                   |
+| `gifs/*/generate.sh`                       | Per-demo recording script (calls `common.sh` pipeline)          |
+| `gifs/scripts/common.sh`                   | Shared pipeline: record → postprocess → themed GIFs → MP4       |
+| `gifs/automation/stitch_full_path.py`      | Concatenates segment MP4s into a composite "full-path" video    |
+| `gifs/automation/receipt_editor.py`        | Automates receipt-labelling TUI for demo recording              |
+| `gifs/automation/tui_navigator.py`         | Pexpect wrapper for TUI keyboard automation                     |
+| `build_userstories.sh`                     | Top-level build script (artifacts, site, GIFs, serve)           |
 
 ### How videos reach the site
 
 1. Each `gifs/*/output/` directory contains themed MP4s (e.g. `2b_label_receipt_dracula.mp4`)
    and optionally stitched full-path videos (e.g. `2b1_full_path.mp4`)
-2. `generate_site.py` calls `discover_all_videos()` which scans all `gifs/*/output/` dirs
+1. `generate_site.py` calls `discover_all_videos()` which scans all `gifs/*/output/` dirs
    and builds a map: `{dir_name: {video_stem: Path}}`
-3. Per story, the `gif_video` field in YAML (e.g. `gif_video: 2b1_full_path`) is looked up
+1. Per story, the `gif_video` field in YAML (e.g. `gif_video: 2b1_full_path`) is looked up
    in the video map — first in the section's GIF dir, then all dirs
-4. Matched videos are copied to `/tmp/site/assets/videos/`
-5. Sidecar `*_markers.json` files provide node timestamps for video↔DAG sync
+1. Matched videos are copied to `/tmp/site/assets/videos/`
+1. Sidecar `*_markers.json` files provide node timestamps for video↔DAG sync
 
 ### How GIFs/MP4s are generated
 
@@ -72,6 +72,7 @@ generate.sh
 
 Some stories (like US-2b.1) stitch multiple segment videos into one composite.
 For US-2b.1, `gifs/2b_label_receipt/generate.sh` stitches:
+
 - `gifs/1a_setup_config/output/cfg_1b1w.mp4` (config setup)
 - `gifs/1b_add_category/output/cat_basic.mp4` (category setup)
 - `gifs/2b_label_receipt/output/2b_label_receipt_dracula.mp4` (receipt labelling)
@@ -86,28 +87,34 @@ scales all segments to the largest resolution, and merges marker JSON sidecars.
 When a video doesn't load on a story page:
 
 1. **Check the YAML**: does the story have `gif_video: <stem>`?
+
    ```bash
    grep -A5 'US-2b.1' user_stories/dag/userstory_dag_data.yaml | grep gif_video
    ```
 
-2. **Check the source video exists and is valid**:
+1. **Check the source video exists and is valid**:
+
    ```bash
    ls -lah gifs/2b_label_receipt/output/2b1_full_path.mp4
    ffmpeg -i gifs/2b_label_receipt/output/2b1_full_path.mp4 2>&1 | grep -E 'Duration|Stream|error'
    ```
+
    A valid MP4 should be a few MB (not GB), have a Duration, and no "moov atom not found" errors.
 
-3. **Check the site copy**:
+1. **Check the site copy**:
+
    ```bash
    ls -lah /tmp/site/assets/videos/2b1_full_path.mp4
    ```
 
-4. **Check the HTML references the right file**:
+1. **Check the HTML references the right file**:
+
    ```bash
    grep 'video\|mp4\|gif' /tmp/site/stories/US-2b.1.html | head -5
    ```
 
-5. **Regenerate if needed**:
+1. **Regenerate if needed**:
+
    ```bash
    # Re-record a single GIF demo:
    ./build_userstories.sh --gif 2b_label_receipt --config /path/to/config.yaml
@@ -134,7 +141,7 @@ When a video doesn't load on a story page:
 - **Port already in use**: `build_userstories.sh --serve` now auto-kills any
   existing process on the target port before starting the server.
 
----
+______________________________________________________________________
 
 ## Issues to fix
 
@@ -142,9 +149,9 @@ When a video doesn't load on a story page:
 
 In Full path in the DAG Diagram for us-2b.1:
 Z. The boxes in the DAG should be less high, squeeze them thinner so that the DAG is less long.
-A. It still contains the 
+A. It still contains the
 
-Matching Parameters 
+Matching Parameters
 box default (+-2d, exact)
 
 box, even though the matching is done after the labelling, and it is not the matching parameters that are relevant for that, it should just show the matching algorithm flow chart at the position of the
@@ -153,12 +160,12 @@ Matching Outcome
 AUTO-LINK
 1 match found
 
-box. The Matching Parameters box should be removed.  The Matching Outcome box should be replaced with the matching algorithm diagram/flow. 
+box. The Matching Parameters box should be removed. The Matching Outcome box should be replaced with the matching algorithm diagram/flow.
 
-
-B. The starting journal is not included for this userstory. It is also not shown in the gif. It should be shown and clickable. 
+B. The starting journal is not included for this userstory. It is also not shown in the gif. It should be shown and clickable.
 C. The bank CSV transactions is not clickable, and the gif is not shown. It should be clickable and shown.
 D. The Journal output is not shown and not clickable. It should.
 
 ## Constraints
+
 Don't fake any data, don't use any synthetic videos. Ensure you regenerate the gifs from the src and test functionalities. Ensure that if the yaml is updated the tests should be updated as well. If the tests and data pieces (from the yaml) for the journal output, starting journal and bankscv do not yet exist or work properly, ensure they do. REgenerate the gifs from the test so that you know everything works reproducably toghether. (If needed you can disable generating different variants of a gif like monokai or dracula and just use 1), but you have all time in the world, just be efficient with your token consumption.

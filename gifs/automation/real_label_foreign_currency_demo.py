@@ -11,9 +11,7 @@ This uses real code from the hledger-preprocessor codebase.
 import hashlib
 import json
 import shutil
-import sys
 import tempfile
-import textwrap
 import time
 from pathlib import Path
 from typing import Any, Dict
@@ -160,13 +158,9 @@ def create_test_environment() -> Dict[str, Any]:
     img.save(img_path, "JPEG")
 
     # Create rotated/cropped versions
-    rotated_path = (
-        root / "receipt_images_processed" / "atm_london_rotated.jpg"
-    )
+    rotated_path = root / "receipt_images_processed" / "atm_london_rotated.jpg"
     img.save(rotated_path, "JPEG")
-    cropped_path = (
-        root / "receipt_images_processed" / "atm_london_cropped.jpg"
-    )
+    cropped_path = root / "receipt_images_processed" / "atm_london_cropped.jpg"
     img.save(cropped_path, "JPEG")
 
     # Create metadata
@@ -298,8 +292,7 @@ def show_label_result(
 
     # Highlight key fields
     print(
-        f"{Colors.BOLD_YELLOW}  Key: currency = POUND (not"
-        f" EUR){Colors.RESET}"
+        f"{Colors.BOLD_YELLOW}  Key: currency = POUND (not EUR){Colors.RESET}"
     )
     print(
         f"{Colors.BOLD_YELLOW}  Key: tendered_amount_out = 100.00"

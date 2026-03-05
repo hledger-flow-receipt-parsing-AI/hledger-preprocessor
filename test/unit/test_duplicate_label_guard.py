@@ -5,10 +5,7 @@ Covers US-X.6: 1 image per receipt — two labels for same image raises error.
 
 import hashlib
 import json
-import tempfile
-from pathlib import Path
 
-import pytest
 
 
 class TestDuplicateLabelGuard:
@@ -53,8 +50,9 @@ class TestDuplicateLabelGuard:
         label_file.write_text(json.dumps(label))
 
         assert label_file.exists()
-        assert json.loads(label_file.read_text())["receipt_category"] == (
-            "groceries:ekoplaza"
+        assert (
+            json.loads(label_file.read_text())["receipt_category"]
+            == "groceries:ekoplaza"
         )
 
     def test_overwrite_prevents_duplicate(self, tmp_path) -> None:

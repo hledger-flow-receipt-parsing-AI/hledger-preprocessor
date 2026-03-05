@@ -170,13 +170,9 @@ def create_test_environment() -> Dict[str, Any]:
     img.save(img_path, "JPEG")
 
     # Create rotated/cropped versions
-    rotated_path = (
-        root / "receipt_images_processed" / "atm_london_rotated.jpg"
-    )
+    rotated_path = root / "receipt_images_processed" / "atm_london_rotated.jpg"
     img.save(rotated_path, "JPEG")
-    cropped_path = (
-        root / "receipt_images_processed" / "atm_london_cropped.jpg"
-    )
+    cropped_path = root / "receipt_images_processed" / "atm_london_cropped.jpg"
     img.save(cropped_path, "JPEG")
 
     # Create metadata
@@ -313,7 +309,9 @@ def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     time.sleep(2)
 
 
-def run_matching_demo(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
+def run_matching_demo(
+    *, env: Dict[str, Any], emitter: StoryMarkerEmitter
+) -> bool:
     """Run the actual --link-receipts-to-transactions CLI command."""
     import pexpect
 

@@ -427,10 +427,7 @@ def generate_dot_full(
             # We've moved past the config layers — should not happen due to
             # ordering, but guard anyway
             pass
-        if (
-            config_group_open
-            and layer_name in CONFIG_GROUP_LAYERS
-        ):
+        if config_group_open and layer_name in CONFIG_GROUP_LAYERS:
             # Check if the next layer is still a config layer
             idx = [ln for ln, _ in ordered_layers].index(layer_name)
             next_is_config = (

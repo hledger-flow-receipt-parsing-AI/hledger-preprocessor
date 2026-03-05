@@ -19,7 +19,6 @@ import argparse
 import json
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -28,7 +27,9 @@ def get_duration(mp4: Path) -> float:
     """Get the duration of an MP4 file in seconds."""
     result = subprocess.run(
         [
-            "ffmpeg", "-i", str(mp4),
+            "ffmpeg",
+            "-i",
+            str(mp4),
         ],
         capture_output=True,
         text=True,
@@ -103,6 +104,7 @@ def stitch(
             if "Stream" in line and "Video" in line:
                 # parse "1464x1224" from the stream line
                 import re
+
                 m = re.search(r"(\d{3,5})x(\d{3,5})", line)
                 if m:
                     w, h = int(m.group(1)), int(m.group(2))
@@ -137,14 +139,21 @@ def stitch(
     filter_complex = ";".join(filter_parts)
 
     cmd = [
-        "ffmpeg", "-y",
+        "ffmpeg",
+        "-y",
         *inputs,
-        "-filter_complex", filter_complex,
-        "-map", "[outv]",
-        "-c:v", "libx264",
-        "-crf", "23",
-        "-pix_fmt", "yuv420p",
-        "-movflags", "faststart",
+        "-filter_complex",
+        filter_complex,
+        "-map",
+        "[outv]",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "23",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "faststart",
         str(output),
     ]
 

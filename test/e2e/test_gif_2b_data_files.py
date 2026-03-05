@@ -8,8 +8,11 @@ the full-path DAG of US-2b.1:
 """
 
 import json
-
-from test.e2e.gif_test_helpers import get_demo_env, get_project_root, run_demo_script
+from test.e2e.gif_test_helpers import (
+    get_demo_env,
+    get_project_root,
+    run_demo_script,
+)
 
 import pytest
 
@@ -50,9 +53,9 @@ def test_gif_2b_data_files(monkeypatch):
 
         # Markers JSON must exist with correct marker
         markers_json = output_dir / f"{stem}_markers.json"
-        assert markers_json.exists(), (
-            f"Markers JSON should exist at {markers_json}"
-        )
+        assert (
+            markers_json.exists()
+        ), f"Markers JSON should exist at {markers_json}"
 
         data = json.loads(markers_json.read_text())
         markers = data["markers"]
@@ -63,11 +66,9 @@ def test_gif_2b_data_files(monkeypatch):
         )
 
         # Timestamp must be non-negative
-        assert markers[expected_marker] >= 0.0, (
-            f"Marker timestamp should be >= 0"
-        )
+        assert (
+            markers[expected_marker] >= 0.0
+        ), f"Marker timestamp should be >= 0"
 
         # Duration must be positive
-        assert data["total_duration"] > 0.0, (
-            f"Total duration should be > 0"
-        )
+        assert data["total_duration"] > 0.0, f"Total duration should be > 0"
