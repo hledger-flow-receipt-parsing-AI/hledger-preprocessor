@@ -12,6 +12,7 @@
 #   ./build_userstories.sh --gifs-config       # Re-record config-dependent GIFs only
 #   ./build_userstories.sh --gif <dir_name>    # Re-record a single GIF (e.g. 2b_label_receipt)
 #   ./build_userstories.sh --serve [port]      # Build + serve (default port: 8059)
+#   ./build_userstories.sh --serve-only [port] # Just serve (no rebuild, default port: 8059)
 #   ./build_userstories.sh --help              # Show this help
 #
 # Options:
@@ -102,6 +103,13 @@ parse_args() {
                 ;;
             --serve)
                 DO_ARTIFACTS=1; DO_SITE=1
+                if [[ "${2:-}" =~ ^[0-9]+$ ]]; then
+                    SERVE_PORT="$2"; shift
+                else
+                    SERVE_PORT="$DEFAULT_PORT"
+                fi
+                ;;
+            --serve-only)
                 if [[ "${2:-}" =~ ^[0-9]+$ ]]; then
                     SERVE_PORT="$2"; shift
                 else
