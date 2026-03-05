@@ -416,16 +416,16 @@ def generate_overview_svg_direct(
     # --- Layout constants ---
     MARGIN = 16
     NODE_W = 100       # node box width
-    NODE_H = 36        # node box height
+    NODE_H = 24        # node box height
     NODE_PAD_X = 14    # horizontal gap between nodes
-    NODE_PAD_Y = 6     # vertical padding inside cluster above/below nodes
-    CLUSTER_PAD_TOP = 22   # space for cluster label
-    CLUSTER_PAD_BOT = 10
-    LAYER_GAP = 12     # vertical gap between layer clusters
-    CONFIG_GROUP_PAD = 8   # horizontal padding for config parent box
-    CONFIG_GROUP_TOP = 22  # extra top padding for "Configuration" label
+    NODE_PAD_Y = 3     # vertical padding inside cluster above/below nodes
+    CLUSTER_PAD_TOP = 16   # space for cluster label
+    CLUSTER_PAD_BOT = 4
+    LAYER_GAP = 6      # vertical gap between layer clusters
+    CONFIG_GROUP_PAD = 4   # horizontal padding for config parent box
+    CONFIG_GROUP_TOP = 16  # extra top padding for "Configuration" label
     FONT_SIZE = 10
-    LABEL_FONT_SIZE = 12
+    LABEL_FONT_SIZE = 11
 
     # --- Compute positions ---
     # node_pos[nid] = (cx, cy) — centre of the node box
@@ -810,16 +810,16 @@ def generate_story_svg_direct(
     # --- Layout constants ---
     MARGIN = 16
     NODE_W = 100
-    NODE_H = 28         # compact height for per-story views
+    NODE_H = 22         # compact height for per-story views
     NODE_PAD_X = 14
-    NODE_PAD_Y = 4
-    CLUSTER_PAD_TOP = 18
-    CLUSTER_PAD_BOT = 6
-    LAYER_GAP = 8
-    CONFIG_GROUP_PAD = 8
-    CONFIG_GROUP_TOP = 18
-    FONT_SIZE = 10
-    LABEL_FONT_SIZE = 11
+    NODE_PAD_Y = 2
+    CLUSTER_PAD_TOP = 14
+    CLUSTER_PAD_BOT = 3
+    LAYER_GAP = 5
+    CONFIG_GROUP_PAD = 3
+    CONFIG_GROUP_TOP = 14
+    FONT_SIZE = 9
+    LABEL_FONT_SIZE = 10
 
     # --- Compute positions ---
     node_pos: Dict[str, Tuple[float, float]] = {}
