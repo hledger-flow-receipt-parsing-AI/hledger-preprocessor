@@ -4,11 +4,14 @@
 import glob
 import json
 import os
+import signal
 import shutil
+import sys
 import tempfile
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from .core import (
     Colors,
@@ -23,15 +26,78 @@ from .key_display import show_key
 from .tui_navigator import Keys, TuiNavigator
 
 
-def find_newest_label_json(labels_dir: str) -> Optional[str]:
-    """Find the most recently created label JSON in the labels directory.
+# ---------------------------------------------------------------------------
+# Reusable receipt values — copy and modify to create new receipt demos.
+# ---------------------------------------------------------------------------
+@dataclass
+class ReceiptDemoValues:
+    """Values to fill into the receipt labelling TUI.
 
-    Args:
-        labels_dir: Path to the receipt labels directory
-
-    Returns:
-        Path to the newest label JSON, or None if not found
+    TUI field sequence (in order):
+      1. date_digits       – Overwrite the datetime field digit-by-digit
+      2. category          – Bookkeeping expense category (text)
+      3. account_index     – "Belongs to bank/accounts_without_csv" (0-based)
+      4. currency_index    – Currency selection (0-based, see Currency enum)
+      5. amount            – Amount paid from account (float as string)
+      6. change            – Change returned to account (float as string)
+      7. add_another_acct  – "y" or "n" (horizontal choice, "y"=index 0, "n"=index 1)
+      8. shop_index        – Select Shop Address (0-based, 0 = "manual address")
+      9. shop_name         – Only if shop_index selects "manual address"
+     10. shop_street       – Only if manual address
+     11. shop_house_nr     – Only if manual address
+     12. shop_zipcode      – Only if manual address
+     13. shop_city         – Only if manual address
+     14. shop_country      – Only if manual address
+     15. subtotal          – Optional float (empty string to skip)
+     16. total_tax         – Optional float (empty string to skip)
     """
+
+    # Field 1 – Date/time digits typed left-to-right over the pre-filled
+    # "YYYY-MM-DD HH:MM" (separators are auto-skipped by the widget).
+    date_digits: str = "202501151030"
+
+    # Field 2 – Bookkeeping expense category
+    category: str = "groceries:ekoplaza"
+
+    # Field 3 – Account (0-based index in the vertical list)
+    account_index: str = "0"
+
+    # Field 4 – Currency (0-based index: 0=BTC … 9=EUR, 10=USD, 11=POUND …)
+    currency_index: str = "9"
+
+    # Field 5 – Amount paid
+    amount: str = "42.17"
+
+    # Field 6 – Change returned
+    change: str = "0"
+
+    # Field 7 – Add another account? 0 = "y", 1 = "n"
+    add_another_account: bool = False
+
+    # Field 8 – Shop address index (0 = "manual address" when no history)
+    shop_index: str = "0"
+
+    # Fields 8a–8f – Manual address fields (used when shop_index picks "manual address")
+    shop_name: str = "Ekoplaza"
+    shop_street: str = "Groenerstraat"
+    shop_house_nr: str = "89"
+    shop_zipcode: str = "7898BA"
+    shop_city: str = "Timboektoe"
+    shop_country: str = "Belgie"
+
+    # Field 9 – Subtotal (empty string → press Enter to skip)
+    subtotal: str = ""
+
+    # Field 10 – Total tax (empty string → press Enter to skip)
+    total_tax: str = "7.35"
+
+
+# Pre-built demo values for the card receipt (US-2b.1)
+CARD_RECEIPT = ReceiptDemoValues()
+
+
+def find_newest_label_json(labels_dir: str) -> Optional[str]:
+    """Find the most recently created label JSON in the labels directory."""
     pattern = os.path.join(labels_dir, "**", "*.json")
     json_files = glob.glob(pattern, recursive=True)
     if not json_files:
@@ -77,25 +143,17 @@ def _precreate_rotation_and_crop_metadata(config_data: dict) -> None:
             continue
 
         stem = Path(img_file).stem
-
-        # Rotated image path
         rotated_path = os.path.join(
             processed_dir, f"{stem}{rotate_suffix}{rotate_ext}"
         )
-        # Cropped image path
         cropped_path = os.path.join(processed_dir, f"{stem}_cropped.jpg")
-        # Metadata path
         metadata_path = os.path.join(processed_dir, f"{stem}{metadata_ext}")
 
-        # Copy original as "rotated" (0-degree rotation)
         if not os.path.exists(rotated_path):
             shutil.copy(img_path, rotated_path)
-
-        # Copy original as "cropped" (full-image crop)
         if not os.path.exists(cropped_path):
             shutil.copy(img_path, cropped_path)
 
-        # Write metadata marking both rotation and crop as done
         metadata = {
             "operations": [
                 {"type": "rotate", "applied": True, "angle_degrees": 0},
@@ -113,87 +171,227 @@ def _precreate_rotation_and_crop_metadata(config_data: dict) -> None:
             json.dump(metadata, f, indent=2)
 
 
+# ---------------------------------------------------------------------------
+# TUI field-filling helpers
+# ---------------------------------------------------------------------------
+
+# Pause durations (seconds) — tuned for GIF readability.
+_BETWEEN = 0.3  # between fields
+_AFTER_TYPE = 0.5  # after typing a value, before advancing
+_AFTER_SELECT = 0.3  # after selecting a multiple-choice option
+
+
+def _fill_datetime(nav: TuiNavigator, digits: str) -> None:
+    """Overwrite the pre-filled date/time field digit-by-digit.
+
+    The DateTimeQuestion widget shows "YYYY-MM-DD HH:MM" and the cursor
+    starts at position 0. Typing a digit replaces the character at the
+    current position and auto-advances past separators.
+    """
+    for ch in digits:
+        nav.type_text(ch, char_pause=0.08)
+    time.sleep(_AFTER_TYPE)
+
+
+def _fill_text(nav: TuiNavigator, text: str) -> None:
+    """Type into a text input field, then advance with Enter."""
+    nav.type_text(text, char_pause=0.06)
+    time.sleep(_AFTER_TYPE)
+    nav.press_enter(pause=_BETWEEN)
+
+
+def _fill_float(nav: TuiNavigator, value: str) -> None:
+    """Type a float value, then advance with Enter."""
+    if value:
+        nav.type_text(value, char_pause=0.08)
+        time.sleep(_AFTER_TYPE)
+    nav.press_enter(pause=_BETWEEN)
+
+
+def _select_vertical(nav: TuiNavigator, index: str) -> None:
+    """Select a vertical multiple-choice option by typing its index."""
+    nav.type_text(index, char_pause=0.08)
+    time.sleep(_AFTER_SELECT)
+    nav.press_enter(pause=_BETWEEN)
+
+
+def _select_horizontal_n(nav: TuiNavigator) -> None:
+    """Select the second option ("n") in a y/n horizontal choice."""
+    nav.send(Keys.RIGHT, pause=0.15)
+    time.sleep(_AFTER_SELECT)
+    nav.press_enter(pause=_BETWEEN)
+
+
+def _select_horizontal_first(nav: TuiNavigator) -> None:
+    """Confirm the first (already-focused) option in a horizontal choice."""
+    nav.press_enter(pause=_BETWEEN)
+
+
+def _fill_receipt_fields(nav: TuiNavigator, vals: ReceiptDemoValues) -> None:
+    """Drive the urwid receipt TUI through every field using *vals*."""
+
+    nav.flush_output()
+
+    # ── Field 1: Receipt date and time ──────────────────────────────────
+    _fill_datetime(nav, vals.date_digits)
+    nav.press_enter(pause=_BETWEEN)
+    nav.flush_output()
+
+    # ── Field 2: Bookkeeping expense category ───────────────────────────
+    _fill_text(nav, vals.category)
+    nav.flush_output()
+
+    # ── Field 3: Account (vertical multiple choice) ─────────────────────
+    _select_vertical(nav, vals.account_index)
+    nav.flush_output()
+
+    # ── Field 4: Currency (vertical multiple choice) ────────────────────
+    _select_vertical(nav, vals.currency_index)
+    nav.flush_output()
+
+    # ── Field 5: Amount paid ────────────────────────────────────────────
+    _fill_float(nav, vals.amount)
+    nav.flush_output()
+
+    # ── Field 6: Change returned ────────────────────────────────────────
+    _fill_float(nav, vals.change)
+    nav.flush_output()
+
+    # ── Field 7: Add another account? (horizontal y/n) ─────────────────
+    if vals.add_another_account:
+        _select_horizontal_first(nav)  # "y"
+    else:
+        _select_horizontal_n(nav)  # "n"
+    nav.flush_output()
+
+    # ── Field 8: Select Shop Address (vertical multiple choice) ─────────
+    _select_vertical(nav, vals.shop_index)
+    nav.flush_output()
+
+    # When "manual address" (index 0) is selected, 6 address fields appear.
+    if vals.shop_index == "0":
+        # Field 8a: Shop name
+        _fill_text(nav, vals.shop_name)
+        nav.flush_output()
+
+        # Field 8b: Shop street
+        _fill_text(nav, vals.shop_street)
+        nav.flush_output()
+
+        # Field 8c: Shop house nr
+        _fill_text(nav, vals.shop_house_nr)
+        nav.flush_output()
+
+        # Field 8d: Shop zipcode
+        _fill_text(nav, vals.shop_zipcode)
+        nav.flush_output()
+
+        # Field 8e: Shop city
+        _fill_text(nav, vals.shop_city)
+        nav.flush_output()
+
+        # Field 8f: Shop country
+        _fill_text(nav, vals.shop_country)
+        nav.flush_output()
+
+    # ── Field 9: Subtotal (optional) ────────────────────────────────────
+    _fill_float(nav, vals.subtotal)
+    nav.flush_output()
+
+    # ── Field 10: Total tax (optional) ──────────────────────────────────
+    _fill_float(nav, vals.total_tax)
+    nav.flush_output()
+
+    # ── Field 11: Done with this receipt? (horizontal, single "yes") ────
+    _select_horizontal_first(nav)
+    nav.flush_output()
+
+
+# ---------------------------------------------------------------------------
+# Main demo runner
+# ---------------------------------------------------------------------------
 def run_label_receipt_demo(
     config_path: str,
-    source_category: str = "repairs:bike",
-    target_category: str = "groceries:ekoplaza",
-    new_description: str = "groceries:ekoplaza",
+    receipt: ReceiptDemoValues = CARD_RECEIPT,
 ) -> None:
-    """
-    Run the label receipt demo automation.
+    """Run the label-receipt demo automation.
 
     Uses --tui-label-receipts to label an unlabelled receipt image,
     demonstrating the first-time labelling flow for US-2b.1.
 
     Args:
-        config_path: Path to the hledger-preprocessor config file
-        source_category: Unused (kept for API compatibility)
-        target_category: The new category to set (for verification)
-        new_description: The new description/category to type in
+        config_path: Path to the hledger-preprocessor config file.
+        receipt: Values to fill into the TUI (default: CARD_RECEIPT).
     """
-    # Load config
     config_data = load_config_yaml(config_path)
     labels_dir = get_labels_dir(config_data)
     conda_base = get_conda_base()
 
-    # Remove existing label JSON files so --tui-label-receipts finds
-    # unlabelled receipts. The test fixture seeds both images and labels,
-    # but this demo needs receipts that have no label yet.
+    root_path = config_data.get("dir_paths", {}).get("root_finance_path", "")
+    input_dir = os.path.join(
+        root_path,
+        config_data.get("dir_paths", {}).get(
+            "receipt_images_input_dir", "receipt_images_input"
+        ),
+    )
+
+    # Remove existing label JSONs so --tui-label-receipts finds unlabelled
+    # receipts. The test fixture seeds both images and labels, but this demo
+    # needs receipts that have no label yet.
     if os.path.isdir(labels_dir):
         for label_json in glob.glob(
             os.path.join(labels_dir, "**", "*.json"), recursive=True
         ):
             os.remove(label_json)
 
-    # Pre-create rotation and crop metadata so the interactive OpenCV
-    # rotation/crop steps are skipped (they can't be driven by pexpect).
+    # Keep only one receipt image so the demo labels exactly one receipt
+    # (otherwise the TUI loops through all unlabelled images).
+    if os.path.isdir(input_dir):
+        images = sorted(
+            f
+            for f in os.listdir(input_dir)
+            if os.path.isfile(os.path.join(input_dir, f))
+        )
+        for extra in images[1:]:
+            os.remove(os.path.join(input_dir, extra))
+
+    # Pre-create rotation/crop metadata so the interactive OpenCV steps are
+    # skipped (they can't be driven by pexpect).
     _precreate_rotation_and_crop_metadata(config_data)
 
-    # Create temp files for before/after comparison
+    # ── Before state ────────────────────────────────────────────────────
     temp_dir = tempfile.mkdtemp()
     before_file = os.path.join(temp_dir, "before_edit_receipt.json")
     after_file = os.path.join(temp_dir, "after_edit_receipt.json")
 
-    # Write an empty JSON as the "before" state (no label exists yet)
     with open(before_file, "w") as f:
         json.dump({}, f)
 
-    # Show the "before" state (empty — receipt has no label yet)
     show_before_state(before_file, after_file)
 
-    # Clear screen and show the command
+    # ── Show command ────────────────────────────────────────────────────
     Screen.clear()
     time.sleep(0.2)
-
     command_display = (
         f"hledger_preprocessor --config {config_path} --tui-label-receipts"
     )
     show_command(command_display, conda_env="hledger_preprocessor")
-
-    # Show Enter key being pressed to "run" the command
     show_key("\r", rows=50, cols=120)
     time.sleep(0.5)
 
-    # Build the actual command
+    # ── Spawn the real TUI ──────────────────────────────────────────────
     cmd = (
         f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && "
         "conda activate hledger_preprocessor && "
         f"hledger_preprocessor --config {config_path} --tui-label-receipts'"
     )
-
-    # Create the TUI navigator (50 rows to show all form fields without scrolling)
     nav = TuiNavigator(cmd, dimensions=(50, 120), timeout=60)
 
     try:
         nav.spawn()
-
-        # Hide cursor during initial prompts
         Cursor.hide()
 
-        # --tui-label-receipts skips the "Receipts List" selection TUI.
-        # With rotation/crop pre-done, it goes to: image display →
-        # "Can you see" prompt → urwid TUI.
-        # Wait for "Can you see" prompt
+        # Wait for the "Can you see" prompt (skipped rotation/crop)
         if not nav.wait_for("Can you see", timeout=30, silent=True):
             print(
                 f"{Colors.BOLD_RED}Error: TUI did not render in"
@@ -204,78 +402,52 @@ def run_label_receipt_demo(
         time.sleep(0.5)
         nav.press_enter()
 
-        # Show cursor for label TUI
         Cursor.show()
         Cursor.set_style(Cursor.BLINKING_BLOCK)
 
-        # Wait for the urwid label TUI to render
+        # Wait for the urwid TUI to fully render
         if nav.wait_for("Select Shop Address", timeout=15, silent=True):
             time.sleep(0.5)
 
         nav.flush_output()
         time.sleep(0.8)
 
-        # --- Navigate through TUI fields ---
-        # The fields are empty (no prefilled values) since this is a new label.
-        # For now, use the same navigation as the old edit flow.
-        # TODO: Update these keystrokes for the label flow (fields are empty,
-        # not prefilled) — this is a follow-up task.
+        # ── Fill in every field ─────────────────────────────────────────
+        _fill_receipt_fields(nav, receipt)
 
-        # Navigate to category field (press Enter to go from date to category)
-        nav.press_enter(pause=0.3)
-        nav.flush_output()
-        time.sleep(0.5)
-
-        # Go to end of field and delete existing text
-        nav.send(Keys.END, pause=0.2)
-        nav.flush_output()
-
-        # Delete "repairs:bike" (12 characters)
-        nav.press_backspace(times=12, pause=0.1)
-        time.sleep(0.3)
-
-        # Type new category
-        nav.type_text(new_description, char_pause=0.1)
-        time.sleep(0.5)
-
-        # Navigate through remaining fields (15 down presses, slower for visibility)
-        nav.press_down(times=15, pause=0.3)
-        time.sleep(0.3)
-        nav.flush_output()
-
-        # Wait for "Done with receipt" prompt
-        nav.wait_for("Done with receipt", timeout=1, silent=True)
-        time.sleep(0.3)
-        nav.flush_output()
-
-        # Confirm done
-        nav.press_enter(pause=0.5)
-
-        # The TUI exits after saving (verbose=False skips the export prompt).
-        # Just wait for the process to exit.
+        # Wait for the process to exit after the TUI saves
         time.sleep(0.5)
         if not nav.wait_for_exit(timeout=15):
             nav.terminate()
 
     finally:
-        # Always restore cursor and clear key overlay
         Cursor.show()
         nav.clear_key_display()
+        # Force-kill the pexpect child's entire process group.
+        # matplotlib/tkinter create background threads that keep the
+        # hledger_preprocessor process alive, which in turn keeps
+        # asciinema's PTY open and prevents the recording from finishing.
+        if nav.child is not None:
+            try:
+                child_pid = nav.child.pid
+                os.killpg(os.getpgid(child_pid), signal.SIGKILL)
+            except (ProcessLookupError, OSError):
+                pass
+            try:
+                nav.child.close(force=True)
+            except Exception:
+                pass
 
-    # Find the newly created label file
+    # ── After state ─────────────────────────────────────────────────────
     time.sleep(0.3)
     new_label_path = find_newest_label_json(labels_dir)
     if new_label_path and os.path.isfile(new_label_path):
         shutil.copy(new_label_path, after_file)
 
-    # Clear screen before showing final state (prevents key overlay artifacts)
     Screen.clear()
     time.sleep(0.2)
-
-    # Show the "after" state
     show_after_state(before_file, after_file)
 
-    # Cleanup
     shutil.rmtree(temp_dir, ignore_errors=True)
 
 
@@ -298,3 +470,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    # Force exit: matplotlib/tkinter GUI threads keep the process alive
+    # after the demo completes, preventing asciinema from finishing.
+    # os._exit bypasses atexit handlers and thread cleanup.
+    os._exit(0)

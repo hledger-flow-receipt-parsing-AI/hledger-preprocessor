@@ -367,6 +367,16 @@ run_serve() {
         return
     fi
 
+    # Kill any existing process on the target port
+    local existing_pid
+    existing_pid=$(ss -tlnp "sport = :${SERVE_PORT}" 2>/dev/null \
+        | awk 'NR>1 { match($0, /pid=([0-9]+)/, m); if (m[1]) print m[1] }')
+    if [[ -n "$existing_pid" ]]; then
+        warn "Port ${SERVE_PORT} already in use (pid $existing_pid) — killing it"
+        kill "$existing_pid" 2>/dev/null || true
+        sleep 0.5
+    fi
+
     log "URL: http://localhost:${SERVE_PORT}/"
     log "Press Ctrl+C to stop"
     echo

@@ -18,4 +18,4 @@ Should not show the starting journal for this userstory,
 it should show the cat of the bank csv transaction
 For the editing it should use C.D.E of Segment view. 
 It should show the matching algoriothm and outcome (with the recursive matching algorithm diagram )
-it should show the journal output.
+it should show the journal output. 
