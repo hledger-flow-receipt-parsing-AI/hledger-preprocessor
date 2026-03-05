@@ -8,16 +8,19 @@
     "malgo_default": 68.12,
     "cat_basic__groceries": 74.72,
     "cat_basic__withdrawl": 77.32,
-    "img_ekoplaza_card": 80.24,
-    "lbl_ekoplaza_card_eur": 105.24,
-    "lbl_ekoplaza_card_eur__date_time": 105.24,
-    "lbl_ekoplaza_card_eur__category": 105.24,
-    "lbl_ekoplaza_card_eur__bank_account": 105.24,
-    "lbl_ekoplaza_card_eur__currency": 105.24,
-    "lbl_ekoplaza_card_eur__amount": 105.24,
-    "lbl_ekoplaza_card_eur__shop": 105.24
+    "start_2024_1000eur": 78.64,
+    "csv_ekoplaza_4217_jan15": 86.96,
+    "img_ekoplaza_card": 96.28,
+    "lbl_ekoplaza_card_eur": 121.28,
+    "lbl_ekoplaza_card_eur__date_time": 121.28,
+    "lbl_ekoplaza_card_eur__category": 121.28,
+    "lbl_ekoplaza_card_eur__bank_account": 121.28,
+    "lbl_ekoplaza_card_eur__currency": 121.28,
+    "lbl_ekoplaza_card_eur__amount": 121.28,
+    "lbl_ekoplaza_card_eur__shop": 121.28,
+    "jrnl_groceries_ekoplaza": 135.38
   },
-  "total_duration": 119.34,
+  "total_duration": 145.38,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
@@ -25,11 +28,23 @@
     },
     {
       "file": "cat_basic.mp4",
-      "duration": 5.52
+      "duration": 3.92
+    },
+    {
+      "file": "starting_journal.mp4",
+      "duration": 8.32
+    },
+    {
+      "file": "bank_csv.mp4",
+      "duration": 9.32
     },
     {
       "file": "2b_label_receipt_dracula.mp4",
       "duration": 39.1
+    },
+    {
+      "file": "journal_output.mp4",
+      "duration": 10.0
     }
   ]
 }

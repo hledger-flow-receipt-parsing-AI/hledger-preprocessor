@@ -1,0 +1,6 @@
+; Opening balances for 2024
+; Sets up the starting position for all accounts.
+
+2024-01-01 Opening Balances
+    assets:bank:triodos:checking      EUR 1000.00
+    equity:opening-balances           EUR -1000.00

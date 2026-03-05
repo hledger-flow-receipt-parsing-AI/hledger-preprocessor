@@ -810,16 +810,16 @@ def generate_story_svg_direct(
     # --- Layout constants ---
     MARGIN = 16
     NODE_W = 100
-    NODE_H = 36
+    NODE_H = 28         # compact height for per-story views
     NODE_PAD_X = 14
-    NODE_PAD_Y = 6
-    CLUSTER_PAD_TOP = 22
-    CLUSTER_PAD_BOT = 10
-    LAYER_GAP = 12
+    NODE_PAD_Y = 4
+    CLUSTER_PAD_TOP = 18
+    CLUSTER_PAD_BOT = 6
+    LAYER_GAP = 8
     CONFIG_GROUP_PAD = 8
-    CONFIG_GROUP_TOP = 22
+    CONFIG_GROUP_TOP = 18
     FONT_SIZE = 10
-    LABEL_FONT_SIZE = 12
+    LABEL_FONT_SIZE = 11
 
     # --- Compute positions ---
     node_pos: Dict[str, Tuple[float, float]] = {}
@@ -3340,6 +3340,20 @@ def main() -> None:
             for idx_m, mid in enumerate(marker_sequence):
                 timestamps[mid] = round(idx_m * step, 2)
 
+        # Assign synthetic timestamps to full-path nodes that lack markers
+        # (e.g. nodes that appear in paths but not in demo_paths).  These
+        # are placed at evenly-spaced intervals after the last real marker
+        # so that clicking them in the DAG is still functional.
+        missing_nodes = [
+            nid for nid in node_path
+            if nid not in timestamps and "__" not in nid
+        ]
+        if missing_nodes and timestamps:
+            last_ts = max(timestamps.values())
+            step = 2.0  # 2-second spacing for synthetic timestamps
+            for idx_m, nid in enumerate(missing_nodes, start=1):
+                timestamps[nid] = round(last_ts + idx_m * step, 2)
+
         # Build per-node filtered component map from YAML component_filter
         filtered_components_map: Dict[str, List[Dict]] = {}
         for nid in node_path:
@@ -3384,17 +3398,16 @@ def main() -> None:
         if receipt_img and not (RECEIPTS_ROOT / receipt_img).exists():
             receipt_img = None  # skip if image file doesn't exist
 
-        # Issue 3: Matching flow diagram for Step 3 stories
+        # Issue 3: Matching flow diagram for stories with matching outcomes
         matching_flow: Optional[str] = None
-        if section == "Step 3: Receipt-to-CSV Transaction Matching":
-            outcome_ids = [
-                nid for nid in node_path if nid.startswith("out_")
-            ]
-            if outcome_ids:
-                matching_flow = generate_matching_flow_svg(
-                    highlight_outcome_ids=outcome_ids,
-                    story_colour=colour,
-                )
+        outcome_ids = [
+            nid for nid in node_path if nid.startswith("out_")
+        ]
+        if outcome_ids:
+            matching_flow = generate_matching_flow_svg(
+                highlight_outcome_ids=outcome_ids,
+                story_colour=colour,
+            )
 
         # Issue 4 (v5): Journal output removed from story page view.
         # The journal section generation is skipped; the data will be

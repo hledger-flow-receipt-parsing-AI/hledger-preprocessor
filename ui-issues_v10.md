@@ -159,3 +159,6 @@ box. The Matching Parameters box should be removed.  The Matching Outcome box sh
 B. The starting journal is not included for this userstory. It is also not shown in the gif. It should be shown and clickable. 
 C. The bank CSV transactions is not clickable, and the gif is not shown. It should be clickable and shown.
 D. The Journal output is not shown and not clickable. It should.
+
+## Constraints
+Don't fake any data, don't use any synthetic videos. Ensure you regenerate the gifs from the src and test functionalities. Ensure that if the yaml is updated the tests should be updated as well. If the tests and data pieces (from the yaml) for the journal output, starting journal and bankscv do not yet exist or work properly, ensure they do. REgenerate the gifs from the test so that you know everything works reproducably toghether. (If needed you can disable generating different variants of a gif like monokai or dracula and just use 1), but you have all time in the world, just be efficient with your token consumption.
