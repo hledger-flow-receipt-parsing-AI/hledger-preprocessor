@@ -44,22 +44,44 @@
     selected = pane;
   }
 
-  function applyZoom(pane) {
+  // soloMode=true: scale the pane content without rebalancing the grid columns
+  function applyZoom(pane, soloMode) {
     var id = pane.getAttribute('data-zoom-id');
     var scale = scaleMap[id];
-    // CSS zoom changes the element's rendered size in the layout
-    pane.style.zoom = scale;
 
-    // If inside a video-dag-row grid, rebuild column ratios so both
-    // panes can grow/shrink independently based on their own zoom level.
-    var grid = pane.closest('.video-dag-row');
-    if (grid) {
-      var videoScale = 1, dagScale = 1;
-      var vp = grid.querySelector('.video-section.zoom-pane');
-      var dp = grid.querySelector('.dag-section.zoom-pane');
-      if (vp) videoScale = scaleMap[vp.getAttribute('data-zoom-id')] || 1;
-      if (dp) dagScale = scaleMap[dp.getAttribute('data-zoom-id')] || 1;
-      grid.style.gridTemplateColumns = videoScale + 'fr ' + dagScale + 'fr';
+    if (soloMode) {
+      // Scale only the inner content via CSS transform, keep grid layout unchanged
+      var inner = pane.querySelector('.zoom-pane-inner');
+      if (inner) {
+        inner.style.transform = 'scale(' + scale + ')';
+        inner.style.transformOrigin = 'top left';
+        inner.style.width = (100 / scale) + '%';
+        inner.style.height = 'auto';
+      }
+      pane.style.zoom = '';
+    } else {
+      // Reset any solo-mode transform
+      var inner = pane.querySelector('.zoom-pane-inner');
+      if (inner) {
+        inner.style.transform = '';
+        inner.style.transformOrigin = '';
+        inner.style.width = '';
+        inner.style.height = '';
+      }
+      // CSS zoom changes the element's rendered size in the layout
+      pane.style.zoom = scale;
+
+      // If inside a video-dag-row grid, rebuild column ratios so both
+      // panes can grow/shrink independently based on their own zoom level.
+      var grid = pane.closest('.video-dag-row');
+      if (grid) {
+        var videoScale = 1, dagScale = 1;
+        var vp = grid.querySelector('.video-section.zoom-pane');
+        var dp = grid.querySelector('.dag-section.zoom-pane');
+        if (vp) videoScale = scaleMap[vp.getAttribute('data-zoom-id')] || 1;
+        if (dp) dagScale = scaleMap[dp.getAttribute('data-zoom-id')] || 1;
+        grid.style.gridTemplateColumns = videoScale + 'fr ' + dagScale + 'fr';
+      }
     }
 
     // Update zoom indicator
@@ -70,9 +92,12 @@
       }
     }
     if (indicator) {
-      indicator.textContent = Math.round(scale * 100) + '%';
+      indicator.textContent = Math.round(scale * 100) + '%' + (soloMode ? ' solo' : '');
     }
   }
+
+  // Track which mode each pane is in
+  var modeMap = {};
 
   document.addEventListener('keydown', function(e) {
     if (!selected) return;
@@ -80,24 +105,30 @@
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
     var id = selected.getAttribute('data-zoom-id');
+    var soloMode = e.altKey;
+
     if (e.key === '=' || e.key === '+') {
       e.preventDefault();
       scaleMap[id] = Math.min(scaleMap[id] + 0.1, 3);
-      applyZoom(selected);
+      modeMap[id] = soloMode ? 'solo' : 'coupled';
+      applyZoom(selected, soloMode);
     } else if (e.key === '-') {
       e.preventDefault();
       scaleMap[id] = Math.max(scaleMap[id] - 0.1, 0.3);
-      applyZoom(selected);
+      modeMap[id] = soloMode ? 'solo' : 'coupled';
+      applyZoom(selected, soloMode);
     } else if (e.key === '0') {
       e.preventDefault();
       scaleMap[id] = 1;
-      applyZoom(selected);
+      modeMap[id] = 'coupled';
+      applyZoom(selected, false);
     }
   });
 
   // Alt+Left/Right: cycle which pane is selected
   document.addEventListener('keydown', function(e) {
     if (!e.altKey) return;
+    if (e.ctrlKey || e.metaKey) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     e.preventDefault();
@@ -114,7 +145,7 @@
     arr[next].scrollIntoView({behavior: 'smooth', block: 'nearest'});
   });
 
-  // Mouse wheel zoom with Ctrl held — target innermost pane
+  // Mouse wheel zoom — Ctrl+scroll = coupled, Ctrl+Alt+scroll = solo
   document.addEventListener('wheel', function(e) {
     if (!e.ctrlKey && !e.metaKey) return;
     var pane = closestPane(e.target);
@@ -122,8 +153,10 @@
     e.preventDefault();
     selectPane(pane);
     var id = pane.getAttribute('data-zoom-id');
+    var soloMode = e.altKey;
     var delta = e.deltaY > 0 ? -0.1 : 0.1;
     scaleMap[id] = Math.max(0.3, Math.min(3, scaleMap[id] + delta));
-    applyZoom(pane);
+    modeMap[id] = soloMode ? 'solo' : 'coupled';
+    applyZoom(pane, soloMode);
   }, {passive: false});
 })();
