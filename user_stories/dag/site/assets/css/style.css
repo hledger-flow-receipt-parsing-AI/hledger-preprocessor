@@ -97,9 +97,9 @@ a:hover { text-decoration: underline; }
   text-transform: lowercase;
 }
 
-/* Receipt image — zoom-pane floated right inside story header */
+/* Receipt image — zoom-pane floated left inside story header */
 .receipt-pane {
-  float: right; margin: 0 0 0.5rem 1rem;
+  float: left; margin: 0 1rem 0.5rem 0;
 }
 .receipt-image-inline {
   max-height: 280px; width: auto;

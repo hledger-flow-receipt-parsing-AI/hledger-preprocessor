@@ -1363,9 +1363,9 @@ a:hover { text-decoration: underline; }
   text-transform: lowercase;
 }
 
-/* Receipt image — zoom-pane floated right inside story header */
+/* Receipt image — zoom-pane floated left inside story header */
 .receipt-pane {
-  float: right; margin: 0 0 0.5rem 1rem;
+  float: left; margin: 0 1rem 0.5rem 0;
 }
 .receipt-image-inline {
   max-height: 280px; width: auto;
@@ -3134,11 +3134,11 @@ def generate_story_html(
     main += "<span><kbd>Space</kbd> play/pause</span>\n"
     main += "</div>\n"
 
-    # -- Compact story header with receipt image floated right --
+    # -- Compact story header with receipt image floated left --
     main += f'<div class="story-header" style="border-left-color:{colour}">\n'
 
     if receipt_image:
-        # Receipt image in its own zoom pane, floated right
+        # Receipt image in its own zoom pane, floated left
         main += (
             '<div class="receipt-pane zoom-pane" data-zoom-id="receipt">\n'
             '<div class="zoom-pane-inner">\n'
@@ -3151,7 +3151,7 @@ def generate_story_html(
     main += f'<span class="story-id">{_esc(sid)}{badge}</span> '
     main += f'<span class="story-title-inline">{_esc(story["title"])}</span>\n'
 
-    # BDD narrative — compact single-block, text wraps beside receipt
+    # BDD narrative — compact single-block, text wraps to the right of receipt
     as_a = story.get("as_a", "")
     i_want = story.get("i_want", "")
     so_that = story.get("so_that", "")

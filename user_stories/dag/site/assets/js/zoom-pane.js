@@ -8,7 +8,6 @@
   var scaleMap = {};
 
   // Independent mode state per grid: stores pixel widths
-  // Key = grid element, value = {video: px, dag: px}
   var indepWidths = new WeakMap();
 
   // Find the innermost zoom-pane for a given element
@@ -109,10 +108,9 @@
     return null;
   }
 
-  // Independent resize: change only the target pane's pixel width.
-  // The other pane keeps its exact current pixel width.
+  // Independent resize using pixel widths.
   // direction: -1 = shrink, +1 = grow
-  var STEP_PX = 40;  // pixels per step
+  var STEP_PX = 40;
 
   function indepResize(pane, direction) {
     var grid = pane.closest('.video-dag-row');
@@ -186,7 +184,6 @@
 
     var grid = pane.closest('.video-dag-row');
     if (grid) {
-      // Clear any independent pixel widths
       indepWidths.delete(grid);
       var videoScale = 1, dagScale = 1;
       var vp = grid.querySelector('.video-section.zoom-pane');
