@@ -75,7 +75,11 @@ digraph userstory_dag {
 
   _skip_receipt_img [label="Receipt Images", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
-  _skip_receipt_lbl [label="Receipt Labels (JSON)", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+  _skip_receipt_lbl_before [label="No label exists yet", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  _skip_receipt_lbl_tui [label="Label receipt in TUI", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  _skip_receipt_lbl_after [label="Receipt label output JSON", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
   _skip_matching_out [label="Matching Outcome", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
@@ -102,8 +106,10 @@ digraph userstory_dag {
   match_default -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> _skip_csv_txn [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_csv_txn -> _skip_receipt_img [style=dotted, color="#CCCCCC", arrowhead=none];
-  _skip_receipt_img -> _skip_receipt_lbl [style=dotted, color="#CCCCCC", arrowhead=none];
-  _skip_receipt_lbl -> _skip_matching_out [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_receipt_img -> _skip_receipt_lbl_before [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_receipt_lbl_before -> _skip_receipt_lbl_tui [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_receipt_lbl_tui -> _skip_receipt_lbl_after [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_receipt_lbl_after -> _skip_matching_out [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_matching_out -> jrnl_groceries_ekoplaza [style=dotted, color="#CCCCCC", arrowhead=none];
   jrnl_groceries_ekoplaza -> viz_sankey [style=invis];
 

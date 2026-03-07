@@ -57,6 +57,48 @@
     if (nid && lay) nodeToLayer[nid] = lay;
   });
 
+  // Receipt pane and overlay elements
+  var receiptPane = document.querySelector('.receipt-pane');
+  var overlayRects = document.querySelectorAll('.receipt-overlay rect');
+
+  // Map sub-component timestamp keys to receipt field IDs
+  var fieldTimestamps = {};
+  Object.keys(TIMESTAMPS).forEach(function(k) {
+    var parts = k.split('__');
+    if (parts.length === 2 && TIMESTAMPS[k] !== null) {
+      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k] };
+    }
+  });
+  var fieldTsKeys = Object.keys(fieldTimestamps)
+    .sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });
+
+  function highlightReceiptField(nodeId, videoTime) {
+    if (receiptPane) {
+      var isReceiptNode = nodeId.indexOf('img_') === 0 ||
+        nodeId.indexOf('nolbl_') === 0 ||
+        nodeId.indexOf('tui_') === 0 ||
+        nodeId.indexOf('lbl_') === 0;
+      if (isReceiptNode) {
+        receiptPane.classList.add('active');
+      } else {
+        receiptPane.classList.remove('active');
+      }
+    }
+    if (overlayRects.length > 0 && videoTime !== undefined) {
+      var activeField = null;
+      var isTuiNode = nodeId.indexOf('tui_') === 0;
+      if (isTuiNode) {
+        for (var i = 0; i < fieldTsKeys.length; i++) {
+          var entry = fieldTimestamps[fieldTsKeys[i]];
+          if (entry.time <= videoTime) activeField = entry.field;
+        }
+      }
+      overlayRects.forEach(function(r) {
+        r.classList.toggle('active', r.getAttribute('data-field') === activeField);
+      });
+    }
+  }
+
   function highlightNode(nodeId) {
     allNodes.forEach(function(n) { n.classList.remove('active'); });
     clusters.forEach(function(c) { c.classList.remove('active-cluster'); });
@@ -82,6 +124,9 @@
     if (layerIndicator) {
       layerIndicator.textContent = targetLayer.replace(/_/g, ' ') || nodeId;
     }
+
+    // Highlight receipt image and field bounding boxes
+    highlightReceiptField(nodeId, video ? video.currentTime : undefined);
 
     // Update currentIdx
     var idx = tsKeys.indexOf(nodeId);

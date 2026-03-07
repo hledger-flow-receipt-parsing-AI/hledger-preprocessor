@@ -215,9 +215,23 @@ def _select_vertical(nav: TuiNavigator, index: str) -> None:
 
 
 def _select_horizontal_n(nav: TuiNavigator) -> None:
-    """Select the second option ("n") in a y/n horizontal choice."""
-    nav.send(Keys.RIGHT, pause=0.15)
-    time.sleep(_AFTER_SELECT)
+    """Select the second option ("n") in a y/n horizontal choice.
+
+    Cursor visibly pauses on ( ) y first, then moves right to ( ) n,
+    pauses so the viewer sees the selection, then presses Enter to
+    fill (x) n and advance to the next question.
+    """
+    # Let the TUI fully render the horizontal choice widget
+    nav.flush_output()
+    time.sleep(0.3)
+    # Pause on ( ) y so the viewer sees the cursor start there
+    time.sleep(0.8)
+    # Move right to ( ) n
+    nav.send(Keys.RIGHT, pause=0.3)
+    nav.flush_output()
+    # Pause on ( ) n so the viewer sees the cursor there
+    time.sleep(0.8)
+    # Press Enter to confirm ( ) n → (x) n
     nav.press_enter(pause=_BETWEEN)
 
 
@@ -257,6 +271,9 @@ def _fill_receipt_fields(nav: TuiNavigator, vals: ReceiptDemoValues) -> None:
     nav.flush_output()
 
     # ── Field 7: Add another account? (horizontal y/n) ─────────────────
+    # Wait for the y/n prompt to render before navigating
+    nav.wait_for("another account", timeout=5, silent=True)
+    time.sleep(0.3)
     if vals.add_another_account:
         _select_horizontal_first(nav)  # "y"
     else:

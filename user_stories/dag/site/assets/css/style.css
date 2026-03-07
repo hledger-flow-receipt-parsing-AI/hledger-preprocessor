@@ -100,6 +100,12 @@ a:hover { text-decoration: underline; }
 /* Receipt image — zoom-pane floated left inside story header */
 .receipt-pane {
   float: left; margin: 0 1rem 0.5rem 0;
+  position: relative;
+  transition: box-shadow 0.3s ease;
+}
+.receipt-pane.active {
+  box-shadow: 0 0 12px 4px var(--accent-glow);
+  border-radius: 6px;
 }
 .receipt-image-inline {
   max-height: 280px; width: auto;
@@ -107,6 +113,17 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: block;
 }
+/* Receipt field bounding box overlay */
+.receipt-overlay {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.receipt-overlay rect {
+  fill: none; stroke: var(--accent); stroke-width: 1.5;
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.receipt-overlay rect.active { opacity: 0.85; }
 
 /* Legacy receipt image section (kept for compatibility) */
 .receipt-image-section {

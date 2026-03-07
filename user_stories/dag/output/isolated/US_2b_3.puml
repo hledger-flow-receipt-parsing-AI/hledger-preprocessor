@@ -89,9 +89,23 @@ digraph userstory_dag {
     img_atm_gbp [label="atm_london.jpg", shape=folder, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="ATM withdrawal slip, 100 GBP"];
   }
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
+  subgraph cluster_receipt_lbl_before {
+    label="No label exists yet";
+    style=filled; fillcolor="#FFF0F3";
+    rank=same;
+    nolbl_atm_100gbp [label="atm_100gbp\n(no label)", shape=tab, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="No receipt label JSON exists yet for ATM withdrawal receipt"];
+  }
+
+  subgraph cluster_receipt_lbl_tui {
+    label="Label receipt in TUI";
     style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    tui_atm_100gbp [label="TUI label\natm_100gbp", shape=tab, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Label ATM withdrawal receipt via TUI"];
+  }
+
+  subgraph cluster_receipt_lbl_after {
+    label="Receipt label output JSON";
+    style=filled; fillcolor="#F8BBD0";
     rank=same;
     lbl_atm_100gbp [label="atm_100gbp\nGBP 100 withdrawal", shape=tab, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Triodos account, GBP withdrawal receipt"];
   }
@@ -122,7 +136,9 @@ digraph userstory_dag {
   match_default -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> csv_atm_gbp_11750 [style=invis];
   csv_atm_gbp_11750 -> img_atm_gbp [style=invis];
-  img_atm_gbp -> lbl_atm_100gbp [style=invis];
+  img_atm_gbp -> nolbl_atm_100gbp [style=invis];
+  nolbl_atm_100gbp -> tui_atm_100gbp [style=invis];
+  tui_atm_100gbp -> lbl_atm_100gbp [style=invis];
   lbl_atm_100gbp -> out_currency_convert [style=invis];
   out_currency_convert -> jrnl_triodos_debit_gbp [style=invis];
   jrnl_triodos_debit_gbp -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
@@ -138,12 +154,14 @@ digraph userstory_dag {
   csv_atm_gbp_11750 -> img_atm_gbp [color="#FF5722", penwidth=2.5, style=solid];
   dirp_default -> fnames_default [color="#FF5722", penwidth=2.5, style=solid];
   fnames_default -> catcfg_default [color="#FF5722", penwidth=2.5, style=solid];
-  img_atm_gbp -> lbl_atm_100gbp [color="#FF5722", penwidth=2.5, style=solid];
+  img_atm_gbp -> nolbl_atm_100gbp [color="#FF5722", penwidth=2.5, style=solid];
   jrnl_wallet_gbp -> jrnl_triodos_debit_gbp [color="#FF5722", penwidth=2.5, style=solid];
   lbl_atm_100gbp -> out_currency_convert [color="#FF5722", penwidth=2.5, style=solid];
   malgo_default -> cat_basic [color="#FF5722", penwidth=2.5, style=solid];
   match_default -> start_2024_1000eur [color="#FF5722", penwidth=2.5, style=solid];
+  nolbl_atm_100gbp -> tui_atm_100gbp [color="#FF5722", penwidth=2.5, style=solid];
   out_currency_convert -> jrnl_wallet_gbp [color="#FF5722", penwidth=2.5, style=solid];
   start_2024_1000eur -> csv_atm_gbp_11750 [color="#FF5722", penwidth=2.5, style=solid];
+  tui_atm_100gbp -> lbl_atm_100gbp [color="#FF5722", penwidth=2.5, style=solid];
 }
 @enddot

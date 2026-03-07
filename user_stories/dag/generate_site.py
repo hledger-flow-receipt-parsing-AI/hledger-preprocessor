@@ -58,7 +58,10 @@ SECTION_PRIMARY_LAYERS: Dict[str, List[str]] = {
     ],
     "Step 1b: Category Configuration": ["categories"],
     "Step 2a: Receipt Image Processing": ["receipt_img"],
-    "Step 2b: Receipt Labelling": ["receipt_img", "receipt_lbl"],
+    "Step 2b: Receipt Labelling": [
+        "receipt_img",
+        "receipt_group",
+    ],
     "Step 3: Receipt-to-CSV Transaction Matching": [
         "csv_txn",
         "matching_out",
@@ -384,6 +387,7 @@ def generate_overview_svg_direct(
         CONFIG_GROUP_LAYERS,
         LAYER_COLOURS,
         LAYER_ORDER,
+        RECEIPT_GROUP_LAYERS,
         collect_edges_from_paths,
         collect_nodes_from_paths,
         count_edge_usage,
@@ -439,6 +443,13 @@ def generate_overview_svg_direct(
     config_y_end = None
     config_max_right = 0.0  # rightmost edge among config child clusters
 
+    # Receipt group tracking (mirrors config group pattern)
+    RECEIPT_GROUP_PAD = CONFIG_GROUP_PAD
+    RECEIPT_GROUP_TOP = CONFIG_GROUP_TOP
+    receipt_y_start = None
+    receipt_y_end = None
+    receipt_max_right = 0.0
+
     for layer_name in ordered_layers:
         nids = layer_nodes[layer_name]
         n_nodes = len(nids)
@@ -452,6 +463,10 @@ def generate_overview_svg_direct(
         # Add space for the "Configuration" label above the first config layer
         if layer_name in CONFIG_GROUP_LAYERS and config_y_start is None:
             y_cursor += CONFIG_GROUP_TOP
+
+        # Add space for the "Receipt Labelling" label above the first receipt layer
+        if layer_name in RECEIPT_GROUP_LAYERS and receipt_y_start is None:
+            y_cursor += RECEIPT_GROUP_TOP
 
         cluster_x = MARGIN
         cluster_y = y_cursor
@@ -479,6 +494,15 @@ def generate_overview_svg_direct(
             if right > config_max_right:
                 config_max_right = right
 
+        # Track receipt group bounds
+        if layer_name in RECEIPT_GROUP_LAYERS:
+            if receipt_y_start is None:
+                receipt_y_start = cluster_y
+            receipt_y_end = cluster_y + cluster_h
+            right = cluster_x + cluster_w
+            if right > receipt_max_right:
+                receipt_max_right = right
+
         y_cursor += cluster_h + LAYER_GAP
 
     total_w = max_width + MARGIN * 2
@@ -495,6 +519,19 @@ def generate_overview_svg_direct(
             - config_y_start
             + CONFIG_GROUP_TOP
             + CONFIG_GROUP_PAD * 2,
+        )
+
+    # Receipt group box
+    receipt_group_box = None
+    if receipt_y_start is not None and receipt_y_end is not None:
+        receipt_group_box = (
+            MARGIN - RECEIPT_GROUP_PAD,
+            receipt_y_start - RECEIPT_GROUP_TOP - RECEIPT_GROUP_PAD,
+            receipt_max_right - MARGIN + RECEIPT_GROUP_PAD * 2,
+            receipt_y_end
+            - receipt_y_start
+            + RECEIPT_GROUP_TOP
+            + RECEIPT_GROUP_PAD * 2,
         )
 
     # --- Edge routing ---
@@ -545,6 +582,19 @@ def generate_overview_svg_direct(
             f' y="{gy + 16:.0f}" font-family="DejaVu Sans,sans-serif"'
             f' font-size="{LABEL_FONT_SIZE}"'
             ' fill="#aaa">Configuration</text></g>'
+        )
+
+    # Receipt Labelling group parent box
+    if receipt_group_box:
+        gx, gy, gw, gh = receipt_group_box
+        lines.append(
+            '<g class="cluster dag-cluster" data-layer="receipt_group"><rect'
+            f' x="{gx:.0f}" y="{gy:.0f}" width="{gw:.0f}" height="{gh:.0f}"'
+            ' fill="none" stroke="#bbb" stroke-width="1.5"'
+            f' stroke-dasharray="5,2" rx="4"/><text x="{gx + 10:.0f}"'
+            f' y="{gy + 16:.0f}" font-family="DejaVu Sans,sans-serif"'
+            f' font-size="{LABEL_FONT_SIZE}"'
+            ' fill="#aaa">Receipt Labelling</text></g>'
         )
 
     # Layer clusters and nodes
@@ -777,6 +827,7 @@ def generate_story_svg_direct(
         CONFIG_GROUP_LAYERS,
         LAYER_COLOURS,
         LAYER_ORDER,
+        RECEIPT_GROUP_LAYERS,
     )
 
     # --- Collect visible nodes / edges ---
@@ -829,6 +880,13 @@ def generate_story_svg_direct(
     config_y_end = None
     config_max_right = 0.0
 
+    # Receipt group tracking (mirrors config group pattern)
+    RECEIPT_GROUP_PAD = CONFIG_GROUP_PAD
+    RECEIPT_GROUP_TOP = CONFIG_GROUP_TOP
+    receipt_y_start = None
+    receipt_y_end = None
+    receipt_max_right = 0.0
+
     for layer_name in ordered_layers:
         nids = layer_nodes[layer_name]
         n_nodes = len(nids)
@@ -841,6 +899,9 @@ def generate_story_svg_direct(
 
         if layer_name in CONFIG_GROUP_LAYERS and config_y_start is None:
             y_cursor += CONFIG_GROUP_TOP
+
+        if layer_name in RECEIPT_GROUP_LAYERS and receipt_y_start is None:
+            y_cursor += RECEIPT_GROUP_TOP
 
         cluster_x = MARGIN
         cluster_y = y_cursor
@@ -866,6 +927,14 @@ def generate_story_svg_direct(
             if right > config_max_right:
                 config_max_right = right
 
+        if layer_name in RECEIPT_GROUP_LAYERS:
+            if receipt_y_start is None:
+                receipt_y_start = cluster_y
+            receipt_y_end = cluster_y + cluster_h
+            right = cluster_x + cluster_w
+            if right > receipt_max_right:
+                receipt_max_right = right
+
         y_cursor += cluster_h + LAYER_GAP
 
     total_w = max_width + MARGIN * 2
@@ -881,6 +950,18 @@ def generate_story_svg_direct(
             - config_y_start
             + CONFIG_GROUP_TOP
             + CONFIG_GROUP_PAD * 2,
+        )
+
+    receipt_group_box = None
+    if receipt_y_start is not None and receipt_y_end is not None:
+        receipt_group_box = (
+            MARGIN - RECEIPT_GROUP_PAD,
+            receipt_y_start - RECEIPT_GROUP_TOP - RECEIPT_GROUP_PAD,
+            receipt_max_right - MARGIN + RECEIPT_GROUP_PAD * 2,
+            receipt_y_end
+            - receipt_y_start
+            + RECEIPT_GROUP_TOP
+            + RECEIPT_GROUP_PAD * 2,
         )
 
     # --- Edge routing helpers ---
@@ -1007,6 +1088,27 @@ def generate_story_svg_direct(
             f' y="{gy + 16:.0f}" font-family="DejaVu Sans,sans-serif"'
             f' font-size="{LABEL_FONT_SIZE}"'
             ' fill="#aaa">Configuration</text></g>'
+        )
+
+    # Receipt Labelling group parent box
+    if receipt_group_box:
+        gx, gy, gw, gh = receipt_group_box
+        rcpt_cls = " section-box" if "receipt_group" in hl_layers else ""
+        rcpt_stroke = (
+            "var(--accent, #2563eb)"
+            if "receipt_group" in hl_layers
+            else "#bbb"
+        )
+        rcpt_sw = "2.5" if "receipt_group" in hl_layers else "1.5"
+        lines.append(
+            f'<g class="cluster dag-cluster{rcpt_cls}"'
+            f' data-layer="receipt_group"><rect x="{gx:.0f}" y="{gy:.0f}"'
+            f' width="{gw:.0f}" height="{gh:.0f}" fill="none"'
+            f' stroke="{rcpt_stroke}" stroke-width="{rcpt_sw}"'
+            f' stroke-dasharray="5,2" rx="4"/><text x="{gx + 10:.0f}"'
+            f' y="{gy + 16:.0f}" font-family="DejaVu Sans,sans-serif"'
+            f' font-size="{LABEL_FONT_SIZE}"'
+            ' fill="#aaa">Receipt Labelling</text></g>'
         )
 
     # Layer clusters and nodes
@@ -1136,7 +1238,9 @@ def add_data_attributes_to_svg(*, svg: str, node_index: Dict[str, Dict]) -> str:
         "start_journal",
         "csv_txn",
         "receipt_img",
-        "receipt_lbl",
+        "receipt_lbl_before",
+        "receipt_lbl_tui",
+        "receipt_lbl_after",
         "matching_out",
         "journal_out",
         "visualization",
@@ -1366,6 +1470,12 @@ a:hover { text-decoration: underline; }
 /* Receipt image — zoom-pane floated left inside story header */
 .receipt-pane {
   float: left; margin: 0 1rem 0.5rem 0;
+  position: relative;
+  transition: box-shadow 0.3s ease;
+}
+.receipt-pane.active {
+  box-shadow: 0 0 12px 4px var(--accent-glow);
+  border-radius: 6px;
 }
 .receipt-image-inline {
   max-height: 280px; width: auto;
@@ -1373,6 +1483,17 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: block;
 }
+/* Receipt field bounding box overlay */
+.receipt-overlay {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.receipt-overlay rect {
+  fill: none; stroke: var(--accent); stroke-width: 1.5;
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.receipt-overlay rect.active { opacity: 0.85; }
 
 /* Legacy receipt image section (kept for compatibility) */
 .receipt-image-section {
@@ -1737,6 +1858,48 @@ def generate_js() -> str:
     if (nid && lay) nodeToLayer[nid] = lay;
   });
 
+  // Receipt pane and overlay elements
+  var receiptPane = document.querySelector('.receipt-pane');
+  var overlayRects = document.querySelectorAll('.receipt-overlay rect');
+
+  // Map sub-component timestamp keys to receipt field IDs
+  var fieldTimestamps = {};
+  Object.keys(TIMESTAMPS).forEach(function(k) {
+    var parts = k.split('__');
+    if (parts.length === 2 && TIMESTAMPS[k] !== null) {
+      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k] };
+    }
+  });
+  var fieldTsKeys = Object.keys(fieldTimestamps)
+    .sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });
+
+  function highlightReceiptField(nodeId, videoTime) {
+    if (receiptPane) {
+      var isReceiptNode = nodeId.indexOf('img_') === 0 ||
+        nodeId.indexOf('nolbl_') === 0 ||
+        nodeId.indexOf('tui_') === 0 ||
+        nodeId.indexOf('lbl_') === 0;
+      if (isReceiptNode) {
+        receiptPane.classList.add('active');
+      } else {
+        receiptPane.classList.remove('active');
+      }
+    }
+    if (overlayRects.length > 0 && videoTime !== undefined) {
+      var activeField = null;
+      var isTuiNode = nodeId.indexOf('tui_') === 0;
+      if (isTuiNode) {
+        for (var i = 0; i < fieldTsKeys.length; i++) {
+          var entry = fieldTimestamps[fieldTsKeys[i]];
+          if (entry.time <= videoTime) activeField = entry.field;
+        }
+      }
+      overlayRects.forEach(function(r) {
+        r.classList.toggle('active', r.getAttribute('data-field') === activeField);
+      });
+    }
+  }
+
   function highlightNode(nodeId) {
     allNodes.forEach(function(n) { n.classList.remove('active'); });
     clusters.forEach(function(c) { c.classList.remove('active-cluster'); });
@@ -1762,6 +1925,9 @@ def generate_js() -> str:
     if (layerIndicator) {
       layerIndicator.textContent = targetLayer.replace(/_/g, ' ') || nodeId;
     }
+
+    // Highlight receipt image and field bounding boxes
+    highlightReceiptField(nodeId, video ? video.currentTime : undefined);
 
     // Update currentIdx
     var idx = tsKeys.indexOf(nodeId);
@@ -3138,13 +3304,39 @@ def generate_story_html(
     main += f'<div class="story-header" style="border-left-color:{colour}">\n'
 
     if receipt_image:
-        # Receipt image in its own zoom pane, floated left
+        # Receipt image in its own zoom pane, floated left.
+        # SVG overlay provides bounding boxes for field highlighting.
+        # Boxes are loaded from a sidecar *_boxes.json generated by
+        # gifs/automation/receipt_renderer.py alongside each receipt PNG.
+        receipt_overlay = ""
+        stem = Path(receipt_image).stem
+        boxes_path = RECEIPTS_ROOT / f"{stem}_boxes.json"
+        if boxes_path.exists():
+            boxes_data = json.loads(boxes_path.read_text())
+            img_w = boxes_data["image_width"]
+            img_h = boxes_data["image_height"]
+            rects: List[str] = []
+            for field_name, box_list in boxes_data["fields"].items():
+                for box in box_list:
+                    rects.append(
+                        f'<rect data-field="{_esc(field_name)}" '
+                        f'x="{box["x"]}" y="{box["y"]}" '
+                        f'width="{box["w"]}" height="{box["h"]}" rx="2"/>'
+                    )
+            receipt_overlay = (
+                f'<svg class="receipt-overlay" '
+                f'viewBox="0 0 {img_w} {img_h}"'
+                f' preserveAspectRatio="xMidYMid meet">\n'
+                + "\n".join(rects)
+                + "\n</svg>\n"
+            )
         main += (
             '<div class="receipt-pane zoom-pane" data-zoom-id="receipt">\n'
             '<div class="zoom-pane-inner">\n'
             '<img class="receipt-image-inline" '
             f'src="../assets/receipts/{_esc(receipt_image)}" '
             f'alt="Receipt: {_esc(story["title"])}">\n'
+            f'{receipt_overlay}'
             "</div></div>\n"
         )
 

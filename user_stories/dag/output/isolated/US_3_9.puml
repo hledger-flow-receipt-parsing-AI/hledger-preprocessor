@@ -89,9 +89,23 @@ digraph userstory_dag {
     img_gold [label="gold_dealer.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Gold purchase receipt, 10g"];
   }
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
+  subgraph cluster_receipt_lbl_before {
+    label="No label exists yet";
+    style=filled; fillcolor="#FFF0F3";
+    rank=same;
+    nolbl_gold_10g [label="gold_10g\n(no label)", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="No receipt label JSON exists yet for gold purchase"];
+  }
+
+  subgraph cluster_receipt_lbl_tui {
+    label="Label receipt in TUI";
     style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    tui_gold_10g [label="TUI label\ngold_10g", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Label gold purchase receipt via TUI"];
+  }
+
+  subgraph cluster_receipt_lbl_after {
+    label="Receipt label output JSON";
+    style=filled; fillcolor="#F8BBD0";
     rank=same;
     lbl_gold_10g [label="gold_10g\n10 GRAMS", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, DirectAssetPurchases.GOLD"];
   }
@@ -122,7 +136,9 @@ digraph userstory_dag {
   match_default -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> csv_gold_dealer_580 [style=invis];
   csv_gold_dealer_580 -> img_gold [style=invis];
-  img_gold -> lbl_gold_10g [style=invis];
+  img_gold -> nolbl_gold_10g [style=invis];
+  nolbl_gold_10g -> tui_gold_10g [style=invis];
+  tui_gold_10g -> lbl_gold_10g [style=invis];
   lbl_gold_10g -> out_asset_convert [style=invis];
   out_asset_convert -> jrnl_asset_gold [style=invis];
   jrnl_asset_gold -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
@@ -138,12 +154,14 @@ digraph userstory_dag {
   csv_gold_dealer_580 -> img_gold [color="#FFD600", penwidth=2.5, style=bold];
   dirp_default -> fnames_default [color="#FFD600", penwidth=2.5, style=bold];
   fnames_default -> catcfg_default [color="#FFD600", penwidth=2.5, style=bold];
-  img_gold -> lbl_gold_10g [color="#FFD600", penwidth=2.5, style=bold];
+  img_gold -> nolbl_gold_10g [color="#FFD600", penwidth=2.5, style=bold];
   lbl_gold_10g -> out_asset_convert [color="#FFD600", penwidth=2.5, style=bold];
   malgo_default -> cat_extended [color="#FFD600", penwidth=2.5, style=bold];
   match_default -> start_2024_1000eur [color="#FFD600", penwidth=2.5, style=bold];
+  nolbl_gold_10g -> tui_gold_10g [color="#FFD600", penwidth=2.5, style=bold];
   out_asset_convert -> jrnl_asset_gold [color="#FFD600", penwidth=2.5, style=bold];
   out_asset_convert -> jrnl_triodos_debit_gold [color="#FFD600", penwidth=2.5, style=bold];
   start_2024_1000eur -> csv_gold_dealer_580 [color="#FFD600", penwidth=2.5, style=bold];
+  tui_gold_10g -> lbl_gold_10g [color="#FFD600", penwidth=2.5, style=bold];
 }
 @enddot
