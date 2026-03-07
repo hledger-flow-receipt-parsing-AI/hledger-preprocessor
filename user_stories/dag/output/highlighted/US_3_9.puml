@@ -114,9 +114,43 @@ digraph userstory_dag {
     img_swapped_date [label="bookshop.jpg", shape=folder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Receipt with ambiguous DD-MM date"];
   }
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
+  subgraph cluster_receipt_lbl_before {
+    label="No label exists yet";
+    style=filled; fillcolor="#FFF0F3";
+    rank=same;
+    nolbl_atm_100gbp [label="atm_100gbp\n(no label)", shape=tab, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for ATM withdrawal receipt"];
+    nolbl_atm_200gbp_fee [label="atm_200gbp\n(no label)", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for ATM withdrawal with fee"];
+    nolbl_bike_cash [label="bike_repair\n(no label)", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for bike repair"];
+    nolbl_coffee_cash [label="coffee_cash\n(no label)", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for coffee"];
+    nolbl_delayed_shop [label="delayed_shop\n(no label)", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for delayed shop"];
+    nolbl_dinner_split [label="dinner_split\n(no label)", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for dinner split"];
+    nolbl_ekoplaza_card_eur [label="ekoplaza_card\n(no label)", shape=tab, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for ekoplaza card receipt"];
+    nolbl_gold_10g [label="gold_10g\n(no label)", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="No receipt label JSON exists yet for gold purchase"];
+    nolbl_return_item [label="return_item\n(no label)", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for return"];
+    nolbl_rounded_shop [label="rounded_shop\n(no label)", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for rounded shop"];
+    nolbl_swapped_date [label="bookshop\n(no label)", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No receipt label JSON exists yet for swapped date"];
+  }
+
+  subgraph cluster_receipt_lbl_tui {
+    label="Label receipt in TUI";
     style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    tui_atm_100gbp [label="TUI label\natm_100gbp", shape=tab, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Label ATM withdrawal receipt via TUI"];
+    tui_atm_200gbp_fee [label="TUI label\natm_200gbp", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Label ATM withdrawal with fee via TUI"];
+    tui_bike_cash [label="TUI label\nbike_repair", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Label bike repair receipt via TUI"];
+    tui_coffee_cash [label="TUI label\ncoffee_cash", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Label coffee receipt via TUI"];
+    tui_delayed_shop [label="TUI label\ndelayed_shop", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Label delayed shop receipt via TUI"];
+    tui_dinner_split [label="TUI label\ndinner_split", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Label dinner split receipt via TUI"];
+    tui_ekoplaza_card_eur [label="TUI label\nekoplaza_card", shape=tab, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Label ekoplaza card receipt via TUI based on image"];
+    tui_gold_10g [label="TUI label\ngold_10g", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Label gold purchase receipt via TUI"];
+    tui_return_item [label="TUI label\nreturn_item", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Label return receipt via TUI"];
+    tui_rounded_shop [label="TUI label\nrounded_shop", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Label rounded shop receipt via TUI"];
+    tui_swapped_date [label="TUI label\nbookshop", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Label swapped date receipt via TUI"];
+  }
+
+  subgraph cluster_receipt_lbl_after {
+    label="Receipt label output JSON";
+    style=filled; fillcolor="#F8BBD0";
     rank=same;
     lbl_atm_100gbp [label="atm_100gbp\nGBP 100 withdrawal", shape=tab, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, GBP withdrawal receipt"];
     lbl_atm_200gbp_fee [label="atm_200gbp\nGBP 200 + fee", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, GBP withdrawal with bank fee"];
@@ -214,17 +248,17 @@ digraph userstory_dag {
   csv_swapped_date -> img_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
   dirp_default -> fnames_default [color="#DDDDDD", penwidth=1.0, style=solid];
   fnames_default -> catcfg_default [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_atm_gbp -> lbl_atm_100gbp [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_atm_gbp_fee -> lbl_atm_200gbp_fee [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_bike_repair -> lbl_bike_cash [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_coffee_cash -> lbl_coffee_cash [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_delayed_shop -> lbl_delayed_shop [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_ekoplaza_card -> lbl_ekoplaza_card_eur [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_gold -> lbl_gold_10g [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_return_item -> lbl_return_item [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_rounded_shop -> lbl_rounded_shop [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_split_dinner -> lbl_dinner_split [color="#DDDDDD", penwidth=1.0, style=solid];
-  img_swapped_date -> lbl_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_atm_gbp -> nolbl_atm_100gbp [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_atm_gbp_fee -> nolbl_atm_200gbp_fee [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_bike_repair -> nolbl_bike_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_coffee_cash -> nolbl_coffee_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_delayed_shop -> nolbl_delayed_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_ekoplaza_card -> nolbl_ekoplaza_card_eur [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_gold -> nolbl_gold_10g [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_return_item -> nolbl_return_item [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_rounded_shop -> nolbl_rounded_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_split_dinner -> nolbl_dinner_split [color="#DDDDDD", penwidth=1.0, style=solid];
+  img_swapped_date -> nolbl_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
   jrnl_groceries_ekoplaza -> viz_sankey [color="#DDDDDD", penwidth=1.0, style=solid];
   jrnl_groceries_ekoplaza -> viz_treemap [color="#DDDDDD", penwidth=1.0, style=solid];
   jrnl_wallet_gbp -> jrnl_triodos_debit_gbp [color="#DDDDDD", penwidth=1.0, style=solid];
@@ -250,6 +284,17 @@ digraph userstory_dag {
   match_narrow -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
   match_wide_both -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
   match_wide_date -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_atm_100gbp -> tui_atm_100gbp [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_atm_200gbp_fee -> tui_atm_200gbp_fee [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_bike_cash -> tui_bike_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_coffee_cash -> tui_coffee_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_delayed_shop -> tui_delayed_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_dinner_split -> tui_dinner_split [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_ekoplaza_card_eur -> tui_ekoplaza_card_eur [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_gold_10g -> tui_gold_10g [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_return_item -> tui_return_item [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_rounded_shop -> tui_rounded_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  nolbl_swapped_date -> tui_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
   out_asset_convert -> jrnl_asset_gold [color="#DDDDDD", penwidth=1.0, style=solid];
   out_asset_convert -> jrnl_triodos_debit_gold [color="#DDDDDD", penwidth=1.0, style=solid];
   out_auto_1hit -> jrnl_dinner_split_card [color="#DDDDDD", penwidth=1.0, style=solid];
@@ -283,6 +328,17 @@ digraph userstory_dag {
   start_2024_1000eur -> img_return_item [color="#DDDDDD", penwidth=1.0, style=solid];
   start_2024_1000eur -> img_split_dinner [color="#DDDDDD", penwidth=1.0, style=solid];
   start_2024_1000eur -> jrnl_groceries_ekoplaza [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_atm_100gbp -> lbl_atm_100gbp [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_atm_200gbp_fee -> lbl_atm_200gbp_fee [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_bike_cash -> lbl_bike_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_coffee_cash -> lbl_coffee_cash [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_delayed_shop -> lbl_delayed_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_dinner_split -> lbl_dinner_split [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_ekoplaza_card_eur -> lbl_ekoplaza_card_eur [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_gold_10g -> lbl_gold_10g [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_return_item -> lbl_return_item [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_rounded_shop -> lbl_rounded_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  tui_swapped_date -> lbl_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_btc_wallet -> acct_gold_wallet [color="#FFD600", penwidth=3.5, style=bold, label="US-3.9"];
   acct_eur_wallet -> acct_gbp_wallet [color="#FFD600", penwidth=3.5, style=bold, label="US-3.9"];
   acct_gbp_wallet -> acct_btc_wallet [color="#FFD600", penwidth=3.5, style=bold, label="US-3.9"];
@@ -294,12 +350,14 @@ digraph userstory_dag {
   csv_gold_dealer_580 -> img_gold [color="#FFD600", penwidth=1.5, style=bold, label="US-3.9"];
   dirp_default -> fnames_default [color="#FFD600", penwidth=5.0, style=bold, label="US-3.9"];
   fnames_default -> catcfg_default [color="#FFD600", penwidth=5.0, style=bold, label="US-3.9"];
-  img_gold -> lbl_gold_10g [color="#FFD600", penwidth=1.5, style=bold, label="US-3.9"];
+  img_gold -> nolbl_gold_10g [color="#FFD600", penwidth=1.5, style=bold, label="US-3.9"];
   lbl_gold_10g -> out_asset_convert [color="#FFD600", penwidth=1.5, style=bold, label="US-3.9"];
   malgo_default -> cat_extended [color="#FFD600", penwidth=2.5, style=bold, label="US-3.9"];
   match_default -> start_2024_1000eur [color="#FFD600", penwidth=5.0, style=bold, label="US-3.9"];
+  nolbl_gold_10g -> tui_gold_10g [color="#FFD600", penwidth=1.5, style=bold, label="US-3.9"];
   out_asset_convert -> jrnl_asset_gold [color="#FFD600", penwidth=1.5, style=bold, label="US-3.9"];
   out_asset_convert -> jrnl_triodos_debit_gold [color="#FFD600", penwidth=1.5, style=bold, label="US-3.9"];
   start_2024_1000eur -> csv_gold_dealer_580 [color="#FFD600", penwidth=1.5, style=bold, label="US-3.9"];
+  tui_gold_10g -> lbl_gold_10g [color="#FFD600", penwidth=1.5, style=bold, label="US-3.9"];
 }
 @enddot

@@ -85,9 +85,23 @@ digraph userstory_dag {
     img_swapped_date [label="bookshop.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Receipt with ambiguous DD-MM date"];
   }
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
+  subgraph cluster_receipt_lbl_before {
+    label="No label exists yet";
+    style=filled; fillcolor="#FFF0F3";
+    rank=same;
+    nolbl_swapped_date [label="bookshop\n(no label)", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="No receipt label JSON exists yet for swapped date"];
+  }
+
+  subgraph cluster_receipt_lbl_tui {
+    label="Label receipt in TUI";
     style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    tui_swapped_date [label="TUI label\nbookshop", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Label swapped date receipt via TUI"];
+  }
+
+  subgraph cluster_receipt_lbl_after {
+    label="Receipt label output JSON";
+    style=filled; fillcolor="#F8BBD0";
     rank=same;
     lbl_swapped_date [label="bookshop\nEUR 25.00 card", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, date entered as 01-05-2025"];
   }
@@ -117,7 +131,9 @@ digraph userstory_dag {
   match_default -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> csv_swapped_date [style=invis];
   csv_swapped_date -> img_swapped_date [style=invis];
-  img_swapped_date -> lbl_swapped_date [style=invis];
+  img_swapped_date -> nolbl_swapped_date [style=invis];
+  nolbl_swapped_date -> tui_swapped_date [style=invis];
+  tui_swapped_date -> lbl_swapped_date [style=invis];
   lbl_swapped_date -> out_swap_dd_mm [style=invis];
   out_swap_dd_mm -> jrnl_swapped_shop [style=invis];
   jrnl_swapped_shop -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
@@ -129,11 +145,13 @@ digraph userstory_dag {
   csv_swapped_date -> img_swapped_date [color="#E65100", penwidth=2.5, style=dashed];
   dirp_default -> fnames_default [color="#E65100", penwidth=2.5, style=dashed];
   fnames_default -> catcfg_default [color="#E65100", penwidth=2.5, style=dashed];
-  img_swapped_date -> lbl_swapped_date [color="#E65100", penwidth=2.5, style=dashed];
+  img_swapped_date -> nolbl_swapped_date [color="#E65100", penwidth=2.5, style=dashed];
   lbl_swapped_date -> out_swap_dd_mm [color="#E65100", penwidth=2.5, style=dashed];
   malgo_default -> cat_basic [color="#E65100", penwidth=2.5, style=dashed];
   match_default -> start_2024_1000eur [color="#E65100", penwidth=2.5, style=dashed];
+  nolbl_swapped_date -> tui_swapped_date [color="#E65100", penwidth=2.5, style=dashed];
   out_swap_dd_mm -> jrnl_swapped_shop [color="#E65100", penwidth=2.5, style=dashed];
   start_2024_1000eur -> csv_swapped_date [color="#E65100", penwidth=2.5, style=dashed];
+  tui_swapped_date -> lbl_swapped_date [color="#E65100", penwidth=2.5, style=dashed];
 }
 @enddot

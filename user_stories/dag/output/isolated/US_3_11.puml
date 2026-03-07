@@ -89,9 +89,23 @@ digraph userstory_dag {
     img_atm_gbp_fee [label="atm_london_fee.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="ATM withdrawal slip, 200 GBP + fee"];
   }
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
+  subgraph cluster_receipt_lbl_before {
+    label="No label exists yet";
+    style=filled; fillcolor="#FFF0F3";
+    rank=same;
+    nolbl_atm_200gbp_fee [label="atm_200gbp\n(no label)", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="No receipt label JSON exists yet for ATM withdrawal with fee"];
+  }
+
+  subgraph cluster_receipt_lbl_tui {
+    label="Label receipt in TUI";
     style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    tui_atm_200gbp_fee [label="TUI label\natm_200gbp", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Label ATM withdrawal with fee via TUI"];
+  }
+
+  subgraph cluster_receipt_lbl_after {
+    label="Receipt label output JSON";
+    style=filled; fillcolor="#F8BBD0";
     rank=same;
     lbl_atm_200gbp_fee [label="atm_200gbp\nGBP 200 + fee", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, GBP withdrawal with bank fee"];
   }
@@ -122,7 +136,9 @@ digraph userstory_dag {
   match_default -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> csv_atm_gbp_23750_fee [style=invis];
   csv_atm_gbp_23750_fee -> img_atm_gbp_fee [style=invis];
-  img_atm_gbp_fee -> lbl_atm_200gbp_fee [style=invis];
+  img_atm_gbp_fee -> nolbl_atm_200gbp_fee [style=invis];
+  nolbl_atm_200gbp_fee -> tui_atm_200gbp_fee [style=invis];
+  tui_atm_200gbp_fee -> lbl_atm_200gbp_fee [style=invis];
   lbl_atm_200gbp_fee -> out_currency_convert_fee [style=invis];
   out_currency_convert_fee -> jrnl_bankfees [style=invis];
   jrnl_bankfees -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
@@ -138,12 +154,14 @@ digraph userstory_dag {
   csv_atm_gbp_23750_fee -> img_atm_gbp_fee [color="#FF8F00", penwidth=2.5, style=dotted];
   dirp_default -> fnames_default [color="#FF8F00", penwidth=2.5, style=dotted];
   fnames_default -> catcfg_default [color="#FF8F00", penwidth=2.5, style=dotted];
-  img_atm_gbp_fee -> lbl_atm_200gbp_fee [color="#FF8F00", penwidth=2.5, style=dotted];
+  img_atm_gbp_fee -> nolbl_atm_200gbp_fee [color="#FF8F00", penwidth=2.5, style=dotted];
   lbl_atm_200gbp_fee -> out_currency_convert_fee [color="#FF8F00", penwidth=2.5, style=dotted];
   malgo_default -> cat_extended [color="#FF8F00", penwidth=2.5, style=dotted];
   match_default -> start_2024_1000eur [color="#FF8F00", penwidth=2.5, style=dotted];
+  nolbl_atm_200gbp_fee -> tui_atm_200gbp_fee [color="#FF8F00", penwidth=2.5, style=dotted];
   out_currency_convert_fee -> jrnl_bankfees [color="#FF8F00", penwidth=2.5, style=dotted];
   out_currency_convert_fee -> jrnl_wallet_gbp_200 [color="#FF8F00", penwidth=2.5, style=dotted];
   start_2024_1000eur -> csv_atm_gbp_23750_fee [color="#FF8F00", penwidth=2.5, style=dotted];
+  tui_atm_200gbp_fee -> lbl_atm_200gbp_fee [color="#FF8F00", penwidth=2.5, style=dotted];
 }
 @enddot

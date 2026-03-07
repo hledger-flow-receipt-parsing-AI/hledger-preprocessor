@@ -80,9 +80,23 @@ digraph userstory_dag {
     img_ekoplaza_card [label="ekoplaza_card.jpg", shape=folder, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Ekoplaza receipt, paid by card"];
   }
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
+  subgraph cluster_receipt_lbl_before {
+    label="No label exists yet";
+    style=filled; fillcolor="#FFF0F3";
+    rank=same;
+    nolbl_ekoplaza_card_eur [label="ekoplaza_card\n(no label)", shape=tab, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="No receipt label JSON exists yet for ekoplaza card receipt"];
+  }
+
+  subgraph cluster_receipt_lbl_tui {
+    label="Label receipt in TUI";
     style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    tui_ekoplaza_card_eur [label="TUI label\nekoplaza_card", shape=tab, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Label ekoplaza card receipt via TUI based on image"];
+  }
+
+  subgraph cluster_receipt_lbl_after {
+    label="Receipt label output JSON";
+    style=filled; fillcolor="#F8BBD0";
     rank=same;
     lbl_ekoplaza_card_eur [label="ekoplaza_card\nEUR 42.17 card", shape=tab, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, 2025-01-15, groceries:ekoplaza"];
   }
@@ -112,7 +126,9 @@ digraph userstory_dag {
   _skip_matching_cfg -> start_2024_1000eur [style=dotted, color="#CCCCCC", arrowhead=none];
   start_2024_1000eur -> csv_ekoplaza_4217_jan15 [style=invis];
   csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [style=invis];
-  img_ekoplaza_card -> lbl_ekoplaza_card_eur [style=invis];
+  img_ekoplaza_card -> nolbl_ekoplaza_card_eur [style=invis];
+  nolbl_ekoplaza_card_eur -> tui_ekoplaza_card_eur [style=invis];
+  tui_ekoplaza_card_eur -> lbl_ekoplaza_card_eur [style=invis];
   lbl_ekoplaza_card_eur -> out_auto_1hit [style=invis];
   out_auto_1hit -> jrnl_groceries_ekoplaza [style=invis];
   jrnl_groceries_ekoplaza -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
@@ -124,10 +140,12 @@ digraph userstory_dag {
   csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [color="#E91E63", penwidth=2.5, style=solid];
   dirp_default -> fnames_default [color="#E91E63", penwidth=2.5, style=solid];
   fnames_default -> catcfg_default [color="#E91E63", penwidth=2.5, style=solid];
-  img_ekoplaza_card -> lbl_ekoplaza_card_eur [color="#E91E63", penwidth=2.5, style=solid];
+  img_ekoplaza_card -> nolbl_ekoplaza_card_eur [color="#E91E63", penwidth=2.5, style=solid];
   lbl_ekoplaza_card_eur -> out_auto_1hit [color="#E91E63", penwidth=2.5, style=solid];
   malgo_default -> cat_basic [color="#E91E63", penwidth=2.5, style=solid];
+  nolbl_ekoplaza_card_eur -> tui_ekoplaza_card_eur [color="#E91E63", penwidth=2.5, style=solid];
   out_auto_1hit -> jrnl_groceries_ekoplaza [color="#E91E63", penwidth=2.5, style=solid];
   start_2024_1000eur -> csv_ekoplaza_4217_jan15 [color="#E91E63", penwidth=2.5, style=solid];
+  tui_ekoplaza_card_eur -> lbl_ekoplaza_card_eur [color="#E91E63", penwidth=2.5, style=solid];
 }
 @enddot

@@ -16,10 +16,12 @@
 #   8. start_journal         - opening-balance journals
 #   9. csv_txn               - bank CSV transaction rows
 #  10. receipt_img            - receipt photographs
-#  11. receipt_lbl            - receipt label JSONs
-#  12. matching_out           - matching algorithm outcomes
-#  13. journal_out            - hledger journal postings
-#  14. visualization          - Sankey / Treemap visualisations
+#  11. receipt_lbl_before     - receipt has no label yet
+#  12. receipt_lbl_tui        - label receipt in TUI based on image
+#  13. receipt_lbl_after      - receipt label output JSON
+#  14. matching_out           - matching algorithm outcomes
+#  15. journal_out            - hledger journal postings
+#  16. visualization          - Sankey / Treemap visualisations
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -345,20 +347,175 @@ layers:
         desc: "Receipt with ambiguous DD-MM date"
         used_by: [test]
 
-  - name: receipt_lbl
-    label: "Receipt Labels (JSON)"
+  - name: receipt_lbl_before
+    label: "No label exists yet"
+    nodes:
+      - id: nolbl_ekoplaza_card_eur
+        label: "ekoplaza_card\n(no label)"
+        desc: "No receipt label JSON exists yet for ekoplaza card receipt"
+        used_by: [test, demo]
+
+      - id: nolbl_ekoplaza_cash_eur
+        label: "ekoplaza_cash\n(no label)"
+        desc: "No receipt label JSON exists yet for ekoplaza cash receipt"
+        used_by: [test]
+
+      - id: nolbl_london_lunch_gbp
+        label: "london_lunch\n(no label)"
+        desc: "No receipt label JSON exists yet for london lunch receipt"
+        used_by: [test]
+
+      - id: nolbl_atm_100gbp
+        label: "atm_100gbp\n(no label)"
+        desc: "No receipt label JSON exists yet for ATM withdrawal receipt"
+        used_by: [test, demo]
+
+      - id: nolbl_atm_200gbp_fee
+        label: "atm_200gbp\n(no label)"
+        desc: "No receipt label JSON exists yet for ATM withdrawal with fee"
+        used_by: [test]
+
+      - id: nolbl_gold_10g
+        label: "gold_10g\n(no label)"
+        desc: "No receipt label JSON exists yet for gold purchase"
+        used_by: [test]
+
+      - id: nolbl_bike_cash
+        label: "bike_repair\n(no label)"
+        desc: "No receipt label JSON exists yet for bike repair"
+        used_by: [test]
+
+      - id: nolbl_coffee_cash
+        label: "coffee_cash\n(no label)"
+        desc: "No receipt label JSON exists yet for coffee"
+        used_by: [test]
+
+      - id: nolbl_dinner_split
+        label: "dinner_split\n(no label)"
+        desc: "No receipt label JSON exists yet for dinner split"
+        used_by: [test]
+
+      - id: nolbl_return_item
+        label: "return_item\n(no label)"
+        desc: "No receipt label JSON exists yet for return"
+        used_by: [test]
+
+      - id: nolbl_delayed_shop
+        label: "delayed_shop\n(no label)"
+        desc: "No receipt label JSON exists yet for delayed shop"
+        used_by: [test]
+
+      - id: nolbl_rounded_shop
+        label: "rounded_shop\n(no label)"
+        desc: "No receipt label JSON exists yet for rounded shop"
+        used_by: [test]
+
+      - id: nolbl_swapped_date
+        label: "bookshop\n(no label)"
+        desc: "No receipt label JSON exists yet for swapped date"
+        used_by: [test]
+
+      - id: nolbl_salary_credit
+        label: "salary_credit\n(no label)"
+        desc: "No receipt label JSON exists yet for salary"
+        used_by: [test]
+
+  - name: receipt_lbl_tui
+    label: "Label receipt in TUI"
+    nodes:
+      - id: tui_ekoplaza_card_eur
+        label: "TUI label\nekoplaza_card"
+        desc: "Label ekoplaza card receipt via TUI based on image"
+        used_by: [test, demo]
+        components: &lbl_components
+          - {id: date, label: "Receipt date"}
+          - {id: time, label: "Receipt time"}
+          - {id: category, label: "Expense category"}
+          - {id: bank_account, label: "Bank / wallet"}
+          - {id: currency, label: "Currency"}
+          - {id: amount, label: "Amount paid"}
+          - {id: change, label: "Change returned"}
+          - {id: shop_name, label: "Shop name"}
+          - {id: shop_street, label: "Street"}
+          - {id: shop_house_nr, label: "House number"}
+          - {id: shop_zipcode, label: "Zip code"}
+          - {id: shop_city, label: "City"}
+          - {id: shop_country, label: "Country"}
+          - {id: tax, label: "Tax (BTW)"}
+
+      - id: tui_ekoplaza_cash_eur
+        label: "TUI label\nekoplaza_cash"
+        desc: "Label ekoplaza cash receipt via TUI"
+        used_by: [test]
+
+      - id: tui_london_lunch_gbp
+        label: "TUI label\nlondon_lunch"
+        desc: "Label london lunch receipt via TUI"
+        used_by: [test]
+
+      - id: tui_atm_100gbp
+        label: "TUI label\natm_100gbp"
+        desc: "Label ATM withdrawal receipt via TUI"
+        used_by: [test, demo]
+
+      - id: tui_atm_200gbp_fee
+        label: "TUI label\natm_200gbp"
+        desc: "Label ATM withdrawal with fee via TUI"
+        used_by: [test]
+
+      - id: tui_gold_10g
+        label: "TUI label\ngold_10g"
+        desc: "Label gold purchase receipt via TUI"
+        used_by: [test]
+
+      - id: tui_bike_cash
+        label: "TUI label\nbike_repair"
+        desc: "Label bike repair receipt via TUI"
+        used_by: [test]
+
+      - id: tui_coffee_cash
+        label: "TUI label\ncoffee_cash"
+        desc: "Label coffee receipt via TUI"
+        used_by: [test]
+
+      - id: tui_dinner_split
+        label: "TUI label\ndinner_split"
+        desc: "Label dinner split receipt via TUI"
+        used_by: [test]
+
+      - id: tui_return_item
+        label: "TUI label\nreturn_item"
+        desc: "Label return receipt via TUI"
+        used_by: [test]
+
+      - id: tui_delayed_shop
+        label: "TUI label\ndelayed_shop"
+        desc: "Label delayed shop receipt via TUI"
+        used_by: [test]
+
+      - id: tui_rounded_shop
+        label: "TUI label\nrounded_shop"
+        desc: "Label rounded shop receipt via TUI"
+        used_by: [test]
+
+      - id: tui_swapped_date
+        label: "TUI label\nbookshop"
+        desc: "Label swapped date receipt via TUI"
+        used_by: [test]
+
+      - id: tui_salary_credit
+        label: "TUI label\nsalary_credit"
+        desc: "Label salary credit via TUI"
+        used_by: [test]
+
+  - name: receipt_lbl_after
+    label: "Receipt label output JSON"
     nodes:
       - id: lbl_ekoplaza_card_eur
         label: "ekoplaza_card\nEUR 42.17 card"
         desc: "Triodos account, 2025-01-15, groceries:ekoplaza"
         used_by: [test, demo]
-        components: &lbl_components
-          - {id: date_time, label: "Receipt date & time"}
-          - {id: category, label: "Expense category"}
-          - {id: bank_account, label: "Bank / wallet"}
-          - {id: currency, label: "Currency"}
-          - {id: amount, label: "Amount paid"}
-          - {id: shop, label: "Shop address"}
+        components: *lbl_components
 
       - id: lbl_ekoplaza_cash_eur
         label: "ekoplaza_cash\nEUR 28.95 cash"
@@ -1036,10 +1193,10 @@ stories:
     data_use: both
     receipt_image: "ekoplaza_card.png"
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
     demo_paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
-    segment_nodes: [img_ekoplaza_card, lbl_ekoplaza_card_eur]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+    segment_nodes: [img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur]
     gif_video: 2b1_full_path
 
   - id: US-2b.2
@@ -1067,10 +1224,10 @@ stories:
     data_use: test
     receipt_image: "coffee_cash.png"
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, nolbl_coffee_cash, tui_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
     demo_paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_coffee_cash, lbl_coffee_cash]
-    segment_nodes: [img_coffee_cash, lbl_coffee_cash]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_coffee_cash, nolbl_coffee_cash, tui_coffee_cash, lbl_coffee_cash]
+    segment_nodes: [img_coffee_cash, nolbl_coffee_cash, tui_coffee_cash, lbl_coffee_cash]
 
   - id: US-2b.3
     title: "Label a foreign-currency receipt"
@@ -1099,10 +1256,10 @@ stories:
     data_use: test
     gif_video: 2b_label_foreign_currency
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp, jrnl_triodos_debit_gbp]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp, jrnl_triodos_debit_gbp]
     demo_paths:
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_atm_gbp, lbl_atm_100gbp]
-    segment_nodes: [img_atm_gbp, lbl_atm_100gbp]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp]
+    segment_nodes: [img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp]
 
   - id: US-2b.4
     title: "Label a split-payment receipt (card + cash)"
@@ -1139,11 +1296,11 @@ stories:
     receipt_image: "split_dinner.png"
     gif_video: 2b_label_split_payment
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_split_dinner_30, img_split_dinner, lbl_dinner_split, out_auto_1hit, jrnl_dinner_split_card]
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, img_split_dinner, lbl_dinner_split, out_skip_cash, jrnl_dinner_split_cash]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_split_dinner_30, img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split, out_auto_1hit, jrnl_dinner_split_card]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split, out_skip_cash, jrnl_dinner_split_cash]
     demo_paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, img_split_dinner, lbl_dinner_split]
-    segment_nodes: [img_split_dinner, lbl_dinner_split]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split]
+    segment_nodes: [img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split]
 
   - id: US-2b.5
     title: "Label a receipt with returned items"
@@ -1172,10 +1329,10 @@ stories:
     receipt_image: "return_item.png"
     gif_video: 2b_label_returned_items
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_return_item, lbl_return_item, out_auto_1hit, jrnl_return_net]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_return_item, nolbl_return_item, tui_return_item, lbl_return_item, out_auto_1hit, jrnl_return_net]
     demo_paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_return_item, lbl_return_item]
-    segment_nodes: [img_return_item, lbl_return_item]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_return_item, nolbl_return_item, tui_return_item, lbl_return_item]
+    segment_nodes: [img_return_item, nolbl_return_item, tui_return_item, lbl_return_item]
 
   - id: US-2b.6
     title: "Use AI suggestions during manual labelling"
@@ -1284,14 +1441,14 @@ stories:
     pattern: bold
     data_use: both
     paths:
-      - [acct_triodos_csv, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+      - [acct_triodos_csv, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
     demo_paths:
-      - [acct_triodos_csv, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
+      - [acct_triodos_csv, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza]
     component_filter:
       cat_basic: [groceries]
       match_default: [days, amount_range, days_month_swap]
       start_2024_1000eur: [opening_balance, base_currency]
-      lbl_ekoplaza_card_eur: [date_time, category, bank_account, currency, amount, shop]
+      lbl_ekoplaza_card_eur: [date, time, category, bank_account, currency, amount, change, shop_name, shop_street, shop_house_nr, shop_zipcode, shop_city, shop_country, tax]
     segment_nodes: [csv_ekoplaza_4217_jan15, lbl_ekoplaza_card_eur, out_auto_1hit]
 
   - id: US-3.2
@@ -1331,10 +1488,10 @@ stories:
     pattern: bold
     data_use: both
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_triodos_debit_gbp]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp, out_currency_convert, jrnl_triodos_debit_gbp]
     demo_paths:
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp]
     segment_nodes: [csv_atm_gbp_11750, lbl_atm_100gbp, out_currency_convert]
 
   - id: US-3.3
@@ -1362,7 +1519,7 @@ stories:
     pattern: dashed
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_narrow, start_2024_1000eur, csv_delayed_jan18, img_delayed_shop, lbl_delayed_shop, out_widen_date, jrnl_delayed_shop]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_narrow, start_2024_1000eur, csv_delayed_jan18, img_delayed_shop, nolbl_delayed_shop, tui_delayed_shop, lbl_delayed_shop, out_widen_date, jrnl_delayed_shop]
     segment_nodes: [match_narrow, csv_delayed_jan18, lbl_delayed_shop, out_widen_date]
 
   - id: US-3.4
@@ -1390,7 +1547,7 @@ stories:
     pattern: dashed
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_rounded_5000, img_rounded_shop, lbl_rounded_shop, out_widen_amount, jrnl_rounded_shop]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_rounded_5000, img_rounded_shop, nolbl_rounded_shop, tui_rounded_shop, lbl_rounded_shop, out_widen_amount, jrnl_rounded_shop]
     segment_nodes: [csv_rounded_5000, lbl_rounded_shop, out_widen_amount]
 
   - id: US-3.5
@@ -1423,7 +1580,7 @@ stories:
     pattern: dashed
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_swapped_date, img_swapped_date, lbl_swapped_date, out_swap_dd_mm, jrnl_swapped_shop]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_swapped_date, img_swapped_date, nolbl_swapped_date, tui_swapped_date, lbl_swapped_date, out_swap_dd_mm, jrnl_swapped_shop]
     segment_nodes: [csv_swapped_date, lbl_swapped_date, out_swap_dd_mm]
 
   - id: US-3.6
@@ -1453,9 +1610,9 @@ stories:
     pattern: dashed
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4217_jan14, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4300_jan16, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4217_jan14, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_date, start_2024_1000eur, csv_ekoplaza_4300_jan16, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_disambiguate_3, jrnl_groceries_ekoplaza]
     segment_nodes: [csv_ekoplaza_4217_jan15, csv_ekoplaza_4217_jan14, csv_ekoplaza_4300_jan16, lbl_ekoplaza_card_eur, out_disambiguate_3]
 
   - id: US-3.7
@@ -1482,7 +1639,7 @@ stories:
     pattern: dotted
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_both, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_too_many_reduce]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_wide_both, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_too_many_reduce]
     segment_nodes: [match_wide_both, csv_ekoplaza_4217_jan15, lbl_ekoplaza_card_eur, out_too_many_reduce]
 
   - id: US-3.8
@@ -1509,7 +1666,7 @@ stories:
     pattern: dashed
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_correct_receipt, out_auto_1hit, jrnl_groceries_ekoplaza]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_correct_receipt, out_auto_1hit, jrnl_groceries_ekoplaza]
     segment_nodes: [lbl_ekoplaza_card_eur, out_correct_receipt, out_auto_1hit]
 
   - id: US-3.9
@@ -1539,8 +1696,8 @@ stories:
     pattern: bold
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_gold_dealer_580, img_gold, lbl_gold_10g, out_asset_convert, jrnl_asset_gold]
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_gold_dealer_580, img_gold, lbl_gold_10g, out_asset_convert, jrnl_triodos_debit_gold]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_gold_dealer_580, img_gold, nolbl_gold_10g, tui_gold_10g, lbl_gold_10g, out_asset_convert, jrnl_asset_gold]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_gold_dealer_580, img_gold, nolbl_gold_10g, tui_gold_10g, lbl_gold_10g, out_asset_convert, jrnl_triodos_debit_gold]
     segment_nodes: [csv_gold_dealer_580, lbl_gold_10g, out_asset_convert]
 
   - id: US-3.10
@@ -1565,7 +1722,7 @@ stories:
     pattern: solid
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_bike_repair, lbl_bike_cash, out_skip_cash, jrnl_repairs_bike]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_bike_repair, nolbl_bike_cash, tui_bike_cash, lbl_bike_cash, out_skip_cash, jrnl_repairs_bike]
     segment_nodes: [lbl_bike_cash, out_skip_cash]
 
   - id: US-3.11
@@ -1595,8 +1752,8 @@ stories:
     pattern: dotted
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_wallet_gbp_200]
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_bankfees]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, nolbl_atm_200gbp_fee, tui_atm_200gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_wallet_gbp_200]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_atm_gbp_23750_fee, img_atm_gbp_fee, nolbl_atm_200gbp_fee, tui_atm_200gbp_fee, lbl_atm_200gbp_fee, out_currency_convert_fee, jrnl_bankfees]
     segment_nodes: [csv_atm_gbp_23750_fee, lbl_atm_200gbp_fee, out_currency_convert_fee]
 
   - id: US-3.12
@@ -1686,7 +1843,7 @@ stories:
     pattern: dotted
     data_use: test
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_duplicate_blocked]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_duplicate_blocked]
     segment_nodes: [csv_ekoplaza_4217_jan15, lbl_ekoplaza_card_eur, out_duplicate_blocked]
 
   - id: US-3.15
@@ -1744,11 +1901,11 @@ stories:
     pattern: bold
     data_use: both
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey]
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_treemap]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_treemap]
     demo_paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey]
-    segment_nodes: [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey, viz_treemap]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey]
+    segment_nodes: [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan15, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_auto_1hit, jrnl_groceries_ekoplaza, viz_sankey, viz_treemap]
 
   - id: US-4.2
     title: "Run the pipeline with randomised/scrambled data for demos"
@@ -2135,7 +2292,7 @@ stories:
         The model runs locally (self-hosted).
     no_dag_reason: >-
       Not yet implemented — image classification step; once built, the path
-      will add a classification node between receipt_img and receipt_lbl layers.
+      will add a classification node between receipt_img and receipt_lbl_before layers.
 
 
   # =========================================================================
@@ -2288,5 +2445,5 @@ stories:
     pattern: solid
     data_use: test
     paths:
-      - [img_ekoplaza_card, lbl_ekoplaza_card_eur]
-    segment_nodes: [img_ekoplaza_card, lbl_ekoplaza_card_eur]
+      - [img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur]
+    segment_nodes: [img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur]

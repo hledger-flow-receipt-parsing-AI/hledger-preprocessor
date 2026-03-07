@@ -97,6 +97,22 @@
 <div class="receipt-pane zoom-pane" data-zoom-id="receipt">
 <div class="zoom-pane-inner">
 <img class="receipt-image-inline" src="../assets/receipts/ekoplaza_card.png" alt="Receipt: Label a simple same-currency card receipt">
+<svg class="receipt-overlay" viewBox="0 0 300 398" preserveAspectRatio="xMidYMid meet">
+<rect data-field="shop_name" x="113" y="12" width="74" height="16" rx="2"/>
+<rect data-field="shop_street" x="89" y="35" width="122" height="15" rx="2"/>
+<rect data-field="shop_house_nr" x="190" y="38" width="20" height="15" rx="2"/>
+<rect data-field="shop_zipcode" x="56" y="56" width="50" height="15" rx="2"/>
+<rect data-field="shop_city" x="107" y="55" width="78" height="16" rx="2"/>
+<rect data-field="shop_country" x="193" y="55" width="49" height="19" rx="2"/>
+<rect data-field="date" x="17" y="89" width="122" height="15" rx="2"/>
+<rect data-field="time" x="17" y="106" width="85" height="16" rx="2"/>
+<rect data-field="category" x="17" y="160" width="150" height="19" rx="2"/>
+<rect data-field="tax" x="17" y="216" width="71" height="17" rx="2"/>
+<rect data-field="currency" x="201" y="248" width="32" height="16" rx="2"/>
+<rect data-field="amount" x="234" y="248" width="48" height="16" rx="2"/>
+<rect data-field="bank_account" x="17" y="286" width="35" height="15" rx="2"/>
+<rect data-field="bank_account" x="17" y="303" width="107" height="16" rx="2"/>
+</svg>
 </div></div>
 <span class="story-id">US-2b.1<span class="badge badge-impl">implemented</span></span> <span class="story-title-inline">Label a simple same-currency card receipt</span>
 <div class="bdd-compact">
@@ -115,9 +131,132 @@
 </div>
 <div class="dag-section zoom-pane" data-zoom-id="dag">
 <div class="zoom-pane-inner">
+<div class="dag-header">
 <h2>DAG Diagram</h2>
+<div class="dag-view-toggle">
+<button id="btn-segment-view" class="toggle-btn active" title="Show only this story's segment">Segment</button>
+<button id="btn-full-view" class="toggle-btn" title="Show full end-to-end path">Full path</button>
+</div>
+</div>
 <div id="dag-segment-view">
-<img class="dag-fallback-img" src="../assets/images/isolated/US_2b_1.png" alt="DAG for US-2b.1">
+<svg class="dag-svg" viewBox="0 0 248 230" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs>
+<marker id="arrow_E91E63" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#E91E63"/></marker>
+</defs>
+<g class="cluster dag-cluster" data-layer="receipt_group"><rect x="13" y="59" width="206" height="153" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="75" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Receipt Labelling</text></g>
+<g class="cluster dag-cluster" data-layer="receipt_img"><rect x="16" y="16" width="200" height="41" fill="#FBE9E7" stroke="#888" rx="3"/><text x="24" y="31" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt Images</text></g>
+<g class="node dag-node" data-layer="receipt_img" data-node="img_ekoplaza_card"><a><title>Ekoplaza receipt, paid by card</title><rect x="32.0" y="32.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="47.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">ekoplaza_card.jpg</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_before"><rect x="16" y="76" width="200" height="41" fill="#FFF0F3" stroke="#888" rx="3"/><text x="24" y="91" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">No label exists yet</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_before" data-node="nolbl_ekoplaza_card_eur"><a><title>No receipt label JSON exists yet for ekoplaza card receipt</title><rect x="32.0" y="92.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="101.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">ekoplaza_card</text>
+<text x="82.0" y="112.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(no label)</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_tui"><rect x="16" y="122" width="200" height="41" fill="#FCE4EC" stroke="#888" rx="3"/><text x="24" y="137" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Label receipt in TUI</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_tui" data-node="tui_ekoplaza_card_eur"><a><title>Label ekoplaza card receipt via TUI based on image</title><rect x="32.0" y="138.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="147.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">TUI label</text>
+<text x="82.0" y="158.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">ekoplaza_card</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="16" y="168" width="200" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="24" y="183" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_ekoplaza_card_eur"><a><title>Triodos account, 2025-01-15, groceries:ekoplaza</title><rect x="32.0" y="184.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="193.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">ekoplaza_card</text>
+<text x="82.0" y="204.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">EUR 42.17 card</text>
+</a></g>
+<g class="edge dag-edge" data-source="img_ekoplaza_card" data-target="nolbl_ekoplaza_card_eur"><path d="M82.0,54.0 C82.0,73.0 82.0,73.0 82.0,92.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="nolbl_ekoplaza_card_eur" data-target="tui_ekoplaza_card_eur"><path d="M82.0,114.0 C82.0,126.0 82.0,126.0 82.0,138.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="tui_ekoplaza_card_eur" data-target="lbl_ekoplaza_card_eur"><path d="M82.0,160.0 C82.0,172.0 82.0,172.0 82.0,184.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+</svg>
+</div>
+<div id="dag-full-view" style="display:none">
+<svg class="dag-svg" viewBox="0 0 294 704" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs>
+<marker id="arrow_E91E63" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#E91E63"/></marker>
+</defs>
+<g class="cluster dag-cluster" data-layer="config_group"><rect x="13" y="13" width="252" height="245" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="29" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Configuration</text></g>
+<g class="cluster dag-cluster section-box" data-layer="receipt_group"><rect x="13" y="441" width="206" height="153" fill="none" stroke="var(--accent, #2563eb)" stroke-width="2.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="457" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Receipt Labelling</text></g>
+<g class="cluster dag-cluster" data-layer="config_accounts"><rect x="16" y="30" width="246" height="41" fill="#E3F2FD" stroke="#888" rx="3"/><text x="24" y="45" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Account Configuration</text></g>
+<g class="node dag-node" data-layer="config_accounts" data-node="acct_eur_wallet"><a><title>EUR cash wallet — no CSV import</title><rect x="32.0" y="46.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="55.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">EUR physical</text>
+<text x="82.0" y="66.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">wallet</text>
+</a></g>
+<g class="node dag-node" data-layer="config_accounts" data-node="acct_triodos_csv"><a><title>Triodos checking account — imports from CSV</title><rect x="146.0" y="46.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="196.0" y="55.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos checking</text>
+<text x="196.0" y="66.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(EUR CSV)</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="config_dir_paths"><rect x="16" y="76" width="200" height="41" fill="#BBDEFB" stroke="#888" rx="3"/><text x="24" y="91" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Directory Paths</text></g>
+<g class="node dag-node" data-layer="config_dir_paths" data-node="dirp_default"><a><title>Standard directory layout: import/{holder}/{bank}/{type}/{year}/</title><rect x="32.0" y="92.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="107.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default dir paths</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="config_file_names"><rect x="16" y="122" width="200" height="41" fill="#90CAF9" stroke="#888" rx="3"/><text x="24" y="137" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Filename Convention</text></g>
+<g class="node dag-node" data-layer="config_file_names" data-node="fnames_default"><a><title>Standard filename conventions for CSV, rules, and journal files</title><rect x="32.0" y="138.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="153.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default filenames</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="config_categorisation"><rect x="16" y="168" width="200" height="41" fill="#64B5F6" stroke="#888" rx="3"/><text x="24" y="183" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categorisation Config</text></g>
+<g class="node dag-node" data-layer="config_categorisation" data-node="catcfg_default"><a><title>Standard categorisation settings from config.yaml</title><rect x="32.0" y="184.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="199.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default categorisation</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="config_matching_algo"><rect x="16" y="214" width="200" height="41" fill="#42A5F5" stroke="#888" rx="3"/><text x="24" y="229" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Algo Config</text></g>
+<g class="node dag-node" data-layer="config_matching_algo" data-node="malgo_default"><a><title>Standard matching algorithm settings from config.yaml</title><rect x="32.0" y="230.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="245.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default matching algo</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="categories"><rect x="16" y="260" width="200" height="41" fill="#E8F5E9" stroke="#888" rx="3"/><text x="24" y="275" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categories</text></g>
+<g class="node dag-node" data-layer="categories" data-node="cat_basic"><a><title>groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}</title><rect x="32.0" y="276.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="291.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">basic categories</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="start_journal"><rect x="16" y="306" width="200" height="41" fill="#F3E5F5" stroke="#888" rx="3"/><text x="24" y="321" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Starting Journal</text></g>
+<g class="node dag-node" data-layer="start_journal" data-node="start_2024_1000eur"><a><title>Opening balance: Assets:Triodos:Checking 1000 EUR</title><rect x="32.0" y="322.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="337.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2024: 1000 EUR</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="csv_txn"><rect x="16" y="352" width="200" height="41" fill="#E0F7FA" stroke="#888" rx="3"/><text x="24" y="367" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Bank CSV Transactions</text></g>
+<g class="node dag-node" data-layer="csv_txn" data-node="csv_ekoplaza_4217_jan15"><a><title>Debit card purchase at Ekoplaza, exact date match</title><rect x="32.0" y="368.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="377.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos -42.17 EUR</text>
+<text x="82.0" y="388.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2025-01-15 Ekoplaza</text>
+</a></g>
+<g class="cluster dag-cluster section-box" data-layer="receipt_img"><rect x="16" y="398" width="200" height="41" fill="#FBE9E7" stroke="#888" rx="3" stroke-dasharray="8 4" stroke-width="2.5"/><text x="24" y="413" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt Images</text></g>
+<g class="node dag-node" data-layer="receipt_img" data-node="img_ekoplaza_card"><a><title>Ekoplaza receipt, paid by card</title><rect x="32.0" y="414.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="429.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">ekoplaza_card.jpg</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_before"><rect x="16" y="458" width="200" height="41" fill="#FFF0F3" stroke="#888" rx="3"/><text x="24" y="473" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">No label exists yet</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_before" data-node="nolbl_ekoplaza_card_eur"><a><title>No receipt label JSON exists yet for ekoplaza card receipt</title><rect x="32.0" y="474.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="483.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">ekoplaza_card</text>
+<text x="82.0" y="494.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(no label)</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_tui"><rect x="16" y="504" width="200" height="41" fill="#FCE4EC" stroke="#888" rx="3"/><text x="24" y="519" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Label receipt in TUI</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_tui" data-node="tui_ekoplaza_card_eur"><a><title>Label ekoplaza card receipt via TUI based on image</title><rect x="32.0" y="520.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="529.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">TUI label</text>
+<text x="82.0" y="540.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">ekoplaza_card</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="16" y="550" width="200" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="24" y="565" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_ekoplaza_card_eur"><a><title>Triodos account, 2025-01-15, groceries:ekoplaza</title><rect x="32.0" y="566.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="575.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">ekoplaza_card</text>
+<text x="82.0" y="586.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">EUR 42.17 card</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="matching_out"><rect x="16" y="596" width="200" height="41" fill="#FFF8E1" stroke="#888" rx="3"/><text x="24" y="611" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Outcome</text></g>
+<g class="node dag-node" data-layer="matching_out" data-node="out_auto_1hit"><a><title>Exact date+amount, no TUI needed</title><rect x="32.0" y="612.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="621.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">AUTO-LINK</text>
+<text x="82.0" y="632.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">1 match found</text>
+</a></g>
+<g class="cluster dag-cluster" data-layer="journal_out"><rect x="16" y="642" width="200" height="41" fill="#E8EAF6" stroke="#888" rx="3"/><text x="24" y="657" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Journal Output</text></g>
+<g class="node dag-node" data-layer="journal_out" data-node="jrnl_groceries_ekoplaza"><a><title>Debit groceries, credit Triodos checking</title><rect x="32.0" y="658.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="667.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Expenses:Groceries:</text>
+<text x="82.0" y="678.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Ekoplaza 42.17 EUR</text>
+</a></g>
+<g class="edge dag-edge" data-source="acct_eur_wallet" data-target="dirp_default"><path d="M82.0,68.0 C82.0,80.0 82.0,80.0 82.0,92.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="acct_triodos_csv" data-target="acct_eur_wallet"><path d="M196.0,46.0 C196.0,20.0 82.0,20.0 82.0,46.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="cat_basic" data-target="start_2024_1000eur"><path d="M82.0,298.0 C82.0,310.0 82.0,310.0 82.0,322.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="catcfg_default" data-target="malgo_default"><path d="M82.0,206.0 C82.0,218.0 82.0,218.0 82.0,230.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="csv_ekoplaza_4217_jan15" data-target="img_ekoplaza_card"><path d="M82.0,390.0 C82.0,402.0 82.0,402.0 82.0,414.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="dirp_default" data-target="fnames_default"><path d="M82.0,114.0 C82.0,126.0 82.0,126.0 82.0,138.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="fnames_default" data-target="catcfg_default"><path d="M82.0,160.0 C82.0,172.0 82.0,172.0 82.0,184.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="img_ekoplaza_card" data-target="nolbl_ekoplaza_card_eur"><path d="M82.0,436.0 C82.0,455.0 82.0,455.0 82.0,474.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="lbl_ekoplaza_card_eur" data-target="out_auto_1hit"><path d="M82.0,588.0 C82.0,600.0 82.0,600.0 82.0,612.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="malgo_default" data-target="cat_basic"><path d="M82.0,252.0 C82.0,264.0 82.0,264.0 82.0,276.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="nolbl_ekoplaza_card_eur" data-target="tui_ekoplaza_card_eur"><path d="M82.0,496.0 C82.0,508.0 82.0,508.0 82.0,520.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="out_auto_1hit" data-target="jrnl_groceries_ekoplaza"><path d="M82.0,634.0 C82.0,646.0 82.0,646.0 82.0,658.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="start_2024_1000eur" data-target="csv_ekoplaza_4217_jan15"><path d="M82.0,344.0 C82.0,356.0 82.0,356.0 82.0,368.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+<g class="edge dag-edge" data-source="tui_ekoplaza_card_eur" data-target="lbl_ekoplaza_card_eur"><path d="M82.0,542.0 C82.0,554.0 82.0,554.0 82.0,566.0" fill="none" stroke="#E91E63" stroke-width="1.5" marker-end="url(#arrow_E91E63)"/></g>
+</svg>
 </div>
 </div>
 </div>
@@ -218,7 +357,7 @@ Current layer: <span class="layer-name" id="layer-indicator-name">—</span>
 </div>
 </div>
 <script>
-const TIMESTAMPS = {"acct_triodos_csv": 0.0, "acct_eur_wallet": 23.16, "dirp_default": 32.72, "fnames_default": 49.96, "catcfg_default": 65.4, "malgo_default": 68.12, "cat_basic__groceries": 74.72, "cat_basic__withdrawl": 77.32, "start_2024_1000eur": 78.64, "csv_ekoplaza_4217_jan15": 86.96, "img_ekoplaza_card": 96.28, "lbl_ekoplaza_card_eur": 121.28, "lbl_ekoplaza_card_eur__date_time": 121.28, "lbl_ekoplaza_card_eur__category": 121.28, "lbl_ekoplaza_card_eur__bank_account": 121.28, "lbl_ekoplaza_card_eur__currency": 121.28, "lbl_ekoplaza_card_eur__amount": 121.28, "lbl_ekoplaza_card_eur__shop": 121.28, "jrnl_groceries_ekoplaza": 135.38, "cat_basic": 74.72, "out_auto_1hit": 137.38};
+const TIMESTAMPS = {"acct_triodos_csv": 0.0, "acct_eur_wallet": 23.16, "dirp_default": 32.72, "fnames_default": 49.96, "catcfg_default": 65.4, "malgo_default": 68.12, "cat_basic__groceries": 73.04, "cat_basic__withdrawl": 75.64, "start_2024_1000eur": 76.96, "csv_ekoplaza_4217_jan15": 85.28, "img_ekoplaza_card": 94.6, "nolbl_ekoplaza_card_eur": 95.5, "tui_ekoplaza_card_eur": 106.4, "tui_ekoplaza_card_eur__date": 107.3, "tui_ekoplaza_card_eur__time": 108.1, "tui_ekoplaza_card_eur__category": 109.9, "tui_ekoplaza_card_eur__bank_account": 112.3, "tui_ekoplaza_card_eur__currency": 113.2, "tui_ekoplaza_card_eur__amount": 113.8, "tui_ekoplaza_card_eur__change": 115.0, "tui_ekoplaza_card_eur__shop_name": 122.0, "tui_ekoplaza_card_eur__shop_street": 123.6, "tui_ekoplaza_card_eur__shop_house_nr": 124.8, "tui_ekoplaza_card_eur__shop_zipcode": 125.8, "tui_ekoplaza_card_eur__shop_city": 127.0, "tui_ekoplaza_card_eur__shop_country": 128.4, "tui_ekoplaza_card_eur__tax": 130.4, "lbl_ekoplaza_card_eur": 133.1, "jrnl_groceries_ekoplaza": 134.8, "cat_basic": 73.04, "out_auto_1hit": 136.8};
 </script>
 <script src="../assets/js/dag-sync.js"></script>
 <script src="../assets/js/zoom-pane.js"></script>
