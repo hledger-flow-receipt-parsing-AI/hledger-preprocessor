@@ -181,24 +181,65 @@ NODE_MARKER_RE = re.compile(r"@@NODE:(\w+)@@")
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]|\x1b\].*?\x07")
 
 
+def _build_rendered_times(
+    *, cast_path: Path
+) -> Tuple[List[Tuple[float, str]], List[float], float]:
+    """Parse a .cast file and compute rendered (idle-compressed) timestamps.
+
+    ``agg`` (v1.7.0) uses its own default ``--idle-time-limit`` of **5 s** as
+    the threshold for detecting idle gaps.  Gaps exceeding this threshold are
+    capped to the ``.cast`` header's ``idle_time_limit`` value (e.g. 2 s).
+    We replicate this exact behaviour so that extracted marker timestamps
+    match the rendered video.
+
+    Returns ``(events, rendered_times, idle_limit)`` where *events* is a
+    list of ``(raw_ts, data)`` tuples and *rendered_times* is the
+    corresponding rendered timestamp for each event.
+    """
+    AGG_IDLE_THRESHOLD = 5.0  # agg's built-in default --idle-time-limit
+
+    events: List[Tuple[float, str]] = []
+    idle_limit: Optional[float] = None
+    try:
+        with open(cast_path) as f:
+            header = json.loads(f.readline())
+            idle_limit = header.get("idle_time_limit")
+            for line in f:
+                row = json.loads(line)
+                events.append((row[0], row[2]))
+    except (json.JSONDecodeError, OSError):
+        return [], [], None
+
+    rendered: List[float] = []
+    rendered_t = 0.0
+    prev_raw = 0.0
+    for i, (raw_t, _data) in enumerate(events):
+        if i == 0:
+            rendered_t = raw_t
+        else:
+            gap = raw_t - prev_raw
+            if gap > AGG_IDLE_THRESHOLD:
+                gap = idle_limit if idle_limit else AGG_IDLE_THRESHOLD
+            rendered_t += gap
+        rendered.append(rendered_t)
+        prev_raw = raw_t
+
+    return events, rendered, idle_limit
+
+
 def parse_cast_node_markers(*, cast_path: Path) -> Dict[str, float]:
     """Parse @@NODE:node_id@@ markers from a .cast file.
 
-    Returns {node_id: first_timestamp_seconds} for each unique node marker.
+    Returns {node_id: first_timestamp_seconds} using rendered
+    (idle-compressed) timestamps that match the GIF/MP4 output.
     """
+    events, rendered, _idle = _build_rendered_times(cast_path=cast_path)
     markers: Dict[str, float] = {}
-    try:
-        with open(cast_path) as f:
-            f.readline()  # skip header
-            for line in f:
-                row = json.loads(line)
-                ts, _evt, data = row[0], row[1], row[2]
-                for m in NODE_MARKER_RE.finditer(data):
-                    nid = m.group(1)
-                    if nid not in markers:
-                        markers[nid] = round(ts, 2)
-    except (json.JSONDecodeError, OSError):
-        pass
+    for i, (raw_t, data) in enumerate(events):
+        for m in NODE_MARKER_RE.finditer(data):
+            nid = m.group(1)
+            if nid not in markers:
+                markers[nid] = round(rendered[i], 2)
     return markers
 
 
@@ -272,17 +313,11 @@ def get_markers_for_story(
 
 
 def get_cast_duration(*, cast_path: Path) -> float:
-    """Return the timestamp of the last event in a .cast file (i.e. its duration)."""
-    last_ts = 0.0
-    try:
-        with open(cast_path) as f:
-            f.readline()  # skip header
-            for line in f:
-                row = json.loads(line)
-                last_ts = row[0]
-    except (json.JSONDecodeError, OSError):
-        pass
-    return round(last_ts, 2)
+    """Return the rendered duration of a .cast file (with idle compression)."""
+    _events, rendered, _idle = _build_rendered_times(cast_path=cast_path)
+    if rendered:
+        return round(rendered[-1], 2)
+    return 0.0
 
 
 def get_node_markers_for_section(
@@ -1862,16 +1897,52 @@ def generate_js() -> str:
   var receiptPane = document.querySelector('.receipt-pane');
   var overlayRects = document.querySelectorAll('.receipt-overlay rect');
 
-  // Map sub-component timestamp keys to receipt field IDs
+  // Map sub-component timestamp keys to receipt field IDs, grouped by parent
   var fieldTimestamps = {};
+  var fieldsByParent = {};
   Object.keys(TIMESTAMPS).forEach(function(k) {
     var parts = k.split('__');
     if (parts.length === 2 && TIMESTAMPS[k] !== null) {
-      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k] };
+      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k], parent: parts[0] };
+      if (!fieldsByParent[parts[0]]) fieldsByParent[parts[0]] = [];
+      fieldsByParent[parts[0]].push(k);
     }
   });
-  var fieldTsKeys = Object.keys(fieldTimestamps)
-    .sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });
+  // Sort each parent's field keys by time
+  Object.keys(fieldsByParent).forEach(function(p) {
+    fieldsByParent[p].sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });
+  });
+
+  // Debug overlay (toggle with 'd' key)
+  var debugEl = null;
+  var debugVisible = false;
+  function ensureDebugEl() {
+    if (!debugEl) {
+      debugEl = document.createElement('div');
+      debugEl.style.cssText = 'position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;padding:8px 12px;border-radius:4px;z-index:9999;pointer-events:none;max-width:340px;white-space:pre';
+      document.body.appendChild(debugEl);
+    }
+  }
+  function updateDebug(videoTime, nodeId, activeField) {
+    if (!debugVisible) return;
+    ensureDebugEl();
+    var lines = ['t=' + (videoTime !== undefined ? videoTime.toFixed(2) : '?') + 's'];
+    lines.push('node=' + nodeId);
+    lines.push('field=' + (activeField || '(none)'));
+    // Show field timestamp ranges for the active TUI node
+    var parentKeys = fieldsByParent[nodeId];
+    if (parentKeys) {
+      lines.push('---');
+      for (var i = 0; i < parentKeys.length; i++) {
+        var e = fieldTimestamps[parentKeys[i]];
+        var marker = (e.field === activeField) ? '>' : ' ';
+        var nextTime = (i + 1 < parentKeys.length) ? fieldTimestamps[parentKeys[i + 1]].time : null;
+        var range = e.time.toFixed(2) + (nextTime ? '-' + nextTime.toFixed(2) : '+');
+        lines.push(marker + ' ' + e.field + ' ' + range);
+      }
+    }
+    debugEl.textContent = lines.join('\\n');
+  }
 
   function highlightReceiptField(nodeId, videoTime) {
     if (receiptPane) {
@@ -1885,12 +1956,14 @@ def generate_js() -> str:
         receiptPane.classList.remove('active');
       }
     }
+    var activeField = null;
     if (overlayRects.length > 0 && videoTime !== undefined) {
-      var activeField = null;
       var isTuiNode = nodeId.indexOf('tui_') === 0;
       if (isTuiNode) {
-        for (var i = 0; i < fieldTsKeys.length; i++) {
-          var entry = fieldTimestamps[fieldTsKeys[i]];
+        // Only consider fields belonging to this specific TUI node
+        var nodeFieldKeys = fieldsByParent[nodeId] || [];
+        for (var i = 0; i < nodeFieldKeys.length; i++) {
+          var entry = fieldTimestamps[nodeFieldKeys[i]];
           if (entry.time <= videoTime) activeField = entry.field;
         }
       }
@@ -1898,6 +1971,7 @@ def generate_js() -> str:
         r.classList.toggle('active', r.getAttribute('data-field') === activeField);
       });
     }
+    updateDebug(videoTime, nodeId, activeField);
   }
 
   function highlightNode(nodeId) {
@@ -1961,6 +2035,10 @@ def generate_js() -> str:
       e.preventDefault();
       if (video.paused) video.play();
       else video.pause();
+    } else if (e.key === 'd') {
+      debugVisible = !debugVisible;
+      if (debugEl) debugEl.style.display = debugVisible ? '' : 'none';
+      if (debugVisible) highlightNode(tsKeys[currentIdx]);
     }
   });
 
