@@ -37,47 +37,155 @@ log "Building markers sidecar JSON..."
 python3 -c "
 import json, re, sys
 from pathlib import Path
+from PIL import Image
 
-# 1. Extract structural markers from .cast
+# ── 1. Parse .cast events ───────────────────────────────────────────
 cast_path = Path('${CAST_FILE}')
-markers = {}
-ts = 0.0
 with open(cast_path) as f:
-    f.readline()  # skip header
+    header = json.loads(f.readline())
+    idle_limit = header.get('idle_time_limit')
+    raw_events = []
     for line in f:
         row = json.loads(line)
-        ts, data = row[0], row[2]
-        for m in re.finditer(r'@@NODE:(\w+)@@', data):
-            nid = m.group(1)
-            if nid not in markers:
-                markers[nid] = round(ts, 2)
+        raw_events.append((row[0], row[2]))
 
-total_duration = round(ts, 2)
+raw_duration = raw_events[-1][0] if raw_events else 0.0
+
+# ── 2. Read the actual GIF frame timing (ground truth) ──────────────
+#    agg's idle compression + zero-gap frame inflation make it
+#    impossible to predict the GIF timeline from .cast timestamps
+#    alone.  Instead, we read the GIF's frame durations and build a
+#    piecewise-linear mapping from raw .cast time → GIF time.
+gif_path = Path('${OUTPUT_DIR}/2b_label_receipt_dracula.gif')
+img = Image.open(gif_path)
+gif_durs_ms = []
+try:
+    while True:
+        gif_durs_ms.append(img.info.get('duration', 100))
+        img.seek(img.tell() + 1)
+except EOFError:
+    pass
+gif_cum = [0.0]
+for d in gif_durs_ms:
+    gif_cum.append(gif_cum[-1] + d / 1000.0)
+gif_duration = gif_cum[-1]
+
+# Find the single large compressed gap (> 5 s in the raw timeline).
+# agg 1.3.0 only compresses gaps exceeding its --idle-time-limit
+# default of 5 s, capping them to the .cast header value.
+AGG_THRESHOLD = 5.0
+gap_event = None
+for i in range(1, len(raw_events)):
+    if raw_events[i][0] - raw_events[i - 1][0] > AGG_THRESHOLD:
+        gap_event = i
+        break
+
+if gap_event is not None:
+    seg1_raw_start = raw_events[0][0]
+    seg1_raw_end   = raw_events[gap_event - 1][0]
+    seg2_raw_start = raw_events[gap_event][0]
+    seg2_raw_end   = raw_events[-1][0]
+    gap_raw_dt     = seg2_raw_start - seg1_raw_end
+    compressed_dt  = idle_limit if idle_limit else 2.0
+
+    # The compressed gap appears as a frame with duration == compressed_dt * 1000.
+    # There may be multiple frames with that duration (unrelated pauses that
+    # happen to equal the idle_time_limit).  Pick the candidate whose position
+    # best explains the overall segment durations.
+    target_ms = int(compressed_dt * 1000)
+    candidates = [fi for fi, d in enumerate(gif_durs_ms) if d == target_ms]
+
+    gap_frame = None
+    if len(candidates) == 1:
+        gap_frame = candidates[0]
+    elif candidates:
+        # Expected pre-gap duration = raw pre-gap minus any sub-threshold
+        # gaps that stay unchanged, so just use a ratio heuristic:
+        # the gap frame should split the GIF at roughly the same fraction
+        # as gap_event splits the events.
+        expected_frac = gap_event / len(raw_events)
+        best_fi = None
+        best_err = float('inf')
+        for fi in candidates:
+            frac = fi / len(gif_durs_ms)
+            err = abs(frac - expected_frac)
+            if err < best_err:
+                best_err = err
+                best_fi = fi
+        gap_frame = best_fi
+
+    if gap_frame is None:
+        print(f'  Warning: could not locate compressed gap frame (target={target_ms}ms, '
+              f'candidates={candidates}), falling back to linear mapping',
+              file=sys.stderr)
+        seg2_raw_start = seg2_raw_end = None
+        seg1_raw_end = raw_events[-1][0]
+        seg1_gif_start = gif_cum[0]
+        seg1_gif_end = gif_cum[-1]
+    else:
+        seg1_gif_start = gif_cum[0]
+        seg1_gif_end   = gif_cum[gap_frame]
+        seg2_gif_start = gif_cum[gap_frame + 1]
+        seg2_gif_end   = gif_cum[-1]
+else:
+    # No large gap — simple linear mapping
+    seg1_raw_start = raw_events[0][0]
+    seg1_raw_end   = raw_events[-1][0]
+    seg1_gif_start = gif_cum[0]
+    seg1_gif_end   = gif_cum[-1]
+    seg2_raw_start = seg2_raw_end = None
+
+seg1_span = seg1_raw_end - seg1_raw_start
+seg1_scale = ((seg1_gif_end - seg1_gif_start) / seg1_span) if seg1_span else 1.0
+if seg2_raw_start is not None:
+    seg2_span = seg2_raw_end - seg2_raw_start
+    seg2_scale = ((seg2_gif_end - seg2_gif_start) / seg2_span) if seg2_span else 1.0
+
+def raw_to_gif(raw_ts):
+    if seg2_raw_start is None or raw_ts <= seg1_raw_end:
+        return seg1_gif_start + (raw_ts - seg1_raw_start) * seg1_scale
+    elif raw_ts >= seg2_raw_start:
+        return seg2_gif_start + (raw_ts - seg2_raw_start) * seg2_scale
+    else:
+        frac = (raw_ts - seg1_raw_end) / (seg2_raw_start - seg1_raw_end)
+        return seg1_gif_end + frac * (seg2_gif_start - seg1_gif_end)
+
+total_duration = round(gif_duration, 2)
+
+# ── 3. Extract structural markers from .cast ────────────────────────
+markers = {}
+raw_markers = {}
+for i, (raw_t, data) in enumerate(raw_events):
+    for m in re.finditer(r'@@NODE:(\w+)@@', data):
+        nid = m.group(1)
+        if nid not in markers:
+            markers[nid] = round(raw_to_gif(raw_t), 2)
+            raw_markers[nid] = raw_t
+
 print(f'  Extracted {len(markers)} structural markers from .cast')
+print(f'  raw duration {raw_duration:.2f}s -> GIF {gif_duration:.2f}s')
 
-# 2. Merge TUI field markers (wall-clock based, need calibration)
+# ── 4. Merge TUI field markers (wall-clock → raw → GIF) ────────────
 tui_markers_path = Path('/tmp/tui_field_markers.json')
 if tui_markers_path.exists():
     tui_markers = json.loads(tui_markers_path.read_text())
-
-    # Calibrate: find the offset between .cast and wall-clock time bases
-    # using the nolbl_ekoplaza_card_eur marker present in both
-    cast_nolbl_ts = markers.get('nolbl_ekoplaza_card_eur')
+    raw_nolbl_ts = raw_markers.get('nolbl_ekoplaza_card_eur')
     tui_nolbl_ts = tui_markers.pop('_calibration_nolbl', None)
 
-    if cast_nolbl_ts is not None and tui_nolbl_ts is not None:
-        offset = cast_nolbl_ts - tui_nolbl_ts
+    if raw_nolbl_ts is not None and tui_nolbl_ts is not None:
+        offset = raw_nolbl_ts - tui_nolbl_ts
         merged = 0
         for nid, wall_ts in tui_markers.items():
             if nid not in markers:
-                markers[nid] = round(wall_ts + offset, 2)
+                raw_ts = wall_ts + offset
+                markers[nid] = round(raw_to_gif(raw_ts), 2)
                 merged += 1
         print(f'  Calibrated offset: {offset:+.2f}s, merged {merged} TUI field markers')
     else:
         print('  Warning: calibration marker missing, skipping TUI field markers',
               file=sys.stderr)
 
-# 3. Write combined sidecar JSON
+# ── 5. Write combined sidecar JSON ──────────────────────────────────
 out = Path('${OUTPUT_DIR}/2b_label_receipt_dracula_markers.json')
 out.write_text(json.dumps({'markers': markers, 'total_duration': total_duration}, indent=2) + '\n')
 print(f'  Total: {len(markers)} markers -> {out}')

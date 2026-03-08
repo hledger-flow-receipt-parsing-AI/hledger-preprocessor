@@ -61,16 +61,52 @@
   var receiptPane = document.querySelector('.receipt-pane');
   var overlayRects = document.querySelectorAll('.receipt-overlay rect');
 
-  // Map sub-component timestamp keys to receipt field IDs
+  // Map sub-component timestamp keys to receipt field IDs, grouped by parent
   var fieldTimestamps = {};
+  var fieldsByParent = {};
   Object.keys(TIMESTAMPS).forEach(function(k) {
     var parts = k.split('__');
     if (parts.length === 2 && TIMESTAMPS[k] !== null) {
-      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k] };
+      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k], parent: parts[0] };
+      if (!fieldsByParent[parts[0]]) fieldsByParent[parts[0]] = [];
+      fieldsByParent[parts[0]].push(k);
     }
   });
-  var fieldTsKeys = Object.keys(fieldTimestamps)
-    .sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });
+  // Sort each parent's field keys by time
+  Object.keys(fieldsByParent).forEach(function(p) {
+    fieldsByParent[p].sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });
+  });
+
+  // Debug overlay (toggle with 'd' key)
+  var debugEl = null;
+  var debugVisible = false;
+  function ensureDebugEl() {
+    if (!debugEl) {
+      debugEl = document.createElement('div');
+      debugEl.style.cssText = 'position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;padding:8px 12px;border-radius:4px;z-index:9999;pointer-events:none;max-width:340px;white-space:pre';
+      document.body.appendChild(debugEl);
+    }
+  }
+  function updateDebug(videoTime, nodeId, activeField) {
+    if (!debugVisible) return;
+    ensureDebugEl();
+    var lines = ['t=' + (videoTime !== undefined ? videoTime.toFixed(2) : '?') + 's'];
+    lines.push('node=' + nodeId);
+    lines.push('field=' + (activeField || '(none)'));
+    // Show field timestamp ranges for the active TUI node
+    var parentKeys = fieldsByParent[nodeId];
+    if (parentKeys) {
+      lines.push('---');
+      for (var i = 0; i < parentKeys.length; i++) {
+        var e = fieldTimestamps[parentKeys[i]];
+        var marker = (e.field === activeField) ? '>' : ' ';
+        var nextTime = (i + 1 < parentKeys.length) ? fieldTimestamps[parentKeys[i + 1]].time : null;
+        var range = e.time.toFixed(2) + (nextTime ? '-' + nextTime.toFixed(2) : '+');
+        lines.push(marker + ' ' + e.field + ' ' + range);
+      }
+    }
+    debugEl.textContent = lines.join('\n');
+  }
 
   function highlightReceiptField(nodeId, videoTime) {
     if (receiptPane) {
@@ -84,12 +120,14 @@
         receiptPane.classList.remove('active');
       }
     }
+    var activeField = null;
     if (overlayRects.length > 0 && videoTime !== undefined) {
-      var activeField = null;
       var isTuiNode = nodeId.indexOf('tui_') === 0;
       if (isTuiNode) {
-        for (var i = 0; i < fieldTsKeys.length; i++) {
-          var entry = fieldTimestamps[fieldTsKeys[i]];
+        // Only consider fields belonging to this specific TUI node
+        var nodeFieldKeys = fieldsByParent[nodeId] || [];
+        for (var i = 0; i < nodeFieldKeys.length; i++) {
+          var entry = fieldTimestamps[nodeFieldKeys[i]];
           if (entry.time <= videoTime) activeField = entry.field;
         }
       }
@@ -97,6 +135,7 @@
         r.classList.toggle('active', r.getAttribute('data-field') === activeField);
       });
     }
+    updateDebug(videoTime, nodeId, activeField);
   }
 
   function highlightNode(nodeId) {
@@ -160,6 +199,10 @@
       e.preventDefault();
       if (video.paused) video.play();
       else video.pause();
+    } else if (e.key === 'd') {
+      debugVisible = !debugVisible;
+      if (debugEl) debugEl.style.display = debugVisible ? '' : 'none';
+      if (debugVisible) highlightNode(tsKeys[currentIdx]);
     }
   });
 
