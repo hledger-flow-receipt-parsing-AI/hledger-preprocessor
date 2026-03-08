@@ -16,6 +16,7 @@ from .core import (
     Colors,
     Cursor,
     Screen,
+    emit_node_marker,
     get_conda_base,
     get_labels_dir,
     load_config_yaml,
@@ -23,6 +24,13 @@ from .core import (
 from .display import show_after_state, show_before_state, show_command
 from .key_display import show_key
 from .tui_navigator import Keys, TuiNavigator
+
+# ---------------------------------------------------------------------------
+# In-memory marker timestamps — collected during TUI field filling via
+# time.time() (no stdout output that would corrupt the urwid screen).
+# Written to the sidecar JSON after the recording finishes.
+# ---------------------------------------------------------------------------
+_tui_markers: dict = {}
 
 
 # ---------------------------------------------------------------------------
@@ -197,6 +205,7 @@ def _fill_text(nav: TuiNavigator, text: str) -> None:
     nav.type_text(text, char_pause=0.06)
     time.sleep(_AFTER_TYPE)
     nav.press_enter(pause=_BETWEEN)
+    nav.flush_output()
 
 
 def _fill_float(nav: TuiNavigator, value: str) -> None:
@@ -205,6 +214,7 @@ def _fill_float(nav: TuiNavigator, value: str) -> None:
         nav.type_text(value, char_pause=0.08)
         time.sleep(_AFTER_TYPE)
     nav.press_enter(pause=_BETWEEN)
+    nav.flush_output()
 
 
 def _select_vertical(nav: TuiNavigator, index: str) -> None:
@@ -212,6 +222,7 @@ def _select_vertical(nav: TuiNavigator, index: str) -> None:
     nav.type_text(index, char_pause=0.08)
     time.sleep(_AFTER_SELECT)
     nav.press_enter(pause=_BETWEEN)
+    nav.flush_output()
 
 
 def _select_horizontal_n(nav: TuiNavigator) -> None:
@@ -233,45 +244,73 @@ def _select_horizontal_n(nav: TuiNavigator) -> None:
     time.sleep(0.8)
     # Press Enter to confirm ( ) n → (x) n
     nav.press_enter(pause=_BETWEEN)
+    nav.flush_output()
 
 
 def _select_horizontal_first(nav: TuiNavigator) -> None:
     """Confirm the first (already-focused) option in a horizontal choice."""
     nav.press_enter(pause=_BETWEEN)
+    nav.flush_output()
 
 
-def _fill_receipt_fields(nav: TuiNavigator, vals: ReceiptDemoValues) -> None:
-    """Drive the urwid receipt TUI through every field using *vals*."""
+def _fill_receipt_fields(
+    nav: TuiNavigator,
+    vals: ReceiptDemoValues,
+    marker_prefix: str = "",
+) -> None:
+    """Drive the urwid receipt TUI through every field using *vals*.
+
+    When *marker_prefix* is set (e.g. ``"tui_ekoplaza_card_eur"``),
+    wall-clock timestamps are recorded in ``_tui_markers`` for each field.
+    After the recording finishes, these are converted to relative offsets
+    and written to the sidecar JSON — no stdout output that would corrupt
+    the urwid screen.
+    """
+    global _tui_markers
+
+    def _mark(field: str) -> None:
+        if marker_prefix:
+            key = f"{marker_prefix}__{field}"
+            _tui_markers[key] = time.time()
 
     nav.flush_output()
 
-    # ── Field 1: Receipt date and time ──────────────────────────────────
+    # ── Field 1: Receipt date ───────────────────────────────────────────
+    _mark("date")
     _fill_datetime(nav, vals.date_digits)
     nav.press_enter(pause=_BETWEEN)
     nav.flush_output()
 
+    # ── Field 1b: Time highlight starts after date Enter ────────────────
+    _mark("time")
+    time.sleep(0.3)
+
     # ── Field 2: Bookkeeping expense category ───────────────────────────
+    _mark("category")
     _fill_text(nav, vals.category)
     nav.flush_output()
 
     # ── Field 3: Account (vertical multiple choice) ─────────────────────
+    _mark("bank_account")
     _select_vertical(nav, vals.account_index)
     nav.flush_output()
 
     # ── Field 4: Currency (vertical multiple choice) ────────────────────
+    _mark("currency")
     _select_vertical(nav, vals.currency_index)
     nav.flush_output()
 
     # ── Field 5: Amount paid ────────────────────────────────────────────
+    _mark("amount")
     _fill_float(nav, vals.amount)
     nav.flush_output()
 
     # ── Field 6: Change returned ────────────────────────────────────────
+    _mark("change")
     _fill_float(nav, vals.change)
     nav.flush_output()
 
     # ── Field 7: Add another account? (horizontal y/n) ─────────────────
-    # Wait for the y/n prompt to render before navigating
     nav.wait_for("another account", timeout=5, silent=True)
     time.sleep(0.3)
     if vals.add_another_account:
@@ -286,27 +325,27 @@ def _fill_receipt_fields(nav: TuiNavigator, vals: ReceiptDemoValues) -> None:
 
     # When "manual address" (index 0) is selected, 6 address fields appear.
     if vals.shop_index == "0":
-        # Field 8a: Shop name
+        _mark("shop_name")
         _fill_text(nav, vals.shop_name)
         nav.flush_output()
 
-        # Field 8b: Shop street
+        _mark("shop_street")
         _fill_text(nav, vals.shop_street)
         nav.flush_output()
 
-        # Field 8c: Shop house nr
+        _mark("shop_house_nr")
         _fill_text(nav, vals.shop_house_nr)
         nav.flush_output()
 
-        # Field 8d: Shop zipcode
+        _mark("shop_zipcode")
         _fill_text(nav, vals.shop_zipcode)
         nav.flush_output()
 
-        # Field 8e: Shop city
+        _mark("shop_city")
         _fill_text(nav, vals.shop_city)
         nav.flush_output()
 
-        # Field 8f: Shop country
+        _mark("shop_country")
         _fill_text(nav, vals.shop_country)
         nav.flush_output()
 
@@ -315,6 +354,7 @@ def _fill_receipt_fields(nav: TuiNavigator, vals: ReceiptDemoValues) -> None:
     nav.flush_output()
 
     # ── Field 10: Total tax (optional) ──────────────────────────────────
+    _mark("tax")
     _fill_float(nav, vals.total_tax)
     nav.flush_output()
 
@@ -383,7 +423,12 @@ def run_label_receipt_demo(
     with open(before_file, "w") as f:
         json.dump({}, f)
 
+    emit_node_marker("img_ekoplaza_card")
     show_before_state(before_file, after_file)
+    emit_node_marker("nolbl_ekoplaza_card_eur")
+    # Record wall-clock time for this structural marker so generate.sh
+    # can calibrate TUI field marker timestamps against .cast timestamps.
+    _tui_markers["_calibration_nolbl"] = time.time()
 
     # ── Show command ────────────────────────────────────────────────────
     Screen.clear()
@@ -428,8 +473,13 @@ def run_label_receipt_demo(
         nav.flush_output()
         time.sleep(0.8)
 
+        # Record the TUI start marker via time.time() (no stdout output)
+        _tui_markers["tui_ekoplaza_card_eur"] = time.time()
+
         # ── Fill in every field ─────────────────────────────────────────
-        _fill_receipt_fields(nav, receipt)
+        _fill_receipt_fields(
+            nav, receipt, marker_prefix="tui_ekoplaza_card_eur"
+        )
 
         # Wait for the process to exit after the TUI saves
         time.sleep(0.5)
@@ -460,6 +510,7 @@ def run_label_receipt_demo(
     if new_label_path and os.path.isfile(new_label_path):
         shutil.copy(new_label_path, after_file)
 
+    emit_node_marker("lbl_ekoplaza_card_eur")
     Screen.clear()
     time.sleep(0.2)
     show_after_state(before_file, after_file)
@@ -469,6 +520,26 @@ def run_label_receipt_demo(
 
 # Keep old name as alias for backwards compatibility with generate.sh
 run_edit_receipt_demo = run_label_receipt_demo
+
+
+def _write_tui_markers_json() -> None:
+    """Write TUI field markers to a temporary JSON file.
+
+    The markers are stored as absolute wall-clock timestamps.
+    ``generate.sh`` calibrates them against the ``.cast`` timestamps
+    using the ``_calibration_nolbl`` key (which corresponds to the
+    ``nolbl_ekoplaza_card_eur`` structural marker emitted to both
+    ``.cast`` and ``_tui_markers``).
+    """
+    global _tui_markers
+    if not _tui_markers:
+        return
+
+    out_path = Path(os.environ.get(
+        "TUI_MARKERS_JSON", "/tmp/tui_field_markers.json"
+    ))
+    out_path.write_text(json.dumps(_tui_markers, indent=2) + "\n")
+    print(f"  TUI field markers ({len(_tui_markers)}) → {out_path}", flush=True)
 
 
 def main() -> None:
@@ -482,6 +553,7 @@ def main() -> None:
         return
 
     run_label_receipt_demo(config_path)
+    _write_tui_markers_json()
 
 
 if __name__ == "__main__":
