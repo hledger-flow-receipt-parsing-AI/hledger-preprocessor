@@ -3,13 +3,9 @@
 Covers US-1a.5: Per-bank matching params override global defaults.
 """
 
-from copy import deepcopy
 
-import pytest
 
-from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import load_config
-from hledger_preprocessor.config.MatchingAlgoConfig import MatchingAlgoConfig
 from hledger_preprocessor.matching.manual_actions.widen_amount_range import (
     widen_amount_range,
 )
@@ -21,9 +17,7 @@ from hledger_preprocessor.matching.manual_actions.widen_date_range import (
 class TestPerBankDateOverride:
     """US-1a.5: Per-bank date margin can differ from global."""
 
-    def test_widen_creates_independent_config(
-        self, temp_finance_root
-    ) -> None:
+    def test_widen_creates_independent_config(self, temp_finance_root) -> None:
         """Widening for one bank creates a separate Config instance."""
         cfg = load_config(
             config_path=str(temp_finance_root["config_path"]),
@@ -36,9 +30,7 @@ class TestPerBankDateOverride:
         # Global unchanged
         assert cfg.matching_algo.days == 2
 
-    def test_successive_widenings_accumulate(
-        self, temp_finance_root
-    ) -> None:
+    def test_successive_widenings_accumulate(self, temp_finance_root) -> None:
         """Multiple widenings accumulate on the same config."""
         cfg = load_config(
             config_path=str(temp_finance_root["config_path"]),
@@ -67,9 +59,7 @@ class TestPerBankAmountOverride:
         assert bank_cfg.matching_algo.amount_range == 0.05
         assert cfg.matching_algo.amount_range == 0
 
-    def test_global_default_is_zero(
-        self, temp_finance_root
-    ) -> None:
+    def test_global_default_is_zero(self, temp_finance_root) -> None:
         """Global default amount_range is 0 (exact match)."""
         cfg = load_config(
             config_path=str(temp_finance_root["config_path"]),
@@ -81,9 +71,7 @@ class TestPerBankAmountOverride:
 class TestMatchingAlgoConfigIntegrity:
     """US-1a.5: MatchingAlgoConfig preserves all fields after override."""
 
-    def test_days_month_swap_preserved(
-        self, temp_finance_root
-    ) -> None:
+    def test_days_month_swap_preserved(self, temp_finance_root) -> None:
         """days_month_swap flag is preserved after widening."""
         cfg = load_config(
             config_path=str(temp_finance_root["config_path"]),
@@ -93,9 +81,7 @@ class TestMatchingAlgoConfigIntegrity:
         widened = widen_date_range(config=cfg, additional_days=5.0)
         assert widened.matching_algo.days_month_swap == original_swap
 
-    def test_multiple_receipts_flag_preserved(
-        self, temp_finance_root
-    ) -> None:
+    def test_multiple_receipts_flag_preserved(self, temp_finance_root) -> None:
         """multiple_receipts_per_transaction flag preserved after widening."""
         cfg = load_config(
             config_path=str(temp_finance_root["config_path"]),

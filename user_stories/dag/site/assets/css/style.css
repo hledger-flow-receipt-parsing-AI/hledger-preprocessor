@@ -97,9 +97,15 @@ a:hover { text-decoration: underline; }
   text-transform: lowercase;
 }
 
-/* Receipt image — zoom-pane floated right inside story header */
+/* Receipt image — zoom-pane floated left inside story header */
 .receipt-pane {
-  float: right; margin: 0 0 0.5rem 1rem;
+  float: left; margin: 0 1rem 0.5rem 0;
+  position: relative;
+  transition: box-shadow 0.3s ease;
+}
+.receipt-pane.active {
+  box-shadow: 0 0 12px 4px var(--accent-glow);
+  border-radius: 6px;
 }
 .receipt-image-inline {
   max-height: 280px; width: auto;
@@ -107,6 +113,17 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: block;
 }
+/* Receipt field bounding box overlay */
+.receipt-overlay {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.receipt-overlay rect {
+  fill: none; stroke: var(--accent); stroke-width: 1.5;
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.receipt-overlay rect.active { opacity: 0.85; }
 
 /* Legacy receipt image section (kept for compatibility) */
 .receipt-image-section {
@@ -379,4 +396,18 @@ a:hover { text-decoration: underline; }
 }
 .zoom-pane.zoom-selected .zoom-indicator,
 .zoom-pane:hover .zoom-indicator { opacity: 1; }
+.zoom-resize-buttons {
+  position: absolute; top: 4px; left: 4px;
+  display: flex; gap: 2px; z-index: 5;
+  opacity: 0; transition: opacity 0.2s;
+}
+.zoom-pane.zoom-selected .zoom-resize-buttons,
+.zoom-pane:hover .zoom-resize-buttons { opacity: 1; }
+.zoom-resize-btn {
+  width: 22px; height: 22px; padding: 0; border: 1px solid var(--border);
+  border-radius: 3px; background: var(--bg-card); color: var(--text-muted);
+  font-size: 0.8rem; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; line-height: 1;
+}
+.zoom-resize-btn:hover { background: var(--accent); color: #fff; }
 .sidebar.zoom-pane { position: fixed; overflow-y: auto; }

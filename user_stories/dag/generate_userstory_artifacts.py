@@ -47,7 +47,9 @@ LAYER_COLOURS = {
     "start_journal": "#F3E5F5",
     "csv_txn": "#E0F7FA",
     "receipt_img": "#FBE9E7",
-    "receipt_lbl": "#FCE4EC",
+    "receipt_lbl_before": "#FFF0F3",
+    "receipt_lbl_tui": "#FCE4EC",
+    "receipt_lbl_after": "#F8BBD0",
     "matching_out": "#FFF8E1",
     "journal_out": "#E8EAF6",
     "visualization": "#F3E5F5",
@@ -64,7 +66,9 @@ LAYER_ORDER = [
     "start_journal",
     "csv_txn",
     "receipt_img",
-    "receipt_lbl",
+    "receipt_lbl_before",
+    "receipt_lbl_tui",
+    "receipt_lbl_after",
     "matching_out",
     "journal_out",
     "visualization",
@@ -77,6 +81,13 @@ CONFIG_GROUP_LAYERS = {
     "config_file_names",
     "config_categorisation",
     "config_matching_algo",
+}
+
+# Layers that belong to the "Receipt Labelling" parent group
+RECEIPT_GROUP_LAYERS = {
+    "receipt_lbl_before",
+    "receipt_lbl_tui",
+    "receipt_lbl_after",
 }
 
 
@@ -176,7 +187,9 @@ def node_shape(layer_name: str) -> str:
         "start_journal": "note",
         "csv_txn": "cylinder",
         "receipt_img": "folder",
-        "receipt_lbl": "tab",
+        "receipt_lbl_before": "tab",
+        "receipt_lbl_tui": "tab",
+        "receipt_lbl_after": "tab",
         "matching_out": "diamond",
         "journal_out": "box",
         "visualization": "octagon",
@@ -427,10 +440,7 @@ def generate_dot_full(
             # We've moved past the config layers — should not happen due to
             # ordering, but guard anyway
             pass
-        if (
-            config_group_open
-            and layer_name in CONFIG_GROUP_LAYERS
-        ):
+        if config_group_open and layer_name in CONFIG_GROUP_LAYERS:
             # Check if the next layer is still a config layer
             idx = [ln for ln, _ in ordered_layers].index(layer_name)
             next_is_config = (

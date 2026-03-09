@@ -47,8 +47,15 @@ def show_after_state(
     after_file: str,
     jq_field: str = ".receipt_category",
     pause_seconds: float = 3.0,
+    scroll_full_json: bool = True,
+    scroll_duration: float = 4.0,
 ) -> None:
-    """Show the 'after' state comparing before and after files."""
+    """Show the 'after' state comparing before and after files.
+
+    When *scroll_full_json* is True, the full receipt JSON is scrolled
+    line-by-line so the viewer can see the complete output even when it
+    is longer than the terminal height.
+    """
     Screen.clear()
     time.sleep(0.2)
 
@@ -87,6 +94,25 @@ def show_after_state(
 
     print(f"{Colors.BOLD_GREEN}{'='*70}{Colors.RESET}")
     time.sleep(pause_seconds)
+
+    # Scroll through the full receipt JSON so viewers can see all fields
+    if scroll_full_json:
+        Screen.clear()
+        time.sleep(0.2)
+        print(f"{Colors.BOLD_GREEN}  Receipt label output JSON:{Colors.RESET}")
+        print()
+        print(f"{Colors.BOLD_BLUE}$ jq '.' after_edit_receipt.json{Colors.RESET}")
+        print()
+        result = subprocess.run(
+            ["jq", ".", after_file], capture_output=True, text=True
+        )
+        lines = result.stdout.rstrip().split("\n")
+        if lines:
+            delay = scroll_duration / max(len(lines), 1)
+            for line in lines:
+                print(f"{Colors.GREEN}{line}{Colors.RESET}")
+                time.sleep(delay)
+        time.sleep(1.0)
 
 
 def show_command(

@@ -178,9 +178,7 @@ def create_test_environment() -> Dict[str, Any]:
         "rotated_path": str(rotated_path),
         "cropped_path": str(cropped_path),
     }
-    metadata_path = (
-        root / "receipt_images_processed" / "dinner_split.json"
-    )
+    metadata_path = root / "receipt_images_processed" / "dinner_split.json"
     metadata_path.write_text(json.dumps(metadata, indent=2))
 
     # Receipt label — split payment: 30 EUR card + 20 EUR cash = 50 EUR total
@@ -310,9 +308,9 @@ def show_label_result(
     print_subheader("Payment Breakdown")
     print(
         f"{Colors.BOLD_WHITE}$ jq"
-        f" '.net_bought_items.account_transactions[]"
-        f" | {{bank: .account.bank, type: .account.account_type,"
-        f" currency: .currency, amount: .tendered_amount_out}}'"
+        " '.net_bought_items.account_transactions[]"
+        " | {bank: .account.bank, type: .account.account_type,"
+        " currency: .currency, amount: .tendered_amount_out}'"
         f" {label_path}{Colors.RESET}"
     )
     print()
@@ -321,9 +319,11 @@ def show_label_result(
     result = subprocess.run(
         [
             "jq",
-            ".net_bought_items.account_transactions[]"
-            " | {bank: .account.bank, type: .account.account_type,"
-            " currency: .currency, amount: .tendered_amount_out}",
+            (
+                ".net_bought_items.account_transactions[]"
+                " | {bank: .account.bank, type: .account.account_type,"
+                " currency: .currency, amount: .tendered_amount_out}"
+            ),
             str(label_path),
         ],
         capture_output=True,
@@ -342,10 +342,7 @@ def show_label_result(
         f"{Colors.BOLD_YELLOW}  Account 2: EUR wallet — 20.00"
         f" EUR (cash){Colors.RESET}"
     )
-    print(
-        f"{Colors.BOLD_YELLOW}  Total: 50.00"
-        f" EUR{Colors.RESET}"
-    )
+    print(f"{Colors.BOLD_YELLOW}  Total: 50.00 EUR{Colors.RESET}")
     print()
     print(
         f"{Colors.WHITE}  During matching (Step 3), only the card portion"
@@ -355,10 +352,7 @@ def show_label_result(
         f"{Colors.WHITE}  to a bank CSV transaction. The cash portion"
         f" (20 EUR) is recorded{Colors.RESET}"
     )
-    print(
-        f"{Colors.WHITE}  directly as a wallet"
-        f" expense.{Colors.RESET}"
-    )
+    print(f"{Colors.WHITE}  directly as a wallet expense.{Colors.RESET}")
     print()
     time.sleep(3)
 

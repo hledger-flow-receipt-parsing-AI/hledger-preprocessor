@@ -143,6 +143,11 @@ load_gif_config() {
         fi
     fi
 
+    # Allow environment variable overrides (useful for testing)
+    GENERATE_THEMED_GIFS="${GIF_GENERATE_THEMED:-$GENERATE_THEMED_GIFS}"
+    GENERATE_SHOWCASE="${GIF_GENERATE_SHOWCASE:-$GENERATE_SHOWCASE}"
+    OUTPUT_OPTIMIZE="${GIF_OUTPUT_OPTIMIZE:-$OUTPUT_OPTIMIZE}"
+
     debug "Config: font_size=$DEFAULT_FONT_SIZE, rows=$DEFAULT_ROWS, cols=$DEFAULT_COLS"
     debug "Config: generate_themed=$GENERATE_THEMED_GIFS, showcase=$GENERATE_SHOWCASE"
 }
@@ -211,6 +216,10 @@ check_ffmpeg() {
 }
 
 run_preflight_checks() {
+    if [[ "${SKIP_PREFLIGHT:-0}" == "1" ]]; then
+        debug "Skipping preflight checks (SKIP_PREFLIGHT=1)"
+        return 0
+    fi
     check_conda_env || exit 1
     check_gifsicle || exit 1
     check_asciinema || exit 1

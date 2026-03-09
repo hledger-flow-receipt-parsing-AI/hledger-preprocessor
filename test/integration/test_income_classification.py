@@ -7,10 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from hledger_preprocessor.categorisation.Categories import (
-    Category,
-    CategoryNamespace,
-)
 from hledger_preprocessor.categorisation.load_categories import (
     load_categories_from_yaml,
 )

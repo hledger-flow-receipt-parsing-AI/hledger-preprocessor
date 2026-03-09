@@ -194,9 +194,7 @@ def create_test_environment() -> Dict[str, Any]:
         "rotated_path": str(rotated_path),
         "cropped_path": str(cropped_path),
     }
-    metadata_path = (
-        root / "receipt_images_processed" / "ekoplaza_centrum.json"
-    )
+    metadata_path = root / "receipt_images_processed" / "ekoplaza_centrum.json"
     metadata_path.write_text(json.dumps(metadata, indent=2))
 
     # Receipt label — matches the Ekoplaza Centrum transaction (Jan 15, 42.50)
@@ -274,7 +272,7 @@ def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     label_path = env["label_path"]
     print(
         f"{Colors.BOLD_WHITE}$ jq '.net_bought_items.the_date,"
-        f" .net_bought_items.account_transactions[0].tendered_amount_out'"
+        " .net_bought_items.account_transactions[0].tendered_amount_out'"
         f" {label_path}{Colors.RESET}"
     )
     print()
@@ -282,8 +280,10 @@ def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     result = subprocess.run(
         [
             "jq",
-            ".net_bought_items.the_date,"
-            " .net_bought_items.account_transactions[0].tendered_amount_out",
+            (
+                ".net_bought_items.the_date,"
+                " .net_bought_items.account_transactions[0].tendered_amount_out"
+            ),
             str(label_path),
         ],
         capture_output=True,
@@ -314,18 +314,12 @@ def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
         f"{Colors.BOLD_YELLOW}  3 Ekoplaza transactions within ±2"
         f" days:{Colors.RESET}"
     )
-    print(
-        f"{Colors.BOLD_YELLOW}    Jan 14: EUR 42.17 (Zuid)"
-        f"{Colors.RESET}"
-    )
+    print(f"{Colors.BOLD_YELLOW}    Jan 14: EUR 42.17 (Zuid){Colors.RESET}")
     print(
         f"{Colors.BOLD_YELLOW}    Jan 15: EUR 42.50 (Centrum) ← correct"
         f" match{Colors.RESET}"
     )
-    print(
-        f"{Colors.BOLD_YELLOW}    Jan 16: EUR 42.00"
-        f" (West){Colors.RESET}"
-    )
+    print(f"{Colors.BOLD_YELLOW}    Jan 16: EUR 42.00 (West){Colors.RESET}")
     print(
         f"{Colors.BOLD_YELLOW}  User must disambiguate from multiple"
         f" candidates{Colors.RESET}"
@@ -334,7 +328,9 @@ def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     time.sleep(2)
 
 
-def run_matching_demo(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
+def run_matching_demo(
+    *, env: Dict[str, Any], emitter: StoryMarkerEmitter
+) -> bool:
     """Run the actual --link-receipts-to-transactions CLI command."""
     import pexpect
 
@@ -502,8 +498,7 @@ def run_disambiguate_demo() -> None:
         print()
         if success:
             print(
-                f"{Colors.BOLD_GREEN}✓ Disambiguation"
-                f" completed!{Colors.RESET}"
+                f"{Colors.BOLD_GREEN}✓ Disambiguation completed!{Colors.RESET}"
             )
         else:
             print(

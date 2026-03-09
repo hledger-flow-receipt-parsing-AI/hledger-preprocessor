@@ -20,7 +20,7 @@ def remove_empty_entries(content: str) -> str:
     # Remove single space entries: [timestamp, "o", " "]
     content = re.sub(r'\n\[\d+\.\d+, "o", " "\]', "", content)
     # Remove carriage return entries: [timestamp, "o", "\r"]
-    content = re.sub(r'\n\[\d+\.\d+, "o", "\\\\r"\]', "", content)
+    content = re.sub(r'\n\[\d+\.\d+, "o", "\\r"\]', "", content)
     return content
 
 

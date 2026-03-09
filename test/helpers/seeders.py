@@ -23,7 +23,7 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
     from PIL import Image, ImageDraw, ImageFont
 
     # Receipt dimensions (typical thermal receipt proportions)
-    width, height = 300, 450
+    width, height = 300, 500
     img = Image.new("RGB", (width, height), color=(255, 255, 253))
     draw = ImageDraw.Draw(img)
 
@@ -50,11 +50,23 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
     house_nr = address.get("house_nr", "")
     zipcode = address.get("zipcode", "")
     city = address.get("city", "")
+    country = address.get("country", "")
 
     net_items = data.get("net_bought_items", {})
     description = net_items.get("description", "Item")
-    the_date = data.get("the_date", "")[:10]  # Just the date part
+    the_date_raw = data.get("the_date", "")
+    the_date = the_date_raw[:10]  # Just the date part
+    the_time = the_date_raw[11:16] if len(the_date_raw) > 15 else ""  # HH:MM
     total_tax = data.get("total_tax", 0)
+
+    # Determine payment method from account type
+    account_info = (
+        net_items.get("account_transactions", [{}])[0].get("account", {})
+        if net_items.get("account_transactions")
+        else {}
+    )
+    account_type = account_info.get("account_type", "")
+    is_card_payment = account_type in ("checking", "savings")
 
     # Get transaction details
     transactions = net_items.get("account_transactions", [{}])
@@ -84,9 +96,12 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
         )
         y += line_height
     if zipcode and city:
+        city_line = f"{zipcode} {city}"
+        if country:
+            city_line += f", {country}"
         draw.text(
             (width // 2, y),
-            f"{zipcode} {city}",
+            city_line,
             fill="black",
             font=font,
             anchor="mt",
@@ -98,11 +113,13 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
     draw.line([(20, y), (width - 20, y)], fill="black", width=1)
     y += 10
 
-    # Date
+    # Date and time
     draw.text((20, y), f"Date: {the_date}", fill="black", font=font)
     y += line_height
-    draw.text((20, y), f"Receipt #{receipt_index + 1}", fill="black", font=font)
-    y += line_height + 5
+    if the_time:
+        draw.text((20, y), f"Time: {the_time}", fill="black", font=font)
+        y += line_height
+    y += 5
 
     # Separator
     draw.line([(20, y), (width - 20, y)], fill="black", width=1)
@@ -171,7 +188,8 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
     if tendered > 0:
         draw.line([(20, y), (width - 20, y)], fill="black", width=1)
         y += 10
-        draw.text((20, y), "CASH", fill="black", font=font)
+        payment_label = "CARD" if is_card_payment else "CASH"
+        draw.text((20, y), payment_label, fill="black", font=font)
         draw.text(
             (width - 20, y),
             f"EUR {tendered:.2f}",
@@ -180,6 +198,11 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
             anchor="rt",
         )
         y += line_height
+        if is_card_payment:
+            draw.text(
+                (20, y), "Card: XXXX5342", fill="black", font=font
+            )
+            y += line_height
 
     if change > 0:
         draw.text((20, y), "CHANGE", fill="black", font=font)
@@ -216,6 +239,51 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
 
 
 @typechecked
+def _seed_receipt_images(
+    *, config: Config, source_json_paths: List[Path]
+) -> None:
+    """Seed receipt images (input + cropped) into a test environment.
+
+    Creates realistic receipt images from JSON data and places them
+    in the input and processed directories. Does NOT create label JSON files.
+
+    Args:
+        config: The Config object containing directory paths.
+        source_json_paths: List of paths to JSON files containing receipt data.
+    """
+    import json
+
+    imgs_dir = Path(
+        config.dir_paths.get_path("receipt_images_input_dir", absolute=True)
+    )
+    processed_dir = Path(
+        config.dir_paths.get_path("receipt_images_processed_dir", absolute=True)
+    )
+
+    for i, src_path in enumerate(source_json_paths):
+        if not src_path.exists():
+            continue
+
+        data = json.loads(src_path.read_text())
+        img_filename = Path(data["raw_img_filepath"]).name
+        new_img_path = imgs_dir / img_filename
+
+        # Create a realistic receipt image from the JSON data
+        img = _create_receipt_image(data, i)
+        img.save(new_img_path, "JPEG")
+
+        # Also create the cropped/processed version of the image
+        img_stem = Path(img_filename).stem
+        cropped_filename = f"{img_stem}_cropped.jpg"
+        cropped_path = processed_dir / cropped_filename
+        img_cropped = _create_receipt_image(data, i + 100)
+        img_cropped.save(cropped_path, "JPEG")
+
+        print(f"seeded receipt image: {new_img_path}")
+        print(f"seeded cropped image: {cropped_path}")
+
+
+@typechecked
 def seed_receipts_into_root(
     *, config: Config, source_json_paths: List[Path]
 ) -> None:
@@ -223,6 +291,7 @@ def seed_receipts_into_root(
 
     Creates realistic receipt images from JSON data and places them
     in the appropriate directories according to the config.
+    Also creates label JSON files in receipt_labels/.
 
     Args:
         config: The Config object containing directory paths.
@@ -279,3 +348,21 @@ def seed_receipts_into_root(
         pprint(data)
         print(f"to:")
         print(dest_path)
+
+
+@typechecked
+def seed_receipt_images_only(
+    *, config: Config, source_json_paths: List[Path]
+) -> None:
+    """Seed only receipt images (no labels) into a test environment.
+
+    Creates realistic receipt images in receipt_images_input/ and
+    receipt_images_processed/ but does NOT create label JSON files
+    in receipt_labels/. This simulates having unlabelled receipts
+    that --tui-label-receipts can pick up.
+
+    Args:
+        config: The Config object containing directory paths.
+        source_json_paths: List of paths to JSON files containing receipt data.
+    """
+    _seed_receipt_images(config=config, source_json_paths=source_json_paths)

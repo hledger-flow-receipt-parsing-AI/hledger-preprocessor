@@ -1,4 +1,5 @@
 # UI Issues v7 — Corrected DAG Sequences per User Story
+
 A. If I select the DAG diagram in a userstory and do ctrl+ or -, the text DAG Diagram and toggle Segment/FullPatth get smaller or larger, but the box itself (and the graph) stay the same size. I want that box to become smaller or larger, and the graph to grow with it (and always fit exactly/tight in that box.)
 
 B. If I press right on the main page it goes to the next userstory, but if it goes to the last one on screen the screen scrolls down to keep the selected userstory in place. Change that left pane into a rolling bar that follows:

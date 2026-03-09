@@ -60,9 +60,9 @@ class TestDuplicateDetection:
         t2 = GenericCsvTransaction(**kwargs)
         # GenericCsvTransaction has unsafe_hash=True so it can go in sets
         linked = {t1.get_hash()}
-        assert t2.get_hash() in linked, (
-            "Second linking attempt should detect duplicate"
-        )
+        assert (
+            t2.get_hash() in linked
+        ), "Second linking attempt should detect duplicate"
 
     def test_different_transactions_not_duplicate(
         self, triodos_account
@@ -107,6 +107,4 @@ class TestDuplicateDetection:
         linked_hashes.add(h)
 
         # Second link attempt is blocked
-        assert h in linked_hashes, (
-            "Duplicate linking should be detected"
-        )
+        assert h in linked_hashes, "Duplicate linking should be detected"

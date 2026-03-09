@@ -1,184 +1,198 @@
 #!/usr/bin/env python3
 """Set up a complete test environment for GIF demos.
 
-Creates all necessary files including:
-- config.yaml
-- categories.yaml
-- Synthetic receipt images (original and cropped)
-- Receipt label JSON files
+Creates all files required by ``verify_config`` so that
+``hledger_preprocessor --tui-label-receipts`` can start without errors.
+
+Mirrors the setup in ``test/conftest.py::temp_finance_root`` but writes
+to a stable directory (default ``/tmp/hledger_demo``) instead of a
+pytest tmp dir.
+
+Usage (standalone)::
+
+    python -m gifs.automation.setup_test_environment
+
+Then pass the generated config to ``build_userstories.sh``::
+
+    ./build_userstories.sh --gif 2b_label_receipt \\
+        --config /tmp/hledger_demo/config.yaml --site --serve
 """
 
 import json
-import os
 import shutil
-from datetime import datetime
+import textwrap
 from pathlib import Path
+from typing import List
 
-from .synthetic_receipt import create_synthetic_receipt
+import yaml
+
+from hledger_preprocessor.config.Config import Config
+from hledger_preprocessor.config.load_config import load_config
+from test.helpers import seed_receipt_images_only
 
 
 def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
     """Create a complete demo environment with all necessary files.
 
+    The environment is idempotent — running it twice overwrites the
+    previous state so the receipt is always unlabelled.
+
     Args:
-        base_dir: Base directory for the demo environment
+        base_dir: Base directory for the demo environment.
 
     Returns:
-        Dictionary with paths to all created files
+        Dictionary with paths to all created files.
     """
-    # Get project root
+    root = Path(base_dir)
     project_root = Path(__file__).parent.parent.parent
 
-    # Create directory structure
-    dirs = {
-        "root": base_dir,
-        "receipt_images_input": os.path.join(base_dir, "receipt_images_input"),
-        "receipt_images_processed": os.path.join(
-            base_dir, "receipt_images_processed"
-        ),
-        "receipt_labels": os.path.join(base_dir, "receipt_labels"),
-        "working_dir": os.path.join(base_dir, "working_dir"),
+    # Clean previous run so state is predictable
+    if root.exists():
+        shutil.rmtree(root)
+
+    # ------------------------------------------------------------------
+    # 1. Create every directory that verify_config checks
+    # ------------------------------------------------------------------
+    dirs_relative = [
+        "receipt_images_input",
+        "receipt_images_processed",
+        "receipt_images",
+        "asset_transaction_csvs",
+        "receipt_labels",
+        "hledger_plots",
+        "start_pos",
+    ]
+    for rel in dirs_relative:
+        (root / rel).mkdir(parents=True, exist_ok=True)
+
+    # ------------------------------------------------------------------
+    # 2. Load template config, patch root path, write final config
+    # ------------------------------------------------------------------
+    template_path = (
+        project_root / "test" / "fixtures" / "config_templates"
+        / "1_bank_1_wallet.yaml"
+    )
+    config_dict = yaml.safe_load(template_path.read_text())
+    config_dict["dir_paths"]["root_finance_path"] = str(root)
+
+    config_path = root / "config.yaml"
+    config_path.write_text(yaml.safe_dump(config_dict))
+
+    # ------------------------------------------------------------------
+    # 3. Categories YAML
+    # ------------------------------------------------------------------
+    categories_path = root / "categories.yaml"
+    categories_path.write_text(textwrap.dedent("""\
+        groceries:
+          ekoplaza: {}
+          supermarket: {}
+        repairs:
+          bike: {}
+        abonnement:
+          monthly:
+            phone: {}
+            rent: {}
+    """))
+
+    # ------------------------------------------------------------------
+    # 4. Triodos bank CSV (matches groceries_ekoplaza_card.json receipt)
+    # ------------------------------------------------------------------
+    csv_path = root / "triodos_2025.csv"
+    csv_path.write_text(
+        "15-01-2025,NL123,-42.17,debit,Ekoplaza,NL456,IC,"
+        "groceries:ekoplaza,1000.00\n"
+    )
+
+    # ------------------------------------------------------------------
+    # 5. Start journal with opening balances
+    # ------------------------------------------------------------------
+    journal_path = root / "start_pos" / "2024_complete.journal"
+    journal_path.write_text(textwrap.dedent("""\
+        2024/01/01 Opening Balances
+            Assets:Checking          €1000.00
+            Equity:Opening Balances
+    """))
+
+    # ------------------------------------------------------------------
+    # 6. hledger-flow import directory structure
+    # ------------------------------------------------------------------
+    working_dir = root / "test_working_dir"
+
+    # Triodos bank account
+    triodos_import = working_dir / "import" / "at" / "triodos" / "checking"
+    for subdir in ["1-in", "2-csv", "3-journal"]:
+        (triodos_import / subdir).mkdir(parents=True, exist_ok=True)
+
+    (triodos_import / "triodos.rules").write_text(textwrap.dedent("""\
+        # hledger CSV import rules for triodos
+        skip 0
+        fields date, _, amount, _, payee, _, _, description, _
+        date-format %d-%m-%Y
+        currency EUR
+        account1 Assets:Checking:Triodos
+    """))
+
+    # EUR wallet account
+    wallet_import = working_dir / "import" / "at" / "wallet" / "physical"
+    for subdir in ["1-in", "2-csv", "3-journal"]:
+        (wallet_import / subdir).mkdir(parents=True, exist_ok=True)
+
+    (wallet_import / "eur.rules").write_text(textwrap.dedent("""\
+        # hledger CSV import rules for EUR wallet
+        skip 0
+        fields date, amount, description
+        date-format %Y-%m-%d
+        currency EUR
+        account1 Assets:Wallet:Physical:EUR
+    """))
+
+    # Wallet asset CSV (required by get_all_accounts)
+    wallet_asset_csv = (
+        working_dir / "asset_transaction_csvs"
+        / "at" / "wallet" / "physical" / "Currency.EUR.csv"
+    )
+    wallet_asset_csv.parent.mkdir(parents=True, exist_ok=True)
+    wallet_asset_csv.write_text(
+        '"currency","account_holder","bank","account_type",'
+        '"date","amount","tendered_amount_out","change_returned"\n'
+    )
+
+    # ------------------------------------------------------------------
+    # 7. Seed receipt images (NO labels — the demo will label them)
+    # ------------------------------------------------------------------
+    config: Config = load_config(
+        config_path=str(config_path),
+        pre_processed_output_dir=None,
+    )
+
+    fixtures_dir = project_root / "test" / "fixtures" / "receipts"
+    source_files: List[Path] = [
+        fixtures_dir / "groceries_ekoplaza_card.json",
+    ]
+    seed_receipt_images_only(config=config, source_json_paths=source_files)
+
+    # ------------------------------------------------------------------
+    # 8. Return paths
+    # ------------------------------------------------------------------
+    return {
+        "config": str(config_path),
+        "root": str(root),
+        "categories": str(categories_path),
+        "csv": str(csv_path),
+        "journal": str(journal_path),
     }
 
-    for dir_path in dirs.values():
-        os.makedirs(dir_path, exist_ok=True)
 
-    paths = {"dirs": dirs}
-
-    # 1. Copy and setup config.yaml
-    config_src = (
-        project_root / "test/fixtures/config_templates/1_bank_1_wallet.yaml"
-    )
-    config_dst = os.path.join(base_dir, "config.yaml")
-
-    # Read and modify config to use our demo paths
-    with open(config_src) as f:
-        config_content = f.read()
-
-    config_content = config_content.replace("/tmp/placeholder_root", base_dir)
-
-    with open(config_dst, "w") as f:
-        f.write(config_content)
-
-    paths["config"] = config_dst
-
-    # 2. Copy categories.yaml
-    categories_src = (
-        project_root / "test/fixtures/categories/example_categories.yaml"
-    )
-    categories_dst = os.path.join(base_dir, "categories.yaml")
-    shutil.copy(categories_src, categories_dst)
-    paths["categories"] = categories_dst
-
-    # 3. Create synthetic receipt images (original and cropped)
-    receipt_original, crop_coords = create_synthetic_receipt(
-        os.path.join(dirs["receipt_images_input"], "receipt_001.jpg"),
-        receipt_width=280,
-        receipt_height=420,
-        background_padding=80,
-    )
-    paths["receipt_original"] = receipt_original
-
-    # Create the cropped version
-    from PIL import Image
-
-    img = Image.open(receipt_original)
-    width, height = img.size
-    x1 = int(crop_coords[0] * width)
-    y1 = int(crop_coords[1] * height)
-    x2 = int(crop_coords[2] * width)
-    y2 = int(crop_coords[3] * height)
-
-    cropped = img.crop((x1, y1, x2, y2))
-    receipt_cropped = os.path.join(
-        dirs["receipt_images_processed"], "receipt_001_cropped.jpg"
-    )
-    cropped.save(receipt_cropped, "JPEG", quality=95)
-    paths["receipt_cropped"] = receipt_cropped
-
-    # 4. Create receipt label JSON
-    # First create the receipt folder (named by image hash)
-    import hashlib
-
-    with open(receipt_cropped, "rb") as f:
-        image_hash = hashlib.sha256(f.read()).hexdigest()
-
-    receipt_folder = os.path.join(dirs["receipt_labels"], image_hash)
-    os.makedirs(receipt_folder, exist_ok=True)
-
-    # Create label JSON
-    label_data = {
-        "ai_receipt_categorisation": None,
-        "net_bought_items": {
-            "account_transactions": [
-                {
-                    "account": {
-                        "account_holder": "at",
-                        "account_type": "checking",
-                        "bank": "triodos",
-                        "base_currency": "EUR",
-                    },
-                    "change_returned": 0,
-                    "currency": "EUR",
-                    "tendered_amount_out": 21.73,
-                }
-            ],
-            "category": None,
-            "description": "groceries:supermarket",
-            "group_discount": 0,
-            "quantity": 1,
-            "round_amount": None,
-            "tax_per_unit": 0,
-            "the_date": datetime.now().isoformat(),
-            "unit_price": None,
-        },
-        "net_returned_items": None,
-        "raw_img_filepath": receipt_original,
-        "receipt_category": "groceries:supermarket",
-        "receipt_owner_address": None,
-        "shop_identifier": {
-            "address": {
-                "city": "Amsterdam",
-                "country": "Netherlands",
-                "house_nr": "123",
-                "street": "Main Street",
-                "zipcode": "1234AB",
-            },
-            "name": "Supermarket",
-            "shop_account_nr": None,
-        },
-        "subtotal": 19.94,
-        "the_date": datetime.now().isoformat(),
-        "total_tax": 1.79,
-        "transaction_hash": None,
-    }
-
-    label_path = os.path.join(
-        receipt_folder, "0_0.json"
-    )  # classifier_type_logic_type format
-    with open(label_path, "w") as f:
-        json.dump(label_data, f, indent=2)
-
-    paths["receipt_label"] = label_path
-    paths["receipt_folder"] = receipt_folder
-    paths["image_hash"] = image_hash
-
-    return paths
-
-
-def print_environment_info(paths: dict):
+def print_environment_info(paths: dict) -> None:
     """Print information about the created environment."""
     print("\n" + "=" * 60)
     print("Demo Environment Created")
     print("=" * 60)
-    print(f"\nBase directory: {paths['dirs']['root']}")
+    print(f"\nBase directory: {paths['root']}")
     print(f"\nFiles created:")
-    print(f"  - Config: {paths['config']}")
-    print(f"  - Categories: {paths['categories']}")
-    print(f"  - Receipt (original): {paths['receipt_original']}")
-    print(f"  - Receipt (cropped): {paths['receipt_cropped']}")
-    print(f"  - Receipt label: {paths['receipt_label']}")
-    print(f"\nImage hash: {paths['image_hash'][:16]}...")
+    for key, val in paths.items():
+        if key != "root":
+            print(f"  - {key}: {val}")
     print()
 
 

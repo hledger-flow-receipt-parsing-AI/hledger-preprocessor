@@ -101,7 +101,7 @@ def main() -> None:
 
     if args.tui_label_receipts:
         manage_creating_receipt_img_labels_with_tui(
-            config=config, verbose=False
+            config=config, labelled_receipts=labelled_receipts, verbose=False
         )
 
 

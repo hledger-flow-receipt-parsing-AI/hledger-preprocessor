@@ -48,12 +48,14 @@ class DonutAI:
             from transformers import (
                 DonutProcessor,  # TODO: resolve and/or silence warning.
             )
-            from transformers import VisionEncoderDecoderModel  # Throws warning.
+            from transformers import (  # Throws warning.
+                VisionEncoderDecoderModel,
+            )
         except ImportError as exc:
             raise ImportError(
-                "DonutAI requires the 'transformers' library.\n"
-                "Install it with:  pip install transformers\n"
-                "Or activate the conda environment:  conda activate hledger_preprocessor"
+                "DonutAI requires the 'transformers' library.\nInstall it with:"
+                "  pip install transformers\nOr activate the conda environment:"
+                "  conda activate hledger_preprocessor"
             ) from exc
 
         self.name = "Donut"

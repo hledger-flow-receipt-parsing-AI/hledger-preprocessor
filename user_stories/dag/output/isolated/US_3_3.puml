@@ -85,9 +85,23 @@ digraph userstory_dag {
     img_delayed_shop [label="delayed_shop.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Receipt dated Jan 15, bank posted Jan 18"];
   }
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
+  subgraph cluster_receipt_lbl_before {
+    label="No label exists yet";
+    style=filled; fillcolor="#FFF0F3";
+    rank=same;
+    nolbl_delayed_shop [label="delayed_shop\n(no label)", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="No receipt label JSON exists yet for delayed shop"];
+  }
+
+  subgraph cluster_receipt_lbl_tui {
+    label="Label receipt in TUI";
     style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    tui_delayed_shop [label="TUI label\ndelayed_shop", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Label delayed shop receipt via TUI"];
+  }
+
+  subgraph cluster_receipt_lbl_after {
+    label="Receipt label output JSON";
+    style=filled; fillcolor="#F8BBD0";
     rank=same;
     lbl_delayed_shop [label="delayed_shop\nEUR 49.99 card", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, receipt dated Jan 15"];
   }
@@ -117,7 +131,9 @@ digraph userstory_dag {
   match_narrow -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> csv_delayed_jan18 [style=invis];
   csv_delayed_jan18 -> img_delayed_shop [style=invis];
-  img_delayed_shop -> lbl_delayed_shop [style=invis];
+  img_delayed_shop -> nolbl_delayed_shop [style=invis];
+  nolbl_delayed_shop -> tui_delayed_shop [style=invis];
+  tui_delayed_shop -> lbl_delayed_shop [style=invis];
   lbl_delayed_shop -> out_widen_date [style=invis];
   out_widen_date -> jrnl_delayed_shop [style=invis];
   jrnl_delayed_shop -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
@@ -129,11 +145,13 @@ digraph userstory_dag {
   csv_delayed_jan18 -> img_delayed_shop [color="#F57C00", penwidth=2.5, style=dashed];
   dirp_default -> fnames_default [color="#F57C00", penwidth=2.5, style=dashed];
   fnames_default -> catcfg_default [color="#F57C00", penwidth=2.5, style=dashed];
-  img_delayed_shop -> lbl_delayed_shop [color="#F57C00", penwidth=2.5, style=dashed];
+  img_delayed_shop -> nolbl_delayed_shop [color="#F57C00", penwidth=2.5, style=dashed];
   lbl_delayed_shop -> out_widen_date [color="#F57C00", penwidth=2.5, style=dashed];
   malgo_default -> cat_basic [color="#F57C00", penwidth=2.5, style=dashed];
   match_narrow -> start_2024_1000eur [color="#F57C00", penwidth=2.5, style=dashed];
+  nolbl_delayed_shop -> tui_delayed_shop [color="#F57C00", penwidth=2.5, style=dashed];
   out_widen_date -> jrnl_delayed_shop [color="#F57C00", penwidth=2.5, style=dashed];
   start_2024_1000eur -> csv_delayed_jan18 [color="#F57C00", penwidth=2.5, style=dashed];
+  tui_delayed_shop -> lbl_delayed_shop [color="#F57C00", penwidth=2.5, style=dashed];
 }
 @enddot

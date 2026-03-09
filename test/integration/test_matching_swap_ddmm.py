@@ -89,23 +89,18 @@ class TestSwapMatchingScenario:
 
         # Without swap: 116 days apart → no match within 2 days
         assert (
-            is_within_date_range(
-                a=receipt_date, b=csv_date, margin=2
-            )
-            is False
+            is_within_date_range(a=receipt_date, b=csv_date, margin=2) is False
         )
 
         # After swap: Jan 5 → May 1 → exact match
         swapped = swap_month_day(some_date=receipt_date)
-        assert is_within_date_range(
-            a=swapped, b=csv_date, margin=2
-        ) is True
+        assert is_within_date_range(a=swapped, b=csv_date, margin=2) is True
 
     def test_swap_not_needed_when_dates_close(self) -> None:
         """If dates are already close, swap is unnecessary."""
         receipt_date = datetime(2025, 3, 4)
         csv_date = datetime(2025, 3, 5)  # 1 day apart
 
-        assert is_within_date_range(
-            a=receipt_date, b=csv_date, margin=2
-        ) is True
+        assert (
+            is_within_date_range(a=receipt_date, b=csv_date, margin=2) is True
+        )
