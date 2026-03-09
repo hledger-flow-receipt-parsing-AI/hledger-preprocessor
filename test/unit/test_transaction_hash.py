@@ -145,9 +145,7 @@ class TestAccountTransactionHash:
     hash via super() which uses date + amounts only.
     """
 
-    def test_same_account_transaction_base_hash(
-        self, wallet_account
-    ) -> None:
+    def test_same_account_transaction_base_hash(self, wallet_account) -> None:
         """Identical AccountTransactions must produce the same base hash."""
         kwargs = dict(
             account=wallet_account,
@@ -163,9 +161,7 @@ class TestAccountTransactionHash:
         h2 = Transaction.get_hash(t2)
         assert h1 == h2
 
-    def test_different_change_different_base_hash(
-        self, wallet_account
-    ) -> None:
+    def test_different_change_different_base_hash(self, wallet_account) -> None:
         """Different change_returned must produce different base hashes."""
         base = dict(
             account=wallet_account,

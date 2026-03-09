@@ -86,6 +86,7 @@ def manually_make_receipt_labels(
                 # TODO: determine whether this should be Transactions.Triodos or Transactions.Assets
                 hledger_account_infos=get_all_accounts(
                     config=config,
+                    labelled_receipts=labelled_receipts,
                 ),
                 receipt_nr=receipt_nr,
                 total_nr_of_receipts=len(raw_receipt_img_filepaths),
@@ -94,7 +95,9 @@ def manually_make_receipt_labels(
             receipts[raw_receipt_img_filepath] = receipt_label
             # Store the manually generated receipt label.
             export_human_label(
-                receipt=receipt_label, label_filepath=label_filepath
+                receipt=receipt_label,
+                label_filepath=label_filepath,
+                verbose=verbose,
             )
             print(f"Saved manual label to:\n{label_filepath}")
         else:

@@ -7,7 +7,6 @@ Covers:
   US-1a.5: Matching algorithm params
 """
 
-import textwrap
 from pathlib import Path
 
 import pytest
@@ -47,9 +46,7 @@ def test_wallet_account_has_no_csv(temp_finance_root) -> None:
         config_path=str(temp_finance_root["config_path"]),
         pre_processed_output_dir=None,
     )
-    wallet_configs = [
-        ac for ac in cfg.accounts if ac.account.bank == "wallet"
-    ]
+    wallet_configs = [ac for ac in cfg.accounts if ac.account.bank == "wallet"]
     assert len(wallet_configs) == 1
     assert wallet_configs[0].has_input_csv() is False
 
@@ -134,9 +131,7 @@ class TestMultiBankConfig:
             (root / d).mkdir(parents=True, exist_ok=True)
 
         # Create categories
-        (root / "categories.yaml").write_text(
-            "groceries:\n  ekoplaza: {}\n"
-        )
+        (root / "categories.yaml").write_text("groceries:\n  ekoplaza: {}\n")
 
         # Create bank CSVs
         (root / "triodos_2025.csv").write_text(

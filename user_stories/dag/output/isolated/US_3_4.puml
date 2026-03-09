@@ -85,9 +85,23 @@ digraph userstory_dag {
     img_rounded_shop [label="rounded_shop.jpg", shape=folder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Receipt 49.99, bank shows 50.00"];
   }
 
-  subgraph cluster_receipt_lbl {
-    label="Receipt Labels (JSON)";
+  subgraph cluster_receipt_lbl_before {
+    label="No label exists yet";
+    style=filled; fillcolor="#FFF0F3";
+    rank=same;
+    nolbl_rounded_shop [label="rounded_shop\n(no label)", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="No receipt label JSON exists yet for rounded shop"];
+  }
+
+  subgraph cluster_receipt_lbl_tui {
+    label="Label receipt in TUI";
     style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    tui_rounded_shop [label="TUI label\nrounded_shop", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Label rounded shop receipt via TUI"];
+  }
+
+  subgraph cluster_receipt_lbl_after {
+    label="Receipt label output JSON";
+    style=filled; fillcolor="#F8BBD0";
     rank=same;
     lbl_rounded_shop [label="rounded_shop\nEUR 49.99 card", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, bank will show 50.00"];
   }
@@ -117,7 +131,9 @@ digraph userstory_dag {
   match_default -> start_2024_1000eur [style=invis];
   start_2024_1000eur -> csv_rounded_5000 [style=invis];
   csv_rounded_5000 -> img_rounded_shop [style=invis];
-  img_rounded_shop -> lbl_rounded_shop [style=invis];
+  img_rounded_shop -> nolbl_rounded_shop [style=invis];
+  nolbl_rounded_shop -> tui_rounded_shop [style=invis];
+  tui_rounded_shop -> lbl_rounded_shop [style=invis];
   lbl_rounded_shop -> out_widen_amount [style=invis];
   out_widen_amount -> jrnl_rounded_shop [style=invis];
   jrnl_rounded_shop -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
@@ -129,11 +145,13 @@ digraph userstory_dag {
   csv_rounded_5000 -> img_rounded_shop [color="#EF6C00", penwidth=2.5, style=dashed];
   dirp_default -> fnames_default [color="#EF6C00", penwidth=2.5, style=dashed];
   fnames_default -> catcfg_default [color="#EF6C00", penwidth=2.5, style=dashed];
-  img_rounded_shop -> lbl_rounded_shop [color="#EF6C00", penwidth=2.5, style=dashed];
+  img_rounded_shop -> nolbl_rounded_shop [color="#EF6C00", penwidth=2.5, style=dashed];
   lbl_rounded_shop -> out_widen_amount [color="#EF6C00", penwidth=2.5, style=dashed];
   malgo_default -> cat_basic [color="#EF6C00", penwidth=2.5, style=dashed];
   match_default -> start_2024_1000eur [color="#EF6C00", penwidth=2.5, style=dashed];
+  nolbl_rounded_shop -> tui_rounded_shop [color="#EF6C00", penwidth=2.5, style=dashed];
   out_widen_amount -> jrnl_rounded_shop [color="#EF6C00", penwidth=2.5, style=dashed];
   start_2024_1000eur -> csv_rounded_5000 [color="#EF6C00", penwidth=2.5, style=dashed];
+  tui_rounded_shop -> lbl_rounded_shop [color="#EF6C00", penwidth=2.5, style=dashed];
 }
 @enddot

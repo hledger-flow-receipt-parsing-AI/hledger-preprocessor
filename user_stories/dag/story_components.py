@@ -54,9 +54,7 @@ def build_node_index(*, data: Dict[str, Any]) -> Dict[str, Dict]:
     return idx
 
 
-def get_story_by_id(
-    *, data: Dict[str, Any], story_id: str
-) -> Optional[Dict]:
+def get_story_by_id(*, data: Dict[str, Any], story_id: str) -> Optional[Dict]:
     """Find a story by its ID.  Returns ``None`` if not found."""
     for story in data.get("stories", []):
         if story["id"] == story_id:
@@ -154,7 +152,7 @@ def validate_component_filters(*, data: Dict[str, Any]) -> List[str]:
             if node_id not in path_nodes:
                 errors.append(
                     f"{sid}: component_filter references '{node_id}' "
-                    f"which is not in any path"
+                    "which is not in any path"
                 )
                 continue
 

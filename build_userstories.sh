@@ -12,6 +12,7 @@
 #   ./build_userstories.sh --gifs-config       # Re-record config-dependent GIFs only
 #   ./build_userstories.sh --gif <dir_name>    # Re-record a single GIF (e.g. 2b_label_receipt)
 #   ./build_userstories.sh --serve [port]      # Build + serve (default port: 8059)
+#   ./build_userstories.sh --serve-only [port] # Just serve (no rebuild, default port: 8059)
 #   ./build_userstories.sh --help              # Show this help
 #
 # Options:
@@ -102,6 +103,13 @@ parse_args() {
                 ;;
             --serve)
                 DO_ARTIFACTS=1; DO_SITE=1
+                if [[ "${2:-}" =~ ^[0-9]+$ ]]; then
+                    SERVE_PORT="$2"; shift
+                else
+                    SERVE_PORT="$DEFAULT_PORT"
+                fi
+                ;;
+            --serve-only)
                 if [[ "${2:-}" =~ ^[0-9]+$ ]]; then
                     SERVE_PORT="$2"; shift
                 else
@@ -365,6 +373,16 @@ run_serve() {
     if [[ -n "$DRY_RUN" ]]; then
         warn "[dry-run] Would serve: http://localhost:${SERVE_PORT}/ from $OUTPUT_DIR"
         return
+    fi
+
+    # Kill any existing process on the target port
+    local existing_pid
+    existing_pid=$(ss -tlnp "sport = :${SERVE_PORT}" 2>/dev/null \
+        | awk 'NR>1 { match($0, /pid=([0-9]+)/, m); if (m[1]) print m[1] }')
+    if [[ -n "$existing_pid" ]]; then
+        warn "Port ${SERVE_PORT} already in use (pid $existing_pid) — killing it"
+        kill "$existing_pid" 2>/dev/null || true
+        sleep 0.5
     fi
 
     log "URL: http://localhost:${SERVE_PORT}/"

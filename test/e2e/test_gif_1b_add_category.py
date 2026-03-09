@@ -4,8 +4,11 @@ Generates 2 per-node category GIFs, each with its own sidecar markers JSON.
 """
 
 import json
-
-from test.e2e.gif_test_helpers import get_demo_env, get_project_root, run_demo_script
+from test.e2e.gif_test_helpers import (
+    get_demo_env,
+    get_project_root,
+    run_demo_script,
+)
 
 import pytest
 
@@ -45,7 +48,9 @@ def test_gif_1b_add_category(temp_finance_root, monkeypatch):
 
         # Markers JSON must exist with correct structure
         markers_json = output_dir / f"{node_id}_markers.json"
-        assert markers_json.exists(), f"Markers JSON should exist at {markers_json}"
+        assert (
+            markers_json.exists()
+        ), f"Markers JSON should exist at {markers_json}"
 
         data = json.loads(markers_json.read_text())
         markers = data["markers"]
@@ -53,11 +58,11 @@ def test_gif_1b_add_category(temp_finance_root, monkeypatch):
         # All expected segment markers must be present
         for comp in expected_components:
             marker_key = f"{node_id}__{comp}"
-            assert marker_key in markers, (
-                f"Marker {marker_key} missing from {node_id}_markers.json"
-            )
+            assert (
+                marker_key in markers
+            ), f"Marker {marker_key} missing from {node_id}_markers.json"
 
         # Timestamps must be monotonically increasing
-        assert list(markers.values()) == sorted(markers.values()), (
-            f"Timestamps not monotonic in {node_id}_markers.json: {markers}"
-        )
+        assert list(markers.values()) == sorted(
+            markers.values()
+        ), f"Timestamps not monotonic in {node_id}_markers.json: {markers}"

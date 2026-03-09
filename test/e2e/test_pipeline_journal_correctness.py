@@ -4,7 +4,6 @@ Covers:
   US-4.1: Full pipeline → journal exists, postings balanced, correct accounts
 """
 
-from pathlib import Path
 from typing import List
 
 import pytest
@@ -65,17 +64,13 @@ class TestPipelinePrerequisites:
         import_dir = working_dir / "import" / "at" / "triodos" / "checking"
         assert import_dir.exists(), f"Import dir should exist: {import_dir}"
         for subdir in ["1-in", "2-csv", "3-journal"]:
-            assert (import_dir / subdir).exists(), (
-                f"Missing subdir: {subdir}"
-            )
+            assert (import_dir / subdir).exists(), f"Missing subdir: {subdir}"
 
 
 class TestReceiptDataIntegrity:
     """Verify receipt data matches CSV data for auto-linking."""
 
-    def test_receipt_date_matches_csv_date(
-        self, temp_finance_root
-    ) -> None:
+    def test_receipt_date_matches_csv_date(self, temp_finance_root) -> None:
         """Receipt date (Jan 15) should match CSV transaction date."""
         cfg = load_config(
             config_path=str(temp_finance_root["config_path"]),
@@ -85,8 +80,7 @@ class TestReceiptDataIntegrity:
         ekoplaza = [
             r
             for r in receipts
-            if r.receipt_category
-            and "ekoplaza" in r.receipt_category.lower()
+            if r.receipt_category and "ekoplaza" in r.receipt_category.lower()
         ]
         if not ekoplaza:
             pytest.skip("Ekoplaza receipt not found")
@@ -96,9 +90,7 @@ class TestReceiptDataIntegrity:
         assert receipt.the_date.month == 1
         assert receipt.the_date.day == 15
 
-    def test_receipt_amount_matches_csv_amount(
-        self, temp_finance_root
-    ) -> None:
+    def test_receipt_amount_matches_csv_amount(self, temp_finance_root) -> None:
         """Receipt amount (42.17) should match CSV amount."""
         cfg = load_config(
             config_path=str(temp_finance_root["config_path"]),
@@ -108,8 +100,7 @@ class TestReceiptDataIntegrity:
         ekoplaza = [
             r
             for r in receipts
-            if r.receipt_category
-            and "ekoplaza" in r.receipt_category.lower()
+            if r.receipt_category and "ekoplaza" in r.receipt_category.lower()
         ]
         if not ekoplaza:
             pytest.skip("Ekoplaza receipt not found")
@@ -131,9 +122,7 @@ class TestWorkingDirectoryStructure:
         """Asset transaction CSVs directory exists."""
         working_dir = temp_finance_root["working_dir"]
         asset_dir = working_dir / "asset_transaction_csvs"
-        assert asset_dir.exists(), (
-            f"Asset CSV dir should exist: {asset_dir}"
-        )
+        assert asset_dir.exists(), f"Asset CSV dir should exist: {asset_dir}"
 
     def test_rules_file_exists(self, temp_finance_root) -> None:
         """hledger rules file exists for triodos."""
@@ -146,8 +135,6 @@ class TestWorkingDirectoryStructure:
             / "checking"
             / "triodos.rules"
         )
-        assert rules_file.exists(), (
-            f"Rules file should exist: {rules_file}"
-        )
+        assert rules_file.exists(), f"Rules file should exist: {rules_file}"
         content = rules_file.read_text()
         assert "account1" in content

@@ -178,9 +178,7 @@ def create_test_environment() -> Dict[str, Any]:
         "rotated_path": str(rotated_path),
         "cropped_path": str(cropped_path),
     }
-    metadata_path = (
-        root / "receipt_images_processed" / "clothing_return.json"
-    )
+    metadata_path = root / "receipt_images_processed" / "clothing_return.json"
     metadata_path.write_text(json.dumps(metadata, indent=2))
 
     # Receipt label — bought 3 items @ 25 EUR each, returned 1 defective
@@ -359,10 +357,7 @@ def show_label_result(
         f"{Colors.WHITE}  searched in the bank CSV. The bank statement"
         f" shows the net{Colors.RESET}"
     )
-    print(
-        f"{Colors.WHITE}  charge, not the gross"
-        f" amount.{Colors.RESET}"
-    )
+    print(f"{Colors.WHITE}  charge, not the gross amount.{Colors.RESET}")
     print()
     time.sleep(3)
 

@@ -179,9 +179,7 @@ class TestGetTransactionsInDateRange:
 
     def test_exact_date_match(self, triodos_account) -> None:
         """Transaction on the exact target date is included."""
-        txn = self._make_csv_txn(
-            triodos_account, datetime(2025, 1, 15), -42.17
-        )
+        txn = self._make_csv_txn(triodos_account, datetime(2025, 1, 15), -42.17)
         transactions_per_year: Dict[int, List[Transaction]] = {
             2025: [txn],
         }
@@ -195,9 +193,7 @@ class TestGetTransactionsInDateRange:
 
     def test_within_margin(self, triodos_account) -> None:
         """Transaction within ±margin days is included."""
-        txn = self._make_csv_txn(
-            triodos_account, datetime(2025, 1, 17), -42.17
-        )
+        txn = self._make_csv_txn(triodos_account, datetime(2025, 1, 17), -42.17)
         transactions_per_year: Dict[int, List[Transaction]] = {
             2025: [txn],
         }
@@ -210,9 +206,7 @@ class TestGetTransactionsInDateRange:
 
     def test_outside_margin_excluded(self, triodos_account) -> None:
         """Transaction outside ±margin days is excluded."""
-        txn = self._make_csv_txn(
-            triodos_account, datetime(2025, 1, 20), -42.17
-        )
+        txn = self._make_csv_txn(triodos_account, datetime(2025, 1, 20), -42.17)
         transactions_per_year: Dict[int, List[Transaction]] = {
             2025: [txn],
         }

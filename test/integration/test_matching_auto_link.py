@@ -10,8 +10,6 @@ from typing import Dict, List
 import pytest
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
-from hledger_preprocessor.config.CsvColumnMapping import CsvColumnMapping
-from hledger_preprocessor.config.MatchingAlgoConfig import MatchingAlgoConfig
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
@@ -21,7 +19,6 @@ from hledger_preprocessor.matching.helper import (
     get_transactions_in_date_range,
 )
 from hledger_preprocessor.matching.searching.helper import (
-    filter_transactions_by_amount,
     is_amount_within_margin,
 )
 from hledger_preprocessor.TransactionObjects.Account import Account
@@ -130,38 +127,50 @@ class TestAutoLinkAmountFiltering:
         """Receipt 42.17 matches CSV -42.17 (same absolute value)."""
         # The matching uses net amounts: receipt net = 42.17, CSV net = -42.17
         # is_amount_within_margin compares absolute diff
-        assert is_amount_within_margin(
-            transaction_amount=-42.17,
-            receipt_amount=42.17,
-            margin=0.0,
-        ) is False  # -42.17 vs 42.17 → diff = 84.34 → outside 0 margin
+        assert (
+            is_amount_within_margin(
+                transaction_amount=-42.17,
+                receipt_amount=42.17,
+                margin=0.0,
+            )
+            is False
+        )  # -42.17 vs 42.17 → diff = 84.34 → outside 0 margin
 
     def test_same_sign_amount_match(self) -> None:
         """When both negative (bank debit), exact match works."""
-        assert is_amount_within_margin(
-            transaction_amount=-42.17,
-            receipt_amount=-42.17,
-            margin=0.0,
-        ) is True
+        assert (
+            is_amount_within_margin(
+                transaction_amount=-42.17,
+                receipt_amount=-42.17,
+                margin=0.0,
+            )
+            is True
+        )
 
     def test_small_margin_catches_rounding(self) -> None:
         """1% margin catches bank rounding.
         Formula: abs(txn - receipt) <= margin * max(receipt, 0.01).
         With positive amounts: diff=0.03, threshold=0.01*42.17=0.42 → match.
         """
-        assert is_amount_within_margin(
-            transaction_amount=42.20,
-            receipt_amount=42.17,
-            margin=0.01,  # 1% of 42.17 = 0.4217
-        ) is True
+        assert (
+            is_amount_within_margin(
+                transaction_amount=42.20,
+                receipt_amount=42.17,
+                margin=0.01,  # 1% of 42.17 = 0.4217
+            )
+            is True
+        )
 
     def test_large_difference_rejected(self) -> None:
         """Different amount not matched with small margin."""
-        assert is_amount_within_margin(
-            transaction_amount=-99.99,
-            receipt_amount=-42.17,
-            margin=0.01,
-        ) is False
+        assert (
+            is_amount_within_margin(
+                transaction_amount=-99.99,
+                receipt_amount=-42.17,
+                margin=0.01,
+            )
+            is False
+        )
 
 
 class TestAutoLinkCombined:
@@ -188,8 +197,7 @@ class TestAutoLinkCombined:
             t
             for t in date_matches
             if is_amount_within_margin(
-                transaction_amount=t.tendered_amount_out
-                - t.change_returned,
+                transaction_amount=t.tendered_amount_out - t.change_returned,
                 receipt_amount=-42.17,  # receipt net as seen by matcher
                 margin=0.0,
             )

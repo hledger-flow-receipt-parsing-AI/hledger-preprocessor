@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
-
 from story_components import (
     build_node_index,
     get_filtered_components,
@@ -59,7 +58,10 @@ SECTION_PRIMARY_LAYERS: Dict[str, List[str]] = {
     ],
     "Step 1b: Category Configuration": ["categories"],
     "Step 2a: Receipt Image Processing": ["receipt_img"],
-    "Step 2b: Receipt Labelling": ["receipt_img", "receipt_lbl"],
+    "Step 2b: Receipt Labelling": [
+        "receipt_img",
+        "receipt_group",
+    ],
     "Step 3: Receipt-to-CSV Transaction Matching": [
         "csv_txn",
         "matching_out",
@@ -132,9 +134,7 @@ def discover_videos(*, gifs_root: Path, theme: str) -> Dict[str, Path]:
     return result
 
 
-def discover_all_videos(
-    *, gifs_root: Path
-) -> Dict[str, Dict[str, Path]]:
+def discover_all_videos(*, gifs_root: Path) -> Dict[str, Dict[str, Path]]:
     """Find ALL MP4/GIF files per GIF directory.
 
     Returns {dir_name: {stem: path}} — e.g.
@@ -181,24 +181,65 @@ NODE_MARKER_RE = re.compile(r"@@NODE:(\w+)@@")
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]|\x1b\].*?\x07")
 
 
+def _build_rendered_times(
+    *, cast_path: Path
+) -> Tuple[List[Tuple[float, str]], List[float], float]:
+    """Parse a .cast file and compute rendered (idle-compressed) timestamps.
+
+    ``agg`` (v1.7.0) uses its own default ``--idle-time-limit`` of **5 s** as
+    the threshold for detecting idle gaps.  Gaps exceeding this threshold are
+    capped to the ``.cast`` header's ``idle_time_limit`` value (e.g. 2 s).
+    We replicate this exact behaviour so that extracted marker timestamps
+    match the rendered video.
+
+    Returns ``(events, rendered_times, idle_limit)`` where *events* is a
+    list of ``(raw_ts, data)`` tuples and *rendered_times* is the
+    corresponding rendered timestamp for each event.
+    """
+    AGG_IDLE_THRESHOLD = 5.0  # agg's built-in default --idle-time-limit
+
+    events: List[Tuple[float, str]] = []
+    idle_limit: Optional[float] = None
+    try:
+        with open(cast_path) as f:
+            header = json.loads(f.readline())
+            idle_limit = header.get("idle_time_limit")
+            for line in f:
+                row = json.loads(line)
+                events.append((row[0], row[2]))
+    except (json.JSONDecodeError, OSError):
+        return [], [], None
+
+    rendered: List[float] = []
+    rendered_t = 0.0
+    prev_raw = 0.0
+    for i, (raw_t, _data) in enumerate(events):
+        if i == 0:
+            rendered_t = raw_t
+        else:
+            gap = raw_t - prev_raw
+            if gap > AGG_IDLE_THRESHOLD:
+                gap = idle_limit if idle_limit else AGG_IDLE_THRESHOLD
+            rendered_t += gap
+        rendered.append(rendered_t)
+        prev_raw = raw_t
+
+    return events, rendered, idle_limit
+
+
 def parse_cast_node_markers(*, cast_path: Path) -> Dict[str, float]:
     """Parse @@NODE:node_id@@ markers from a .cast file.
 
-    Returns {node_id: first_timestamp_seconds} for each unique node marker.
+    Returns {node_id: first_timestamp_seconds} using rendered
+    (idle-compressed) timestamps that match the GIF/MP4 output.
     """
+    events, rendered, _idle = _build_rendered_times(cast_path=cast_path)
     markers: Dict[str, float] = {}
-    try:
-        with open(cast_path) as f:
-            f.readline()  # skip header
-            for line in f:
-                row = json.loads(line)
-                ts, _evt, data = row[0], row[1], row[2]
-                for m in NODE_MARKER_RE.finditer(data):
-                    nid = m.group(1)
-                    if nid not in markers:
-                        markers[nid] = round(ts, 2)
-    except (json.JSONDecodeError, OSError):
-        pass
+    for i, (raw_t, data) in enumerate(events):
+        for m in NODE_MARKER_RE.finditer(data):
+            nid = m.group(1)
+            if nid not in markers:
+                markers[nid] = round(rendered[i], 2)
     return markers
 
 
@@ -272,17 +313,11 @@ def get_markers_for_story(
 
 
 def get_cast_duration(*, cast_path: Path) -> float:
-    """Return the timestamp of the last event in a .cast file (i.e. its duration)."""
-    last_ts = 0.0
-    try:
-        with open(cast_path) as f:
-            f.readline()  # skip header
-            for line in f:
-                row = json.loads(line)
-                last_ts = row[0]
-    except (json.JSONDecodeError, OSError):
-        pass
-    return round(last_ts, 2)
+    """Return the rendered duration of a .cast file (with idle compression)."""
+    _events, rendered, _idle = _build_rendered_times(cast_path=cast_path)
+    if rendered:
+        return round(rendered[-1], 2)
+    return 0.0
 
 
 def get_node_markers_for_section(
@@ -380,14 +415,14 @@ def generate_overview_svg_direct(
     out horizontally within each layer.  Edges are drawn as quadratic
     Bézier curves between node centres.
     """
-    from collections import Counter
     from html import escape as html_escape
 
     # --- Import helpers from generate_userstory_artifacts ---
     from generate_userstory_artifacts import (
+        CONFIG_GROUP_LAYERS,
         LAYER_COLOURS,
         LAYER_ORDER,
-        CONFIG_GROUP_LAYERS,
+        RECEIPT_GROUP_LAYERS,
         collect_edges_from_paths,
         collect_nodes_from_paths,
         count_edge_usage,
@@ -415,17 +450,17 @@ def generate_overview_svg_direct(
 
     # --- Layout constants ---
     MARGIN = 16
-    NODE_W = 100       # node box width
-    NODE_H = 36        # node box height
-    NODE_PAD_X = 14    # horizontal gap between nodes
-    NODE_PAD_Y = 6     # vertical padding inside cluster above/below nodes
-    CLUSTER_PAD_TOP = 22   # space for cluster label
-    CLUSTER_PAD_BOT = 10
-    LAYER_GAP = 12     # vertical gap between layer clusters
-    CONFIG_GROUP_PAD = 8   # horizontal padding for config parent box
-    CONFIG_GROUP_TOP = 22  # extra top padding for "Configuration" label
+    NODE_W = 100  # node box width
+    NODE_H = 24  # node box height
+    NODE_PAD_X = 14  # horizontal gap between nodes
+    NODE_PAD_Y = 3  # vertical padding inside cluster above/below nodes
+    CLUSTER_PAD_TOP = 16  # space for cluster label
+    CLUSTER_PAD_BOT = 4
+    LAYER_GAP = 6  # vertical gap between layer clusters
+    CONFIG_GROUP_PAD = 4  # horizontal padding for config parent box
+    CONFIG_GROUP_TOP = 16  # extra top padding for "Configuration" label
     FONT_SIZE = 10
-    LABEL_FONT_SIZE = 12
+    LABEL_FONT_SIZE = 11
 
     # --- Compute positions ---
     # node_pos[nid] = (cx, cy) — centre of the node box
@@ -441,7 +476,14 @@ def generate_overview_svg_direct(
     # First config layer flag for the config group box
     config_y_start = None
     config_y_end = None
-    config_max_right = 0.0   # rightmost edge among config child clusters
+    config_max_right = 0.0  # rightmost edge among config child clusters
+
+    # Receipt group tracking (mirrors config group pattern)
+    RECEIPT_GROUP_PAD = CONFIG_GROUP_PAD
+    RECEIPT_GROUP_TOP = CONFIG_GROUP_TOP
+    receipt_y_start = None
+    receipt_y_end = None
+    receipt_max_right = 0.0
 
     for layer_name in ordered_layers:
         nids = layer_nodes[layer_name]
@@ -456,6 +498,10 @@ def generate_overview_svg_direct(
         # Add space for the "Configuration" label above the first config layer
         if layer_name in CONFIG_GROUP_LAYERS and config_y_start is None:
             y_cursor += CONFIG_GROUP_TOP
+
+        # Add space for the "Receipt Labelling" label above the first receipt layer
+        if layer_name in RECEIPT_GROUP_LAYERS and receipt_y_start is None:
+            y_cursor += RECEIPT_GROUP_TOP
 
         cluster_x = MARGIN
         cluster_y = y_cursor
@@ -483,6 +529,15 @@ def generate_overview_svg_direct(
             if right > config_max_right:
                 config_max_right = right
 
+        # Track receipt group bounds
+        if layer_name in RECEIPT_GROUP_LAYERS:
+            if receipt_y_start is None:
+                receipt_y_start = cluster_y
+            receipt_y_end = cluster_y + cluster_h
+            right = cluster_x + cluster_w
+            if right > receipt_max_right:
+                receipt_max_right = right
+
         y_cursor += cluster_h + LAYER_GAP
 
     total_w = max_width + MARGIN * 2
@@ -495,8 +550,23 @@ def generate_overview_svg_direct(
             MARGIN - CONFIG_GROUP_PAD,
             config_y_start - CONFIG_GROUP_TOP - CONFIG_GROUP_PAD,
             config_max_right - MARGIN + CONFIG_GROUP_PAD * 2,
-            config_y_end - config_y_start + CONFIG_GROUP_TOP
+            config_y_end
+            - config_y_start
+            + CONFIG_GROUP_TOP
             + CONFIG_GROUP_PAD * 2,
+        )
+
+    # Receipt group box
+    receipt_group_box = None
+    if receipt_y_start is not None and receipt_y_end is not None:
+        receipt_group_box = (
+            MARGIN - RECEIPT_GROUP_PAD,
+            receipt_y_start - RECEIPT_GROUP_TOP - RECEIPT_GROUP_PAD,
+            receipt_max_right - MARGIN + RECEIPT_GROUP_PAD * 2,
+            receipt_y_end
+            - receipt_y_start
+            + RECEIPT_GROUP_TOP
+            + RECEIPT_GROUP_PAD * 2,
         )
 
     # --- Edge routing ---
@@ -529,10 +599,10 @@ def generate_overview_svg_direct(
         safe_id = re.sub(r"[^a-zA-Z0-9]", "", key)
         lines.append(
             f'<marker id="arrow_{safe_id}" viewBox="0 0 10 6"'
-            f' refX="10" refY="3" markerWidth="8" markerHeight="6"'
-            f' orient="auto-start-reverse">'
+            ' refX="10" refY="3" markerWidth="8" markerHeight="6"'
+            ' orient="auto-start-reverse">'
             f'<path d="M0,0 L10,3 L0,6 Z" fill="{colour}"/>'
-            f'</marker>'
+            "</marker>"
         )
     lines.append("</defs>")
 
@@ -540,14 +610,26 @@ def generate_overview_svg_direct(
     if config_group_box:
         gx, gy, gw, gh = config_group_box
         lines.append(
-            f'<g class="cluster dag-cluster" data-layer="config_group">'
-            f'<rect x="{gx:.0f}" y="{gy:.0f}" width="{gw:.0f}"'
-            f' height="{gh:.0f}" fill="none" stroke="#bbb"'
-            f' stroke-width="1.5" stroke-dasharray="5,2" rx="4"/>'
-            f'<text x="{gx + 10:.0f}" y="{gy + 16:.0f}"'
-            f' font-family="DejaVu Sans,sans-serif" font-size="{LABEL_FONT_SIZE}"'
-            f' fill="#aaa">Configuration</text>'
-            f'</g>'
+            '<g class="cluster dag-cluster" data-layer="config_group"><rect'
+            f' x="{gx:.0f}" y="{gy:.0f}" width="{gw:.0f}" height="{gh:.0f}"'
+            ' fill="none" stroke="#bbb" stroke-width="1.5"'
+            f' stroke-dasharray="5,2" rx="4"/><text x="{gx + 10:.0f}"'
+            f' y="{gy + 16:.0f}" font-family="DejaVu Sans,sans-serif"'
+            f' font-size="{LABEL_FONT_SIZE}"'
+            ' fill="#aaa">Configuration</text></g>'
+        )
+
+    # Receipt Labelling group parent box
+    if receipt_group_box:
+        gx, gy, gw, gh = receipt_group_box
+        lines.append(
+            '<g class="cluster dag-cluster" data-layer="receipt_group"><rect'
+            f' x="{gx:.0f}" y="{gy:.0f}" width="{gw:.0f}" height="{gh:.0f}"'
+            ' fill="none" stroke="#bbb" stroke-width="1.5"'
+            f' stroke-dasharray="5,2" rx="4"/><text x="{gx + 10:.0f}"'
+            f' y="{gy + 16:.0f}" font-family="DejaVu Sans,sans-serif"'
+            f' font-size="{LABEL_FONT_SIZE}"'
+            ' fill="#aaa">Receipt Labelling</text></g>'
         )
 
     # Layer clusters and nodes
@@ -562,10 +644,10 @@ def generate_overview_svg_direct(
             f'<rect x="{cx:.0f}" y="{cy:.0f}" width="{cw:.0f}"'
             f' height="{ch:.0f}" fill="{fill}" stroke="#888" rx="3"/>'
             f'<text x="{cx + 8:.0f}" y="{cy + 15:.0f}"'
-            f' font-family="DejaVu Sans,sans-serif"'
+            ' font-family="DejaVu Sans,sans-serif"'
             f' font-size="{LABEL_FONT_SIZE}" fill="#333">'
-            f'{html_escape(layer_label)}</text>'
-            f'</g>'
+            f"{html_escape(layer_label)}</text>"
+            "</g>"
         )
 
         for nid in nids:
@@ -575,7 +657,7 @@ def generate_overview_svg_direct(
             ny = ncy - NODE_H / 2
             pw = penwidth_for_count(node_usage.get(nid, 1))
             label = info["label"].replace("\\n", "\n")
-            tooltip = html_escape(info["desc"])
+            html_escape(info["desc"])
 
             # Split multi-line label
             label_lines = label.split("\n")
@@ -591,8 +673,8 @@ def generate_overview_svg_direct(
             if len(label_lines) == 1:
                 lines.append(
                     f'<text x="{ncx:.1f}" y="{ncy + 4:.1f}"'
-                    f' text-anchor="middle"'
-                    f' font-family="DejaVu Sans,sans-serif"'
+                    ' text-anchor="middle"'
+                    ' font-family="DejaVu Sans,sans-serif"'
                     f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'
                 )
             else:
@@ -603,8 +685,8 @@ def generate_overview_svg_direct(
                     ty = start_y + j * (FONT_SIZE + 2)
                     lines.append(
                         f'<text x="{ncx:.1f}" y="{ty:.1f}"'
-                        f' text-anchor="middle"'
-                        f' font-family="DejaVu Sans,sans-serif"'
+                        ' text-anchor="middle"'
+                        ' font-family="DejaVu Sans,sans-serif"'
                         f' font-size="{FONT_SIZE}">{html_escape(ln)}</text>'
                     )
             lines.append("</a></g>")
@@ -623,9 +705,7 @@ def generate_overview_svg_direct(
     # so we can spread them out horizontally to avoid overlap.
     lane_counter: Dict[Tuple, int] = defaultdict(int)
 
-    def edge_path(
-        src: str, dst: str, lane_offset: float = 0
-    ) -> str:
+    def edge_path(src: str, dst: str, lane_offset: float = 0) -> str:
         """Build an SVG path from src node bottom to dst node top.
 
         Adjacent layers: simple S-curve.
@@ -633,8 +713,8 @@ def generate_overview_svg_direct(
         """
         sx, sy = node_pos[src]
         tx, ty = node_pos[dst]
-        s_bot = sy + NODE_H / 2   # source bottom
-        t_top = ty - NODE_H / 2   # target top
+        s_bot = sy + NODE_H / 2  # source bottom
+        t_top = ty - NODE_H / 2  # target top
 
         src_layer = node_index[src]["layer"]
         dst_layer = node_index[dst]["layer"]
@@ -681,7 +761,7 @@ def generate_overview_svg_direct(
     # Collect all unique edges and assign lane offsets for long edges
     # to prevent overlapping paths on the right side.
     all_edges_to_draw: List[Tuple[str, str]] = []
-    for (src, dst) in sorted(visible_edges):
+    for src, dst in sorted(visible_edges):
         if src in node_pos and dst in node_pos:
             all_edges_to_draw.append((src, dst))
 
@@ -723,8 +803,8 @@ def generate_overview_svg_direct(
                 f' data-target="{dst}">'
                 f'<path d="{d}"'
                 f' fill="none" stroke="#CCC" stroke-width="{pw}"'
-                f' marker-end="url(#arrow_grey)"/>'
-                f'</g>'
+                ' marker-end="url(#arrow_grey)"/>'
+                "</g>"
             )
 
     # Second pass: coloured edges per story
@@ -744,15 +824,13 @@ def generate_overview_svg_direct(
                     f' fill="none" stroke="{colour}"'
                     f' stroke-width="1.5"{dash}'
                     f' marker-end="url(#{arrow_id})"/>'
-                    f'</g>'
+                    "</g>"
                 )
 
     lines.append("</svg>")
     result = "\n".join(lines)
     # Fill in the viewBox now that total_w is final
-    result = result.replace(
-        "__VIEWBOX__", f"0 0 {total_w:.0f} {total_h:.0f}"
-    )
+    result = result.replace("__VIEWBOX__", f"0 0 {total_w:.0f} {total_h:.0f}")
     return result
 
 
@@ -781,10 +859,10 @@ def generate_story_svg_direct(
     from html import escape as html_escape
 
     from generate_userstory_artifacts import (
+        CONFIG_GROUP_LAYERS,
         LAYER_COLOURS,
         LAYER_ORDER,
-        CONFIG_GROUP_LAYERS,
-        collect_edges_from_paths,
+        RECEIPT_GROUP_LAYERS,
     )
 
     # --- Collect visible nodes / edges ---
@@ -805,21 +883,24 @@ def generate_story_svg_direct(
         layer_nodes[k].sort()
 
     if not layer_nodes:
-        return '<svg class="dag-svg" viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg"></svg>'
+        return (
+            '<svg class="dag-svg" viewBox="0 0 200 40"'
+            ' xmlns="http://www.w3.org/2000/svg"></svg>'
+        )
 
     # --- Layout constants ---
     MARGIN = 16
     NODE_W = 100
-    NODE_H = 36
+    NODE_H = 22  # compact height for per-story views
     NODE_PAD_X = 14
-    NODE_PAD_Y = 6
-    CLUSTER_PAD_TOP = 22
-    CLUSTER_PAD_BOT = 10
-    LAYER_GAP = 12
-    CONFIG_GROUP_PAD = 8
-    CONFIG_GROUP_TOP = 22
-    FONT_SIZE = 10
-    LABEL_FONT_SIZE = 12
+    NODE_PAD_Y = 2
+    CLUSTER_PAD_TOP = 14
+    CLUSTER_PAD_BOT = 3
+    LAYER_GAP = 5
+    CONFIG_GROUP_PAD = 3
+    CONFIG_GROUP_TOP = 14
+    FONT_SIZE = 9
+    LABEL_FONT_SIZE = 10
 
     # --- Compute positions ---
     node_pos: Dict[str, Tuple[float, float]] = {}
@@ -834,6 +915,13 @@ def generate_story_svg_direct(
     config_y_end = None
     config_max_right = 0.0
 
+    # Receipt group tracking (mirrors config group pattern)
+    RECEIPT_GROUP_PAD = CONFIG_GROUP_PAD
+    RECEIPT_GROUP_TOP = CONFIG_GROUP_TOP
+    receipt_y_start = None
+    receipt_y_end = None
+    receipt_max_right = 0.0
+
     for layer_name in ordered_layers:
         nids = layer_nodes[layer_name]
         n_nodes = len(nids)
@@ -846,6 +934,9 @@ def generate_story_svg_direct(
 
         if layer_name in CONFIG_GROUP_LAYERS and config_y_start is None:
             y_cursor += CONFIG_GROUP_TOP
+
+        if layer_name in RECEIPT_GROUP_LAYERS and receipt_y_start is None:
+            y_cursor += RECEIPT_GROUP_TOP
 
         cluster_x = MARGIN
         cluster_y = y_cursor
@@ -871,6 +962,14 @@ def generate_story_svg_direct(
             if right > config_max_right:
                 config_max_right = right
 
+        if layer_name in RECEIPT_GROUP_LAYERS:
+            if receipt_y_start is None:
+                receipt_y_start = cluster_y
+            receipt_y_end = cluster_y + cluster_h
+            right = cluster_x + cluster_w
+            if right > receipt_max_right:
+                receipt_max_right = right
+
         y_cursor += cluster_h + LAYER_GAP
 
     total_w = max_width + MARGIN * 2
@@ -882,8 +981,22 @@ def generate_story_svg_direct(
             MARGIN - CONFIG_GROUP_PAD,
             config_y_start - CONFIG_GROUP_TOP - CONFIG_GROUP_PAD,
             config_max_right - MARGIN + CONFIG_GROUP_PAD * 2,
-            config_y_end - config_y_start + CONFIG_GROUP_TOP
+            config_y_end
+            - config_y_start
+            + CONFIG_GROUP_TOP
             + CONFIG_GROUP_PAD * 2,
+        )
+
+    receipt_group_box = None
+    if receipt_y_start is not None and receipt_y_end is not None:
+        receipt_group_box = (
+            MARGIN - RECEIPT_GROUP_PAD,
+            receipt_y_start - RECEIPT_GROUP_TOP - RECEIPT_GROUP_PAD,
+            receipt_max_right - MARGIN + RECEIPT_GROUP_PAD * 2,
+            receipt_y_end
+            - receipt_y_start
+            + RECEIPT_GROUP_TOP
+            + RECEIPT_GROUP_PAD * 2,
         )
 
     # --- Edge routing helpers ---
@@ -900,9 +1013,7 @@ def generate_story_svg_direct(
         (cx + cw for cx, cy, cw, ch in cluster_box.values()), default=200
     )
 
-    def edge_path(
-        src: str, dst: str, lane_offset: float = 0
-    ) -> str:
+    def edge_path(src: str, dst: str, lane_offset: float = 0) -> str:
         sx, sy = node_pos[src]
         tx, ty = node_pos[dst]
         s_bot = sy + NODE_H / 2
@@ -987,10 +1098,10 @@ def generate_story_svg_direct(
     lines.append("<defs>")
     lines.append(
         f'<marker id="arrow_{safe_colour}" viewBox="0 0 10 6"'
-        f' refX="10" refY="3" markerWidth="8" markerHeight="6"'
-        f' orient="auto-start-reverse">'
+        ' refX="10" refY="3" markerWidth="8" markerHeight="6"'
+        ' orient="auto-start-reverse">'
         f'<path d="M0,0 L10,3 L0,6 Z" fill="{story_colour}"/>'
-        f'</marker>'
+        "</marker>"
     )
     lines.append("</defs>")
 
@@ -999,17 +1110,40 @@ def generate_story_svg_direct(
     if config_group_box:
         gx, gy, gw, gh = config_group_box
         cfg_cls = " section-box" if "config_group" in hl_layers else ""
-        cfg_stroke = "var(--accent, #2563eb)" if "config_group" in hl_layers else "#bbb"
+        cfg_stroke = (
+            "var(--accent, #2563eb)" if "config_group" in hl_layers else "#bbb"
+        )
         cfg_sw = "2.5" if "config_group" in hl_layers else "1.5"
         lines.append(
-            f'<g class="cluster dag-cluster{cfg_cls}" data-layer="config_group">'
-            f'<rect x="{gx:.0f}" y="{gy:.0f}" width="{gw:.0f}"'
-            f' height="{gh:.0f}" fill="none" stroke="{cfg_stroke}"'
-            f' stroke-width="{cfg_sw}" stroke-dasharray="5,2" rx="4"/>'
-            f'<text x="{gx + 10:.0f}" y="{gy + 16:.0f}"'
-            f' font-family="DejaVu Sans,sans-serif" font-size="{LABEL_FONT_SIZE}"'
-            f' fill="#aaa">Configuration</text>'
-            f'</g>'
+            f'<g class="cluster dag-cluster{cfg_cls}"'
+            f' data-layer="config_group"><rect x="{gx:.0f}" y="{gy:.0f}"'
+            f' width="{gw:.0f}" height="{gh:.0f}" fill="none"'
+            f' stroke="{cfg_stroke}" stroke-width="{cfg_sw}"'
+            f' stroke-dasharray="5,2" rx="4"/><text x="{gx + 10:.0f}"'
+            f' y="{gy + 16:.0f}" font-family="DejaVu Sans,sans-serif"'
+            f' font-size="{LABEL_FONT_SIZE}"'
+            ' fill="#aaa">Configuration</text></g>'
+        )
+
+    # Receipt Labelling group parent box
+    if receipt_group_box:
+        gx, gy, gw, gh = receipt_group_box
+        rcpt_cls = " section-box" if "receipt_group" in hl_layers else ""
+        rcpt_stroke = (
+            "var(--accent, #2563eb)"
+            if "receipt_group" in hl_layers
+            else "#bbb"
+        )
+        rcpt_sw = "2.5" if "receipt_group" in hl_layers else "1.5"
+        lines.append(
+            f'<g class="cluster dag-cluster{rcpt_cls}"'
+            f' data-layer="receipt_group"><rect x="{gx:.0f}" y="{gy:.0f}"'
+            f' width="{gw:.0f}" height="{gh:.0f}" fill="none"'
+            f' stroke="{rcpt_stroke}" stroke-width="{rcpt_sw}"'
+            f' stroke-dasharray="5,2" rx="4"/><text x="{gx + 10:.0f}"'
+            f' y="{gy + 16:.0f}" font-family="DejaVu Sans,sans-serif"'
+            f' font-size="{LABEL_FONT_SIZE}"'
+            ' fill="#aaa">Receipt Labelling</text></g>'
         )
 
     # Layer clusters and nodes
@@ -1022,20 +1156,16 @@ def generate_story_svg_direct(
         extra_cls = " section-box" if layer_name in hl_layers else ""
         extra_style = ""
         if layer_name in hl_layers:
-            extra_style = (
-                ' stroke-dasharray="8 4"'
-                ' stroke-width="2.5"'
-            )
+            extra_style = ' stroke-dasharray="8 4" stroke-width="2.5"'
 
         lines.append(
-            f'<g class="cluster dag-cluster{extra_cls}" data-layer="{layer_name}">'
-            f'<rect x="{cx:.0f}" y="{cy:.0f}" width="{cw:.0f}"'
-            f' height="{ch:.0f}" fill="{fill}" stroke="#888" rx="3"{extra_style}/>'
-            f'<text x="{cx + 8:.0f}" y="{cy + 15:.0f}"'
-            f' font-family="DejaVu Sans,sans-serif"'
-            f' font-size="{LABEL_FONT_SIZE}" fill="#333">'
-            f'{html_escape(layer_label)}</text>'
-            f'</g>'
+            f'<g class="cluster dag-cluster{extra_cls}"'
+            f' data-layer="{layer_name}"><rect x="{cx:.0f}" y="{cy:.0f}"'
+            f' width="{cw:.0f}" height="{ch:.0f}" fill="{fill}" stroke="#888"'
+            f' rx="3"{extra_style}/><text x="{cx + 8:.0f}" y="{cy + 15:.0f}"'
+            ' font-family="DejaVu Sans,sans-serif"'
+            f' font-size="{LABEL_FONT_SIZE}"'
+            f' fill="#333">{html_escape(layer_label)}</text></g>'
         )
 
         for nid in nids:
@@ -1052,13 +1182,13 @@ def generate_story_svg_direct(
                 f'<a><title>{html_escape(info["desc"])}</title>'
                 f'<rect x="{nx:.1f}" y="{ny:.1f}"'
                 f' width="{NODE_W}" height="{NODE_H}"'
-                f' fill="white" stroke="#333" stroke-width="1" rx="3"/>'
+                ' fill="white" stroke="#333" stroke-width="1" rx="3"/>'
             )
             if len(label_lines) == 1:
                 lines.append(
                     f'<text x="{ncx:.1f}" y="{ncy + 4:.1f}"'
-                    f' text-anchor="middle"'
-                    f' font-family="DejaVu Sans,sans-serif"'
+                    ' text-anchor="middle"'
+                    ' font-family="DejaVu Sans,sans-serif"'
                     f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'
                 )
             else:
@@ -1068,8 +1198,8 @@ def generate_story_svg_direct(
                     ty = start_y + j * (FONT_SIZE + 2)
                     lines.append(
                         f'<text x="{ncx:.1f}" y="{ty:.1f}"'
-                        f' text-anchor="middle"'
-                        f' font-family="DejaVu Sans,sans-serif"'
+                        ' text-anchor="middle"'
+                        ' font-family="DejaVu Sans,sans-serif"'
                         f' font-size="{FONT_SIZE}">{html_escape(ln)}</text>'
                     )
             lines.append("</a></g>")
@@ -1083,22 +1213,18 @@ def generate_story_svg_direct(
             f' data-target="{dst}">'
             f'<path d="{d}"'
             f' fill="none" stroke="{story_colour}"'
-            f' stroke-width="1.5"'
+            ' stroke-width="1.5"'
             f' marker-end="url(#{arrow_id})"/>'
-            f'</g>'
+            "</g>"
         )
 
     lines.append("</svg>")
     result = "\n".join(lines)
-    result = result.replace(
-        "__VIEWBOX__", f"0 0 {total_w:.0f} {total_h:.0f}"
-    )
+    result = result.replace("__VIEWBOX__", f"0 0 {total_w:.0f} {total_h:.0f}")
     return result
 
 
-def add_data_attributes_to_svg(
-    *, svg: str, node_index: Dict[str, Dict]
-) -> str:
+def add_data_attributes_to_svg(*, svg: str, node_index: Dict[str, Dict]) -> str:
     """Post-process SVG to add data-layer and data-node attributes to nodes.
 
     PlantUML/Graphviz outputs nodes as <g> with a <title> containing the
@@ -1147,7 +1273,9 @@ def add_data_attributes_to_svg(
         "start_journal",
         "csv_txn",
         "receipt_img",
-        "receipt_lbl",
+        "receipt_lbl_before",
+        "receipt_lbl_tui",
+        "receipt_lbl_after",
         "matching_out",
         "journal_out",
         "visualization",
@@ -1182,7 +1310,9 @@ def add_data_attributes_to_svg(
         m = edge_title_re.search(svg, search_start)
         if not m:
             break
-        title_text = html_mod.unescape(m.group(1))  # e.g. "malgo_default->cat_basic"
+        title_text = html_mod.unescape(
+            m.group(1)
+        )  # e.g. "malgo_default->cat_basic"
         parts = title_text.split("->")
         if len(parts) == 2:
             src, tgt = parts[0].strip(), parts[1].strip()
@@ -1215,27 +1345,27 @@ def add_data_attributes_to_svg(
     # Make the SVG background transparent (first polygon is usually the bg)
     svg = re.sub(
         r'(<polygon fill=")white(" stroke="transparent")',
-        r'\1none\2',
+        r"\1none\2",
         svg,
         count=1,
     )
 
     # Make SVG responsive: strip fixed width/height (in pt), keep viewBox,
     # and add class. The viewBox is already set by PlantUML/Graphviz.
-    svg = re.sub(r'\s*width="[^"]*"', '', svg, count=1)
-    svg = re.sub(r'\s*height="[^"]*"', '', svg, count=1)
+    svg = re.sub(r'\s*width="[^"]*"', "", svg, count=1)
+    svg = re.sub(r'\s*height="[^"]*"', "", svg, count=1)
     svg = svg.replace("<svg", '<svg class="dag-svg"', 1)
 
     # Inject arrowhead markers into PlantUML SVGs so edges have visible arrows.
     # Add a <defs> block right after the opening <svg> tag.
     arrow_defs = (
-        '<defs>'
+        "<defs>"
         '<marker id="puml-arrow" viewBox="0 0 10 6" '
         'refX="10" refY="3" markerWidth="8" markerHeight="6" '
         'orient="auto-start-reverse">'
         '<path d="M0,0 L10,3 L0,6 Z" fill="#333"/>'
-        '</marker>'
-        '</defs>'
+        "</marker>"
+        "</defs>"
     )
     # Insert after the first '>' of the <svg> tag
     svg_tag_end = svg.find(">", svg.find("<svg"))
@@ -1372,9 +1502,15 @@ a:hover { text-decoration: underline; }
   text-transform: lowercase;
 }
 
-/* Receipt image — zoom-pane floated right inside story header */
+/* Receipt image — zoom-pane floated left inside story header */
 .receipt-pane {
-  float: right; margin: 0 0 0.5rem 1rem;
+  float: left; margin: 0 1rem 0.5rem 0;
+  position: relative;
+  transition: box-shadow 0.3s ease;
+}
+.receipt-pane.active {
+  box-shadow: 0 0 12px 4px var(--accent-glow);
+  border-radius: 6px;
 }
 .receipt-image-inline {
   max-height: 280px; width: auto;
@@ -1382,6 +1518,17 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: block;
 }
+/* Receipt field bounding box overlay */
+.receipt-overlay {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.receipt-overlay rect {
+  fill: none; stroke: var(--accent); stroke-width: 1.5;
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.receipt-overlay rect.active { opacity: 0.85; }
 
 /* Legacy receipt image section (kept for compatibility) */
 .receipt-image-section {
@@ -1654,6 +1801,20 @@ a:hover { text-decoration: underline; }
 }
 .zoom-pane.zoom-selected .zoom-indicator,
 .zoom-pane:hover .zoom-indicator { opacity: 1; }
+.zoom-resize-buttons {
+  position: absolute; top: 4px; left: 4px;
+  display: flex; gap: 2px; z-index: 5;
+  opacity: 0; transition: opacity 0.2s;
+}
+.zoom-pane.zoom-selected .zoom-resize-buttons,
+.zoom-pane:hover .zoom-resize-buttons { opacity: 1; }
+.zoom-resize-btn {
+  width: 22px; height: 22px; padding: 0; border: 1px solid var(--border);
+  border-radius: 3px; background: var(--bg-card); color: var(--text-muted);
+  font-size: 0.8rem; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; line-height: 1;
+}
+.zoom-resize-btn:hover { background: var(--accent); color: #fff; }
 .sidebar.zoom-pane { position: fixed; overflow-y: auto; }
 """
     return (
@@ -1732,6 +1893,87 @@ def generate_js() -> str:
     if (nid && lay) nodeToLayer[nid] = lay;
   });
 
+  // Receipt pane and overlay elements
+  var receiptPane = document.querySelector('.receipt-pane');
+  var overlayRects = document.querySelectorAll('.receipt-overlay rect');
+
+  // Map sub-component timestamp keys to receipt field IDs, grouped by parent
+  var fieldTimestamps = {};
+  var fieldsByParent = {};
+  Object.keys(TIMESTAMPS).forEach(function(k) {
+    var parts = k.split('__');
+    if (parts.length === 2 && TIMESTAMPS[k] !== null) {
+      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k], parent: parts[0] };
+      if (!fieldsByParent[parts[0]]) fieldsByParent[parts[0]] = [];
+      fieldsByParent[parts[0]].push(k);
+    }
+  });
+  // Sort each parent's field keys by time
+  Object.keys(fieldsByParent).forEach(function(p) {
+    fieldsByParent[p].sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });
+  });
+
+  // Debug overlay (toggle with 'd' key)
+  var debugEl = null;
+  var debugVisible = false;
+  function ensureDebugEl() {
+    if (!debugEl) {
+      debugEl = document.createElement('div');
+      debugEl.style.cssText = 'position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;padding:8px 12px;border-radius:4px;z-index:9999;pointer-events:none;max-width:340px;white-space:pre';
+      document.body.appendChild(debugEl);
+    }
+  }
+  function updateDebug(videoTime, nodeId, activeField) {
+    if (!debugVisible) return;
+    ensureDebugEl();
+    var lines = ['t=' + (videoTime !== undefined ? videoTime.toFixed(2) : '?') + 's'];
+    lines.push('node=' + nodeId);
+    lines.push('field=' + (activeField || '(none)'));
+    // Show field timestamp ranges for the active TUI node
+    var parentKeys = fieldsByParent[nodeId];
+    if (parentKeys) {
+      lines.push('---');
+      for (var i = 0; i < parentKeys.length; i++) {
+        var e = fieldTimestamps[parentKeys[i]];
+        var marker = (e.field === activeField) ? '>' : ' ';
+        var nextTime = (i + 1 < parentKeys.length) ? fieldTimestamps[parentKeys[i + 1]].time : null;
+        var range = e.time.toFixed(2) + (nextTime ? '-' + nextTime.toFixed(2) : '+');
+        lines.push(marker + ' ' + e.field + ' ' + range);
+      }
+    }
+    debugEl.textContent = lines.join('\\n');
+  }
+
+  function highlightReceiptField(nodeId, videoTime) {
+    if (receiptPane) {
+      var isReceiptNode = nodeId.indexOf('img_') === 0 ||
+        nodeId.indexOf('nolbl_') === 0 ||
+        nodeId.indexOf('tui_') === 0 ||
+        nodeId.indexOf('lbl_') === 0;
+      if (isReceiptNode) {
+        receiptPane.classList.add('active');
+      } else {
+        receiptPane.classList.remove('active');
+      }
+    }
+    var activeField = null;
+    if (overlayRects.length > 0 && videoTime !== undefined) {
+      var isTuiNode = nodeId.indexOf('tui_') === 0;
+      if (isTuiNode) {
+        // Only consider fields belonging to this specific TUI node
+        var nodeFieldKeys = fieldsByParent[nodeId] || [];
+        for (var i = 0; i < nodeFieldKeys.length; i++) {
+          var entry = fieldTimestamps[nodeFieldKeys[i]];
+          if (entry.time <= videoTime) activeField = entry.field;
+        }
+      }
+      overlayRects.forEach(function(r) {
+        r.classList.toggle('active', r.getAttribute('data-field') === activeField);
+      });
+    }
+    updateDebug(videoTime, nodeId, activeField);
+  }
+
   function highlightNode(nodeId) {
     allNodes.forEach(function(n) { n.classList.remove('active'); });
     clusters.forEach(function(c) { c.classList.remove('active-cluster'); });
@@ -1757,6 +1999,9 @@ def generate_js() -> str:
     if (layerIndicator) {
       layerIndicator.textContent = targetLayer.replace(/_/g, ' ') || nodeId;
     }
+
+    // Highlight receipt image and field bounding boxes
+    highlightReceiptField(nodeId, video ? video.currentTime : undefined);
 
     // Update currentIdx
     var idx = tsKeys.indexOf(nodeId);
@@ -1790,6 +2035,10 @@ def generate_js() -> str:
       e.preventDefault();
       if (video.paused) video.play();
       else video.pause();
+    } else if (e.key === 'd') {
+      debugVisible = !debugVisible;
+      if (debugEl) debugEl.style.display = debugVisible ? '' : 'none';
+      if (debugVisible) highlightNode(tsKeys[currentIdx]);
     }
   });
 
@@ -2178,8 +2427,14 @@ def generate_zoom_js() -> str:
     """Generate the zoom-pane JavaScript for independently zoomable regions.
 
     Each element with class ``zoom-pane`` becomes a zoomable region.
-    Clicking selects it (highlighted outline), and Ctrl+/- zooms only
-    the selected pane.  Ctrl+0 resets zoom.
+    Clicking selects it (highlighted outline).
+
+    Two zoom modes:
+    - Ctrl+/-: Coupled mode — grid columns rebalance proportionally.
+    - , / . keys (or buttons): Independent mode — only the target pane
+      changes width (in pixels). The other pane stays exactly the same
+      size. / to reset.
+    - Ctrl+0: Reset all.
     """
     return r"""
 (function() {
@@ -2189,6 +2444,9 @@ def generate_zoom_js() -> str:
 
   var selected = null;
   var scaleMap = {};
+
+  // Independent mode state per grid: stores pixel widths
+  var indepWidths = new WeakMap();
 
   // Find the innermost zoom-pane for a given element
   function closestPane(el) {
@@ -2212,6 +2470,47 @@ def generate_zoom_js() -> str:
     indicator.className = 'zoom-indicator';
     indicator.textContent = '100%';
     pane.appendChild(indicator);
+
+    // Add resize buttons for panes inside a video-dag-row grid
+    if (pane.closest('.video-dag-row')) {
+      var btnGroup = document.createElement('span');
+      btnGroup.className = 'zoom-resize-buttons';
+
+      var btnShrink = document.createElement('button');
+      btnShrink.className = 'zoom-resize-btn';
+      btnShrink.textContent = '\u2212';
+      btnShrink.title = 'Shrink this pane only';
+      btnShrink.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectPane(pane);
+        indepResize(pane, -1);
+      });
+
+      var btnGrow = document.createElement('button');
+      btnGrow.className = 'zoom-resize-btn';
+      btnGrow.textContent = '+';
+      btnGrow.title = 'Grow this pane only';
+      btnGrow.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectPane(pane);
+        indepResize(pane, +1);
+      });
+
+      var btnReset = document.createElement('button');
+      btnReset.className = 'zoom-resize-btn';
+      btnReset.textContent = '\u21ba';
+      btnReset.title = 'Reset pane size';
+      btnReset.addEventListener('click', function(e) {
+        e.stopPropagation();
+        selectPane(pane);
+        resetAll(pane);
+      });
+
+      btnGroup.appendChild(btnShrink);
+      btnGroup.appendChild(btnGrow);
+      btnGroup.appendChild(btnReset);
+      pane.appendChild(btnGroup);
+    }
   });
 
   // Single document-level listener picks the innermost zoom-pane
@@ -2227,16 +2526,103 @@ def generate_zoom_js() -> str:
     selected = pane;
   }
 
-  function applyZoom(pane) {
-    var id = pane.getAttribute('data-zoom-id');
-    var scale = scaleMap[id];
-    // CSS zoom changes the element's rendered size in the layout
-    pane.style.zoom = scale;
+  function clearTransforms(pane) {
+    var inner = pane.querySelector('.zoom-pane-inner');
+    if (inner) {
+      inner.style.transform = '';
+      inner.style.transformOrigin = '';
+      inner.style.width = '';
+      inner.style.height = '';
+    }
+    pane.style.zoom = '';
+  }
 
-    // If inside a video-dag-row grid, rebuild column ratios so both
-    // panes can grow/shrink independently based on their own zoom level.
+  function getIndicator(pane) {
+    for (var j = 0; j < pane.children.length; j++) {
+      if (pane.children[j].classList.contains('zoom-indicator')) {
+        return pane.children[j];
+      }
+    }
+    return null;
+  }
+
+  // Independent resize using pixel widths.
+  // direction: -1 = shrink, +1 = grow
+  var STEP_PX = 40;
+
+  function indepResize(pane, direction) {
+    var grid = pane.closest('.video-dag-row');
+    if (!grid) return;
+
+    var vp = grid.querySelector('.video-section.zoom-pane');
+    var dp = grid.querySelector('.dag-section.zoom-pane');
+    if (!vp || !dp) return;
+
+    // Clear any coupled-mode zoom first
+    clearTransforms(vp);
+    clearTransforms(dp);
+    scaleMap[vp.getAttribute('data-zoom-id')] = 1;
+    scaleMap[dp.getAttribute('data-zoom-id')] = 1;
+
+    // Snapshot current widths if not already in independent mode
+    var w = indepWidths.get(grid);
+    if (!w) {
+      w = {
+        video: vp.getBoundingClientRect().width,
+        dag: dp.getBoundingClientRect().width
+      };
+      indepWidths.set(grid, w);
+    }
+
+    // Adjust only the target pane
+    var isVideo = pane === vp;
+    var key = isVideo ? 'video' : 'dag';
+    w[key] = Math.max(100, w[key] + direction * STEP_PX);
+
+    grid.style.gridTemplateColumns = w.video + 'px ' + w.dag + 'px';
+
+    // Update indicators
+    var vInd = getIndicator(vp);
+    var dInd = getIndicator(dp);
+    if (vInd) vInd.textContent = Math.round(w.video) + 'px';
+    if (dInd) dInd.textContent = Math.round(w.dag) + 'px';
+  }
+
+  function resetAll(pane) {
     var grid = pane.closest('.video-dag-row');
     if (grid) {
+      grid.style.gridTemplateColumns = '';
+      indepWidths.delete(grid);
+    }
+
+    var vp = grid && grid.querySelector('.video-section.zoom-pane');
+    var dp = grid && grid.querySelector('.dag-section.zoom-pane');
+
+    if (vp) { clearTransforms(vp); scaleMap[vp.getAttribute('data-zoom-id')] = 1; }
+    if (dp) { clearTransforms(dp); scaleMap[dp.getAttribute('data-zoom-id')] = 1; }
+
+    var vInd = vp && getIndicator(vp);
+    var dInd = dp && getIndicator(dp);
+    if (vInd) vInd.textContent = '100%';
+    if (dInd) dInd.textContent = '100%';
+  }
+
+  function applyCoupledZoom(pane) {
+    var id = pane.getAttribute('data-zoom-id');
+    var scale = scaleMap[id];
+
+    var inner = pane.querySelector('.zoom-pane-inner');
+    if (inner) {
+      inner.style.transform = '';
+      inner.style.transformOrigin = '';
+      inner.style.width = '';
+      inner.style.height = '';
+    }
+    pane.style.zoom = scale;
+
+    var grid = pane.closest('.video-dag-row');
+    if (grid) {
+      indepWidths.delete(grid);
       var videoScale = 1, dagScale = 1;
       var vp = grid.querySelector('.video-section.zoom-pane');
       var dp = grid.querySelector('.dag-section.zoom-pane');
@@ -2244,43 +2630,62 @@ def generate_zoom_js() -> str:
       if (dp) dagScale = scaleMap[dp.getAttribute('data-zoom-id')] || 1;
       grid.style.gridTemplateColumns = videoScale + 'fr ' + dagScale + 'fr';
     }
-
-    // Update zoom indicator
-    var indicator = null;
-    for (var j = 0; j < pane.children.length; j++) {
-      if (pane.children[j].classList.contains('zoom-indicator')) {
-        indicator = pane.children[j]; break;
-      }
-    }
+    var indicator = getIndicator(pane);
     if (indicator) {
       indicator.textContent = Math.round(scale * 100) + '%';
     }
   }
 
+  // Ctrl+/- = coupled zoom
   document.addEventListener('keydown', function(e) {
     if (!selected) return;
     if (!e.ctrlKey && !e.metaKey) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.altKey || e.shiftKey) return;
 
     var id = selected.getAttribute('data-zoom-id');
+
     if (e.key === '=' || e.key === '+') {
       e.preventDefault();
       scaleMap[id] = Math.min(scaleMap[id] + 0.1, 3);
-      applyZoom(selected);
+      applyCoupledZoom(selected);
     } else if (e.key === '-') {
       e.preventDefault();
       scaleMap[id] = Math.max(scaleMap[id] - 0.1, 0.3);
-      applyZoom(selected);
+      applyCoupledZoom(selected);
     } else if (e.key === '0') {
       e.preventDefault();
-      scaleMap[id] = 1;
-      applyZoom(selected);
+      resetAll(selected);
+    }
+  });
+
+  // Independent resize: , (or <) to shrink, . (or >) to grow, / to reset.
+  // Also [ ] \ as alternatives.
+  document.addEventListener('keydown', function(e) {
+    if (!selected) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.target.tagName === 'BUTTON') return;
+
+    var inGrid = !!selected.closest('.video-dag-row');
+    if (!inGrid) return;
+
+    if (e.key === ',' || e.key === '<' || e.key === '[') {
+      e.preventDefault();
+      indepResize(selected, -1);
+    } else if (e.key === '.' || e.key === '>' || e.key === ']') {
+      e.preventDefault();
+      indepResize(selected, +1);
+    } else if (e.key === '/' || e.key === '\\') {
+      e.preventDefault();
+      resetAll(selected);
     }
   });
 
   // Alt+Left/Right: cycle which pane is selected
   document.addEventListener('keydown', function(e) {
     if (!e.altKey) return;
+    if (e.ctrlKey || e.metaKey) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     e.preventDefault();
@@ -2297,7 +2702,7 @@ def generate_zoom_js() -> str:
     arr[next].scrollIntoView({behavior: 'smooth', block: 'nearest'});
   });
 
-  // Mouse wheel zoom with Ctrl held — target innermost pane
+  // Mouse wheel zoom — Ctrl+scroll = coupled
   document.addEventListener('wheel', function(e) {
     if (!e.ctrlKey && !e.metaKey) return;
     var pane = closestPane(e.target);
@@ -2307,7 +2712,7 @@ def generate_zoom_js() -> str:
     var id = pane.getAttribute('data-zoom-id');
     var delta = e.deltaY > 0 ? -0.1 : 0.1;
     scaleMap[id] = Math.max(0.3, Math.min(3, scaleMap[id] + delta));
-    applyZoom(pane);
+    applyCoupledZoom(pane);
   }, {passive: false});
 })();
 """
@@ -2329,15 +2734,15 @@ def _html_head(*, title: str) -> str:
 
 def _line_swatch_svg(*, colour: str, pattern: str) -> str:
     """Return an inline SVG showing a short line with the story's colour and dash pattern."""
-    dash_map = {"dashed": '5,3', "dotted": '2,3', "bold": '', "solid": ''}
-    da = dash_map.get(pattern, '')
-    sw = '3.5' if pattern == 'bold' else '2'
-    da_attr = f' stroke-dasharray="{da}"' if da else ''
+    dash_map = {"dashed": "5,3", "dotted": "2,3", "bold": "", "solid": ""}
+    da = dash_map.get(pattern, "")
+    sw = "3.5" if pattern == "bold" else "2"
+    da_attr = f' stroke-dasharray="{da}"' if da else ""
     return (
-        f'<svg class="sidebar-swatch" viewBox="0 0 22 10" '
-        f'style="width:22px;height:10px;vertical-align:middle;margin-right:4px;flex-shrink:0">'
-        f'<line x1="1" y1="5" x2="21" y2="5" stroke="{colour}" '
-        f'stroke-width="{sw}"{da_attr}/></svg>'
+        '<svg class="sidebar-swatch" viewBox="0 0 22 10"'
+        ' style="width:22px;height:10px;vertical-align:middle;margin-right:4px;flex-shrink:0"><line'
+        f' x1="1" y1="5" x2="21" y2="5" stroke="{colour}"'
+        f' stroke-width="{sw}"{da_attr}/></svg>'
     )
 
 
@@ -2350,7 +2755,9 @@ def _sidebar_html(
     html = '<nav class="sidebar zoom-pane" data-zoom-id="sidebar">\n'
     html += '<div class="zoom-pane-inner">\n'
     html += '<h1><a href="{INDEX_PATH}">hledger-preprocessor</a></h1>\n'
-    html += "<p style=\"font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem\">"
+    html += (
+        '<p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">'
+    )
     html += "User Story DAG Explorer</p>\n"
     swv = stories_with_video or set()
     for section, stories in sections.items():
@@ -2370,8 +2777,8 @@ def _sidebar_html(
             )
             html += (
                 f'<li><a href="{{STORIES_PATH}}/{s["id"]}.html"{active}'
-                f' style="display:inline-flex;align-items:center">'
-                f'{swatch}'
+                ' style="display:inline-flex;align-items:center">'
+                f"{swatch}"
                 f'{s["id"]}: {_esc(s["title"])}{play_icon}</a></li>\n'
             )
         html += "</ul>\n</details>\n"
@@ -2389,16 +2796,20 @@ def generate_index_html(
 ) -> str:
     head = _html_head(title="User Story DAG — hledger-preprocessor")
     head = head.replace("{CSS_PATH}", "assets/css/style.css")
-    sidebar = _sidebar_html(sections=sections, stories_with_video=stories_with_video)
+    sidebar = _sidebar_html(
+        sections=sections, stories_with_video=stories_with_video
+    )
     sidebar = sidebar.replace("{INDEX_PATH}", "index.html")
     sidebar = sidebar.replace("{STORIES_PATH}", "stories")
 
     main = '<div class="main">\n'
     main += "<h1>User Story DAG</h1>\n"
-    main += "<p style=\"margin-bottom:0.8rem;color:var(--text-muted)\">"
+    main += '<p style="margin-bottom:0.8rem;color:var(--text-muted)">'
     main += "Interactive explorer &mdash; use "
-    main += "<kbd style=\"padding:0.1rem 0.35rem;background:var(--bg-card);"
-    main += "border:1px solid var(--border);border-radius:3px;font-size:0.8rem\">"
+    main += '<kbd style="padding:0.1rem 0.35rem;background:var(--bg-card);'
+    main += (
+        'border:1px solid var(--border);border-radius:3px;font-size:0.8rem">'
+    )
     main += "&#x2192;</kbd> to start cycling through stories."
     main += "</p>\n"
 
@@ -2407,9 +2818,15 @@ def generate_index_html(
         main += '<div class="dag-explorer">\n'
         main += overview_svg + "\n"
         main += '<div class="explorer-status" id="explorer-status">\n'
-        main += '<svg class="story-line-swatch" id="explorer-swatch" viewBox="0 0 32 14">'
-        main += '<line x1="2" y1="7" x2="30" y2="7" stroke="#888" stroke-width="2.5"/>'
-        main += '</svg>\n'
+        main += (
+            '<svg class="story-line-swatch" id="explorer-swatch" viewBox="0 0'
+            ' 32 14">'
+        )
+        main += (
+            '<line x1="2" y1="7" x2="30" y2="7" stroke="#888"'
+            ' stroke-width="2.5"/>'
+        )
+        main += "</svg>\n"
         main += '<span class="story-counter" id="explorer-counter"></span>\n'
         main += '<span class="story-title" id="explorer-title"></span>\n'
         main += '<span class="hints" id="explorer-hints"></span>\n'
@@ -2434,19 +2851,35 @@ def generate_index_html(
 # The matching algorithm retries in a loop.  Each outcome either terminates
 # (match found / blocked / skipped) or loops back for another attempt.
 _MATCHING_FLOW_OUTCOMES: List[Dict[str, str]] = [
-    {"id": "out_auto_1hit",       "short": "AUTO-LINK",      "kind": "terminal"},
-    {"id": "out_currency_convert","short": "CURRENCY\nCONVERT","kind": "terminal"},
-    {"id": "out_currency_convert_fee","short": "CURRENCY\n+ FEE","kind": "terminal"},
-    {"id": "out_widen_date",      "short": "WIDEN\nDATE",     "kind": "retry"},
-    {"id": "out_widen_amount",    "short": "WIDEN\nAMOUNT",   "kind": "retry"},
-    {"id": "out_swap_dd_mm",      "short": "SWAP\nDD/MM",     "kind": "retry"},
-    {"id": "out_correct_receipt", "short": "CORRECT\nRECEIPT","kind": "retry"},
-    {"id": "out_disambiguate_3",  "short": "DISAMBIGUATE",   "kind": "terminal"},
+    {"id": "out_auto_1hit", "short": "AUTO-LINK", "kind": "terminal"},
+    {
+        "id": "out_currency_convert",
+        "short": "CURRENCY\nCONVERT",
+        "kind": "terminal",
+    },
+    {
+        "id": "out_currency_convert_fee",
+        "short": "CURRENCY\n+ FEE",
+        "kind": "terminal",
+    },
+    {"id": "out_widen_date", "short": "WIDEN\nDATE", "kind": "retry"},
+    {"id": "out_widen_amount", "short": "WIDEN\nAMOUNT", "kind": "retry"},
+    {"id": "out_swap_dd_mm", "short": "SWAP\nDD/MM", "kind": "retry"},
+    {"id": "out_correct_receipt", "short": "CORRECT\nRECEIPT", "kind": "retry"},
+    {"id": "out_disambiguate_3", "short": "DISAMBIGUATE", "kind": "terminal"},
     {"id": "out_too_many_reduce", "short": "TOO MANY\n(15+)", "kind": "retry"},
-    {"id": "out_skip_cash",       "short": "SKIP\n(cash)",    "kind": "terminal"},
-    {"id": "out_duplicate_blocked","short": "BLOCKED\n(dup)",  "kind": "terminal"},
-    {"id": "out_asset_convert",   "short": "ASSET\nCONVERT",  "kind": "terminal"},
-    {"id": "out_csv_only_classify","short": "CLASSIFY\n(CSV)", "kind": "terminal"},
+    {"id": "out_skip_cash", "short": "SKIP\n(cash)", "kind": "terminal"},
+    {
+        "id": "out_duplicate_blocked",
+        "short": "BLOCKED\n(dup)",
+        "kind": "terminal",
+    },
+    {"id": "out_asset_convert", "short": "ASSET\nCONVERT", "kind": "terminal"},
+    {
+        "id": "out_csv_only_classify",
+        "short": "CLASSIFY\n(CSV)",
+        "kind": "terminal",
+    },
 ]
 
 
@@ -2465,13 +2898,17 @@ def generate_matching_flow_svg(
     hl = set(highlight_outcome_ids)
 
     # Layout constants
-    cx = 300          # centre-x of "Try to match" diamond
-    cy = 60           # centre-y of diamond
+    cx = 300  # centre-x of "Try to match" diamond
+    cy = 60  # centre-y of diamond
     dw, dh = 140, 50  # diamond half-size
     box_w, box_h = 110, 46
-    gap_y = 90        # vertical gap from diamond centre to outcome row
-    retry_outcomes = [o for o in _MATCHING_FLOW_OUTCOMES if o["kind"] == "retry"]
-    terminal_outcomes = [o for o in _MATCHING_FLOW_OUTCOMES if o["kind"] == "terminal"]
+    gap_y = 90  # vertical gap from diamond centre to outcome row
+    retry_outcomes = [
+        o for o in _MATCHING_FLOW_OUTCOMES if o["kind"] == "retry"
+    ]
+    terminal_outcomes = [
+        o for o in _MATCHING_FLOW_OUTCOMES if o["kind"] == "terminal"
+    ]
 
     # Place retry outcomes (top row, looping back)
     retry_x_start = 30
@@ -2493,9 +2930,9 @@ def generate_matching_flow_svg(
 
     lines: List[str] = []
     lines.append(
-        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        '<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {svg_w} {svg_h}" '
-        f'style="max-width:100%;height:auto;font-family:system-ui,sans-serif;font-size:11px">'
+        'style="max-width:100%;height:auto;font-family:system-ui,sans-serif;font-size:11px">'
     )
     lines.append("<defs>")
     lines.append(
@@ -2505,42 +2942,48 @@ def generate_matching_flow_svg(
     )
     lines.append(
         '<marker id="mf-arrow-hl" markerWidth="8" markerHeight="6" '
-        f'refX="8" refY="3" orient="auto">'
+        'refX="8" refY="3" orient="auto">'
         f'<path d="M0,0 L8,3 L0,6 Z" fill="{story_colour}"/></marker>'
     )
     lines.append("</defs>")
 
     # Diamond: "Try to match"
-    diamond_pts = (
-        f"{cx},{cy - dh} {cx + dw},{cy} {cx},{cy + dh} {cx - dw},{cy}"
-    )
+    diamond_pts = f"{cx},{cy - dh} {cx + dw},{cy} {cx},{cy + dh} {cx - dw},{cy}"
     lines.append(
         f'<polygon points="{diamond_pts}" '
-        f'fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>'
+        'fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>'
     )
     lines.append(
         f'<text x="{cx}" y="{cy - 6}" text-anchor="middle" '
-        f'font-weight="bold" font-size="13" fill="#1565c0">Try to</text>'
+        'font-weight="bold" font-size="13" fill="#1565c0">Try to</text>'
     )
     lines.append(
         f'<text x="{cx}" y="{cy + 10}" text-anchor="middle" '
-        f'font-weight="bold" font-size="13" fill="#1565c0">match</text>'
+        'font-weight="bold" font-size="13" fill="#1565c0">match</text>'
     )
 
     # Section labels
     lines.append(
         f'<text x="{cx}" y="{retry_y - 28}" text-anchor="middle" '
-        f'font-size="10" fill="#888" font-style="italic">'
-        f'retry outcomes (loop back)</text>'
+        'font-size="10" fill="#888" font-style="italic">'
+        "retry outcomes (loop back)</text>"
     )
     lines.append(
         f'<text x="{cx}" y="{term_y - 12}" text-anchor="middle" '
-        f'font-size="10" fill="#888" font-style="italic">'
-        f'terminal outcomes (flow ends)</text>'
+        'font-size="10" fill="#888" font-style="italic">'
+        "terminal outcomes (flow ends)</text>"
     )
 
-    def _box(x: int, y: int, w: int, h: int, oid: str, label: str,
-             is_hl: bool, kind: str) -> None:
+    def _box(
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        oid: str,
+        label: str,
+        is_hl: bool,
+        kind: str,
+    ) -> None:
         fill = "#fff" if not is_hl else "#e8f5e9"
         stroke = story_colour if is_hl else "#bbb"
         sw = "2.5" if is_hl else "1"
@@ -2564,13 +3007,14 @@ def generate_matching_flow_svg(
             for li, lt in enumerate(label_lines):
                 lines.append(
                     f'<text x="{x + w // 2}" y="{ty + li * 14}" '
-                    f'text-anchor="middle" font-size="10" fill="#333">'
-                    f'{_esc(lt)}</text>'
+                    'text-anchor="middle" font-size="10" fill="#333">'
+                    f"{_esc(lt)}</text>"
                 )
         lines.append("</g>")
 
-    def _arrow(x1: int, y1: int, x2: int, y2: int, is_hl: bool,
-               curved: bool = False) -> None:
+    def _arrow(
+        x1: int, y1: int, x2: int, y2: int, is_hl: bool, curved: bool = False
+    ) -> None:
         stroke = story_colour if is_hl else "#999"
         sw = "2" if is_hl else "1"
         marker = "mf-arrow-hl" if is_hl else "mf-arrow"
@@ -2607,7 +3051,7 @@ def generate_matching_flow_svg(
             f'<path d="M{lx},{by} L{lx},{loop_top} L{cx},{loop_top}" '
             f'fill="none" stroke="{"" + story_colour if is_hl else "#999"}" '
             f'stroke-width="{"2" if is_hl else "1"}" '
-            f'stroke-dasharray="4,3" '
+            'stroke-dasharray="4,3" '
             f'opacity="{"1" if is_hl else "0.35"}" '
             f'marker-end="url(#{"mf-arrow-hl" if is_hl else "mf-arrow"})"/>'
         )
@@ -2617,8 +3061,16 @@ def generate_matching_flow_svg(
         bx = term_x_start + idx * term_spacing
         by = term_y
         is_hl = out["id"] in hl
-        _box(bx, by, box_w - 10, box_h, out["id"], out["short"], is_hl,
-             "terminal")
+        _box(
+            bx,
+            by,
+            box_w - 10,
+            box_h,
+            out["id"],
+            out["short"],
+            is_hl,
+            "terminal",
+        )
 
         # Arrow from diamond down to box
         _arrow(cx, cy + dh, bx + (box_w - 10) // 2, by, is_hl, curved=True)
@@ -2727,9 +3179,7 @@ def generate_journal_section(
                 tree_lines.append(f"    {info['bank']}/")
                 tree_lines.append(f"      {info['type']}/")
                 tree_lines.append(f"        {year}/")
-                tree_lines.append(
-                    f"          {info['filename']}.journal"
-                )
+                tree_lines.append(f"          {info['filename']}.journal")
         # De-duplicate while preserving order for the tree display
         seen: set = set()
         deduped: List[str] = []
@@ -2886,7 +3336,8 @@ def generate_story_html(
     head = _html_head(title=f"{sid}: {story['title']} — hledger-preprocessor")
     head = head.replace("{CSS_PATH}", "../assets/css/style.css")
     sidebar = _sidebar_html(
-        sections=sections, current_story_id=sid,
+        sections=sections,
+        current_story_id=sid,
         stories_with_video=stories_with_video,
     )
     sidebar = sidebar.replace("{INDEX_PATH}", "../index.html")
@@ -2907,31 +3358,70 @@ def generate_story_html(
 
     # -- Navigation hints bar (Issue v6-A) --
     main += '<div class="nav-hints">\n'
-    main += '<span><kbd>Alt</kbd>+<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle focus</span>\n'
-    main += '<span><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd> / <kbd>j</kbd><kbd>k</kbd> prev/next DAG node</span>\n'
-    main += '<span><kbd>Ctrl</kbd>+<kbd>+</kbd><kbd>−</kbd> zoom focused pane</span>\n'
-    main += '<span><kbd>Ctrl</kbd>+<kbd>0</kbd> reset zoom</span>\n'
-    main += '<span><kbd>Space</kbd> play/pause</span>\n'
-    main += '</div>\n'
+    main += (
+        "<span><kbd>Alt</kbd>+<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle"
+        " focus</span>\n"
+    )
+    main += (
+        "<span><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd> /"
+        " <kbd>j</kbd><kbd>k</kbd> prev/next DAG node</span>\n"
+    )
+    main += (
+        "<span><kbd>Ctrl</kbd>+<kbd>+</kbd><kbd>−</kbd> zoom focused"
+        " pane</span>\n"
+    )
+    main += (
+        "<span><kbd>,</kbd><kbd>.</kbd> resize pane only &middot; <kbd>/</kbd>"
+        " reset</span>\n"
+    )
+    main += "<span><kbd>Ctrl</kbd>+<kbd>0</kbd> reset zoom</span>\n"
+    main += "<span><kbd>Space</kbd> play/pause</span>\n"
+    main += "</div>\n"
 
-    # -- Compact story header with receipt image floated right --
+    # -- Compact story header with receipt image floated left --
     main += f'<div class="story-header" style="border-left-color:{colour}">\n'
 
     if receipt_image:
-        # Receipt image in its own zoom pane, floated right
+        # Receipt image in its own zoom pane, floated left.
+        # SVG overlay provides bounding boxes for field highlighting.
+        # Boxes are loaded from a sidecar *_boxes.json generated by
+        # gifs/automation/receipt_renderer.py alongside each receipt PNG.
+        receipt_overlay = ""
+        stem = Path(receipt_image).stem
+        boxes_path = RECEIPTS_ROOT / f"{stem}_boxes.json"
+        if boxes_path.exists():
+            boxes_data = json.loads(boxes_path.read_text())
+            img_w = boxes_data["image_width"]
+            img_h = boxes_data["image_height"]
+            rects: List[str] = []
+            for field_name, box_list in boxes_data["fields"].items():
+                for box in box_list:
+                    rects.append(
+                        f'<rect data-field="{_esc(field_name)}" '
+                        f'x="{box["x"]}" y="{box["y"]}" '
+                        f'width="{box["w"]}" height="{box["h"]}" rx="2"/>'
+                    )
+            receipt_overlay = (
+                f'<svg class="receipt-overlay" '
+                f'viewBox="0 0 {img_w} {img_h}"'
+                f' preserveAspectRatio="xMidYMid meet">\n'
+                + "\n".join(rects)
+                + "\n</svg>\n"
+            )
         main += (
-            f'<div class="receipt-pane zoom-pane" data-zoom-id="receipt">\n'
-            f'<div class="zoom-pane-inner">\n'
-            f'<img class="receipt-image-inline" '
+            '<div class="receipt-pane zoom-pane" data-zoom-id="receipt">\n'
+            '<div class="zoom-pane-inner">\n'
+            '<img class="receipt-image-inline" '
             f'src="../assets/receipts/{_esc(receipt_image)}" '
             f'alt="Receipt: {_esc(story["title"])}">\n'
-            f'</div></div>\n'
+            f'{receipt_overlay}'
+            "</div></div>\n"
         )
 
     main += f'<span class="story-id">{_esc(sid)}{badge}</span> '
     main += f'<span class="story-title-inline">{_esc(story["title"])}</span>\n'
 
-    # BDD narrative — compact single-block, text wraps beside receipt
+    # BDD narrative — compact single-block, text wraps to the right of receipt
     as_a = story.get("as_a", "")
     i_want = story.get("i_want", "")
     so_that = story.get("so_that", "")
@@ -2963,10 +3453,10 @@ def generate_story_html(
             )
         else:
             main += (
-                f'<video id="demo-video" controls loop preload="metadata">\n'
+                '<video id="demo-video" controls loop preload="metadata">\n'
                 f'<source src="../assets/videos/{video_filename}" '
-                f'type="video/mp4">\n'
-                f"</video>\n"
+                'type="video/mp4">\n'
+                "</video>\n"
             )
         main += '<div class="video-hint">'
         main += "&#x2191;&#x2193; arrows or j/k to jump between DAG nodes "
@@ -3005,15 +3495,15 @@ def generate_story_html(
     elif has_png_fallback:
         safe = story_id_to_safe(story_id=sid)
         main += (
-            f'<div id="dag-segment-view">\n'
-            f'<img class="dag-fallback-img" '
+            '<div id="dag-segment-view">\n'
+            '<img class="dag-fallback-img" '
             f'src="../assets/images/isolated/{safe}.png" '
             f'alt="DAG for {_esc(sid)}">\n'
-            f"</div>\n"
+            "</div>\n"
         )
     if full_svg_content:
         main += (
-            f'<div id="dag-full-view" style="display:none">\n'
+            '<div id="dag-full-view" style="display:none">\n'
             f"{full_svg_content}\n</div>\n"
         )
     main += "</div>\n"  # close zoom-pane-inner
@@ -3024,7 +3514,10 @@ def generate_story_html(
     if timestamps:
         main += '<div class="layer-indicator">\n'
         main += '<span class="layer-dot"></span>\n'
-        main += 'Current layer: <span class="layer-name" id="layer-indicator-name">—</span>\n'
+        main += (
+            'Current layer: <span class="layer-name"'
+            ' id="layer-indicator-name">—</span>\n'
+        )
         main += "</div>\n"
     main += "</div>\n"  # close below-row
     main += "</div>\n"  # close video-dag-row
@@ -3034,8 +3527,12 @@ def generate_story_html(
         main += '<div class="matching-flow-section">\n'
         main += "<h2>Matching Flow</h2>\n"
         main += '<p class="matching-flow-desc">'
-        main += "The matching algorithm tries to find a CSV transaction for each "
-        main += "receipt. Retry outcomes loop back for another attempt; terminal "
+        main += (
+            "The matching algorithm tries to find a CSV transaction for each "
+        )
+        main += (
+            "receipt. Retry outcomes loop back for another attempt; terminal "
+        )
         main += "outcomes end the flow."
         main += "</p>\n"
         main += matching_flow_svg + "\n"
@@ -3046,17 +3543,11 @@ def generate_story_html(
     # Prev / Next
     main += '<div class="nav-links">\n'
     if prev_story:
-        main += (
-            f'<a href="{prev_story["id"]}.html">'
-            f'← {prev_story["id"]}</a>\n'
-        )
+        main += f'<a href="{prev_story["id"]}.html">← {prev_story["id"]}</a>\n'
     else:
         main += "<span></span>\n"
     if next_story:
-        main += (
-            f'<a href="{next_story["id"]}.html">'
-            f'{next_story["id"]} →</a>\n'
-        )
+        main += f'<a href="{next_story["id"]}.html">{next_story["id"]} →</a>\n'
     else:
         main += "<span></span>\n"
     main += "</div>\n"
@@ -3165,7 +3656,10 @@ def main() -> None:
         "--dim-opacity",
         type=float,
         default=None,
-        help="Opacity for non-used/unreachable DAG nodes (0.0–1.0, default: 0.18)",
+        help=(
+            "Opacity for non-used/unreachable DAG nodes (0.0–1.0, default:"
+            " 0.18)"
+        ),
     )
     args = parser.parse_args()
     output_dir = args.output
@@ -3177,7 +3671,10 @@ def main() -> None:
     node_index = build_node_index(data=data)
     sections = group_stories_by_section(stories=stories)
 
-    print(f"Found {len(stories)} stories with DAG paths in {len(sections)} sections.")
+    print(
+        f"Found {len(stories)} stories with DAG paths in"
+        f" {len(sections)} sections."
+    )
 
     # Discover videos, cast files, and sidecar marker JSON files
     video_map = discover_videos(gifs_root=GIFS_ROOT, theme=DEFAULT_THEME)
@@ -3197,8 +3694,10 @@ def main() -> None:
     for s in stories:
         section = s.get("section", "")
         vid = get_video_for_story(
-            story=s, section=section,
-            video_map=video_map, all_videos=all_videos,
+            story=s,
+            section=section,
+            video_map=video_map,
+            all_videos=all_videos,
         )
         if vid:
             stories_with_video.add(s["id"])
@@ -3241,14 +3740,16 @@ def main() -> None:
     # Build stories JSON for the explorer
     stories_for_json = []
     for s in stories:
-        stories_for_json.append({
-            "id": s["id"],
-            "title": s.get("title", ""),
-            "colour": s.get("colour", "#7aa2f7"),
-            "pattern": s.get("pattern", "solid"),
-            "paths": s.get("paths", []),
-            "url": f"stories/{s['id']}.html",
-        })
+        stories_for_json.append(
+            {
+                "id": s["id"],
+                "title": s.get("title", ""),
+                "colour": s.get("colour", "#7aa2f7"),
+                "pattern": s.get("pattern", "solid"),
+                "paths": s.get("paths", []),
+                "url": f"stories/{s['id']}.html",
+            }
+        )
     stories_json = json.dumps(stories_for_json)
 
     # Generate index.html
@@ -3322,9 +3823,7 @@ def main() -> None:
             if "__" not in marker_id and marker_id not in timestamps:
                 prefix = marker_id + "__"
                 child_ts = [
-                    timestamps[k]
-                    for k in timestamps
-                    if k.startswith(prefix)
+                    timestamps[k] for k in timestamps if k.startswith(prefix)
                 ]
                 if child_ts:
                     timestamps[marker_id] = min(child_ts)
@@ -3339,6 +3838,21 @@ def main() -> None:
             step = (cast_dur / n) if cast_dur and n > 1 else 2.0
             for idx_m, mid in enumerate(marker_sequence):
                 timestamps[mid] = round(idx_m * step, 2)
+
+        # Assign synthetic timestamps to full-path nodes that lack markers
+        # (e.g. nodes that appear in paths but not in demo_paths).  These
+        # are placed at evenly-spaced intervals after the last real marker
+        # so that clicking them in the DAG is still functional.
+        missing_nodes = [
+            nid
+            for nid in node_path
+            if nid not in timestamps and "__" not in nid
+        ]
+        if missing_nodes and timestamps:
+            last_ts = max(timestamps.values())
+            step = 2.0  # 2-second spacing for synthetic timestamps
+            for idx_m, nid in enumerate(missing_nodes, start=1):
+                timestamps[nid] = round(last_ts + idx_m * step, 2)
 
         # Build per-node filtered component map from YAML component_filter
         filtered_components_map: Dict[str, List[Dict]] = {}
@@ -3384,17 +3898,14 @@ def main() -> None:
         if receipt_img and not (RECEIPTS_ROOT / receipt_img).exists():
             receipt_img = None  # skip if image file doesn't exist
 
-        # Issue 3: Matching flow diagram for Step 3 stories
+        # Issue 3: Matching flow diagram for stories with matching outcomes
         matching_flow: Optional[str] = None
-        if section == "Step 3: Receipt-to-CSV Transaction Matching":
-            outcome_ids = [
-                nid for nid in node_path if nid.startswith("out_")
-            ]
-            if outcome_ids:
-                matching_flow = generate_matching_flow_svg(
-                    highlight_outcome_ids=outcome_ids,
-                    story_colour=colour,
-                )
+        outcome_ids = [nid for nid in node_path if nid.startswith("out_")]
+        if outcome_ids:
+            matching_flow = generate_matching_flow_svg(
+                highlight_outcome_ids=outcome_ids,
+                story_colour=colour,
+            )
 
         # Issue 4 (v5): Journal output removed from story page view.
         # The journal section generation is skipped; the data will be
@@ -3418,9 +3929,7 @@ def main() -> None:
             full_svg_content=full_path_svg,
             matching_flow_svg=matching_flow,
         )
-        (output_dir / "stories" / f"{story['id']}.html").write_text(
-            story_html
-        )
+        (output_dir / "stories" / f"{story['id']}.html").write_text(story_html)
 
     print(f"Done! Site generated at {output_dir}/")
     print(f"  {len(flat)} story pages + index.html")

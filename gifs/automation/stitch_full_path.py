@@ -19,7 +19,6 @@ import argparse
 import json
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -28,7 +27,9 @@ def get_duration(mp4: Path) -> float:
     """Get the duration of an MP4 file in seconds."""
     result = subprocess.run(
         [
-            "ffmpeg", "-i", str(mp4),
+            "ffmpeg",
+            "-i",
+            str(mp4),
         ],
         capture_output=True,
         text=True,
@@ -103,6 +104,7 @@ def stitch(
             if "Stream" in line and "Video" in line:
                 # parse "1464x1224" from the stream line
                 import re
+
                 m = re.search(r"(\d{3,5})x(\d{3,5})", line)
                 if m:
                     w, h = int(m.group(1)), int(m.group(2))
@@ -119,11 +121,16 @@ def stitch(
     for mp4 in segments:
         inputs.extend(["-i", str(mp4)])
 
-    # Scale + pad each input to max_w x max_h, then concat
+    # Normalise fps, scale + pad each input to max_w x max_h, then concat.
+    # All streams must share the same frame rate for the concat filter;
+    # without this, mismatched rates (e.g. 25 vs 50 fps) cause ffmpeg to
+    # generate an astronomical number of frames and a corrupt output file.
+    TARGET_FPS = 25
     filter_parts = []
     for i in range(n):
         filter_parts.append(
-            f"[{i}:v]scale={max_w}:{max_h}:force_original_aspect_ratio=decrease,"
+            f"[{i}:v]fps={TARGET_FPS},"
+            f"scale={max_w}:{max_h}:force_original_aspect_ratio=decrease,"
             f"pad={max_w}:{max_h}:(ow-iw)/2:(oh-ih)/2:color=black,"
             f"setsar=1[v{i}]"
         )
@@ -132,14 +139,21 @@ def stitch(
     filter_complex = ";".join(filter_parts)
 
     cmd = [
-        "ffmpeg", "-y",
+        "ffmpeg",
+        "-y",
         *inputs,
-        "-filter_complex", filter_complex,
-        "-map", "[outv]",
-        "-c:v", "libx264",
-        "-crf", "23",
-        "-pix_fmt", "yuv420p",
-        "-movflags", "faststart",
+        "-filter_complex",
+        filter_complex,
+        "-map",
+        "[outv]",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "23",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "faststart",
         str(output),
     ]
 

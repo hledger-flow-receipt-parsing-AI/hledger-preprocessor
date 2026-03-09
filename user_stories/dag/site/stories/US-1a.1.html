@@ -89,6 +89,7 @@
 <span><kbd>Alt</kbd>+<kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> cycle focus</span>
 <span><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd> / <kbd>j</kbd><kbd>k</kbd> prev/next DAG node</span>
 <span><kbd>Ctrl</kbd>+<kbd>+</kbd><kbd>−</kbd> zoom focused pane</span>
+<span><kbd>,</kbd><kbd>.</kbd> resize pane only &middot; <kbd>/</kbd> reset</span>
 <span><kbd>Ctrl</kbd>+<kbd>0</kbd> reset zoom</span>
 <span><kbd>Space</kbd> play/pause</span>
 </div>
@@ -118,69 +119,69 @@
 </div>
 </div>
 <div id="dag-segment-view">
-<svg class="dag-svg" viewBox="0 0 248 484" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg class="dag-svg" viewBox="0 0 248 276" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <defs>
 <marker id="arrow_2196F3" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#2196F3"/></marker>
 </defs>
-<g class="cluster dag-cluster" data-layer="config_group"><rect x="8" y="8" width="216" height="456" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="18" y="24" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#aaa">Configuration</text></g>
-<g class="cluster dag-cluster" data-layer="config_accounts"><rect x="16" y="38" width="200" height="74" fill="#E3F2FD" stroke="#888" rx="3"/><text x="24" y="53" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Account Configuration</text></g>
-<g class="node dag-node" data-layer="config_accounts" data-node="acct_triodos_csv"><a><title>Triodos checking account — imports from CSV</title><rect x="32.0" y="66.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="82.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Triodos checking</text>
-<text x="82.0" y="94.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">(EUR CSV)</text>
+<g class="cluster dag-cluster" data-layer="config_group"><rect x="13" y="13" width="206" height="245" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="29" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Configuration</text></g>
+<g class="cluster dag-cluster" data-layer="config_accounts"><rect x="16" y="30" width="200" height="41" fill="#E3F2FD" stroke="#888" rx="3"/><text x="24" y="45" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Account Configuration</text></g>
+<g class="node dag-node" data-layer="config_accounts" data-node="acct_triodos_csv"><a><title>Triodos checking account — imports from CSV</title><rect x="32.0" y="46.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="55.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos checking</text>
+<text x="82.0" y="66.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(EUR CSV)</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_dir_paths"><rect x="16" y="124" width="200" height="74" fill="#BBDEFB" stroke="#888" rx="3"/><text x="24" y="139" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Directory Paths</text></g>
-<g class="node dag-node" data-layer="config_dir_paths" data-node="dirp_default"><a><title>Standard directory layout: import/{holder}/{bank}/{type}/{year}/</title><rect x="32.0" y="152.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="174.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Default dir paths</text>
+<g class="cluster dag-cluster" data-layer="config_dir_paths"><rect x="16" y="76" width="200" height="41" fill="#BBDEFB" stroke="#888" rx="3"/><text x="24" y="91" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Directory Paths</text></g>
+<g class="node dag-node" data-layer="config_dir_paths" data-node="dirp_default"><a><title>Standard directory layout: import/{holder}/{bank}/{type}/{year}/</title><rect x="32.0" y="92.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="107.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default dir paths</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_file_names"><rect x="16" y="210" width="200" height="74" fill="#90CAF9" stroke="#888" rx="3"/><text x="24" y="225" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Filename Convention</text></g>
-<g class="node dag-node" data-layer="config_file_names" data-node="fnames_default"><a><title>Standard filename conventions for CSV, rules, and journal files</title><rect x="32.0" y="238.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="260.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Default filenames</text>
+<g class="cluster dag-cluster" data-layer="config_file_names"><rect x="16" y="122" width="200" height="41" fill="#90CAF9" stroke="#888" rx="3"/><text x="24" y="137" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Filename Convention</text></g>
+<g class="node dag-node" data-layer="config_file_names" data-node="fnames_default"><a><title>Standard filename conventions for CSV, rules, and journal files</title><rect x="32.0" y="138.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="153.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default filenames</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_categorisation"><rect x="16" y="296" width="200" height="74" fill="#64B5F6" stroke="#888" rx="3"/><text x="24" y="311" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Categorisation Config</text></g>
-<g class="node dag-node" data-layer="config_categorisation" data-node="catcfg_default"><a><title>Standard categorisation settings from config.yaml</title><rect x="32.0" y="324.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="346.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Default categorisation</text>
+<g class="cluster dag-cluster" data-layer="config_categorisation"><rect x="16" y="168" width="200" height="41" fill="#64B5F6" stroke="#888" rx="3"/><text x="24" y="183" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categorisation Config</text></g>
+<g class="node dag-node" data-layer="config_categorisation" data-node="catcfg_default"><a><title>Standard categorisation settings from config.yaml</title><rect x="32.0" y="184.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="199.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default categorisation</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_matching_algo"><rect x="16" y="382" width="200" height="74" fill="#42A5F5" stroke="#888" rx="3"/><text x="24" y="397" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Matching Algo Config</text></g>
-<g class="node dag-node" data-layer="config_matching_algo" data-node="malgo_default"><a><title>Standard matching algorithm settings from config.yaml</title><rect x="32.0" y="410.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="432.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Default matching algo</text>
+<g class="cluster dag-cluster" data-layer="config_matching_algo"><rect x="16" y="214" width="200" height="41" fill="#42A5F5" stroke="#888" rx="3"/><text x="24" y="229" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Algo Config</text></g>
+<g class="node dag-node" data-layer="config_matching_algo" data-node="malgo_default"><a><title>Standard matching algorithm settings from config.yaml</title><rect x="32.0" y="230.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="245.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default matching algo</text>
 </a></g>
-<g class="edge dag-edge" data-source="acct_triodos_csv" data-target="dirp_default"><path d="M82.0,102.0 C82.0,127.0 82.0,127.0 82.0,152.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
-<g class="edge dag-edge" data-source="catcfg_default" data-target="malgo_default"><path d="M82.0,360.0 C82.0,385.0 82.0,385.0 82.0,410.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
-<g class="edge dag-edge" data-source="dirp_default" data-target="fnames_default"><path d="M82.0,188.0 C82.0,213.0 82.0,213.0 82.0,238.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
-<g class="edge dag-edge" data-source="fnames_default" data-target="catcfg_default"><path d="M82.0,274.0 C82.0,299.0 82.0,299.0 82.0,324.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
+<g class="edge dag-edge" data-source="acct_triodos_csv" data-target="dirp_default"><path d="M82.0,68.0 C82.0,80.0 82.0,80.0 82.0,92.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
+<g class="edge dag-edge" data-source="catcfg_default" data-target="malgo_default"><path d="M82.0,206.0 C82.0,218.0 82.0,218.0 82.0,230.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
+<g class="edge dag-edge" data-source="dirp_default" data-target="fnames_default"><path d="M82.0,114.0 C82.0,126.0 82.0,126.0 82.0,138.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
+<g class="edge dag-edge" data-source="fnames_default" data-target="catcfg_default"><path d="M82.0,160.0 C82.0,172.0 82.0,172.0 82.0,184.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
 </svg>
 </div>
 <div id="dag-full-view" style="display:none">
-<svg class="dag-svg" viewBox="0 0 248 484" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg class="dag-svg" viewBox="0 0 248 276" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <defs>
 <marker id="arrow_2196F3" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#2196F3"/></marker>
 </defs>
-<g class="cluster dag-cluster section-box" data-layer="config_group"><rect x="8" y="8" width="216" height="456" fill="none" stroke="var(--accent, #2563eb)" stroke-width="2.5" stroke-dasharray="5,2" rx="4"/><text x="18" y="24" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#aaa">Configuration</text></g>
-<g class="cluster dag-cluster" data-layer="config_accounts"><rect x="16" y="38" width="200" height="74" fill="#E3F2FD" stroke="#888" rx="3"/><text x="24" y="53" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Account Configuration</text></g>
-<g class="node dag-node" data-layer="config_accounts" data-node="acct_triodos_csv"><a><title>Triodos checking account — imports from CSV</title><rect x="32.0" y="66.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="82.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Triodos checking</text>
-<text x="82.0" y="94.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">(EUR CSV)</text>
+<g class="cluster dag-cluster section-box" data-layer="config_group"><rect x="13" y="13" width="206" height="245" fill="none" stroke="var(--accent, #2563eb)" stroke-width="2.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="29" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Configuration</text></g>
+<g class="cluster dag-cluster" data-layer="config_accounts"><rect x="16" y="30" width="200" height="41" fill="#E3F2FD" stroke="#888" rx="3"/><text x="24" y="45" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Account Configuration</text></g>
+<g class="node dag-node" data-layer="config_accounts" data-node="acct_triodos_csv"><a><title>Triodos checking account — imports from CSV</title><rect x="32.0" y="46.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="55.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos checking</text>
+<text x="82.0" y="66.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(EUR CSV)</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_dir_paths"><rect x="16" y="124" width="200" height="74" fill="#BBDEFB" stroke="#888" rx="3"/><text x="24" y="139" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Directory Paths</text></g>
-<g class="node dag-node" data-layer="config_dir_paths" data-node="dirp_default"><a><title>Standard directory layout: import/{holder}/{bank}/{type}/{year}/</title><rect x="32.0" y="152.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="174.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Default dir paths</text>
+<g class="cluster dag-cluster" data-layer="config_dir_paths"><rect x="16" y="76" width="200" height="41" fill="#BBDEFB" stroke="#888" rx="3"/><text x="24" y="91" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Directory Paths</text></g>
+<g class="node dag-node" data-layer="config_dir_paths" data-node="dirp_default"><a><title>Standard directory layout: import/{holder}/{bank}/{type}/{year}/</title><rect x="32.0" y="92.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="107.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default dir paths</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_file_names"><rect x="16" y="210" width="200" height="74" fill="#90CAF9" stroke="#888" rx="3"/><text x="24" y="225" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Filename Convention</text></g>
-<g class="node dag-node" data-layer="config_file_names" data-node="fnames_default"><a><title>Standard filename conventions for CSV, rules, and journal files</title><rect x="32.0" y="238.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="260.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Default filenames</text>
+<g class="cluster dag-cluster" data-layer="config_file_names"><rect x="16" y="122" width="200" height="41" fill="#90CAF9" stroke="#888" rx="3"/><text x="24" y="137" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Filename Convention</text></g>
+<g class="node dag-node" data-layer="config_file_names" data-node="fnames_default"><a><title>Standard filename conventions for CSV, rules, and journal files</title><rect x="32.0" y="138.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="153.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default filenames</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_categorisation"><rect x="16" y="296" width="200" height="74" fill="#64B5F6" stroke="#888" rx="3"/><text x="24" y="311" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Categorisation Config</text></g>
-<g class="node dag-node" data-layer="config_categorisation" data-node="catcfg_default"><a><title>Standard categorisation settings from config.yaml</title><rect x="32.0" y="324.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="346.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Default categorisation</text>
+<g class="cluster dag-cluster" data-layer="config_categorisation"><rect x="16" y="168" width="200" height="41" fill="#64B5F6" stroke="#888" rx="3"/><text x="24" y="183" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categorisation Config</text></g>
+<g class="node dag-node" data-layer="config_categorisation" data-node="catcfg_default"><a><title>Standard categorisation settings from config.yaml</title><rect x="32.0" y="184.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="199.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default categorisation</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_matching_algo"><rect x="16" y="382" width="200" height="74" fill="#42A5F5" stroke="#888" rx="3"/><text x="24" y="397" font-family="DejaVu Sans,sans-serif" font-size="12" fill="#333">Matching Algo Config</text></g>
-<g class="node dag-node" data-layer="config_matching_algo" data-node="malgo_default"><a><title>Standard matching algorithm settings from config.yaml</title><rect x="32.0" y="410.0" width="100" height="36" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="432.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="10">Default matching algo</text>
+<g class="cluster dag-cluster" data-layer="config_matching_algo"><rect x="16" y="214" width="200" height="41" fill="#42A5F5" stroke="#888" rx="3"/><text x="24" y="229" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Algo Config</text></g>
+<g class="node dag-node" data-layer="config_matching_algo" data-node="malgo_default"><a><title>Standard matching algorithm settings from config.yaml</title><rect x="32.0" y="230.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="245.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default matching algo</text>
 </a></g>
-<g class="edge dag-edge" data-source="acct_triodos_csv" data-target="dirp_default"><path d="M82.0,102.0 C82.0,127.0 82.0,127.0 82.0,152.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
-<g class="edge dag-edge" data-source="catcfg_default" data-target="malgo_default"><path d="M82.0,360.0 C82.0,385.0 82.0,385.0 82.0,410.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
-<g class="edge dag-edge" data-source="dirp_default" data-target="fnames_default"><path d="M82.0,188.0 C82.0,213.0 82.0,213.0 82.0,238.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
-<g class="edge dag-edge" data-source="fnames_default" data-target="catcfg_default"><path d="M82.0,274.0 C82.0,299.0 82.0,299.0 82.0,324.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
+<g class="edge dag-edge" data-source="acct_triodos_csv" data-target="dirp_default"><path d="M82.0,68.0 C82.0,80.0 82.0,80.0 82.0,92.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
+<g class="edge dag-edge" data-source="catcfg_default" data-target="malgo_default"><path d="M82.0,206.0 C82.0,218.0 82.0,218.0 82.0,230.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
+<g class="edge dag-edge" data-source="dirp_default" data-target="fnames_default"><path d="M82.0,114.0 C82.0,126.0 82.0,126.0 82.0,138.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
+<g class="edge dag-edge" data-source="fnames_default" data-target="catcfg_default"><path d="M82.0,160.0 C82.0,172.0 82.0,172.0 82.0,184.0" fill="none" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow_2196F3)"/></g>
 </svg>
 </div>
 </div>

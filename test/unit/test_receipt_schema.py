@@ -101,9 +101,7 @@ class TestAccountTransactionValidation:
         )
         assert txn.is_purchase() is True
 
-    def test_to_hledger_dict_has_required_keys(
-        self, wallet_account
-    ) -> None:
+    def test_to_hledger_dict_has_required_keys(self, wallet_account) -> None:
         """AccountTransaction.to_hledger_dict() returns expected fields."""
         txn = AccountTransaction(
             account=wallet_account,
