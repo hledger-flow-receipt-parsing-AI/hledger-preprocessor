@@ -165,25 +165,121 @@ for i, (raw_t, data) in enumerate(raw_events):
 print(f'  Extracted {len(markers)} structural markers from .cast')
 print(f'  raw duration {raw_duration:.2f}s -> GIF {gif_duration:.2f}s')
 
-# ── 4. Merge TUI field markers (wall-clock → raw → GIF) ────────────
-tui_markers_path = Path('/tmp/tui_field_markers.json')
-if tui_markers_path.exists():
-    tui_markers = json.loads(tui_markers_path.read_text())
-    raw_nolbl_ts = raw_markers.get('nolbl_ekoplaza_card_eur')
-    tui_nolbl_ts = tui_markers.pop('_calibration_nolbl', None)
+# ── 4. Extract TUI field markers from .cast key overlay events ──────
+#    Instead of using wall-clock time.time() markers (which drift vs the
+#    .cast clock), we detect the actual typed content in the .cast output
+#    stream.  The key overlay renders pressed keys at row 49, col 106 as
+#    '[  key  ]'.  We trace through the known field sequence matching the
+#    first typed character for each field.
+def extract_field_markers_from_cast(events, raw_to_gif_fn):
+    key_events = []
+    for raw_t, data in events:
+        if '49;' not in data:
+            continue
+        m = re.search(r'\[\s*(\S+?)\s*\]', data)
+        if m:
+            key_events.append((raw_t, m.group(1)))
 
-    if raw_nolbl_ts is not None and tui_nolbl_ts is not None:
-        offset = raw_nolbl_ts - tui_nolbl_ts
-        merged = 0
-        for nid, wall_ts in tui_markers.items():
-            if nid not in markers:
-                raw_ts = wall_ts + offset
-                markers[nid] = round(raw_to_gif(raw_ts), 2)
-                merged += 1
-        print(f'  Calibrated offset: {offset:+.2f}s, merged {merged} TUI field markers')
-    else:
-        print('  Warning: calibration marker missing, skipping TUI field markers',
-              file=sys.stderr)
+    if not key_events:
+        return {}
+
+    prefix = 'tui_ekoplaza_card_eur'
+
+    def first_key_after(char, after):
+        for t, k in key_events:
+            if t > after and k == char:
+                return t
+        return None
+
+    def first_enter_after(after):
+        for t, k in key_events:
+            if t > after and k == 'Enter':
+                return t
+        return None
+
+    def first_typed_after(after):
+        for t, k in key_events:
+            if t > after and k not in ('Enter', 'Right'):
+                return t
+        return None
+
+    result = {}
+
+    # date: first digit '2' (start of '202501151030')
+    date_start = first_key_after('2', 10.0)
+    if date_start is None:
+        return result
+    result[f'{prefix}'] = raw_to_gif_fn(date_start - 0.5)
+    result[f'{prefix}__date'] = raw_to_gif_fn(date_start)
+
+    # time: Enter after date digits
+    date_enter = first_enter_after(date_start + 1.0)
+    if date_enter:
+        result[f'{prefix}__time'] = raw_to_gif_fn(date_enter)
+
+    # category: first char 'g' (for 'groceries:ekoplaza')
+    cat_start = first_key_after('g', date_enter or date_start + 2)
+    if cat_start:
+        result[f'{prefix}__category'] = raw_to_gif_fn(cat_start)
+
+    # bank_account: '0' after category Enter
+    cat_enter = first_enter_after(cat_start) if cat_start else None
+    acct_start = first_key_after('0', cat_enter) if cat_enter else None
+    if acct_start:
+        result[f'{prefix}__bank_account'] = raw_to_gif_fn(acct_start)
+
+    # currency: '9' after account Enter
+    acct_enter = first_enter_after(acct_start) if acct_start else None
+    curr_start = first_key_after('9', acct_enter) if acct_enter else None
+    if curr_start:
+        result[f'{prefix}__currency'] = raw_to_gif_fn(curr_start)
+
+    # amount: '4' after currency Enter (for '42.17')
+    curr_enter = first_enter_after(curr_start) if curr_start else None
+    amt_start = first_key_after('4', curr_enter) if curr_enter else None
+    if amt_start:
+        result[f'{prefix}__amount'] = raw_to_gif_fn(amt_start)
+
+    # change: '0' after amount Enter
+    amt_enter = first_enter_after(amt_start + 0.5) if amt_start else None
+    change_start = first_key_after('0', amt_enter) if amt_enter else None
+    if change_start:
+        result[f'{prefix}__change'] = raw_to_gif_fn(change_start)
+
+    # shop_name: 'E' (for 'Ekoplaza') after several Enter presses
+    shop_name_start = first_key_after('E', 30.0)
+    if shop_name_start:
+        result[f'{prefix}__shop_name'] = raw_to_gif_fn(shop_name_start)
+
+    # Remaining shop fields: first typed char after each Enter
+    prev_ts = shop_name_start
+    for field in ['shop_street', 'shop_house_nr', 'shop_zipcode',
+                  'shop_city', 'shop_country']:
+        if prev_ts is None:
+            break
+        enter_ts = first_enter_after(prev_ts)
+        if enter_ts is None:
+            break
+        typed_ts = first_typed_after(enter_ts)
+        if typed_ts is None:
+            break
+        result[f'{prefix}__{field}'] = raw_to_gif_fn(typed_ts)
+        prev_ts = typed_ts
+
+    # tax: first typed char after subtotal Enter (skip) + country Enter
+    country_enter = first_enter_after(prev_ts) if prev_ts else None
+    subtotal_enter = first_enter_after(country_enter) if country_enter else None
+    tax_start = first_typed_after(subtotal_enter) if subtotal_enter else None
+    if tax_start:
+        result[f'{prefix}__tax'] = raw_to_gif_fn(tax_start)
+
+    return result
+
+field_markers = extract_field_markers_from_cast(raw_events, raw_to_gif)
+for nid, gif_ts in field_markers.items():
+    if nid not in markers:
+        markers[nid] = round(gif_ts, 2)
+print(f'  Extracted {len(field_markers)} TUI field markers from .cast content')
 
 # ── 5. Write combined sidecar JSON ──────────────────────────────────
 out = Path('${OUTPUT_DIR}/2b_label_receipt_dracula_markers.json')
