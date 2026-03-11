@@ -214,24 +214,15 @@ def extract_field_markers_from_cast(events, raw_to_gif_fn):
             tui_render_ts = raw_t
             break
 
-    # Find when time digits (e.g. '10:30') first appear on screen
-    time_visible_ts = None
-    for raw_t, data in events:
-        if raw_t > 10 and '10:30' in data:
-            time_visible_ts = raw_t
-            break
-
     result = {}
 
-    # date: when the TUI renders with the date question visible
+    # date + time: highlighted together since the TUI has one combined
+    # "Receipt date and time:" field typed as a single string.
     if tui_render_ts is None:
         return result
     result[f'{prefix}'] = raw_to_gif_fn(tui_render_ts - 0.5)
     result[f'{prefix}__date'] = raw_to_gif_fn(tui_render_ts)
-
-    # time: when the time portion becomes visible on screen
-    if time_visible_ts:
-        result[f'{prefix}__time'] = raw_to_gif_fn(time_visible_ts)
+    result[f'{prefix}__time'] = raw_to_gif_fn(tui_render_ts)
 
     # From here, each field activates when the PREVIOUS field's Enter
     # is pressed. The Enter triggers a TUI redraw that shows the next

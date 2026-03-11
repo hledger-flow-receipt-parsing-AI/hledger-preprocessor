@@ -1956,22 +1956,31 @@ def generate_js() -> str:
         receiptPane.classList.remove('active');
       }
     }
-    var activeField = null;
+    var activeFields = {};
     if (overlayRects.length > 0 && videoTime !== undefined) {
       var isTuiNode = nodeId.indexOf('tui_') === 0;
       if (isTuiNode) {
-        // Only consider fields belonging to this specific TUI node
+        // Find the most recent marker timestamp <= videoTime, then
+        // highlight ALL fields that share that same timestamp (e.g.
+        // date + time are one combined TUI field).
         var nodeFieldKeys = fieldsByParent[nodeId] || [];
+        var activeTime = -1;
         for (var i = 0; i < nodeFieldKeys.length; i++) {
           var entry = fieldTimestamps[nodeFieldKeys[i]];
-          if (entry.time <= videoTime) activeField = entry.field;
+          if (entry.time <= videoTime) activeTime = entry.time;
+        }
+        if (activeTime >= 0) {
+          for (var i = 0; i < nodeFieldKeys.length; i++) {
+            var entry = fieldTimestamps[nodeFieldKeys[i]];
+            if (entry.time === activeTime) activeFields[entry.field] = true;
+          }
         }
       }
       overlayRects.forEach(function(r) {
-        r.classList.toggle('active', r.getAttribute('data-field') === activeField);
+        r.classList.toggle('active', !!activeFields[r.getAttribute('data-field')]);
       });
     }
-    updateDebug(videoTime, nodeId, activeField);
+    updateDebug(videoTime, nodeId, Object.keys(activeFields).join(','));
   }
 
   function highlightNode(nodeId) {
