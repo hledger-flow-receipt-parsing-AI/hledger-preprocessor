@@ -165,12 +165,15 @@ for i, (raw_t, data) in enumerate(raw_events):
 print(f'  Extracted {len(markers)} structural markers from .cast')
 print(f'  raw duration {raw_duration:.2f}s -> GIF {gif_duration:.2f}s')
 
-# ── 4. Extract TUI field markers from .cast key overlay events ──────
-#    Instead of using wall-clock time.time() markers (which drift vs the
-#    .cast clock), we detect the actual typed content in the .cast output
-#    stream.  The key overlay renders pressed keys at row 49, col 106 as
-#    '[  key  ]'.  We trace through the known field sequence matching the
-#    first typed character for each field.
+# ── 4. Extract TUI field markers from .cast content events ───────────
+#    Markers are set to when the field becomes VISIBLE/ACTIVE on screen,
+#    NOT when the user starts typing.  This means:
+#    - date: when the TUI first renders (showing "Receipt date and time:")
+#    - time: when the time digits (e.g. "10:30") first appear on screen
+#    - category, bank_account, etc.: when the previous field's Enter key
+#      is pressed (which triggers the TUI to activate the next field)
+#    This eliminates the 0.1–1.4s lag between field becoming active and
+#    the first keystroke that the old approach suffered from.
 def extract_field_markers_from_cast(events, raw_to_gif_fn):
     key_events = []
     for raw_t, data in events:
@@ -203,75 +206,115 @@ def extract_field_markers_from_cast(events, raw_to_gif_fn):
                 return t
         return None
 
+    # Find when TUI first renders — first event containing 'Receipt date'
+    # after the initial Enter confirmation (t > 10)
+    tui_render_ts = None
+    for raw_t, data in events:
+        if raw_t > 10 and 'Receipt date' in data:
+            tui_render_ts = raw_t
+            break
+
+    # Find when time digits (e.g. '10:30') first appear on screen
+    time_visible_ts = None
+    for raw_t, data in events:
+        if raw_t > 10 and '10:30' in data:
+            time_visible_ts = raw_t
+            break
+
     result = {}
 
-    # date: first digit '2' (start of '202501151030')
-    date_start = first_key_after('2', 10.0)
-    if date_start is None:
+    # date: when the TUI renders with the date question visible
+    if tui_render_ts is None:
         return result
-    result[f'{prefix}'] = raw_to_gif_fn(date_start - 0.5)
-    result[f'{prefix}__date'] = raw_to_gif_fn(date_start)
+    result[f'{prefix}'] = raw_to_gif_fn(tui_render_ts - 0.5)
+    result[f'{prefix}__date'] = raw_to_gif_fn(tui_render_ts)
 
-    # time: Enter after date digits
-    date_enter = first_enter_after(date_start + 1.0)
+    # time: when the time portion becomes visible on screen
+    if time_visible_ts:
+        result[f'{prefix}__time'] = raw_to_gif_fn(time_visible_ts)
+
+    # From here, each field activates when the PREVIOUS field's Enter
+    # is pressed. The Enter triggers a TUI redraw that shows the next
+    # field as active. We use the Enter timestamp as the marker.
+
+    # date Enter → category becomes active
+    date_start = first_key_after('2', 10.0)
+    date_enter = first_enter_after((date_start or tui_render_ts) + 1.0)
     if date_enter:
-        result[f'{prefix}__time'] = raw_to_gif_fn(date_enter)
+        result[f'{prefix}__category'] = raw_to_gif_fn(date_enter)
 
-    # category: first char 'g' (for 'groceries:ekoplaza')
-    cat_start = first_key_after('g', date_enter or date_start + 2)
-    if cat_start:
-        result[f'{prefix}__category'] = raw_to_gif_fn(cat_start)
-
-    # bank_account: '0' after category Enter
+    # category Enter → bank_account becomes active
+    cat_start = first_key_after('g', date_enter or tui_render_ts + 2)
     cat_enter = first_enter_after(cat_start) if cat_start else None
+    if cat_enter:
+        result[f'{prefix}__bank_account'] = raw_to_gif_fn(cat_enter)
+
+    # bank_account Enter → currency becomes active
     acct_start = first_key_after('0', cat_enter) if cat_enter else None
-    if acct_start:
-        result[f'{prefix}__bank_account'] = raw_to_gif_fn(acct_start)
-
-    # currency: '9' after account Enter
     acct_enter = first_enter_after(acct_start) if acct_start else None
+    if acct_enter:
+        result[f'{prefix}__currency'] = raw_to_gif_fn(acct_enter)
+
+    # currency Enter → amount becomes active
     curr_start = first_key_after('9', acct_enter) if acct_enter else None
-    if curr_start:
-        result[f'{prefix}__currency'] = raw_to_gif_fn(curr_start)
-
-    # amount: '4' after currency Enter (for '42.17')
     curr_enter = first_enter_after(curr_start) if curr_start else None
+    if curr_enter:
+        result[f'{prefix}__amount'] = raw_to_gif_fn(curr_enter)
+
+    # amount Enter → change becomes active
     amt_start = first_key_after('4', curr_enter) if curr_enter else None
-    if amt_start:
-        result[f'{prefix}__amount'] = raw_to_gif_fn(amt_start)
+    amt_enter = first_enter_after((amt_start or 0) + 0.5) if amt_start else None
+    if amt_enter:
+        result[f'{prefix}__change'] = raw_to_gif_fn(amt_enter)
 
-    # change: '0' after amount Enter
-    amt_enter = first_enter_after(amt_start + 0.5) if amt_start else None
+    # change Enter → (then Right + Enter for "Done with receipt" → shop flow)
     change_start = first_key_after('0', amt_enter) if amt_enter else None
-    if change_start:
-        result[f'{prefix}__change'] = raw_to_gif_fn(change_start)
+    change_enter = first_enter_after(change_start) if change_start else None
+    # After change Enter: Right key + Enter to confirm "Done with this receipt"
+    # Then shop_name field becomes active
+    if change_enter:
+        right_key = first_key_after('Right', change_enter)
+        done_enter = first_enter_after(right_key) if right_key else None
+        # After "Done" confirmation, shop address selection appears
+        # The next keystroke selects "new address" (0) + Enter, then shop_name
+        if done_enter:
+            shop_select = first_key_after('0', done_enter)
+            shop_select_enter = first_enter_after(shop_select) if shop_select else None
+            if shop_select_enter:
+                result[f'{prefix}__shop_name'] = raw_to_gif_fn(shop_select_enter)
+                prev_enter = shop_select_enter
+            else:
+                prev_enter = done_enter
+        else:
+            prev_enter = change_enter
+    else:
+        prev_enter = None
 
-    # shop_name: 'E' (for 'Ekoplaza') after several Enter presses
-    shop_name_start = first_key_after('E', 30.0)
-    if shop_name_start:
-        result[f'{prefix}__shop_name'] = raw_to_gif_fn(shop_name_start)
+    # Remaining shop fields: each field activates when the previous
+    # field's Enter is pressed.  prev_enter is shop_select_enter (when
+    # shop_name became active — already recorded above).  We skip through
+    # shop_name's typing to find the Enter that transitions to shop_street,
+    # then repeat for each subsequent field.
+    if prev_enter:
+        prev_ts = prev_enter  # shop_select_enter = when shop_name activated
+        for field in ['shop_street', 'shop_house_nr', 'shop_zipcode',
+                      'shop_city', 'shop_country']:
+            # Find typing in the current field and its confirming Enter
+            typed_ts = first_typed_after(prev_ts)
+            if typed_ts is None:
+                break
+            enter_ts = first_enter_after(typed_ts)
+            if enter_ts is None:
+                break
+            # This Enter confirms the PREVIOUS field and activates THIS field
+            result[f'{prefix}__{field}'] = raw_to_gif_fn(enter_ts)
+            prev_ts = enter_ts
 
-    # Remaining shop fields: first typed char after each Enter
-    prev_ts = shop_name_start
-    for field in ['shop_street', 'shop_house_nr', 'shop_zipcode',
-                  'shop_city', 'shop_country']:
-        if prev_ts is None:
-            break
-        enter_ts = first_enter_after(prev_ts)
-        if enter_ts is None:
-            break
-        typed_ts = first_typed_after(enter_ts)
-        if typed_ts is None:
-            break
-        result[f'{prefix}__{field}'] = raw_to_gif_fn(typed_ts)
-        prev_ts = typed_ts
-
-    # tax: first typed char after subtotal Enter (skip) + country Enter
-    country_enter = first_enter_after(prev_ts) if prev_ts else None
-    subtotal_enter = first_enter_after(country_enter) if country_enter else None
-    tax_start = first_typed_after(subtotal_enter) if subtotal_enter else None
-    if tax_start:
-        result[f'{prefix}__tax'] = raw_to_gif_fn(tax_start)
+        # prev_ts is now the country Enter.
+        # After country: subtotal field (Enter to skip) → tax becomes active
+        subtotal_enter = first_enter_after(prev_ts) if prev_ts else None
+        if subtotal_enter:
+            result[f'{prefix}__tax'] = raw_to_gif_fn(subtotal_enter)
 
     return result
 
