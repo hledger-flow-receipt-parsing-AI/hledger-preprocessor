@@ -19,6 +19,7 @@
 #   --output <dir>      Site output directory (default: /tmp/site)
 #   --config <path>     Config file for GIFs that need it (auto-generated if omitted)
 #   --dim-opacity <val> Opacity for non-used DAG nodes (0.0–1.0, default: 0.18)
+#   --all-themes        Generate all 8 theme variants (default: single theme only)
 #   --no-svg            Skip PlantUML SVG generation (use PNG fallbacks)
 #   --no-render         Skip plantuml PNG rendering of artifacts
 #   --dry-run           Show what would run without executing
@@ -67,6 +68,7 @@ SERVE_PORT=""
 NO_SVG=""
 NO_RENDER=""
 DRY_RUN=""
+ALL_THEMES=""
 
 # Modules to run
 DO_ARTIFACTS=""
@@ -134,6 +136,7 @@ parse_args() {
             --no-svg)      NO_SVG=1 ;;
             --no-render)   NO_RENDER=1 ;;
             --dry-run)     DRY_RUN=1 ;;
+            --all-themes)  ALL_THEMES=1 ;;
             *)
                 error "Unknown option: $1"
                 echo "Run with --help for usage."
@@ -149,6 +152,13 @@ parse_args() {
           -z "$SERVE_PORT" ]]; then
         DO_ARTIFACTS=1
         DO_SITE=1
+    fi
+
+    # Default to single theme unless --all-themes is passed
+    if [[ -n "$ALL_THEMES" ]]; then
+        export GIF_GENERATE_THEMED=true
+    else
+        export GIF_GENERATE_THEMED=false
     fi
 }
 

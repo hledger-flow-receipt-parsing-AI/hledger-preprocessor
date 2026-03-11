@@ -11,26 +11,26 @@
     "start_2024_1000eur": 76.96,
     "csv_ekoplaza_4217_jan15": 85.28,
     "img_ekoplaza_card": 94.6,
-    "nolbl_ekoplaza_card_eur": 97.86,
-    "lbl_ekoplaza_card_eur": 139.75,
-    "tui_ekoplaza_card_eur": 108.13,
-    "tui_ekoplaza_card_eur__date": 108.58,
-    "tui_ekoplaza_card_eur__time": 108.58,
-    "tui_ekoplaza_card_eur__category": 111.7,
-    "tui_ekoplaza_card_eur__bank_account": 114.52,
-    "tui_ekoplaza_card_eur__currency": 115.31,
-    "tui_ekoplaza_card_eur__amount": 116.1,
-    "tui_ekoplaza_card_eur__change": 117.55,
-    "tui_ekoplaza_card_eur__shop_name": 126.6,
-    "tui_ekoplaza_card_eur__shop_street": 128.26,
-    "tui_ekoplaza_card_eur__shop_house_nr": 130.41,
-    "tui_ekoplaza_card_eur__shop_zipcode": 131.47,
-    "tui_ekoplaza_card_eur__shop_city": 132.92,
-    "tui_ekoplaza_card_eur__shop_country": 134.78,
-    "tui_ekoplaza_card_eur__tax": 136.23,
-    "jrnl_groceries_ekoplaza": 149.6
+    "nolbl_ekoplaza_card_eur": 97.43,
+    "lbl_ekoplaza_card_eur": 137.04,
+    "tui_ekoplaza_card_eur": 105.83,
+    "tui_ekoplaza_card_eur__date": 106.3,
+    "tui_ekoplaza_card_eur__time": 106.3,
+    "tui_ekoplaza_card_eur__category": 109.67,
+    "tui_ekoplaza_card_eur__bank_account": 112.63,
+    "tui_ekoplaza_card_eur__currency": 113.46,
+    "tui_ekoplaza_card_eur__amount": 114.29,
+    "tui_ekoplaza_card_eur__change": 115.81,
+    "tui_ekoplaza_card_eur__shop_name": 121.35,
+    "tui_ekoplaza_card_eur__shop_street": 123.34,
+    "tui_ekoplaza_card_eur__shop_house_nr": 125.92,
+    "tui_ekoplaza_card_eur__shop_zipcode": 127.18,
+    "tui_ekoplaza_card_eur__shop_city": 128.93,
+    "tui_ekoplaza_card_eur__shop_country": 131.15,
+    "tui_ekoplaza_card_eur__tax": 132.89,
+    "jrnl_groceries_ekoplaza": 146.4
   },
-  "total_duration": 159.6,
+  "total_duration": 156.4,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
@@ -49,8 +49,8 @@
       "duration": 9.32
     },
     {
-      "file": "2b_label_receipt_dracula.mp4",
-      "duration": 55.0
+      "file": "2b_label_receipt.mp4",
+      "duration": 51.8
     },
     {
       "file": "journal_output.mp4",

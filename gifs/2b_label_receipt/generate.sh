@@ -34,8 +34,9 @@ run_full_pipeline \
 # gives the absolute wall-clock time.  The offset between them is used to
 # convert all TUI field markers to .cast-relative timestamps.
 log "Building markers sidecar JSON..."
-python3 -c "
-import json, re, sys
+python3 -u -c "
+import json, re, sys, traceback
+sys.stdout.reconfigure(line_buffering=True)
 from pathlib import Path
 from PIL import Image
 
@@ -56,7 +57,7 @@ raw_duration = raw_events[-1][0] if raw_events else 0.0
 #    impossible to predict the GIF timeline from .cast timestamps
 #    alone.  Instead, we read the GIF's frame durations and build a
 #    piecewise-linear mapping from raw .cast time → GIF time.
-gif_path = Path('${OUTPUT_DIR}/2b_label_receipt_dracula.gif')
+gif_path = Path('${OUTPUT_DIR}/2b_label_receipt.gif')
 img = Image.open(gif_path)
 gif_durs_ms = []
 try:
@@ -168,8 +169,8 @@ print(f'  raw duration {raw_duration:.2f}s -> GIF {gif_duration:.2f}s')
 # ── 4. Extract TUI field markers from .cast content events ───────────
 #    Markers are set to when the field becomes VISIBLE/ACTIVE on screen,
 #    NOT when the user starts typing.  This means:
-#    - date: when the TUI first renders (showing "Receipt date and time:")
-#    - time: when the time digits (e.g. "10:30") first appear on screen
+#    - date: when the TUI first renders (showing 'Receipt date and time:')
+#    - time: when the time digits (e.g. '10:30') first appear on screen
 #    - category, bank_account, etc.: when the previous field's Enter key
 #      is pressed (which triggers the TUI to activate the next field)
 #    This eliminates the 0.1–1.4s lag between field becoming active and
@@ -217,7 +218,7 @@ def extract_field_markers_from_cast(events, raw_to_gif_fn):
     result = {}
 
     # date + time: highlighted together since the TUI has one combined
-    # "Receipt date and time:" field typed as a single string.
+    # 'Receipt date and time:' field typed as a single string.
     if tui_render_ts is None:
         return result
     result[f'{prefix}'] = raw_to_gif_fn(tui_render_ts - 0.5)
@@ -258,16 +259,16 @@ def extract_field_markers_from_cast(events, raw_to_gif_fn):
     if amt_enter:
         result[f'{prefix}__change'] = raw_to_gif_fn(amt_enter)
 
-    # change Enter → (then Right + Enter for "Done with receipt" → shop flow)
+    # change Enter → (then Right + Enter for 'Done with receipt' → shop flow)
     change_start = first_key_after('0', amt_enter) if amt_enter else None
     change_enter = first_enter_after(change_start) if change_start else None
-    # After change Enter: Right key + Enter to confirm "Done with this receipt"
+    # After change Enter: Right key + Enter to confirm 'Done with this receipt'
     # Then shop_name field becomes active
     if change_enter:
         right_key = first_key_after('Right', change_enter)
         done_enter = first_enter_after(right_key) if right_key else None
-        # After "Done" confirmation, shop address selection appears
-        # The next keystroke selects "new address" (0) + Enter, then shop_name
+        # After 'Done' confirmation, shop address selection appears
+        # The next keystroke selects 'new address' (0) + Enter, then shop_name
         if done_enter:
             shop_select = first_key_after('0', done_enter)
             shop_select_enter = first_enter_after(shop_select) if shop_select else None
@@ -309,14 +310,18 @@ def extract_field_markers_from_cast(events, raw_to_gif_fn):
 
     return result
 
-field_markers = extract_field_markers_from_cast(raw_events, raw_to_gif)
-for nid, gif_ts in field_markers.items():
-    if nid not in markers:
-        markers[nid] = round(gif_ts, 2)
-print(f'  Extracted {len(field_markers)} TUI field markers from .cast content')
+try:
+    field_markers = extract_field_markers_from_cast(raw_events, raw_to_gif)
+    for nid, gif_ts in field_markers.items():
+        if nid not in markers:
+            markers[nid] = round(gif_ts, 2)
+    print(f'  Extracted {len(field_markers)} TUI field markers from .cast content')
+except Exception as e:
+    print(f'  WARNING: TUI field marker extraction failed: {e}', file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
 
 # ── 5. Write combined sidecar JSON ──────────────────────────────────
-out = Path('${OUTPUT_DIR}/2b_label_receipt_dracula_markers.json')
+out = Path('${OUTPUT_DIR}/2b_label_receipt_markers.json')
 out.write_text(json.dumps({'markers': markers, 'total_duration': total_duration}, indent=2) + '\n')
 print(f'  Total: {len(markers)} markers -> {out}')
 "
@@ -330,7 +335,7 @@ CFG_VIDEO="${GIFS_ROOT}/1a_setup_config/output/cfg_1b1w.mp4"
 CAT_VIDEO="${GIFS_ROOT}/1b_add_category/output/cat_basic.mp4"
 STARTJ_VIDEO="${GIFS_ROOT}/2b_data_files/output/starting_journal.mp4"
 CSV_VIDEO="${GIFS_ROOT}/2b_data_files/output/bank_csv.mp4"
-RECEIPT_VIDEO="${OUTPUT_DIR}/2b_label_receipt_dracula.mp4"
+RECEIPT_VIDEO="${OUTPUT_DIR}/2b_label_receipt.mp4"
 JRNL_VIDEO="${GIFS_ROOT}/2b_data_files/output/journal_output.mp4"
 FULL_PATH_VIDEO="${OUTPUT_DIR}/2b1_full_path.mp4"
 
