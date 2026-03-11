@@ -11,7 +11,7 @@
     "**/.pytest_cache": true,
     "**/__init__*": true,
     "**/__pycache__*": true,
-    "**/build*": true,
+    "**/build/*": true,
     "**/dist*": true,
     "src/appcommander/__init__.py": false
   },
