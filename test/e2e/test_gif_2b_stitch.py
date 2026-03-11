@@ -43,7 +43,7 @@ PREREQUISITE_SEGMENTS = [
     "1b_add_category/output/cat_basic.mp4",
     "2b_data_files/output/starting_journal.mp4",
     "2b_data_files/output/bank_csv.mp4",
-    "2b_label_receipt/output/2b_label_receipt_dracula.mp4",
+    "2b_label_receipt/output/2b_label_receipt.mp4",
     "2b_data_files/output/journal_output.mp4",
 ]
 
