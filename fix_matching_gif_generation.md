@@ -1,5 +1,11 @@
 # Fix: Foreign Currency Matching GIF Hangs During Automated Recording
 
+## Before You Start
+
+Read these files for project conventions and context:
+- `gifs/CLAUDE.md` — GIF directory structure and overview
+- `~/.claude/projects/-home-a-git-git-hledger/memory/MEMORY.md` — debugging patterns (especially shell double-quote escaping in `python3 -c "..."` blocks, and the requirement to always end userstory work with rebuild/serve commands)
+
 ## Problem
 
 Running `./build_userstories.sh --gifs` hangs on the `3b_foreign_currency_match` GIF.

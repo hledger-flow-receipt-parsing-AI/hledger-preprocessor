@@ -1,44 +1,44 @@
 {
   "markers": {
-    "acct_eur_wallet": 23.16,
     "acct_triodos_csv": 0.0,
-    "catcfg_default": 65.4,
+    "acct_eur_wallet": 23.16,
     "dirp_default": 32.72,
     "fnames_default": 49.96,
+    "catcfg_default": 65.4,
     "malgo_default": 68.12,
-    "cat_basic__groceries": 73.04,
-    "cat_basic__withdrawl": 75.64,
-    "start_2024_1000eur": 76.96,
-    "csv_ekoplaza_4217_jan15": 85.28,
-    "img_ekoplaza_card": 94.6,
-    "nolbl_ekoplaza_card_eur": 97.43,
-    "lbl_ekoplaza_card_eur": 137.04,
-    "tui_ekoplaza_card_eur": 105.83,
-    "tui_ekoplaza_card_eur__date": 106.3,
-    "tui_ekoplaza_card_eur__time": 106.3,
-    "tui_ekoplaza_card_eur__category": 109.67,
-    "tui_ekoplaza_card_eur__bank_account": 112.63,
-    "tui_ekoplaza_card_eur__currency": 113.46,
-    "tui_ekoplaza_card_eur__amount": 114.29,
-    "tui_ekoplaza_card_eur__change": 115.81,
-    "tui_ekoplaza_card_eur__shop_name": 121.35,
-    "tui_ekoplaza_card_eur__shop_street": 123.34,
-    "tui_ekoplaza_card_eur__shop_house_nr": 125.92,
-    "tui_ekoplaza_card_eur__shop_zipcode": 127.18,
-    "tui_ekoplaza_card_eur__shop_city": 128.93,
-    "tui_ekoplaza_card_eur__shop_country": 131.15,
-    "tui_ekoplaza_card_eur__tax": 132.89,
-    "jrnl_groceries_ekoplaza": 146.4
+    "cat_basic__groceries": 74.72,
+    "cat_basic__withdrawl": 77.32,
+    "start_2024_1000eur": 80.24,
+    "csv_ekoplaza_4217_jan15": 88.56,
+    "img_ekoplaza_card": 97.88,
+    "nolbl_ekoplaza_card_eur": 100.78,
+    "lbl_ekoplaza_card_eur": 139.83,
+    "tui_ekoplaza_card_eur": 108.33,
+    "tui_ekoplaza_card_eur__date": 108.82,
+    "tui_ekoplaza_card_eur__time": 108.82,
+    "tui_ekoplaza_card_eur__category": 112.26,
+    "tui_ekoplaza_card_eur__bank_account": 115.3,
+    "tui_ekoplaza_card_eur__currency": 116.15,
+    "tui_ekoplaza_card_eur__amount": 117.0,
+    "tui_ekoplaza_card_eur__change": 118.55,
+    "tui_ekoplaza_card_eur__shop_name": 124.12,
+    "tui_ekoplaza_card_eur__shop_street": 126.1,
+    "tui_ekoplaza_card_eur__shop_house_nr": 128.68,
+    "tui_ekoplaza_card_eur__shop_zipcode": 129.95,
+    "tui_ekoplaza_card_eur__shop_city": 131.69,
+    "tui_ekoplaza_card_eur__shop_country": 133.91,
+    "tui_ekoplaza_card_eur__tax": 135.65,
+    "jrnl_groceries_ekoplaza": 149.18
   },
-  "total_duration": 156.4,
+  "total_duration": 159.18,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
-      "duration": 73.04
+      "duration": 74.72
     },
     {
       "file": "cat_basic.mp4",
-      "duration": 3.92
+      "duration": 5.52
     },
     {
       "file": "starting_journal.mp4",
@@ -50,7 +50,7 @@
     },
     {
       "file": "2b_label_receipt.mp4",
-      "duration": 51.8
+      "duration": 51.3
     },
     {
       "file": "journal_output.mp4",

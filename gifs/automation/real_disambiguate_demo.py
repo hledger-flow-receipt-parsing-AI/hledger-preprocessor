@@ -374,6 +374,7 @@ def run_matching_demo(
                     [
                         "ignore_keys=",
                         "EXPORTING to:",
+                        "Please select an action",
                         pexpect.EOF,
                         pexpect.TIMEOUT,
                     ],
@@ -386,8 +387,14 @@ def run_matching_demo(
                     time.sleep(0.5)
                     nav.press_enter(pause=0.2)
                 elif index == 2:
-                    break
+                    # Unexpected "No matches found" prompt in disambiguate demo
+                    raise RuntimeError(
+                        "Disambiguate demo hit 'No matches found' — "
+                        "test data should produce multiple matches, not zero."
+                    )
                 elif index == 3:
+                    break
+                elif index == 4:
                     if not nav.child.isalive():
                         break
                     continue
