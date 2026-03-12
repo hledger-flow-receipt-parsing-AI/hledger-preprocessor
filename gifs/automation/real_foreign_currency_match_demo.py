@@ -355,6 +355,7 @@ def run_matching_demo(
                     [
                         "ignore_keys=",
                         "EXPORTING to:",
+                        "Please select an action",
                         pexpect.EOF,
                         pexpect.TIMEOUT,
                     ],
@@ -367,8 +368,28 @@ def run_matching_demo(
                     time.sleep(0.5)
                     nav.press_enter(pause=0.2)
                 elif index == 2:
-                    break
+                    # "No matches found" prompt — select option 1:
+                    # "Add estimated conversion rate"
+                    time.sleep(0.5)
+                    nav.send("1")
+                    nav.press_enter(pause=0.3)
+                    # Wait for currency selection prompt, pick EUR (option 10)
+                    nav.child.expect(
+                        "Enter the number corresponding to the currency",
+                        timeout=10,
+                    )
+                    time.sleep(0.3)
+                    nav.send("10")
+                    nav.press_enter(pause=0.3)
+                    # Wait for conversion ratio prompt, enter 1.175
+                    nav.child.expect("Enter the conversion ratio", timeout=10)
+                    time.sleep(0.3)
+                    nav.send("1.175")
+                    nav.press_enter(pause=0.3)
+                    # Loop back — matching should now succeed
                 elif index == 3:
+                    break
+                elif index == 4:
                     if not nav.child.isalive():
                         break
                     continue
