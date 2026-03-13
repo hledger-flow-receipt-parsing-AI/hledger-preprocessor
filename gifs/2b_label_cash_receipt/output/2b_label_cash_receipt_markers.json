@@ -1,0 +1,23 @@
+{
+  "markers": {
+    "img_coffee_cash": 0.0,
+    "nolbl_coffee_cash": 2.6,
+    "lbl_coffee_cash": 42.68,
+    "tui_coffee_cash": 12.63,
+    "tui_coffee_cash__date": 13.06,
+    "tui_coffee_cash__time": 13.06,
+    "tui_coffee_cash__category": 16.14,
+    "tui_coffee_cash__bank_account": 18.18,
+    "tui_coffee_cash__currency": 18.94,
+    "tui_coffee_cash__amount": 19.7,
+    "tui_coffee_cash__change": 20.74,
+    "tui_coffee_cash__shop_name": 26.28,
+    "tui_coffee_cash__shop_street": 28.84,
+    "tui_coffee_cash__shop_house_nr": 31.06,
+    "tui_coffee_cash__shop_zipcode": 32.32,
+    "tui_coffee_cash__shop_city": 34.06,
+    "tui_coffee_cash__shop_country": 35.92,
+    "tui_coffee_cash__tax": 38.25
+  },
+  "total_duration": 51.99
+}

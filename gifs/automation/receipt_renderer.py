@@ -146,26 +146,31 @@ def render_receipt(
     shop_account_nr = shop.get("shop_account_nr", "")
 
     net_items = data.get("net_bought_items", {})
+    returned_items = data.get("net_returned_items")
     description = net_items.get("description", "Item")
     the_date_raw = data.get("the_date", "")
     the_date = the_date_raw[:10]
     the_time = the_date_raw[11:16] if len(the_date_raw) > 15 else ""
     total_tax = data.get("total_tax", 0)
 
-    account_info = (
-        net_items.get("account_transactions", [{}])[0].get("account", {})
-        if net_items.get("account_transactions")
-        else {}
-    )
-    account_type = account_info.get("account_type", "")
-    is_card_payment = account_type in ("checking", "savings")
-
     transactions = net_items.get("account_transactions", [{}])
-    txn = transactions[0] if transactions else {}
-    tendered = txn.get("tendered_amount_out", 0)
-    change_returned = txn.get("change_returned", 0)
-    currency = txn.get("currency", "EUR")
-    total = tendered - change_returned if tendered else 0
+    currency = transactions[0].get("currency", "EUR") if transactions else "EUR"
+
+    # Compute grand total across ALL account_transactions
+    grand_total = 0.0
+    for txn in transactions:
+        grand_total += txn.get("tendered_amount_out", 0) - txn.get(
+            "change_returned", 0
+        )
+
+    # Returned items total
+    returned_total = 0.0
+    if returned_items:
+        for rtxn in returned_items.get("account_transactions", []):
+            returned_total += rtxn.get("tendered_amount_out", 0)
+
+    # Net total (bought minus returned) for display
+    net_total = grand_total - returned_total
 
     # -- Shop name (centered, bold) ------------------------------------------
     _record(
@@ -307,6 +312,8 @@ def render_receipt(
 
     # -- Category / description as item --------------------------------------
     item_name = description.replace(":", " - ").title()
+    bought_qty = net_items.get("quantity", 1) or 1
+    bought_unit = net_items.get("unit_price")
     _record(
         draw,
         (20, y),
@@ -315,27 +322,61 @@ def render_receipt(
         field="category",
         boxes=boxes,
     )
-    if total > 0:
+    if bought_qty > 1 and bought_unit:
         _draw_only(
             draw,
             (width - 20, y),
-            f"{currency} {total:.2f}",
+            f"{bought_qty}x {currency} {bought_unit:.2f}",
             font=font,
             anchor="rt",
         )
-    y += line_height + 10
+    elif grand_total > 0:
+        _draw_only(
+            draw,
+            (width - 20, y),
+            f"{currency} {grand_total:.2f}",
+            font=font,
+            anchor="rt",
+        )
+    y += line_height
+
+    # -- Returned items (if any) ---------------------------------------------
+    if returned_items:
+        ret_qty = returned_items.get("quantity", 1) or 1
+        ret_unit = returned_items.get("unit_price")
+        if ret_qty and ret_unit:
+            right_text = f"-{ret_qty}x {currency} {ret_unit:.2f}"
+        else:
+            right_text = f"-{currency} {returned_total:.2f}"
+        # Truncate left text to avoid overlap with right-aligned price
+        right_w = draw.textlength(right_text, font=font)
+        max_left_w = width - 40 - right_w - 5  # margins + gap
+        left_text = "RETURNED:"
+        while draw.textlength(f"  {left_text}", font=font) > max_left_w:
+            left_text = left_text[:-1]
+        _draw_only(draw, (20, y), f"  {left_text}", font=font)
+        _draw_only(
+            draw,
+            (width - 20, y),
+            right_text,
+            font=font,
+            anchor="rt",
+        )
+        y += line_height
+
+    y += 10
 
     # -- Separator -----------------------------------------------------------
     draw.line([(20, y), (width - 20, y)], fill="black", width=1)
     y += 10
 
     # -- Subtotal ------------------------------------------------------------
-    if total > 0:
+    if net_total > 0:
         _draw_only(draw, (20, y), "SUBTOTAL", font=font)
         _draw_only(
             draw,
             (width - 20, y),
-            f"{currency} {total - total_tax:.2f}",
+            f"{currency} {net_total - total_tax:.2f}",
             font=font,
             anchor="rt",
         )
@@ -366,11 +407,11 @@ def render_receipt(
     y += 5
     draw.line([(20, y), (width - 20, y)], fill="black", width=2)
     y += 8
-    if total > 0:
+    if net_total > 0:
         _draw_only(draw, (20, y), "TOTAL", font=font_bold)
 
         # Draw currency and amount as separate draw calls for separate boxes
-        total_str = f"{currency} {total:.2f}"
+        total_str = f"{currency} {net_total:.2f}"
         # Right-aligned: compute positions backwards from right margin
         full_tw = draw.textlength(total_str, font=font_bold)
         right_edge = width - 20
@@ -389,7 +430,7 @@ def render_receipt(
 
         # Amount portion (after "EUR ")
         space_w = draw.textlength(" ", font=font_bold)
-        amt_str = f"{total:.2f}"
+        amt_str = f"{net_total:.2f}"
         _record(
             draw,
             (int(total_left + cur_w + space_w), y),
@@ -400,57 +441,73 @@ def render_receipt(
         )
         y += line_height + 10
 
-    # -- Payment section -----------------------------------------------------
-    if tendered > 0:
+    # -- Payment section (all account_transactions) --------------------------
+    has_payment = any(
+        txn.get("tendered_amount_out", 0) > 0 for txn in transactions
+    )
+    if has_payment:
         draw.line([(20, y), (width - 20, y)], fill="black", width=1)
         y += 10
-        payment_label = "CARD" if is_card_payment else "CASH"
-        _record(
-            draw,
-            (20, y),
-            payment_label,
-            font=font,
-            field="bank_account",
-            boxes=boxes,
-        )
-        _draw_only(
-            draw,
-            (width - 20, y),
-            f"{currency} {tendered:.2f}",
-            font=font,
-            anchor="rt",
-        )
-        y += line_height
 
-        if is_card_payment and shop_account_nr:
+        for txn in transactions:
+            txn_tendered = txn.get("tendered_amount_out", 0)
+            txn_change = txn.get("change_returned", 0)
+            txn_cur = txn.get("currency", "EUR")
+            txn_acct = txn.get("account", {})
+            txn_type = txn_acct.get("account_type", "")
+            is_card = txn_type in ("checking", "savings")
+
+            if txn_tendered <= 0:
+                continue
+
+            payment_label = "CARD" if is_card else "CASH"
             _record(
                 draw,
                 (20, y),
-                shop_account_nr,
+                payment_label,
                 font=font,
                 field="bank_account",
                 boxes=boxes,
             )
+            _draw_only(
+                draw,
+                (width - 20, y),
+                f"{txn_cur} {txn_tendered:.2f}",
+                font=font,
+                anchor="rt",
+            )
             y += line_height
 
-    # -- Change --------------------------------------------------------------
-    if change_returned > 0:
-        _record(
-            draw,
-            (20, y),
-            "CHANGE",
-            font=font,
-            field="change",
-            boxes=boxes,
-        )
-        _draw_only(
-            draw,
-            (width - 20, y),
-            f"{currency} {change_returned:.2f}",
-            font=font,
-            anchor="rt",
-        )
-        y += line_height + 10
+            if is_card and shop_account_nr:
+                _record(
+                    draw,
+                    (20, y),
+                    shop_account_nr,
+                    font=font,
+                    field="bank_account",
+                    boxes=boxes,
+                )
+                y += line_height
+
+            if txn_change > 0:
+                _record(
+                    draw,
+                    (20, y),
+                    "CHANGE",
+                    font=font,
+                    field="change",
+                    boxes=boxes,
+                )
+                _draw_only(
+                    draw,
+                    (width - 20, y),
+                    f"{txn_cur} {txn_change:.2f}",
+                    font=font,
+                    anchor="rt",
+                )
+                y += line_height
+
+        y += 10
 
     # -- Footer --------------------------------------------------------------
     y += 10

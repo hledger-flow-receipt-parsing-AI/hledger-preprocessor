@@ -269,9 +269,6 @@ STANDALONE_GIFS=(
     1a_setup_config
     1b_add_category
     2a_crop_receipt
-    2b_label_foreign_currency
-    2b_label_split_payment
-    2b_label_returned_items
     3_match_receipt_to_csv
     3b_foreign_currency_match
     3c_widen_date_match
@@ -281,6 +278,10 @@ STANDALONE_GIFS=(
 # GIF scripts that require a config path (use init_demo / common.sh)
 CONFIG_GIFS=(
     2b_label_receipt
+    2b_label_cash_receipt
+    2b_label_foreign_currency
+    2b_label_split_payment
+    2b_label_returned_items
     4_run_pipeline
     5_show_plots
 )

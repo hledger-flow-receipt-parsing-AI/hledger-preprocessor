@@ -1,0 +1,29 @@
+{
+  "markers": {
+    "acct_triodos_csv": 0.0,
+    "acct_eur_wallet": 23.16,
+    "dirp_default": 32.72,
+    "fnames_default": 49.96,
+    "catcfg_default": 65.4,
+    "malgo_default": 68.12,
+    "cat_basic__groceries": 74.72,
+    "cat_basic__withdrawl": 77.32,
+    "img_atm_gbp": 80.24,
+    "nolbl_atm_100gbp": 83.91
+  },
+  "total_duration": 91.64,
+  "segments": [
+    {
+      "file": "cfg_1b1w.mp4",
+      "duration": 74.72
+    },
+    {
+      "file": "cat_basic.mp4",
+      "duration": 5.52
+    },
+    {
+      "file": "2b_label_foreign_currency.mp4",
+      "duration": 11.4
+    }
+  ]
+}

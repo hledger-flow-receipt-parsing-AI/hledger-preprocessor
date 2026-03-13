@@ -57,12 +57,7 @@ digraph userstory_dag {
     cat_basic [label="basic categories", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}"];
   }
 
-  subgraph cluster_matching_cfg {
-    label="Matching Parameters";
-    style=filled; fillcolor="#FFF3E0";
-    rank=same;
-    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
-  }
+  _skip_matching_cfg [label="Matching Parameters", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
   subgraph cluster_start_journal {
     label="Starting Journal";
@@ -122,8 +117,8 @@ digraph userstory_dag {
   fnames_default -> catcfg_default [style=invis];
   catcfg_default -> malgo_default [style=invis];
   malgo_default -> cat_basic [style=invis];
-  cat_basic -> match_default [style=invis];
-  match_default -> start_2024_1000eur [style=invis];
+  cat_basic -> _skip_matching_cfg [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_matching_cfg -> start_2024_1000eur [style=dotted, color="#CCCCCC", arrowhead=none];
   start_2024_1000eur -> _skip_csv_txn [style=dotted, color="#CCCCCC", arrowhead=none];
   _skip_csv_txn -> img_return_item [style=dotted, color="#CCCCCC", arrowhead=none];
   img_return_item -> nolbl_return_item [style=invis];
@@ -135,14 +130,13 @@ digraph userstory_dag {
 
   acct_eur_wallet -> dirp_default [color="#607D8B", penwidth=2.5, style=solid];
   acct_triodos_csv -> acct_eur_wallet [color="#607D8B", penwidth=2.5, style=solid];
-  cat_basic -> match_default [color="#607D8B", penwidth=2.5, style=solid];
+  cat_basic -> start_2024_1000eur [color="#607D8B", penwidth=2.5, style=solid];
   catcfg_default -> malgo_default [color="#607D8B", penwidth=2.5, style=solid];
   dirp_default -> fnames_default [color="#607D8B", penwidth=2.5, style=solid];
   fnames_default -> catcfg_default [color="#607D8B", penwidth=2.5, style=solid];
   img_return_item -> nolbl_return_item [color="#607D8B", penwidth=2.5, style=solid];
   lbl_return_item -> out_auto_1hit [color="#607D8B", penwidth=2.5, style=solid];
   malgo_default -> cat_basic [color="#607D8B", penwidth=2.5, style=solid];
-  match_default -> start_2024_1000eur [color="#607D8B", penwidth=2.5, style=solid];
   nolbl_return_item -> tui_return_item [color="#607D8B", penwidth=2.5, style=solid];
   out_auto_1hit -> jrnl_return_net [color="#607D8B", penwidth=2.5, style=solid];
   start_2024_1000eur -> img_return_item [color="#607D8B", penwidth=2.5, style=solid];

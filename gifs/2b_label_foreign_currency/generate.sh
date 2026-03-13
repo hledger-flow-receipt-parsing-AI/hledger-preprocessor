@@ -2,142 +2,170 @@
 # =============================================================================
 # Foreign-Currency Receipt Labelling Demo - GIF Generator
 #
-# Demonstrates US-2b.3: Labelling a GBP ATM withdrawal receipt.
-# Shows the receipt label JSON with POUND currency and GBP amount,
-# highlighting that the account base_currency (EUR) differs.
-#
-# This runs the REAL receipt labelling demo against
-# a test environment to show authentic output.
+# 1. Records the segment-only foreign-currency receipt TUI demo.
+# 2. Stitches cfg_1b1w + cat_basic + receipt segment into a full-path
+#    video for US-2b.3 (config → categories → receipt labelling).
 # =============================================================================
 
 set -euo pipefail
 
+# Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-OUTPUT_DIR="${SCRIPT_DIR}/output"
-RECORDINGS_DIR="${SCRIPT_DIR}/recordings"
-DEMO_NAME="2b_label_foreign_currency"
+source "${SCRIPT_DIR}/../scripts/common.sh"
 
-# Colors for output
-GREEN="\033[0;32m"
-YELLOW="\033[0;33m"
-CYAN="\033[0;36m"
-RED="\033[0;31m"
-RESET="\033[0m"
+# Initialize demo (sets up paths, runs preflight checks)
+init_demo "2b_label_foreign_currency" "$@"
 
-log() { echo -e "${GREEN}[+]${RESET} $*"; }
-warn() { echo -e "${YELLOW}[!]${RESET} $*"; }
-error() { echo -e "${RED}[✗]${RESET} $*"; }
-header() { echo -e "${CYAN}=== $1 ===${RESET}"; }
+# ── Step 1: Record the segment-only foreign-currency receipt demo ─────
+run_full_pipeline \
+    "gifs.automation.real_label_foreign_currency_tui_demo" \
+    "Step 2b: Label Foreign-Currency Receipt (GBP)" \
+    50 \
+    120
 
-header "Foreign-Currency Receipt Labelling Demo Generator"
+# ── Step 1b: Build sidecar JSON from .cast markers ───────────────────
+log "Building markers sidecar JSON..."
+python3 -u -c "
+import json, re, sys
+sys.stdout.reconfigure(line_buffering=True)
+from pathlib import Path
+from PIL import Image
 
-# Ensure directories exist
-mkdir -p "$OUTPUT_DIR" "$RECORDINGS_DIR"
+# ── 1. Parse .cast events ───────────────────────────────────────────
+cast_path = Path('${CAST_FILE}')
+with open(cast_path) as f:
+    header = json.loads(f.readline())
+    idle_limit = header.get('idle_time_limit')
+    raw_events = []
+    for line in f:
+        row = json.loads(line)
+        raw_events.append((row[0], row[2]))
 
-# Use PYTHON env var if set, otherwise use python from PATH
-PYTHON="${PYTHON:-python}"
+raw_duration = raw_events[-1][0] if raw_events else 0.0
 
-# Check conda environment
-if ! "$PYTHON" -c "import hledger_preprocessor" 2>/dev/null; then
-    error "hledger_preprocessor not importable. Activate conda environment first."
-    warn "Run: conda activate hledger_preprocessor"
-    exit 1
+# ── 2. Read the actual GIF frame timing (ground truth) ──────────────
+gif_path = Path('${OUTPUT_DIR}/2b_label_foreign_currency.gif')
+img = Image.open(gif_path)
+gif_durs_ms = []
+try:
+    while True:
+        gif_durs_ms.append(img.info.get('duration', 100))
+        img.seek(img.tell() + 1)
+except EOFError:
+    pass
+gif_cum = [0.0]
+for d in gif_durs_ms:
+    gif_cum.append(gif_cum[-1] + d / 1000.0)
+gif_duration = gif_cum[-1]
+
+AGG_THRESHOLD = 5.0
+gap_event = None
+for i in range(1, len(raw_events)):
+    if raw_events[i][0] - raw_events[i - 1][0] > AGG_THRESHOLD:
+        gap_event = i
+        break
+
+if gap_event is not None:
+    seg1_raw_start = raw_events[0][0]
+    seg1_raw_end   = raw_events[gap_event - 1][0]
+    seg2_raw_start = raw_events[gap_event][0]
+    seg2_raw_end   = raw_events[-1][0]
+    compressed_dt  = idle_limit if idle_limit else 2.0
+    target_ms = int(compressed_dt * 1000)
+    candidates = [fi for fi, d in enumerate(gif_durs_ms) if d == target_ms]
+    gap_frame = None
+    if len(candidates) == 1:
+        gap_frame = candidates[0]
+    elif candidates:
+        expected_frac = gap_event / len(raw_events)
+        best_fi = None
+        best_err = float('inf')
+        for fi in candidates:
+            frac = fi / len(gif_durs_ms)
+            err = abs(frac - expected_frac)
+            if err < best_err:
+                best_err = err
+                best_fi = fi
+        gap_frame = best_fi
+    if gap_frame is None:
+        seg2_raw_start = seg2_raw_end = None
+        seg1_raw_end = raw_events[-1][0]
+        seg1_gif_start = gif_cum[0]
+        seg1_gif_end = gif_cum[-1]
+    else:
+        seg1_gif_start = gif_cum[0]
+        seg1_gif_end   = gif_cum[gap_frame]
+        seg2_gif_start = gif_cum[gap_frame + 1]
+        seg2_gif_end   = gif_cum[-1]
+else:
+    seg1_raw_start = raw_events[0][0]
+    seg1_raw_end   = raw_events[-1][0]
+    seg1_gif_start = gif_cum[0]
+    seg1_gif_end   = gif_cum[-1]
+    seg2_raw_start = seg2_raw_end = None
+
+seg1_span = seg1_raw_end - seg1_raw_start
+seg1_scale = ((seg1_gif_end - seg1_gif_start) / seg1_span) if seg1_span else 1.0
+if seg2_raw_start is not None:
+    seg2_span = seg2_raw_end - seg2_raw_start
+    seg2_scale = ((seg2_gif_end - seg2_gif_start) / seg2_span) if seg2_span else 1.0
+
+def raw_to_gif(raw_ts):
+    if seg2_raw_start is None or raw_ts <= seg1_raw_end:
+        return seg1_gif_start + (raw_ts - seg1_raw_start) * seg1_scale
+    elif raw_ts >= seg2_raw_start:
+        return seg2_gif_start + (raw_ts - seg2_raw_start) * seg2_scale
+    else:
+        frac = (raw_ts - seg1_raw_end) / (seg2_raw_start - seg1_raw_end)
+        return seg1_gif_end + frac * (seg2_gif_start - seg1_gif_end)
+
+total_duration = round(gif_duration, 2)
+
+# ── 3. Extract structural markers from .cast ────────────────────────
+markers = {}
+for i, (raw_t, data) in enumerate(raw_events):
+    for m in re.finditer(r'@@NODE:(\w+)@@', data):
+        nid = m.group(1)
+        if nid not in markers:
+            markers[nid] = round(raw_to_gif(raw_t), 2)
+
+print(f'  Extracted {len(markers)} structural markers from .cast')
+print(f'  raw duration {raw_duration:.2f}s -> GIF {gif_duration:.2f}s')
+
+# ── 4. Write combined sidecar JSON ──────────────────────────────────
+out = Path('${OUTPUT_DIR}/2b_label_foreign_currency_markers.json')
+out.write_text(json.dumps({'markers': markers, 'total_duration': total_duration}, indent=2) + '\n')
+print(f'  Total: {len(markers)} markers -> {out}')
+"
+
+# ── Step 2: Stitch full-path video for US-2b.3 ───────────────────────
+if [[ "${SKIP_STITCH:-0}" == "1" ]]; then
+    log "Skipping stitch step (SKIP_STITCH=1)"
+else
+GIFS_ROOT="${SCRIPT_DIR}/.."
+CFG_VIDEO="${GIFS_ROOT}/1a_setup_config/output/cfg_1b1w.mp4"
+CAT_VIDEO="${GIFS_ROOT}/1b_add_category/output/cat_basic.mp4"
+RECEIPT_VIDEO="${OUTPUT_DIR}/2b_label_foreign_currency.mp4"
+FULL_PATH_VIDEO="${OUTPUT_DIR}/2b3_full_path.mp4"
+
+ALL_SEGMENTS=("$CFG_VIDEO" "$CAT_VIDEO" "$RECEIPT_VIDEO")
+MISSING=()
+for seg in "${ALL_SEGMENTS[@]}"; do
+    [[ -f "$seg" ]] || MISSING+=("$seg")
+done
+
+if [[ ${#MISSING[@]} -eq 0 ]]; then
+    log "Stitching full-path video: cfg_1b1w + cat_basic + foreign_currency_receipt"
+    python -m gifs.automation.stitch_full_path \
+        --segments "${ALL_SEGMENTS[@]}" \
+        --output "$FULL_PATH_VIDEO"
+    log "Full-path video: ${FULL_PATH_VIDEO}"
+else
+    warn "Skipping full-path stitch (missing prerequisite videos)"
+    for m in "${MISSING[@]}"; do
+        warn "  Missing: $m"
+    done
 fi
-
-# Check for asciinema
-if ! command -v asciinema >/dev/null 2>&1; then
-    error "asciinema not found!"
-    warn "Install with: pip install asciinema"
-    exit 1
-fi
-
-# Check for agg (asciinema to GIF converter)
-if ! command -v asciinema-agg >/dev/null 2>&1; then
-    log "Installing agg (asciinema → GIF converter)..."
-    pip install -q agg || { error "Failed to install agg"; exit 1; }
-fi
-
-# Record the demo using asciinema
-CAST_FILE="${RECORDINGS_DIR}/${DEMO_NAME}.cast"
-log "Recording demo with asciinema..."
-rm -f "$CAST_FILE"
-
-cd "$PROJECT_ROOT"
-export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
-
-asciinema rec "$CAST_FILE" \
-    --command="$PYTHON -m gifs.automation.real_label_foreign_currency_demo" \
-    --title "Step 2b: Label Foreign-Currency Receipt (GBP)" \
-    --idle-time-limit=2 \
-    --rows 38 \
-    --cols 100 \
-    -y -q
-
-log "Recording completed → ${CAST_FILE}"
-
-# Post-process the cast file (clean up escape sequences)
-log "Post-processing cast file..."
-CAST_FILE="$CAST_FILE" "$PYTHON" -m gifs.automation.cast_postprocess || true
-
-# Generate themed GIFs
-log "Generating GIFs..."
-OUTPUT_GIF="${OUTPUT_DIR}/${DEMO_NAME}.gif"
-
-# Default theme (dracula)
-asciinema-agg "$CAST_FILE" "$OUTPUT_GIF" \
-    --theme dracula \
-    --font-size 20 \
-    --renderer resvg \
-    --line-height 1.2
-
-log "Generated: ${OUTPUT_GIF}"
-
-# Optimize the GIF
-if command -v gifsicle >/dev/null 2>&1; then
-    log "Optimizing GIF with gifsicle..."
-    gifsicle -O3 "$OUTPUT_GIF" -o "${OUTPUT_GIF}.tmp" 2>/dev/null || true
-    if [[ -f "${OUTPUT_GIF}.tmp" ]]; then
-        mv "${OUTPUT_GIF}.tmp" "$OUTPUT_GIF"
-    fi
-fi
-
-# Show results
-echo
-header "Summary"
-echo
-log "Generated GIF:"
-echo "  ${OUTPUT_GIF}"
-echo "  Size: $(du -h "$OUTPUT_GIF" 2>/dev/null | cut -f1 || echo 'N/A')"
-echo
-echo "Note: This demo shows labelling a GBP ATM receipt with currency=POUND."
-echo
-
-# Convert GIF to MP4 for pausable GitHub README videos
-convert_gif_to_mp4() {
-    local gif_file="$1"
-    local mp4_file="${gif_file%.gif}.mp4"
-
-    if ! command -v ffmpeg >/dev/null 2>&1; then
-        log "ffmpeg not found, skipping MP4 conversion"
-        return 0
-    fi
-
-    log "Converting GIF to MP4..."
-    if ffmpeg -y -i "$gif_file" \
-        -movflags faststart \
-        -pix_fmt yuv420p \
-        -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
-        -c:v libx264 \
-        -crf 23 \
-        -preset medium \
-        "$mp4_file" 2>/dev/null; then
-        log "MP4 created at: $mp4_file"
-    else
-        log "MP4 conversion failed (non-fatal)"
-    fi
-}
-
-convert_gif_to_mp4 "$OUTPUT_GIF"
+fi  # end SKIP_STITCH guard
 
 exit 0
