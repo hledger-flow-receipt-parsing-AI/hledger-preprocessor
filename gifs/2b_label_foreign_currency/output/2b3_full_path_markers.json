@@ -12,11 +12,29 @@
     "malgo_default": 106.48,
     "cat_basic__groceries": 113.08,
     "cat_basic__withdrawl": 115.68,
-    "img_atm_gbp": 118.6,
-    "nolbl_atm_100gbp": 121.34,
-    "lbl_atm_100gbp": 160.75
+    "start_2024_1000eur": 118.6,
+    "csv_ekoplaza_4217_jan15": 126.92,
+    "img_atm_gbp": 136.24,
+    "nolbl_atm_100gbp": 139.75,
+    "lbl_atm_100gbp": 181.71,
+    "tui_atm_100gbp": 150.05,
+    "tui_atm_100gbp__date": 150.48,
+    "tui_atm_100gbp__time": 150.48,
+    "tui_atm_100gbp__category": 153.53,
+    "tui_atm_100gbp__bank_account": 156.39,
+    "tui_atm_100gbp__currency": 157.15,
+    "tui_atm_100gbp__amount": 158.01,
+    "tui_atm_100gbp__change": 159.16,
+    "tui_atm_100gbp__shop_name": 167.77,
+    "tui_atm_100gbp__shop_street": 169.81,
+    "tui_atm_100gbp__shop_house_nr": 171.85,
+    "tui_atm_100gbp__shop_zipcode": 172.76,
+    "tui_atm_100gbp__shop_city": 174.32,
+    "tui_atm_100gbp__shop_country": 175.7,
+    "tui_atm_100gbp__tax": 177.92,
+    "jrnl_groceries_ekoplaza": 189.04
   },
-  "total_duration": 169.0,
+  "total_duration": 199.04,
   "segments": [
     {
       "file": "cfg_1b5a.mp4",
@@ -27,8 +45,20 @@
       "duration": 5.52
     },
     {
+      "file": "starting_journal.mp4",
+      "duration": 8.32
+    },
+    {
+      "file": "bank_csv.mp4",
+      "duration": 9.32
+    },
+    {
       "file": "2b_label_foreign_currency.mp4",
-      "duration": 50.4
+      "duration": 52.8
+    },
+    {
+      "file": "journal_output.mp4",
+      "duration": 10.0
     }
   ]
 }

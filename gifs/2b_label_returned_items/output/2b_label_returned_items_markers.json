@@ -1,8 +1,23 @@
 {
   "markers": {
     "img_return_item": 0.0,
-    "nolbl_return_item": 2.83,
-    "lbl_return_item": 41.9
+    "nolbl_return_item": 3.51,
+    "lbl_return_item": 47.09,
+    "tui_return_item": 16.02,
+    "tui_return_item__date": 16.46,
+    "tui_return_item__time": 16.46,
+    "tui_return_item__category": 19.6,
+    "tui_return_item__bank_account": 21.98,
+    "tui_return_item__currency": 22.76,
+    "tui_return_item__amount": 23.54,
+    "tui_return_item__change": 24.6,
+    "tui_return_item__shop_name": 33.48,
+    "tui_return_item__shop_street": 34.7,
+    "tui_return_item__shop_house_nr": 36.7,
+    "tui_return_item__shop_zipcode": 37.74,
+    "tui_return_item__shop_city": 39.16,
+    "tui_return_item__shop_country": 40.87,
+    "tui_return_item__tax": 42.78
   },
-  "total_duration": 51.23
+  "total_duration": 54.72
 }
