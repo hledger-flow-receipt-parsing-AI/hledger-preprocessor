@@ -1,7 +1,8 @@
 {
   "markers": {
     "img_return_item": 0.0,
-    "nolbl_return_item": 3.65
+    "nolbl_return_item": 2.83,
+    "lbl_return_item": 41.9
   },
-  "total_duration": 11.32
+  "total_duration": 51.23
 }

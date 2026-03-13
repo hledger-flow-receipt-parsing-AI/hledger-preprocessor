@@ -1,7 +1,8 @@
 {
   "markers": {
     "img_split_dinner": 0.0,
-    "nolbl_dinner_split": 3.68
+    "nolbl_dinner_split": 2.84,
+    "lbl_dinner_split": 50.96
   },
-  "total_duration": 11.29
+  "total_duration": 59.02
 }

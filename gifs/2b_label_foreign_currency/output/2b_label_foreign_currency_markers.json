@@ -1,7 +1,8 @@
 {
   "markers": {
     "img_atm_gbp": 0.0,
-    "nolbl_atm_100gbp": 3.67
+    "nolbl_atm_100gbp": 2.74,
+    "lbl_atm_100gbp": 42.15
   },
-  "total_duration": 11.34
+  "total_duration": 50.44
 }

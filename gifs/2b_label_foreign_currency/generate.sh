@@ -3,7 +3,7 @@
 # Foreign-Currency Receipt Labelling Demo - GIF Generator
 #
 # 1. Records the segment-only foreign-currency receipt TUI demo.
-# 2. Stitches cfg_1b1w + cat_basic + receipt segment into a full-path
+# 2. Stitches cfg_1b5a + cat_basic + receipt segment into a full-path
 #    video for US-2b.3 (config → categories → receipt labelling).
 # =============================================================================
 
@@ -143,7 +143,7 @@ if [[ "${SKIP_STITCH:-0}" == "1" ]]; then
     log "Skipping stitch step (SKIP_STITCH=1)"
 else
 GIFS_ROOT="${SCRIPT_DIR}/.."
-CFG_VIDEO="${GIFS_ROOT}/1a_setup_config/output/cfg_1b1w.mp4"
+CFG_VIDEO="${GIFS_ROOT}/1a_setup_config/output/cfg_1b5a.mp4"
 CAT_VIDEO="${GIFS_ROOT}/1b_add_category/output/cat_basic.mp4"
 RECEIPT_VIDEO="${OUTPUT_DIR}/2b_label_foreign_currency.mp4"
 FULL_PATH_VIDEO="${OUTPUT_DIR}/2b3_full_path.mp4"
@@ -155,7 +155,7 @@ for seg in "${ALL_SEGMENTS[@]}"; do
 done
 
 if [[ ${#MISSING[@]} -eq 0 ]]; then
-    log "Stitching full-path video: cfg_1b1w + cat_basic + foreign_currency_receipt"
+    log "Stitching full-path video: cfg_1b5a + cat_basic + foreign_currency_receipt"
     python -m gifs.automation.stitch_full_path \
         --segments "${ALL_SEGMENTS[@]}" \
         --output "$FULL_PATH_VIDEO"
