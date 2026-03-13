@@ -101,7 +101,7 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
     csv_path.write_text(
         "date,account_nr,amount,type,payee,counter_account,code,"
         "description,balance\n"
-        "15-01-2025,NL123,-42.17,debit,Ekoplaza,NL456,IC,"
+        "15-01-2025,NL79 TRIO 0379 2834 09,-42.17,debit,Ekoplaza,NL456,IC,"
         "groceries:ekoplaza,1000.00\n"
     )
 
