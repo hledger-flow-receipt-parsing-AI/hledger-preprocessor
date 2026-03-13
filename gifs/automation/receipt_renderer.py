@@ -143,6 +143,8 @@ def render_receipt(
     city = address.get("city", "")
     country = address.get("country", "")
 
+    shop_account_nr = shop.get("shop_account_nr", "")
+
     net_items = data.get("net_bought_items", {})
     description = net_items.get("description", "Item")
     the_date_raw = data.get("the_date", "")
@@ -180,21 +182,26 @@ def render_receipt(
     # -- Address: street + house_nr ------------------------------------------
     if street and house_nr:
         addr_text = f"{street} {house_nr}"
-        _record(
-            draw,
-            (width // 2, y),
-            addr_text,
-            font=font,
-            field="shop_street",
-            boxes=boxes,
-            anchor="mt",
-        )
-        # shop_house_nr shares the same line — record the house_nr portion
-        # Measure the full string and the street-only prefix to find hr offset
+        # Draw the full line centered (no bbox recording)
+        _draw_only(draw, (width // 2, y), addr_text, font=font, anchor="mt")
+
+        # Compute left edge of the centered line
         full_w = draw.textlength(addr_text, font=font)
-        street_w = draw.textlength(f"{street} ", font=font)
-        # Compute the left edge of the full centered string
         full_left = width // 2 - full_w / 2
+
+        # Record shop_street bbox (street portion only)
+        st_bbox = draw.textbbox((int(full_left), y), street, font=font)
+        boxes.setdefault("shop_street", []).append(
+            {
+                "x": max(0, int(st_bbox[0] - _PAD)),
+                "y": max(0, int(st_bbox[1] - _PAD)),
+                "w": int(st_bbox[2] - st_bbox[0]) + 2 * _PAD,
+                "h": int(st_bbox[3] - st_bbox[1]) + 2 * _PAD,
+            }
+        )
+
+        # Record shop_house_nr bbox (house number portion only)
+        street_w = draw.textlength(f"{street} ", font=font)
         hr_left = full_left + street_w
         hr_bbox = draw.textbbox((int(hr_left), y), house_nr, font=font)
         boxes.setdefault("shop_house_nr", []).append(
@@ -344,11 +351,13 @@ def render_receipt(
             field="tax",
             boxes=boxes,
         )
-        _draw_only(
+        _record(
             draw,
             (width - 20, y),
             f"{currency} {total_tax:.2f}",
             font=font,
+            field="tax",
+            boxes=boxes,
             anchor="rt",
         )
         y += line_height
@@ -413,11 +422,11 @@ def render_receipt(
         )
         y += line_height
 
-        if is_card_payment:
+        if is_card_payment and shop_account_nr:
             _record(
                 draw,
                 (20, y),
-                "Card: XXXX5342",
+                shop_account_nr,
                 font=font,
                 field="bank_account",
                 boxes=boxes,
