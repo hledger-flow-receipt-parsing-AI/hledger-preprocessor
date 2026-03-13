@@ -86,6 +86,9 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
         groceries:
           ekoplaza: {}
           supermarket: {}
+        food:
+          coffee: {}
+          restaurant: {}
         repairs:
           bike: {}
         abonnement:
@@ -170,6 +173,7 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
     fixtures_dir = project_root / "test" / "fixtures" / "receipts"
     source_files: List[Path] = [
         fixtures_dir / "groceries_ekoplaza_card.json",
+        fixtures_dir / "coffee_cash.json",
     ]
     seed_receipt_images_only(config=config, source_json_paths=source_files)
 

@@ -61,12 +61,7 @@ digraph userstory_dag {
     cat_basic [label="basic categories", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}"];
   }
 
-  subgraph cluster_matching_cfg {
-    label="Matching Parameters";
-    style=filled; fillcolor="#FFF3E0";
-    rank=same;
-    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
-  }
+  _skip_matching_cfg [label="Matching Parameters", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
 
   subgraph cluster_start_journal {
     label="Starting Journal";
@@ -132,8 +127,8 @@ digraph userstory_dag {
   fnames_default -> catcfg_default [style=invis];
   catcfg_default -> malgo_default [style=invis];
   malgo_default -> cat_basic [style=invis];
-  cat_basic -> match_default [style=invis];
-  match_default -> start_2024_1000eur [style=invis];
+  cat_basic -> _skip_matching_cfg [style=dotted, color="#CCCCCC", arrowhead=none];
+  _skip_matching_cfg -> start_2024_1000eur [style=dotted, color="#CCCCCC", arrowhead=none];
   start_2024_1000eur -> csv_atm_gbp_11750 [style=invis];
   csv_atm_gbp_11750 -> img_atm_gbp [style=invis];
   img_atm_gbp -> nolbl_atm_100gbp [style=invis];
@@ -149,7 +144,7 @@ digraph userstory_dag {
   acct_gold_wallet -> acct_silver_wallet [color="#FF5722", penwidth=2.5, style=solid];
   acct_silver_wallet -> dirp_default [color="#FF5722", penwidth=2.5, style=solid];
   acct_triodos_csv -> acct_eur_wallet [color="#FF5722", penwidth=2.5, style=solid];
-  cat_basic -> match_default [color="#FF5722", penwidth=2.5, style=solid];
+  cat_basic -> start_2024_1000eur [color="#FF5722", penwidth=2.5, style=solid];
   catcfg_default -> malgo_default [color="#FF5722", penwidth=2.5, style=solid];
   csv_atm_gbp_11750 -> img_atm_gbp [color="#FF5722", penwidth=2.5, style=solid];
   dirp_default -> fnames_default [color="#FF5722", penwidth=2.5, style=solid];
@@ -158,7 +153,6 @@ digraph userstory_dag {
   jrnl_wallet_gbp -> jrnl_triodos_debit_gbp [color="#FF5722", penwidth=2.5, style=solid];
   lbl_atm_100gbp -> out_currency_convert [color="#FF5722", penwidth=2.5, style=solid];
   malgo_default -> cat_basic [color="#FF5722", penwidth=2.5, style=solid];
-  match_default -> start_2024_1000eur [color="#FF5722", penwidth=2.5, style=solid];
   nolbl_atm_100gbp -> tui_atm_100gbp [color="#FF5722", penwidth=2.5, style=solid];
   out_currency_convert -> jrnl_wallet_gbp [color="#FF5722", penwidth=2.5, style=solid];
   start_2024_1000eur -> csv_atm_gbp_11750 [color="#FF5722", penwidth=2.5, style=solid];

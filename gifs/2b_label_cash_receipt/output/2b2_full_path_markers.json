@@ -1,0 +1,45 @@
+{
+  "markers": {
+    "acct_triodos_csv": 0.0,
+    "acct_eur_wallet": 23.16,
+    "dirp_default": 32.72,
+    "fnames_default": 49.96,
+    "catcfg_default": 65.4,
+    "malgo_default": 68.12,
+    "cat_basic__groceries": 74.72,
+    "cat_basic__withdrawl": 77.32,
+    "img_coffee_cash": 80.24,
+    "nolbl_coffee_cash": 82.84,
+    "lbl_coffee_cash": 122.92,
+    "tui_coffee_cash": 92.87,
+    "tui_coffee_cash__date": 93.3,
+    "tui_coffee_cash__time": 93.3,
+    "tui_coffee_cash__category": 96.38,
+    "tui_coffee_cash__bank_account": 98.42,
+    "tui_coffee_cash__currency": 99.18,
+    "tui_coffee_cash__amount": 99.94,
+    "tui_coffee_cash__change": 100.98,
+    "tui_coffee_cash__shop_name": 106.52,
+    "tui_coffee_cash__shop_street": 109.08,
+    "tui_coffee_cash__shop_house_nr": 111.3,
+    "tui_coffee_cash__shop_zipcode": 112.56,
+    "tui_coffee_cash__shop_city": 114.3,
+    "tui_coffee_cash__shop_country": 116.16,
+    "tui_coffee_cash__tax": 118.49
+  },
+  "total_duration": 132.24,
+  "segments": [
+    {
+      "file": "cfg_1b1w.mp4",
+      "duration": 74.72
+    },
+    {
+      "file": "cat_basic.mp4",
+      "duration": 5.52
+    },
+    {
+      "file": "2b_label_cash_receipt.mp4",
+      "duration": 52.0
+    }
+  ]
+}
