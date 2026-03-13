@@ -3,8 +3,9 @@
 # Split-Payment Receipt Labelling Demo - GIF Generator
 #
 # 1. Records the segment-only split-payment receipt TUI demo.
-# 2. Stitches cfg_1b1w + cat_extended + receipt segment into a full-path
-#    video for US-2b.4 (config → categories → receipt labelling).
+# 2. Stitches cfg_1b1w + cat_basic + starting_journal + bank_csv +
+#    receipt segment + journal_output into a full-path video for US-2b.4
+#    (config → categories → journal → csv → receipt labelling → output).
 # =============================================================================
 
 set -euo pipefail
@@ -132,7 +133,166 @@ for i, (raw_t, data) in enumerate(raw_events):
 print(f'  Extracted {len(markers)} structural markers from .cast')
 print(f'  raw duration {raw_duration:.2f}s -> GIF {gif_duration:.2f}s')
 
-# ── 4. Write combined sidecar JSON ──────────────────────────────────
+# ── 4. Extract TUI field markers from .cast content events ───────────
+def extract_field_markers_from_cast(events, raw_to_gif_fn):
+    key_events = []
+    for raw_t, data in events:
+        if '49;' not in data:
+            continue
+        m = re.search(r'\[\s*(\S+?)\s*\]', data)
+        if m:
+            key_events.append((raw_t, m.group(1)))
+
+    if not key_events:
+        return {}
+
+    prefix = 'tui_dinner_split'
+
+    def first_key_after(char, after):
+        for t, k in key_events:
+            if t > after and k == char:
+                return t
+        return None
+
+    def first_enter_after(after):
+        for t, k in key_events:
+            if t > after and k == 'Enter':
+                return t
+        return None
+
+    def first_typed_after(after):
+        for t, k in key_events:
+            if t > after and k not in ('Enter', 'Right'):
+                return t
+        return None
+
+    tui_render_ts = None
+    for raw_t, data in events:
+        if raw_t > 10 and 'Receipt date' in data:
+            tui_render_ts = raw_t
+            break
+
+    result = {}
+
+    if tui_render_ts is None:
+        return result
+    result[f'{prefix}'] = raw_to_gif_fn(tui_render_ts - 0.5)
+    result[f'{prefix}__date'] = raw_to_gif_fn(tui_render_ts)
+    result[f'{prefix}__time'] = raw_to_gif_fn(tui_render_ts)
+
+    # date_digits starts with '2' (2025...)
+    date_start = first_key_after('2', 10.0)
+    date_enter = first_enter_after((date_start or tui_render_ts) + 1.0)
+    if date_enter:
+        result[f'{prefix}__category'] = raw_to_gif_fn(date_enter)
+
+    # category = 'food:restaurant', first char 'f'
+    cat_start = first_key_after('f', date_enter or tui_render_ts + 2)
+    cat_enter = first_enter_after(cat_start) if cat_start else None
+    if cat_enter:
+        result[f'{prefix}__bank_account'] = raw_to_gif_fn(cat_enter)
+
+    # account_index = '0' (first payment - card)
+    acct_start = first_key_after('0', cat_enter) if cat_enter else None
+    acct_enter = first_enter_after(acct_start) if acct_start else None
+    if acct_enter:
+        result[f'{prefix}__currency'] = raw_to_gif_fn(acct_enter)
+
+    # currency_index = '9' (EUR)
+    curr_start = first_key_after('9', acct_enter) if acct_enter else None
+    curr_enter = first_enter_after(curr_start) if curr_start else None
+    if curr_enter:
+        result[f'{prefix}__amount'] = raw_to_gif_fn(curr_enter)
+
+    # amount = '30', first char '3'
+    amt_start = first_key_after('3', curr_enter) if curr_enter else None
+    amt_enter = first_enter_after((amt_start or 0) + 0.5) if amt_start else None
+    if amt_enter:
+        result[f'{prefix}__change'] = raw_to_gif_fn(amt_enter)
+
+    # change = '0'
+    change_start = first_key_after('0', amt_enter) if amt_enter else None
+    change_enter = first_enter_after(change_start) if change_start else None
+    if change_enter:
+        # add_another_account = True -> Enter directly (first option = yes)
+        add_acct_enter = first_enter_after(change_enter)
+        if add_acct_enter:
+            result[f'{prefix}__bank_account_2'] = raw_to_gif_fn(add_acct_enter)
+
+            # account_index_2 = '1' (EUR wallet - cash)
+            acct2_start = first_key_after('1', add_acct_enter)
+            acct2_enter = first_enter_after(acct2_start) if acct2_start else None
+            if acct2_enter:
+                result[f'{prefix}__currency_2'] = raw_to_gif_fn(acct2_enter)
+
+            # currency_index_2 = '9' (EUR)
+            curr2_start = first_key_after('9', acct2_enter) if acct2_enter else None
+            curr2_enter = first_enter_after(curr2_start) if curr2_start else None
+            if curr2_enter:
+                result[f'{prefix}__amount_2'] = raw_to_gif_fn(curr2_enter)
+
+            # amount_2 = '20', first char '2'
+            amt2_start = first_key_after('2', curr2_enter) if curr2_enter else None
+            amt2_enter = first_enter_after((amt2_start or 0) + 0.5) if amt2_start else None
+            if amt2_enter:
+                result[f'{prefix}__change_2'] = raw_to_gif_fn(amt2_enter)
+
+            # change_2 = '0'
+            change2_start = first_key_after('0', amt2_enter) if amt2_enter else None
+            change2_enter = first_enter_after(change2_start) if change2_start else None
+            if change2_enter:
+                # second add_another_account = False -> Right then Enter
+                right_key = first_key_after('Right', change2_enter)
+                done_enter = first_enter_after(right_key) if right_key else None
+                if done_enter:
+                    # shop_index = '0'
+                    shop_select = first_key_after('0', done_enter)
+                    shop_select_enter = first_enter_after(shop_select) if shop_select else None
+                    if shop_select_enter:
+                        result[f'{prefix}__shop_name'] = raw_to_gif_fn(shop_select_enter)
+                        prev_enter = shop_select_enter
+                    else:
+                        prev_enter = done_enter
+                else:
+                    prev_enter = change2_enter
+            else:
+                prev_enter = None
+        else:
+            prev_enter = None
+    else:
+        prev_enter = None
+
+    if prev_enter:
+        prev_ts = prev_enter
+        for field in ['shop_street', 'shop_house_nr', 'shop_zipcode',
+                      'shop_city', 'shop_country']:
+            typed_ts = first_typed_after(prev_ts)
+            if typed_ts is None:
+                break
+            enter_ts = first_enter_after(typed_ts)
+            if enter_ts is None:
+                break
+            result[f'{prefix}__{field}'] = raw_to_gif_fn(enter_ts)
+            prev_ts = enter_ts
+
+        subtotal_enter = first_enter_after(prev_ts) if prev_ts else None
+        if subtotal_enter:
+            result[f'{prefix}__tax'] = raw_to_gif_fn(subtotal_enter)
+
+    return result
+
+try:
+    field_markers = extract_field_markers_from_cast(raw_events, raw_to_gif)
+    for nid, gif_ts in field_markers.items():
+        if nid not in markers:
+            markers[nid] = round(gif_ts, 2)
+    print(f'  Extracted {len(field_markers)} TUI field markers from .cast content')
+except Exception as e:
+    import traceback
+    print(f'  WARNING: TUI field marker extraction failed: {e}', file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
+
+# ── 5. Write combined sidecar JSON ──────────────────────────────────
 out = Path('${OUTPUT_DIR}/2b_label_split_payment_markers.json')
 out.write_text(json.dumps({'markers': markers, 'total_duration': total_duration}, indent=2) + '\n')
 print(f'  Total: {len(markers)} markers -> {out}')
@@ -145,17 +305,20 @@ else
 GIFS_ROOT="${SCRIPT_DIR}/.."
 CFG_VIDEO="${GIFS_ROOT}/1a_setup_config/output/cfg_1b1w.mp4"
 CAT_VIDEO="${GIFS_ROOT}/1b_add_category/output/cat_basic.mp4"
+STARTJ_VIDEO="${GIFS_ROOT}/2b_data_files/output/starting_journal.mp4"
+CSV_VIDEO="${GIFS_ROOT}/2b_data_files/output/bank_csv.mp4"
 RECEIPT_VIDEO="${OUTPUT_DIR}/2b_label_split_payment.mp4"
+JRNL_VIDEO="${GIFS_ROOT}/2b_data_files/output/journal_output.mp4"
 FULL_PATH_VIDEO="${OUTPUT_DIR}/2b4_full_path.mp4"
 
-ALL_SEGMENTS=("$CFG_VIDEO" "$CAT_VIDEO" "$RECEIPT_VIDEO")
+ALL_SEGMENTS=("$CFG_VIDEO" "$CAT_VIDEO" "$STARTJ_VIDEO" "$CSV_VIDEO" "$RECEIPT_VIDEO" "$JRNL_VIDEO")
 MISSING=()
 for seg in "${ALL_SEGMENTS[@]}"; do
     [[ -f "$seg" ]] || MISSING+=("$seg")
 done
 
 if [[ ${#MISSING[@]} -eq 0 ]]; then
-    log "Stitching full-path video: cfg_1b1w + cat_basic + split_payment_receipt"
+    log "Stitching full-path video: cfg_1b1w + cat_basic + starting_journal + bank_csv + split_payment_receipt + journal_output"
     python -m gifs.automation.stitch_full_path \
         --segments "${ALL_SEGMENTS[@]}" \
         --output "$FULL_PATH_VIDEO"

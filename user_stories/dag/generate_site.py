@@ -841,6 +841,7 @@ def generate_story_svg_direct(
     paths: List[List[str]],
     story_colour: str = "#7aa2f7",
     highlight_layers: Optional[List[str]] = None,
+    svg_id_prefix: str = "",
 ) -> str:
     """Generate a per-story SVG showing only the given nodes.
 
@@ -903,7 +904,7 @@ def generate_story_svg_direct(
     COL_GAP = 20  # horizontal gap between left and right columns
     FONT_SIZE = 9
     LABEL_FONT_SIZE = 10
-    MIN_CLUSTER_W = 140  # tighter minimum cluster width
+    MIN_CLUSTER_W = 132  # tight minimum cluster width (node=100 + 2*MARGIN)
 
     ordered_layers = [ln for ln in LAYER_ORDER if ln in layer_nodes]
 
@@ -946,6 +947,7 @@ def generate_story_svg_direct(
     config_y_start = None
     config_y_end = None
     config_max_right = 0.0
+    config_first_layer_bottom = None  # bottom of the first (widest) config layer
 
     RECEIPT_GROUP_PAD = CONFIG_GROUP_PAD
     RECEIPT_GROUP_TOP = CONFIG_GROUP_TOP
@@ -981,6 +983,7 @@ def generate_story_svg_direct(
         if layer_name in CONFIG_GROUP_LAYERS:
             if config_y_start is None:
                 config_y_start = cluster_y
+                config_first_layer_bottom = cluster_y + ch
             config_y_end = cluster_y + ch
             right = cluster_x + cw
             if right > config_max_right:
@@ -998,9 +1001,10 @@ def generate_story_svg_direct(
         # Right column x starts after the left column
         right_col_x = left_max_width + MARGIN + COL_GAP
 
-        # Right column y starts below the config_accounts layer
-        if config_y_end is not None:
-            right_y_start = config_y_end + LAYER_GAP
+        # Right column y starts just below the first (widest) config layer
+        # to form a "P-shape" / reversed-L layout that minimises height.
+        if config_first_layer_bottom is not None:
+            right_y_start = config_first_layer_bottom + LAYER_GAP
         else:
             right_y_start = MARGIN
 
@@ -1236,11 +1240,14 @@ def generate_story_svg_direct(
         ' xmlns:xlink="http://www.w3.org/1999/xlink">'
     )
 
-    # Arrow marker — larger for visibility
+    # Arrow marker — larger for visibility.
+    # Use svg_id_prefix to avoid duplicate marker IDs when multiple SVGs
+    # appear on the same HTML page (segment view + full-path view).
     safe_colour = re.sub(r"[^a-zA-Z0-9]", "", story_colour)
+    marker_id_base = f"{svg_id_prefix}arrow_{safe_colour}"
     lines.append("<defs>")
     lines.append(
-        f'<marker id="arrow_{safe_colour}" viewBox="0 0 10 6"'
+        f'<marker id="{marker_id_base}" viewBox="0 0 10 6"'
         ' refX="10" refY="3" markerWidth="10" markerHeight="8"'
         ' orient="auto-start-reverse">'
         f'<path d="M0,0 L10,3 L0,6 Z" fill="{story_colour}"/>'
@@ -1348,7 +1355,7 @@ def generate_story_svg_direct(
             lines.append("</a></g>")
 
     # --- Edges ---
-    arrow_id = f"arrow_{safe_colour}"
+    arrow_id = marker_id_base
     for src, dst in all_edges_to_draw:
         d = edge_path(src, dst, edge_lane.get((src, dst), 0))
         lines.append(
@@ -4040,6 +4047,7 @@ def main() -> None:
                     node_index=node_index,
                     paths=all_paths,
                     story_colour=colour,
+                    svg_id_prefix="seg_",
                 )
 
             # Full-path view: all nodes from paths, with section-layer highlight
@@ -4051,6 +4059,7 @@ def main() -> None:
                     paths=all_paths,
                     story_colour=colour,
                     highlight_layers=section_layers,
+                    svg_id_prefix="fp_",
                 )
 
         # Receipt image (from YAML receipt_image field)

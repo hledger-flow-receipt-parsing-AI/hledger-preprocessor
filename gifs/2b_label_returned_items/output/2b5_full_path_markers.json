@@ -8,11 +8,28 @@
     "malgo_default": 68.12,
     "cat_basic__groceries": 74.72,
     "cat_basic__withdrawl": 77.32,
-    "img_return_item": 80.24,
-    "nolbl_return_item": 83.07,
-    "lbl_return_item": 122.14
+    "start_2024_1000eur": 80.24,
+    "img_return_item": 88.56,
+    "nolbl_return_item": 92.07,
+    "lbl_return_item": 135.65,
+    "tui_return_item": 104.58,
+    "tui_return_item__date": 105.02,
+    "tui_return_item__time": 105.02,
+    "tui_return_item__category": 108.16,
+    "tui_return_item__bank_account": 110.54,
+    "tui_return_item__currency": 111.32,
+    "tui_return_item__amount": 112.1,
+    "tui_return_item__change": 113.16,
+    "tui_return_item__shop_name": 122.04,
+    "tui_return_item__shop_street": 123.26,
+    "tui_return_item__shop_house_nr": 125.26,
+    "tui_return_item__shop_zipcode": 126.3,
+    "tui_return_item__shop_city": 127.72,
+    "tui_return_item__shop_country": 129.43,
+    "tui_return_item__tax": 131.34,
+    "jrnl_groceries_ekoplaza": 143.26
   },
-  "total_duration": 131.44,
+  "total_duration": 153.26,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
@@ -23,8 +40,16 @@
       "duration": 5.52
     },
     {
+      "file": "starting_journal.mp4",
+      "duration": 8.32
+    },
+    {
       "file": "2b_label_returned_items.mp4",
-      "duration": 51.2
+      "duration": 54.7
+    },
+    {
+      "file": "journal_output.mp4",
+      "duration": 10.0
     }
   ]
 }
