@@ -9,9 +9,10 @@
     "cat_basic__groceries": 74.72,
     "cat_basic__withdrawl": 77.32,
     "img_split_dinner": 80.24,
-    "nolbl_dinner_split": 83.92
+    "nolbl_dinner_split": 83.08,
+    "lbl_dinner_split": 131.2
   },
-  "total_duration": 91.44,
+  "total_duration": 139.24,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
@@ -23,7 +24,7 @@
     },
     {
       "file": "2b_label_split_payment.mp4",
-      "duration": 11.2
+      "duration": 59.0
     }
   ]
 }

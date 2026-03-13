@@ -9,9 +9,10 @@
     "cat_basic__groceries": 74.72,
     "cat_basic__withdrawl": 77.32,
     "img_return_item": 80.24,
-    "nolbl_return_item": 83.89
+    "nolbl_return_item": 83.07,
+    "lbl_return_item": 122.14
   },
-  "total_duration": 91.64,
+  "total_duration": 131.44,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
@@ -23,7 +24,7 @@
     },
     {
       "file": "2b_label_returned_items.mp4",
-      "duration": 11.4
+      "duration": 51.2
     }
   ]
 }

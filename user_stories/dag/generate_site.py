@@ -599,7 +599,7 @@ def generate_overview_svg_direct(
         safe_id = re.sub(r"[^a-zA-Z0-9]", "", key)
         lines.append(
             f'<marker id="arrow_{safe_id}" viewBox="0 0 10 6"'
-            ' refX="10" refY="3" markerWidth="8" markerHeight="6"'
+            ' refX="10" refY="3" markerWidth="10" markerHeight="8"'
             ' orient="auto-start-reverse">'
             f'<path d="M0,0 L10,3 L0,6 Z" fill="{colour}"/>'
             "</marker>"
@@ -844,9 +844,10 @@ def generate_story_svg_direct(
 ) -> str:
     """Generate a per-story SVG showing only the given nodes.
 
-    Uses the same layout approach as ``generate_overview_svg_direct()`` —
-    left-aligned layers, same styling, arrows, edge routing — but filtered
-    to only the supplied *node_ids*.
+    Uses a two-column layout when many layers are present: left column
+    holds config/pre-receipt layers, right column holds receipt-labelling
+    and post-receipt layers.  The right column starts vertically below the
+    (typically wider) account-config layer to save horizontal space.
 
     Args:
         node_ids: Node IDs to include.
@@ -896,85 +897,191 @@ def generate_story_svg_direct(
     NODE_PAD_Y = 2
     CLUSTER_PAD_TOP = 14
     CLUSTER_PAD_BOT = 3
-    LAYER_GAP = 5
+    LAYER_GAP = 8  # increased for arrow visibility
     CONFIG_GROUP_PAD = 3
     CONFIG_GROUP_TOP = 14
+    COL_GAP = 20  # horizontal gap between left and right columns
     FONT_SIZE = 9
     LABEL_FONT_SIZE = 10
+    MIN_CLUSTER_W = 140  # tighter minimum cluster width
+
+    ordered_layers = [ln for ln in LAYER_ORDER if ln in layer_nodes]
+
+    # --- Determine 2-column split ---
+    # The right column starts at the first RECEIPT_GROUP_LAYER.
+    # Left column: all layers before that.  Right column: receipt group + rest.
+    # Only use 2-column if there are enough layers (>6) and a receipt group.
+    receipt_split_idx = None
+    for i, ln in enumerate(ordered_layers):
+        if ln in RECEIPT_GROUP_LAYERS:
+            receipt_split_idx = i
+            break
+
+    use_two_columns = (
+        receipt_split_idx is not None and len(ordered_layers) >= 7
+    )
+
+    if use_two_columns:
+        left_layers = ordered_layers[:receipt_split_idx]
+        right_layers = ordered_layers[receipt_split_idx:]
+    else:
+        left_layers = ordered_layers
+        right_layers = []
+
+    # --- Helper: compute cluster width for a layer ---
+    def _cluster_w(layer_name: str) -> float:
+        n = len(layer_nodes[layer_name])
+        return max(
+            n * NODE_W + (n - 1) * NODE_PAD_X + 2 * MARGIN,
+            MIN_CLUSTER_W,
+        )
+
+    def _cluster_h() -> float:
+        return CLUSTER_PAD_TOP + NODE_H + CLUSTER_PAD_BOT + NODE_PAD_Y
 
     # --- Compute positions ---
     node_pos: Dict[str, Tuple[float, float]] = {}
     cluster_box: Dict[str, Tuple[float, float, float, float]] = {}
 
-    y_cursor = MARGIN
-    max_width = 0.0
-
-    ordered_layers = [ln for ln in LAYER_ORDER if ln in layer_nodes]
-
     config_y_start = None
     config_y_end = None
     config_max_right = 0.0
 
-    # Receipt group tracking (mirrors config group pattern)
     RECEIPT_GROUP_PAD = CONFIG_GROUP_PAD
     RECEIPT_GROUP_TOP = CONFIG_GROUP_TOP
     receipt_y_start = None
     receipt_y_end = None
     receipt_max_right = 0.0
 
-    for layer_name in ordered_layers:
-        nids = layer_nodes[layer_name]
-        n_nodes = len(nids)
+    # Layout left column
+    y_cursor = MARGIN
+    left_max_width = 0.0
 
-        cluster_w = max(
-            n_nodes * NODE_W + (n_nodes - 1) * NODE_PAD_X + 2 * MARGIN,
-            200,
-        )
-        cluster_h = CLUSTER_PAD_TOP + NODE_H + CLUSTER_PAD_BOT + NODE_PAD_Y
+    for layer_name in left_layers:
+        cw = _cluster_w(layer_name)
+        ch = _cluster_h()
 
         if layer_name in CONFIG_GROUP_LAYERS and config_y_start is None:
             y_cursor += CONFIG_GROUP_TOP
 
-        if layer_name in RECEIPT_GROUP_LAYERS and receipt_y_start is None:
-            y_cursor += RECEIPT_GROUP_TOP
-
         cluster_x = MARGIN
         cluster_y = y_cursor
-
-        cluster_box[layer_name] = (cluster_x, cluster_y, cluster_w, cluster_h)
+        cluster_box[layer_name] = (cluster_x, cluster_y, cw, ch)
 
         node_start_x = cluster_x + MARGIN
         node_y = cluster_y + CLUSTER_PAD_TOP + NODE_PAD_Y
-
-        for i, nid in enumerate(nids):
+        for i, nid in enumerate(layer_nodes[layer_name]):
             cx = node_start_x + i * (NODE_W + NODE_PAD_X) + NODE_W / 2
             cy = node_y + NODE_H / 2
             node_pos[nid] = (cx, cy)
 
-        if cluster_w + MARGIN > max_width:
-            max_width = cluster_w + MARGIN
+        if cw + MARGIN > left_max_width:
+            left_max_width = cw + MARGIN
 
         if layer_name in CONFIG_GROUP_LAYERS:
             if config_y_start is None:
                 config_y_start = cluster_y
-            config_y_end = cluster_y + cluster_h
-            right = cluster_x + cluster_w
+            config_y_end = cluster_y + ch
+            right = cluster_x + cw
             if right > config_max_right:
                 config_max_right = right
 
-        if layer_name in RECEIPT_GROUP_LAYERS:
-            if receipt_y_start is None:
-                receipt_y_start = cluster_y
-            receipt_y_end = cluster_y + cluster_h
-            right = cluster_x + cluster_w
-            if right > receipt_max_right:
-                receipt_max_right = right
+        y_cursor += ch + LAYER_GAP
 
-        y_cursor += cluster_h + LAYER_GAP
+    left_col_bottom = y_cursor
 
-    total_w = max_width + MARGIN * 2
-    total_h = y_cursor + MARGIN
+    # Layout right column (if 2-column)
+    right_col_x = 0.0
+    right_max_width = 0.0
 
+    if use_two_columns and right_layers:
+        # Right column x starts after the left column
+        right_col_x = left_max_width + MARGIN + COL_GAP
+
+        # Right column y starts below the config_accounts layer
+        if config_y_end is not None:
+            right_y_start = config_y_end + LAYER_GAP
+        else:
+            right_y_start = MARGIN
+
+        y_cursor_r = right_y_start
+
+        for layer_name in right_layers:
+            cw = _cluster_w(layer_name)
+            ch = _cluster_h()
+
+            if layer_name in RECEIPT_GROUP_LAYERS and receipt_y_start is None:
+                y_cursor_r += RECEIPT_GROUP_TOP
+
+            cluster_x = right_col_x
+            cluster_y = y_cursor_r
+            cluster_box[layer_name] = (cluster_x, cluster_y, cw, ch)
+
+            node_start_x = cluster_x + MARGIN
+            node_y = cluster_y + CLUSTER_PAD_TOP + NODE_PAD_Y
+            for i, nid in enumerate(layer_nodes[layer_name]):
+                cx = node_start_x + i * (NODE_W + NODE_PAD_X) + NODE_W / 2
+                cy = node_y + NODE_H / 2
+                node_pos[nid] = (cx, cy)
+
+            if cw > right_max_width:
+                right_max_width = cw
+
+            if layer_name in RECEIPT_GROUP_LAYERS:
+                if receipt_y_start is None:
+                    receipt_y_start = cluster_y
+                receipt_y_end = cluster_y + ch
+                right = cluster_x + cw
+                if right > receipt_max_right:
+                    receipt_max_right = right
+
+            y_cursor_r += ch + LAYER_GAP
+
+        right_col_bottom = y_cursor_r
+    else:
+        # Single column: layout remaining layers in the same column
+        for layer_name in right_layers:
+            cw = _cluster_w(layer_name)
+            ch = _cluster_h()
+
+            if layer_name in RECEIPT_GROUP_LAYERS and receipt_y_start is None:
+                y_cursor += RECEIPT_GROUP_TOP
+
+            cluster_x = MARGIN
+            cluster_y = y_cursor
+            cluster_box[layer_name] = (cluster_x, cluster_y, cw, ch)
+
+            node_start_x = cluster_x + MARGIN
+            node_y = cluster_y + CLUSTER_PAD_TOP + NODE_PAD_Y
+            for i, nid in enumerate(layer_nodes[layer_name]):
+                cx = node_start_x + i * (NODE_W + NODE_PAD_X) + NODE_W / 2
+                cy = node_y + NODE_H / 2
+                node_pos[nid] = (cx, cy)
+
+            if cw + MARGIN > left_max_width:
+                left_max_width = cw + MARGIN
+
+            if layer_name in RECEIPT_GROUP_LAYERS:
+                if receipt_y_start is None:
+                    receipt_y_start = cluster_y
+                receipt_y_end = cluster_y + ch
+                right = cluster_x + cw
+                if right > receipt_max_right:
+                    receipt_max_right = right
+
+            y_cursor += ch + LAYER_GAP
+
+        right_col_bottom = y_cursor
+
+    # Compute total dimensions
+    if use_two_columns:
+        total_w = right_col_x + right_max_width + MARGIN * 2
+        total_h = max(left_col_bottom, right_col_bottom) + MARGIN
+    else:
+        total_w = left_max_width + MARGIN * 2
+        total_h = right_col_bottom + MARGIN
+
+    # Config group box
     config_group_box = None
     if config_y_start is not None and config_y_end is not None:
         config_group_box = (
@@ -987,12 +1094,32 @@ def generate_story_svg_direct(
             + CONFIG_GROUP_PAD * 2,
         )
 
+    # Receipt group box
     receipt_group_box = None
     if receipt_y_start is not None and receipt_y_end is not None:
         receipt_group_box = (
-            MARGIN - RECEIPT_GROUP_PAD,
+            receipt_y_start
+            and (cluster_box[right_layers[0]][0] if use_two_columns else MARGIN)
+            or MARGIN,
             receipt_y_start - RECEIPT_GROUP_TOP - RECEIPT_GROUP_PAD,
-            receipt_max_right - MARGIN + RECEIPT_GROUP_PAD * 2,
+            receipt_max_right
+            - (right_col_x if use_two_columns else MARGIN)
+            + RECEIPT_GROUP_PAD * 2,
+            receipt_y_end
+            - receipt_y_start
+            + RECEIPT_GROUP_TOP
+            + RECEIPT_GROUP_PAD * 2,
+        )
+        # Recalculate properly: x should be the right column x minus pad
+        if use_two_columns:
+            rcpt_x = right_col_x - RECEIPT_GROUP_PAD
+        else:
+            rcpt_x = MARGIN - RECEIPT_GROUP_PAD
+        receipt_group_box = (
+            rcpt_x,
+            receipt_y_start - RECEIPT_GROUP_TOP - RECEIPT_GROUP_PAD,
+            receipt_max_right - (right_col_x if use_two_columns else MARGIN)
+            + RECEIPT_GROUP_PAD * 2,
             receipt_y_end
             - receipt_y_start
             + RECEIPT_GROUP_TOP
@@ -1013,6 +1140,9 @@ def generate_story_svg_direct(
         (cx + cw for cx, cy, cw, ch in cluster_box.values()), default=200
     )
 
+    # Track which column each layer belongs to for cross-column edges
+    right_layer_set = set(right_layers) if use_two_columns else set()
+
     def edge_path(src: str, dst: str, lane_offset: float = 0) -> str:
         sx, sy = node_pos[src]
         tx, ty = node_pos[dst]
@@ -1024,6 +1154,19 @@ def generate_story_svg_direct(
         src_li = layer_idx.get(src_layer, 0)
         dst_li = layer_idx.get(dst_layer, 0)
         layer_gap = abs(dst_li - src_li)
+
+        # Cross-column edge (left col -> right col)
+        src_in_right = src_layer in right_layer_set
+        dst_in_right = dst_layer in right_layer_set
+        if use_two_columns and not src_in_right and dst_in_right:
+            # Route: go down from source, curve right, go up to target
+            mid_x = (sx + tx) / 2
+            return (
+                f"M{sx:.1f},{s_bot:.1f}"
+                f" C{sx:.1f},{s_bot + 20:.1f}"
+                f" {tx:.1f},{t_top - 20:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
+            )
 
         if layer_gap == 0:
             _, cy, _, _ = cluster_box[src_layer]
@@ -1093,12 +1236,12 @@ def generate_story_svg_direct(
         ' xmlns:xlink="http://www.w3.org/1999/xlink">'
     )
 
-    # Arrow marker
+    # Arrow marker — larger for visibility
     safe_colour = re.sub(r"[^a-zA-Z0-9]", "", story_colour)
     lines.append("<defs>")
     lines.append(
         f'<marker id="arrow_{safe_colour}" viewBox="0 0 10 6"'
-        ' refX="10" refY="3" markerWidth="8" markerHeight="6"'
+        ' refX="10" refY="3" markerWidth="10" markerHeight="8"'
         ' orient="auto-start-reverse">'
         f'<path d="M0,0 L10,3 L0,6 Z" fill="{story_colour}"/>'
         "</marker>"
@@ -3822,6 +3965,14 @@ def main() -> None:
         for marker_id in marker_sequence:
             if marker_id in raw_markers:
                 timestamps[marker_id] = raw_markers[marker_id]
+
+        # Include sub-component markers from sidecar JSON that weren't in the
+        # YAML marker sequence (e.g. TUI field markers like tui_*__date).
+        # These are dynamically generated by TUI demos and need to appear in
+        # the TIMESTAMPS JS object for receipt-field highlighting.
+        for marker_id, ts in raw_markers.items():
+            if "__" in marker_id and marker_id not in timestamps:
+                timestamps[marker_id] = ts
 
         # Infer missing parent-node timestamps from their first child.
         # Sidecar JSON may only contain sub-component keys (e.g.

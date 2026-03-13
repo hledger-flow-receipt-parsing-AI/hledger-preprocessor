@@ -97,9 +97,9 @@
 <div class="receipt-pane zoom-pane" data-zoom-id="receipt">
 <div class="zoom-pane-inner">
 <img class="receipt-image-inline" src="../assets/receipts/atm_london.png" alt="Receipt: Label a foreign-currency receipt">
-<svg class="receipt-overlay" viewBox="0 0 300 380" preserveAspectRatio="xMidYMid meet">
+<svg class="receipt-overlay" viewBox="0 0 300 372" preserveAspectRatio="xMidYMid meet">
 <rect data-field="shop_name" x="96" y="12" width="107" height="16" rx="2"/>
-<rect data-field="shop_street" x="93" y="35" width="114" height="16" rx="2"/>
+<rect data-field="shop_street" x="92" y="37" width="100" height="16" rx="2"/>
 <rect data-field="shop_house_nr" x="193" y="38" width="13" height="15" rx="2"/>
 <rect data-field="shop_zipcode" x="38" y="56" width="57" height="15" rx="2"/>
 <rect data-field="shop_city" x="96" y="55" width="49" height="16" rx="2"/>
@@ -110,7 +110,6 @@
 <rect data-field="currency" x="175" y="230" width="48" height="16" rx="2"/>
 <rect data-field="amount" x="226" y="230" width="57" height="16" rx="2"/>
 <rect data-field="bank_account" x="17" y="268" width="35" height="15" rx="2"/>
-<rect data-field="bank_account" x="17" y="285" width="107" height="16" rx="2"/>
 </svg>
 </div></div>
 <span class="story-id">US-2b.3<span class="badge badge-impl">implemented</span></span> <span class="story-title-inline">Label a foreign-currency receipt</span>
@@ -123,7 +122,7 @@
 <div class="video-section zoom-pane" data-zoom-id="video">
 <div class="zoom-pane-inner">
 <video id="demo-video" controls loop preload="metadata">
-<source src="../assets/videos/2b_label_receipt_dracula.mp4" type="video/mp4">
+<source src="../assets/videos/2b3_full_path.mp4" type="video/mp4">
 </video>
 <div class="video-hint">&#x2191;&#x2193; arrows or j/k to jump between DAG nodes &middot; click a node to seek &middot; space to play/pause</div>
 </div>
@@ -138,42 +137,41 @@
 </div>
 </div>
 <div id="dag-segment-view">
-<svg class="dag-svg" viewBox="0 0 248 230" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg class="dag-svg" viewBox="0 0 188 228" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <defs>
-<marker id="arrow_FF5722" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#FF5722"/></marker>
+<marker id="arrow_FF5722" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="10" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#FF5722"/></marker>
 </defs>
-<g class="cluster dag-cluster" data-layer="receipt_group"><rect x="13" y="59" width="206" height="153" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="75" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Receipt Labelling</text></g>
-<g class="cluster dag-cluster" data-layer="receipt_img"><rect x="16" y="16" width="200" height="41" fill="#FBE9E7" stroke="#888" rx="3"/><text x="24" y="31" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt Images</text></g>
+<g class="cluster dag-cluster" data-layer="receipt_img"><rect x="16" y="16" width="140" height="41" fill="#FBE9E7" stroke="#888" rx="3"/><text x="24" y="31" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt Images</text></g>
 <g class="node dag-node" data-layer="receipt_img" data-node="img_atm_gbp"><a><title>ATM withdrawal slip, 100 GBP</title><rect x="32.0" y="32.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
 <text x="82.0" y="47.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_london.jpg</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_before"><rect x="16" y="76" width="200" height="41" fill="#FFF0F3" stroke="#888" rx="3"/><text x="24" y="91" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">No label exists yet</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_before" data-node="nolbl_atm_100gbp"><a><title>No receipt label JSON exists yet for ATM withdrawal receipt</title><rect x="32.0" y="92.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="101.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
-<text x="82.0" y="112.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(no label)</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_before"><rect x="16" y="65" width="140" height="41" fill="#FFF0F3" stroke="#888" rx="3"/><text x="24" y="80" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">No label exists yet</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_before" data-node="nolbl_atm_100gbp"><a><title>No receipt label JSON exists yet for ATM withdrawal receipt</title><rect x="32.0" y="81.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="90.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
+<text x="82.0" y="101.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(no label)</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_tui"><rect x="16" y="122" width="200" height="41" fill="#FCE4EC" stroke="#888" rx="3"/><text x="24" y="137" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Label receipt in TUI</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_tui" data-node="tui_atm_100gbp"><a><title>Label ATM withdrawal receipt via TUI</title><rect x="32.0" y="138.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="147.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">TUI label</text>
-<text x="82.0" y="158.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_tui"><rect x="16" y="114" width="140" height="41" fill="#FCE4EC" stroke="#888" rx="3"/><text x="24" y="129" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Label receipt in TUI</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_tui" data-node="tui_atm_100gbp"><a><title>Label ATM withdrawal receipt via TUI</title><rect x="32.0" y="130.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="139.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">TUI label</text>
+<text x="82.0" y="150.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="16" y="168" width="200" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="24" y="183" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_atm_100gbp"><a><title>Triodos account, GBP withdrawal receipt</title><rect x="32.0" y="184.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="193.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
-<text x="82.0" y="204.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">GBP 100 withdrawal</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="16" y="163" width="140" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="24" y="178" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_atm_100gbp"><a><title>Triodos account, GBP withdrawal receipt</title><rect x="32.0" y="179.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="188.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
+<text x="82.0" y="199.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">GBP 100 withdrawal</text>
 </a></g>
-<g class="edge dag-edge" data-source="img_atm_gbp" data-target="nolbl_atm_100gbp"><path d="M82.0,54.0 C82.0,73.0 82.0,73.0 82.0,92.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="nolbl_atm_100gbp" data-target="tui_atm_100gbp"><path d="M82.0,114.0 C82.0,126.0 82.0,126.0 82.0,138.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="tui_atm_100gbp" data-target="lbl_atm_100gbp"><path d="M82.0,160.0 C82.0,172.0 82.0,172.0 82.0,184.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="img_atm_gbp" data-target="nolbl_atm_100gbp"><path d="M82.0,54.0 C82.0,67.5 82.0,67.5 82.0,81.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="nolbl_atm_100gbp" data-target="tui_atm_100gbp"><path d="M82.0,103.0 C82.0,116.5 82.0,116.5 82.0,130.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="tui_atm_100gbp" data-target="lbl_atm_100gbp"><path d="M82.0,152.0 C82.0,165.5 82.0,165.5 82.0,179.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
 </svg>
 </div>
 <div id="dag-full-view" style="display:none">
-<svg class="dag-svg" viewBox="0 0 750 750" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg class="dag-svg" viewBox="0 0 1032 550" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <defs>
-<marker id="arrow_FF5722" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#FF5722"/></marker>
+<marker id="arrow_FF5722" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="10" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#FF5722"/></marker>
 </defs>
-<g class="cluster dag-cluster" data-layer="config_group"><rect x="13" y="13" width="708" height="245" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="29" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Configuration</text></g>
-<g class="cluster dag-cluster section-box" data-layer="receipt_group"><rect x="13" y="487" width="206" height="153" fill="none" stroke="var(--accent, #2563eb)" stroke-width="2.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="503" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Receipt Labelling</text></g>
+<g class="cluster dag-cluster" data-layer="config_group"><rect x="13" y="13" width="708" height="257" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="29" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Configuration</text></g>
+<g class="cluster dag-cluster section-box" data-layer="receipt_group"><rect x="751" y="272" width="146" height="159" fill="none" stroke="var(--accent, #2563eb)" stroke-width="2.5" stroke-dasharray="5,2" rx="4"/><text x="761" y="288" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Receipt Labelling</text></g>
 <g class="cluster dag-cluster" data-layer="config_accounts"><rect x="16" y="30" width="702" height="41" fill="#E3F2FD" stroke="#888" rx="3"/><text x="24" y="45" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Account Configuration</text></g>
 <g class="node dag-node" data-layer="config_accounts" data-node="acct_btc_wallet"><a><title>BTC digital wallet / exchange</title><rect x="32.0" y="46.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
 <text x="82.0" y="55.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">BTC digital</text>
@@ -199,92 +197,87 @@
 <text x="652.0" y="55.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos checking</text>
 <text x="652.0" y="66.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(EUR CSV)</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_dir_paths"><rect x="16" y="76" width="200" height="41" fill="#BBDEFB" stroke="#888" rx="3"/><text x="24" y="91" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Directory Paths</text></g>
-<g class="node dag-node" data-layer="config_dir_paths" data-node="dirp_default"><a><title>Standard directory layout: import/{holder}/{bank}/{type}/{year}/</title><rect x="32.0" y="92.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="107.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default dir paths</text>
+<g class="cluster dag-cluster" data-layer="config_dir_paths"><rect x="16" y="79" width="140" height="41" fill="#BBDEFB" stroke="#888" rx="3"/><text x="24" y="94" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Directory Paths</text></g>
+<g class="node dag-node" data-layer="config_dir_paths" data-node="dirp_default"><a><title>Standard directory layout: import/{holder}/{bank}/{type}/{year}/</title><rect x="32.0" y="95.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="110.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default dir paths</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_file_names"><rect x="16" y="122" width="200" height="41" fill="#90CAF9" stroke="#888" rx="3"/><text x="24" y="137" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Filename Convention</text></g>
-<g class="node dag-node" data-layer="config_file_names" data-node="fnames_default"><a><title>Standard filename conventions for CSV, rules, and journal files</title><rect x="32.0" y="138.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="153.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default filenames</text>
+<g class="cluster dag-cluster" data-layer="config_file_names"><rect x="16" y="128" width="140" height="41" fill="#90CAF9" stroke="#888" rx="3"/><text x="24" y="143" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Filename Convention</text></g>
+<g class="node dag-node" data-layer="config_file_names" data-node="fnames_default"><a><title>Standard filename conventions for CSV, rules, and journal files</title><rect x="32.0" y="144.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="159.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default filenames</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_categorisation"><rect x="16" y="168" width="200" height="41" fill="#64B5F6" stroke="#888" rx="3"/><text x="24" y="183" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categorisation Config</text></g>
-<g class="node dag-node" data-layer="config_categorisation" data-node="catcfg_default"><a><title>Standard categorisation settings from config.yaml</title><rect x="32.0" y="184.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="199.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default categorisation</text>
+<g class="cluster dag-cluster" data-layer="config_categorisation"><rect x="16" y="177" width="140" height="41" fill="#64B5F6" stroke="#888" rx="3"/><text x="24" y="192" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categorisation Config</text></g>
+<g class="node dag-node" data-layer="config_categorisation" data-node="catcfg_default"><a><title>Standard categorisation settings from config.yaml</title><rect x="32.0" y="193.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="208.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default categorisation</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_matching_algo"><rect x="16" y="214" width="200" height="41" fill="#42A5F5" stroke="#888" rx="3"/><text x="24" y="229" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Algo Config</text></g>
-<g class="node dag-node" data-layer="config_matching_algo" data-node="malgo_default"><a><title>Standard matching algorithm settings from config.yaml</title><rect x="32.0" y="230.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="245.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default matching algo</text>
+<g class="cluster dag-cluster" data-layer="config_matching_algo"><rect x="16" y="226" width="140" height="41" fill="#42A5F5" stroke="#888" rx="3"/><text x="24" y="241" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Algo Config</text></g>
+<g class="node dag-node" data-layer="config_matching_algo" data-node="malgo_default"><a><title>Standard matching algorithm settings from config.yaml</title><rect x="32.0" y="242.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="257.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default matching algo</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="categories"><rect x="16" y="260" width="200" height="41" fill="#E8F5E9" stroke="#888" rx="3"/><text x="24" y="275" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categories</text></g>
-<g class="node dag-node" data-layer="categories" data-node="cat_basic"><a><title>groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}</title><rect x="32.0" y="276.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="291.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">basic categories</text>
+<g class="cluster dag-cluster" data-layer="categories"><rect x="16" y="275" width="140" height="41" fill="#E8F5E9" stroke="#888" rx="3"/><text x="24" y="290" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categories</text></g>
+<g class="node dag-node" data-layer="categories" data-node="cat_basic"><a><title>groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}</title><rect x="32.0" y="291.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="306.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">basic categories</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="matching_cfg"><rect x="16" y="306" width="200" height="41" fill="#FFF3E0" stroke="#888" rx="3"/><text x="24" y="321" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Parameters</text></g>
-<g class="node dag-node" data-layer="matching_cfg" data-node="match_default"><a><title>days:2, amount_range:0, days_month_swap:true</title><rect x="32.0" y="322.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="337.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">default (±2d, exact)</text>
+<g class="cluster dag-cluster" data-layer="start_journal"><rect x="16" y="324" width="140" height="41" fill="#F3E5F5" stroke="#888" rx="3"/><text x="24" y="339" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Starting Journal</text></g>
+<g class="node dag-node" data-layer="start_journal" data-node="start_2024_1000eur"><a><title>Opening balance: Assets:Triodos:Checking 1000 EUR</title><rect x="32.0" y="340.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="355.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2024: 1000 EUR</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="start_journal"><rect x="16" y="352" width="200" height="41" fill="#F3E5F5" stroke="#888" rx="3"/><text x="24" y="367" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Starting Journal</text></g>
-<g class="node dag-node" data-layer="start_journal" data-node="start_2024_1000eur"><a><title>Opening balance: Assets:Triodos:Checking 1000 EUR</title><rect x="32.0" y="368.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="383.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2024: 1000 EUR</text>
+<g class="cluster dag-cluster" data-layer="csv_txn"><rect x="16" y="373" width="140" height="41" fill="#E0F7FA" stroke="#888" rx="3"/><text x="24" y="388" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Bank CSV Transactions</text></g>
+<g class="node dag-node" data-layer="csv_txn" data-node="csv_atm_gbp_11750"><a><title>Foreign ATM withdrawal: 100 GBP * 1.175</title><rect x="32.0" y="389.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="398.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos -117.50 EUR</text>
+<text x="82.0" y="409.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2025-01-15 ATM London</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="csv_txn"><rect x="16" y="398" width="200" height="41" fill="#E0F7FA" stroke="#888" rx="3"/><text x="24" y="413" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Bank CSV Transactions</text></g>
-<g class="node dag-node" data-layer="csv_txn" data-node="csv_atm_gbp_11750"><a><title>Foreign ATM withdrawal: 100 GBP * 1.175</title><rect x="32.0" y="414.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="423.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos -117.50 EUR</text>
-<text x="82.0" y="434.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2025-01-15 ATM London</text>
+<g class="cluster dag-cluster section-box" data-layer="receipt_img"><rect x="16" y="422" width="140" height="41" fill="#FBE9E7" stroke="#888" rx="3" stroke-dasharray="8 4" stroke-width="2.5"/><text x="24" y="437" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt Images</text></g>
+<g class="node dag-node" data-layer="receipt_img" data-node="img_atm_gbp"><a><title>ATM withdrawal slip, 100 GBP</title><rect x="32.0" y="438.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="453.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_london.jpg</text>
 </a></g>
-<g class="cluster dag-cluster section-box" data-layer="receipt_img"><rect x="16" y="444" width="200" height="41" fill="#FBE9E7" stroke="#888" rx="3" stroke-dasharray="8 4" stroke-width="2.5"/><text x="24" y="459" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt Images</text></g>
-<g class="node dag-node" data-layer="receipt_img" data-node="img_atm_gbp"><a><title>ATM withdrawal slip, 100 GBP</title><rect x="32.0" y="460.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="475.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_london.jpg</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_before"><rect x="754" y="289" width="140" height="41" fill="#FFF0F3" stroke="#888" rx="3"/><text x="762" y="304" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">No label exists yet</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_before" data-node="nolbl_atm_100gbp"><a><title>No receipt label JSON exists yet for ATM withdrawal receipt</title><rect x="770.0" y="305.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="820.0" y="314.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
+<text x="820.0" y="325.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(no label)</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_before"><rect x="16" y="504" width="200" height="41" fill="#FFF0F3" stroke="#888" rx="3"/><text x="24" y="519" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">No label exists yet</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_before" data-node="nolbl_atm_100gbp"><a><title>No receipt label JSON exists yet for ATM withdrawal receipt</title><rect x="32.0" y="520.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="529.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
-<text x="82.0" y="540.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(no label)</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_tui"><rect x="754" y="338" width="140" height="41" fill="#FCE4EC" stroke="#888" rx="3"/><text x="762" y="353" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Label receipt in TUI</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_tui" data-node="tui_atm_100gbp"><a><title>Label ATM withdrawal receipt via TUI</title><rect x="770.0" y="354.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="820.0" y="363.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">TUI label</text>
+<text x="820.0" y="374.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_tui"><rect x="16" y="550" width="200" height="41" fill="#FCE4EC" stroke="#888" rx="3"/><text x="24" y="565" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Label receipt in TUI</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_tui" data-node="tui_atm_100gbp"><a><title>Label ATM withdrawal receipt via TUI</title><rect x="32.0" y="566.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="575.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">TUI label</text>
-<text x="82.0" y="586.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="754" y="387" width="140" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="762" y="402" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_atm_100gbp"><a><title>Triodos account, GBP withdrawal receipt</title><rect x="770.0" y="403.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="820.0" y="412.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
+<text x="820.0" y="423.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">GBP 100 withdrawal</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="16" y="596" width="200" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="24" y="611" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_atm_100gbp"><a><title>Triodos account, GBP withdrawal receipt</title><rect x="32.0" y="612.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="621.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">atm_100gbp</text>
-<text x="82.0" y="632.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">GBP 100 withdrawal</text>
+<g class="cluster dag-cluster" data-layer="matching_out"><rect x="754" y="436" width="140" height="41" fill="#FFF8E1" stroke="#888" rx="3"/><text x="762" y="451" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Outcome</text></g>
+<g class="node dag-node" data-layer="matching_out" data-node="out_currency_convert"><a><title>Receipt GBP != CSV EUR, user provides conversion ratio</title><rect x="770.0" y="452.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="820.0" y="461.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">CURRENCY CONVERT</text>
+<text x="820.0" y="472.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">user enters rate</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="matching_out"><rect x="16" y="642" width="200" height="41" fill="#FFF8E1" stroke="#888" rx="3"/><text x="24" y="657" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Outcome</text></g>
-<g class="node dag-node" data-layer="matching_out" data-node="out_currency_convert"><a><title>Receipt GBP != CSV EUR, user provides conversion ratio</title><rect x="32.0" y="658.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="667.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">CURRENCY CONVERT</text>
-<text x="82.0" y="678.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">user enters rate</text>
+<g class="cluster dag-cluster" data-layer="journal_out"><rect x="754" y="485" width="246" height="41" fill="#E8EAF6" stroke="#888" rx="3"/><text x="762" y="500" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Journal Output</text></g>
+<g class="node dag-node" data-layer="journal_out" data-node="jrnl_triodos_debit_gbp"><a><title>Bank debit for GBP withdrawal</title><rect x="770.0" y="501.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="820.0" y="510.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Assets:Triodos:</text>
+<text x="820.0" y="521.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Checking -117.50 EUR</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="journal_out"><rect x="16" y="688" width="246" height="41" fill="#E8EAF6" stroke="#888" rx="3"/><text x="24" y="703" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Journal Output</text></g>
-<g class="node dag-node" data-layer="journal_out" data-node="jrnl_triodos_debit_gbp"><a><title>Bank debit for GBP withdrawal</title><rect x="32.0" y="704.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="713.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Assets:Triodos:</text>
-<text x="82.0" y="724.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Checking -117.50 EUR</text>
-</a></g>
-<g class="node dag-node" data-layer="journal_out" data-node="jrnl_wallet_gbp"><a><title>Foreign currency asset from ATM withdrawal</title><rect x="146.0" y="704.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="196.0" y="713.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Assets:Wallet:</text>
-<text x="196.0" y="724.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">GBP 100</text>
+<g class="node dag-node" data-layer="journal_out" data-node="jrnl_wallet_gbp"><a><title>Foreign currency asset from ATM withdrawal</title><rect x="884.0" y="501.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="934.0" y="510.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Assets:Wallet:</text>
+<text x="934.0" y="521.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">GBP 100</text>
 </a></g>
 <g class="edge dag-edge" data-source="acct_btc_wallet" data-target="acct_gold_wallet"><path d="M82.0,46.0 C82.0,20.0 424.0,20.0 424.0,46.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
 <g class="edge dag-edge" data-source="acct_eur_wallet" data-target="acct_gbp_wallet"><path d="M196.0,46.0 C196.0,14.0 310.0,14.0 310.0,46.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
 <g class="edge dag-edge" data-source="acct_gbp_wallet" data-target="acct_btc_wallet"><path d="M310.0,46.0 C310.0,8.0 82.0,8.0 82.0,46.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
 <g class="edge dag-edge" data-source="acct_gold_wallet" data-target="acct_silver_wallet"><path d="M424.0,46.0 C424.0,2.0 538.0,2.0 538.0,46.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="acct_silver_wallet" data-target="dirp_default"><path d="M538.0,68.0 C538.0,80.0 82.0,80.0 82.0,92.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="acct_silver_wallet" data-target="dirp_default"><path d="M538.0,68.0 C538.0,81.5 82.0,81.5 82.0,95.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
 <g class="edge dag-edge" data-source="acct_triodos_csv" data-target="acct_eur_wallet"><path d="M652.0,46.0 C652.0,-4.0 196.0,-4.0 196.0,46.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="cat_basic" data-target="match_default"><path d="M82.0,298.0 C82.0,310.0 82.0,310.0 82.0,322.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="catcfg_default" data-target="malgo_default"><path d="M82.0,206.0 C82.0,218.0 82.0,218.0 82.0,230.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="csv_atm_gbp_11750" data-target="img_atm_gbp"><path d="M82.0,436.0 C82.0,448.0 82.0,448.0 82.0,460.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="dirp_default" data-target="fnames_default"><path d="M82.0,114.0 C82.0,126.0 82.0,126.0 82.0,138.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="fnames_default" data-target="catcfg_default"><path d="M82.0,160.0 C82.0,172.0 82.0,172.0 82.0,184.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="img_atm_gbp" data-target="nolbl_atm_100gbp"><path d="M82.0,482.0 C82.0,501.0 82.0,501.0 82.0,520.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="jrnl_wallet_gbp" data-target="jrnl_triodos_debit_gbp"><path d="M196.0,704.0 C196.0,678.0 82.0,678.0 82.0,704.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="lbl_atm_100gbp" data-target="out_currency_convert"><path d="M82.0,634.0 C82.0,646.0 82.0,646.0 82.0,658.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="malgo_default" data-target="cat_basic"><path d="M82.0,252.0 C82.0,264.0 82.0,264.0 82.0,276.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="match_default" data-target="start_2024_1000eur"><path d="M82.0,344.0 C82.0,356.0 82.0,356.0 82.0,368.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="nolbl_atm_100gbp" data-target="tui_atm_100gbp"><path d="M82.0,542.0 C82.0,554.0 82.0,554.0 82.0,566.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="out_currency_convert" data-target="jrnl_wallet_gbp"><path d="M82.0,680.0 C82.0,692.0 196.0,692.0 196.0,704.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="start_2024_1000eur" data-target="csv_atm_gbp_11750"><path d="M82.0,390.0 C82.0,402.0 82.0,402.0 82.0,414.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
-<g class="edge dag-edge" data-source="tui_atm_100gbp" data-target="lbl_atm_100gbp"><path d="M82.0,588.0 C82.0,600.0 82.0,600.0 82.0,612.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="cat_basic" data-target="start_2024_1000eur"><path d="M82.0,313.0 C82.0,326.5 82.0,326.5 82.0,340.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="catcfg_default" data-target="malgo_default"><path d="M82.0,215.0 C82.0,228.5 82.0,228.5 82.0,242.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="csv_atm_gbp_11750" data-target="img_atm_gbp"><path d="M82.0,411.0 C82.0,424.5 82.0,424.5 82.0,438.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="dirp_default" data-target="fnames_default"><path d="M82.0,117.0 C82.0,130.5 82.0,130.5 82.0,144.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="fnames_default" data-target="catcfg_default"><path d="M82.0,166.0 C82.0,179.5 82.0,179.5 82.0,193.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="img_atm_gbp" data-target="nolbl_atm_100gbp"><path d="M82.0,460.0 C82.0,480.0 820.0,285.0 820.0,305.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="jrnl_wallet_gbp" data-target="jrnl_triodos_debit_gbp"><path d="M934.0,501.0 C934.0,475.0 820.0,475.0 820.0,501.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="lbl_atm_100gbp" data-target="out_currency_convert"><path d="M820.0,425.0 C820.0,438.5 820.0,438.5 820.0,452.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="malgo_default" data-target="cat_basic"><path d="M82.0,264.0 C82.0,277.5 82.0,277.5 82.0,291.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="nolbl_atm_100gbp" data-target="tui_atm_100gbp"><path d="M820.0,327.0 C820.0,340.5 820.0,340.5 820.0,354.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="out_currency_convert" data-target="jrnl_wallet_gbp"><path d="M820.0,474.0 C820.0,487.5 934.0,487.5 934.0,501.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="start_2024_1000eur" data-target="csv_atm_gbp_11750"><path d="M82.0,362.0 C82.0,375.5 82.0,375.5 82.0,389.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
+<g class="edge dag-edge" data-source="tui_atm_100gbp" data-target="lbl_atm_100gbp"><path d="M820.0,376.0 C820.0,389.5 820.0,389.5 820.0,403.0" fill="none" stroke="#FF5722" stroke-width="1.5" marker-end="url(#arrow_FF5722)"/></g>
 </svg>
 </div>
 </div>
@@ -386,7 +379,7 @@ Current layer: <span class="layer-name" id="layer-indicator-name">—</span>
 </div>
 </div>
 <script>
-const TIMESTAMPS = {"acct_triodos_csv": 0.0, "acct_eur_wallet": 1.75, "acct_gbp_wallet": 3.51, "acct_btc_wallet": 5.26, "acct_gold_wallet": 7.02, "acct_silver_wallet": 8.77, "dirp_default": 10.52, "fnames_default": 12.28, "catcfg_default": 14.03, "malgo_default": 15.78, "cat_basic": 17.54, "cat_basic__groceries": 19.29, "cat_basic__withdrawl": 21.05, "img_atm_gbp": 22.8, "nolbl_atm_100gbp": 24.55, "tui_atm_100gbp": 26.31, "lbl_atm_100gbp": 28.06, "lbl_atm_100gbp__date": 29.82, "lbl_atm_100gbp__time": 31.57, "lbl_atm_100gbp__category": 33.32, "lbl_atm_100gbp__bank_account": 35.08, "lbl_atm_100gbp__currency": 36.83, "lbl_atm_100gbp__amount": 38.59, "lbl_atm_100gbp__change": 40.34, "lbl_atm_100gbp__shop_name": 42.09, "lbl_atm_100gbp__shop_street": 43.85, "lbl_atm_100gbp__shop_house_nr": 45.6, "lbl_atm_100gbp__shop_zipcode": 47.35, "lbl_atm_100gbp__shop_city": 49.11, "lbl_atm_100gbp__shop_country": 50.86, "lbl_atm_100gbp__tax": 52.62, "match_default": 54.62, "start_2024_1000eur": 56.62, "csv_atm_gbp_11750": 58.62, "out_currency_convert": 60.62, "jrnl_wallet_gbp": 62.62, "jrnl_triodos_debit_gbp": 64.62};
+const TIMESTAMPS = {"acct_triodos_csv": 0.0, "acct_eur_wallet": 23.16, "acct_gbp_wallet": 32.72, "acct_btc_wallet": 42.04, "acct_gold_wallet": 52.48, "acct_silver_wallet": 61.64, "dirp_default": 70.96, "fnames_default": 88.32, "catcfg_default": 103.76, "malgo_default": 106.48, "cat_basic__groceries": 113.08, "cat_basic__withdrawl": 115.68, "img_atm_gbp": 118.6, "nolbl_atm_100gbp": 121.34, "lbl_atm_100gbp": 160.75, "cat_basic": 113.08, "start_2024_1000eur": 162.75, "csv_atm_gbp_11750": 164.75, "tui_atm_100gbp": 166.75, "out_currency_convert": 168.75, "jrnl_wallet_gbp": 170.75, "jrnl_triodos_debit_gbp": 172.75};
 </script>
 <script src="../assets/js/dag-sync.js"></script>
 <script src="../assets/js/zoom-pane.js"></script>

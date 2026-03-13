@@ -83,7 +83,7 @@ def setup_returned_items_env():
                     ["the_date", "date"], ["description", "description"],
                 ],
             },
-            {"base_currency": "EUR", "account_holder": "at", "bank": "wallet", "account_type": "physical"},
+            {"base_currency": "EUR", "account_holder": "at", "bank": "wallet", "account_type": "physical", "input_csv_filename": None, "csv_column_mapping": None, "tnx_date_columns": None},
         ],
         "dir_paths": {
             "root_finance_path": str(root),

@@ -55,15 +55,26 @@ def setup_foreign_currency_env():
         "date-format %Y-%m-%d\ncurrency EUR\naccount1 Assets:Wallet:Physical:EUR\n"
     )
 
-    wallet_asset_csv = (
-        working_dir / "asset_transaction_csvs"
-        / "at" / "wallet" / "physical" / "Currency.EUR.csv"
-    )
-    wallet_asset_csv.parent.mkdir(parents=True, exist_ok=True)
-    wallet_asset_csv.write_text(
+    csv_header = (
         '"currency","account_holder","bank","account_type",'
         '"date","amount","tendered_amount_out","change_returned"\n'
     )
+
+    # Create asset transaction CSVs for all wallet accounts
+    wallet_phys_csv_dir = (
+        working_dir / "asset_transaction_csvs"
+        / "at" / "wallet" / "physical"
+    )
+    wallet_phys_csv_dir.mkdir(parents=True, exist_ok=True)
+    for cur in ("EUR", "POUND", "GOLD", "SILVER"):
+        (wallet_phys_csv_dir / f"Currency.{cur}.csv").write_text(csv_header)
+
+    wallet_dig_csv_dir = (
+        working_dir / "asset_transaction_csvs"
+        / "at" / "wallet" / "digital"
+    )
+    wallet_dig_csv_dir.mkdir(parents=True, exist_ok=True)
+    (wallet_dig_csv_dir / "Currency.BTC.csv").write_text(csv_header)
 
     # Config with 6 accounts (matching the TUI account list for US-2b.3)
     config_dict = {

@@ -119,37 +119,36 @@
 </div>
 </div>
 <div id="dag-segment-view">
-<svg class="dag-svg" viewBox="0 0 248 184" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg class="dag-svg" viewBox="0 0 188 179" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <defs>
-<marker id="arrow_EF6C00" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#EF6C00"/></marker>
+<marker id="arrow_EF6C00" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="10" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#EF6C00"/></marker>
 </defs>
-<g class="cluster dag-cluster" data-layer="receipt_group"><rect x="13" y="59" width="206" height="61" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="75" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Receipt Labelling</text></g>
-<g class="cluster dag-cluster" data-layer="csv_txn"><rect x="16" y="16" width="200" height="41" fill="#E0F7FA" stroke="#888" rx="3"/><text x="24" y="31" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Bank CSV Transactions</text></g>
+<g class="cluster dag-cluster" data-layer="csv_txn"><rect x="16" y="16" width="140" height="41" fill="#E0F7FA" stroke="#888" rx="3"/><text x="24" y="31" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Bank CSV Transactions</text></g>
 <g class="node dag-node" data-layer="csv_txn" data-node="csv_rounded_5000"><a><title>Bank rounded 49.99 to 50.00</title><rect x="32.0" y="32.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
 <text x="82.0" y="41.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos -50.00 EUR</text>
 <text x="82.0" y="52.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2025-01-15 ShopX</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="16" y="76" width="200" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="24" y="91" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_rounded_shop"><a><title>Triodos account, bank will show 50.00</title><rect x="32.0" y="92.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="101.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop</text>
-<text x="82.0" y="112.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">EUR 49.99 card</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="16" y="65" width="140" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="24" y="80" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_rounded_shop"><a><title>Triodos account, bank will show 50.00</title><rect x="32.0" y="81.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="90.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop</text>
+<text x="82.0" y="101.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">EUR 49.99 card</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="matching_out"><rect x="16" y="122" width="200" height="41" fill="#FFF8E1" stroke="#888" rx="3"/><text x="24" y="137" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Outcome</text></g>
-<g class="node dag-node" data-layer="matching_out" data-node="out_widen_amount"><a><title>No match at exact, user widens to ±0.02, finds match</title><rect x="32.0" y="138.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="147.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">WIDEN AMOUNT</text>
-<text x="82.0" y="158.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">0 -&gt; ±0.02</text>
+<g class="cluster dag-cluster" data-layer="matching_out"><rect x="16" y="114" width="140" height="41" fill="#FFF8E1" stroke="#888" rx="3"/><text x="24" y="129" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Outcome</text></g>
+<g class="node dag-node" data-layer="matching_out" data-node="out_widen_amount"><a><title>No match at exact, user widens to ±0.02, finds match</title><rect x="32.0" y="130.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="139.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">WIDEN AMOUNT</text>
+<text x="82.0" y="150.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">0 -&gt; ±0.02</text>
 </a></g>
-<g class="edge dag-edge" data-source="csv_rounded_5000" data-target="lbl_rounded_shop"><path d="M82.0,54.0 C82.0,73.0 82.0,73.0 82.0,92.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="lbl_rounded_shop" data-target="out_widen_amount"><path d="M82.0,114.0 C82.0,126.0 82.0,126.0 82.0,138.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="csv_rounded_5000" data-target="lbl_rounded_shop"><path d="M82.0,54.0 C82.0,67.5 82.0,67.5 82.0,81.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="lbl_rounded_shop" data-target="out_widen_amount"><path d="M82.0,103.0 C82.0,116.5 82.0,116.5 82.0,130.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
 </svg>
 </div>
 <div id="dag-full-view" style="display:none">
-<svg class="dag-svg" viewBox="0 0 294 750" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg class="dag-svg" viewBox="0 0 470 550" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <defs>
-<marker id="arrow_EF6C00" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#EF6C00"/></marker>
+<marker id="arrow_EF6C00" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="10" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,3 L0,6 Z" fill="#EF6C00"/></marker>
 </defs>
-<g class="cluster dag-cluster" data-layer="config_group"><rect x="13" y="13" width="252" height="245" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="29" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Configuration</text></g>
-<g class="cluster dag-cluster" data-layer="receipt_group"><rect x="13" y="487" width="206" height="153" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="503" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Receipt Labelling</text></g>
+<g class="cluster dag-cluster" data-layer="config_group"><rect x="13" y="13" width="252" height="257" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="23" y="29" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Configuration</text></g>
+<g class="cluster dag-cluster" data-layer="receipt_group"><rect x="295" y="272" width="146" height="159" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5,2" rx="4"/><text x="305" y="288" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#aaa">Receipt Labelling</text></g>
 <g class="cluster dag-cluster" data-layer="config_accounts"><rect x="16" y="30" width="246" height="41" fill="#E3F2FD" stroke="#888" rx="3"/><text x="24" y="45" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Account Configuration</text></g>
 <g class="node dag-node" data-layer="config_accounts" data-node="acct_eur_wallet"><a><title>EUR cash wallet — no CSV import</title><rect x="32.0" y="46.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
 <text x="82.0" y="55.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">EUR physical</text>
@@ -159,83 +158,83 @@
 <text x="196.0" y="55.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos checking</text>
 <text x="196.0" y="66.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(EUR CSV)</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_dir_paths"><rect x="16" y="76" width="200" height="41" fill="#BBDEFB" stroke="#888" rx="3"/><text x="24" y="91" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Directory Paths</text></g>
-<g class="node dag-node" data-layer="config_dir_paths" data-node="dirp_default"><a><title>Standard directory layout: import/{holder}/{bank}/{type}/{year}/</title><rect x="32.0" y="92.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="107.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default dir paths</text>
+<g class="cluster dag-cluster" data-layer="config_dir_paths"><rect x="16" y="79" width="140" height="41" fill="#BBDEFB" stroke="#888" rx="3"/><text x="24" y="94" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Directory Paths</text></g>
+<g class="node dag-node" data-layer="config_dir_paths" data-node="dirp_default"><a><title>Standard directory layout: import/{holder}/{bank}/{type}/{year}/</title><rect x="32.0" y="95.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="110.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default dir paths</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_file_names"><rect x="16" y="122" width="200" height="41" fill="#90CAF9" stroke="#888" rx="3"/><text x="24" y="137" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Filename Convention</text></g>
-<g class="node dag-node" data-layer="config_file_names" data-node="fnames_default"><a><title>Standard filename conventions for CSV, rules, and journal files</title><rect x="32.0" y="138.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="153.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default filenames</text>
+<g class="cluster dag-cluster" data-layer="config_file_names"><rect x="16" y="128" width="140" height="41" fill="#90CAF9" stroke="#888" rx="3"/><text x="24" y="143" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Filename Convention</text></g>
+<g class="node dag-node" data-layer="config_file_names" data-node="fnames_default"><a><title>Standard filename conventions for CSV, rules, and journal files</title><rect x="32.0" y="144.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="159.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default filenames</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_categorisation"><rect x="16" y="168" width="200" height="41" fill="#64B5F6" stroke="#888" rx="3"/><text x="24" y="183" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categorisation Config</text></g>
-<g class="node dag-node" data-layer="config_categorisation" data-node="catcfg_default"><a><title>Standard categorisation settings from config.yaml</title><rect x="32.0" y="184.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="199.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default categorisation</text>
+<g class="cluster dag-cluster" data-layer="config_categorisation"><rect x="16" y="177" width="140" height="41" fill="#64B5F6" stroke="#888" rx="3"/><text x="24" y="192" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categorisation Config</text></g>
+<g class="node dag-node" data-layer="config_categorisation" data-node="catcfg_default"><a><title>Standard categorisation settings from config.yaml</title><rect x="32.0" y="193.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="208.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default categorisation</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="config_matching_algo"><rect x="16" y="214" width="200" height="41" fill="#42A5F5" stroke="#888" rx="3"/><text x="24" y="229" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Algo Config</text></g>
-<g class="node dag-node" data-layer="config_matching_algo" data-node="malgo_default"><a><title>Standard matching algorithm settings from config.yaml</title><rect x="32.0" y="230.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="245.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default matching algo</text>
+<g class="cluster dag-cluster" data-layer="config_matching_algo"><rect x="16" y="226" width="140" height="41" fill="#42A5F5" stroke="#888" rx="3"/><text x="24" y="241" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Algo Config</text></g>
+<g class="node dag-node" data-layer="config_matching_algo" data-node="malgo_default"><a><title>Standard matching algorithm settings from config.yaml</title><rect x="32.0" y="242.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="257.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Default matching algo</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="categories"><rect x="16" y="260" width="200" height="41" fill="#E8F5E9" stroke="#888" rx="3"/><text x="24" y="275" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categories</text></g>
-<g class="node dag-node" data-layer="categories" data-node="cat_basic"><a><title>groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}</title><rect x="32.0" y="276.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="291.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">basic categories</text>
+<g class="cluster dag-cluster" data-layer="categories"><rect x="16" y="275" width="140" height="41" fill="#E8F5E9" stroke="#888" rx="3"/><text x="24" y="290" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Categories</text></g>
+<g class="node dag-node" data-layer="categories" data-node="cat_basic"><a><title>groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}</title><rect x="32.0" y="291.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="306.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">basic categories</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="matching_cfg"><rect x="16" y="306" width="200" height="41" fill="#FFF3E0" stroke="#888" rx="3"/><text x="24" y="321" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Parameters</text></g>
-<g class="node dag-node" data-layer="matching_cfg" data-node="match_default"><a><title>days:2, amount_range:0, days_month_swap:true</title><rect x="32.0" y="322.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="337.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">default (±2d, exact)</text>
+<g class="cluster dag-cluster" data-layer="matching_cfg"><rect x="16" y="324" width="140" height="41" fill="#FFF3E0" stroke="#888" rx="3"/><text x="24" y="339" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Parameters</text></g>
+<g class="node dag-node" data-layer="matching_cfg" data-node="match_default"><a><title>days:2, amount_range:0, days_month_swap:true</title><rect x="32.0" y="340.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="355.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">default (±2d, exact)</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="start_journal"><rect x="16" y="352" width="200" height="41" fill="#F3E5F5" stroke="#888" rx="3"/><text x="24" y="367" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Starting Journal</text></g>
-<g class="node dag-node" data-layer="start_journal" data-node="start_2024_1000eur"><a><title>Opening balance: Assets:Triodos:Checking 1000 EUR</title><rect x="32.0" y="368.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="383.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2024: 1000 EUR</text>
+<g class="cluster dag-cluster" data-layer="start_journal"><rect x="16" y="373" width="140" height="41" fill="#F3E5F5" stroke="#888" rx="3"/><text x="24" y="388" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Starting Journal</text></g>
+<g class="node dag-node" data-layer="start_journal" data-node="start_2024_1000eur"><a><title>Opening balance: Assets:Triodos:Checking 1000 EUR</title><rect x="32.0" y="389.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="404.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2024: 1000 EUR</text>
 </a></g>
-<g class="cluster dag-cluster section-box" data-layer="csv_txn"><rect x="16" y="398" width="200" height="41" fill="#E0F7FA" stroke="#888" rx="3" stroke-dasharray="8 4" stroke-width="2.5"/><text x="24" y="413" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Bank CSV Transactions</text></g>
-<g class="node dag-node" data-layer="csv_txn" data-node="csv_rounded_5000"><a><title>Bank rounded 49.99 to 50.00</title><rect x="32.0" y="414.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="423.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos -50.00 EUR</text>
-<text x="82.0" y="434.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2025-01-15 ShopX</text>
+<g class="cluster dag-cluster section-box" data-layer="csv_txn"><rect x="16" y="422" width="140" height="41" fill="#E0F7FA" stroke="#888" rx="3" stroke-dasharray="8 4" stroke-width="2.5"/><text x="24" y="437" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Bank CSV Transactions</text></g>
+<g class="node dag-node" data-layer="csv_txn" data-node="csv_rounded_5000"><a><title>Bank rounded 49.99 to 50.00</title><rect x="32.0" y="438.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="447.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Triodos -50.00 EUR</text>
+<text x="82.0" y="458.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">2025-01-15 ShopX</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_img"><rect x="16" y="444" width="200" height="41" fill="#FBE9E7" stroke="#888" rx="3"/><text x="24" y="459" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt Images</text></g>
-<g class="node dag-node" data-layer="receipt_img" data-node="img_rounded_shop"><a><title>Receipt 49.99, bank shows 50.00</title><rect x="32.0" y="460.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="475.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop.jpg</text>
+<g class="cluster dag-cluster" data-layer="receipt_img"><rect x="16" y="471" width="140" height="41" fill="#FBE9E7" stroke="#888" rx="3"/><text x="24" y="486" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt Images</text></g>
+<g class="node dag-node" data-layer="receipt_img" data-node="img_rounded_shop"><a><title>Receipt 49.99, bank shows 50.00</title><rect x="32.0" y="487.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="82.0" y="502.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop.jpg</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_before"><rect x="16" y="504" width="200" height="41" fill="#FFF0F3" stroke="#888" rx="3"/><text x="24" y="519" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">No label exists yet</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_before" data-node="nolbl_rounded_shop"><a><title>No receipt label JSON exists yet for rounded shop</title><rect x="32.0" y="520.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="529.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop</text>
-<text x="82.0" y="540.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(no label)</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_before"><rect x="298" y="289" width="140" height="41" fill="#FFF0F3" stroke="#888" rx="3"/><text x="306" y="304" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">No label exists yet</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_before" data-node="nolbl_rounded_shop"><a><title>No receipt label JSON exists yet for rounded shop</title><rect x="314.0" y="305.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="364.0" y="314.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop</text>
+<text x="364.0" y="325.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">(no label)</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_tui"><rect x="16" y="550" width="200" height="41" fill="#FCE4EC" stroke="#888" rx="3"/><text x="24" y="565" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Label receipt in TUI</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_tui" data-node="tui_rounded_shop"><a><title>Label rounded shop receipt via TUI</title><rect x="32.0" y="566.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="575.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">TUI label</text>
-<text x="82.0" y="586.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_tui"><rect x="298" y="338" width="140" height="41" fill="#FCE4EC" stroke="#888" rx="3"/><text x="306" y="353" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Label receipt in TUI</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_tui" data-node="tui_rounded_shop"><a><title>Label rounded shop receipt via TUI</title><rect x="314.0" y="354.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="364.0" y="363.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">TUI label</text>
+<text x="364.0" y="374.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="16" y="596" width="200" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="24" y="611" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
-<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_rounded_shop"><a><title>Triodos account, bank will show 50.00</title><rect x="32.0" y="612.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="621.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop</text>
-<text x="82.0" y="632.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">EUR 49.99 card</text>
+<g class="cluster dag-cluster" data-layer="receipt_lbl_after"><rect x="298" y="387" width="140" height="41" fill="#F8BBD0" stroke="#888" rx="3"/><text x="306" y="402" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Receipt label output JSON</text></g>
+<g class="node dag-node" data-layer="receipt_lbl_after" data-node="lbl_rounded_shop"><a><title>Triodos account, bank will show 50.00</title><rect x="314.0" y="403.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="364.0" y="412.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">rounded_shop</text>
+<text x="364.0" y="423.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">EUR 49.99 card</text>
 </a></g>
-<g class="cluster dag-cluster section-box" data-layer="matching_out"><rect x="16" y="642" width="200" height="41" fill="#FFF8E1" stroke="#888" rx="3" stroke-dasharray="8 4" stroke-width="2.5"/><text x="24" y="657" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Outcome</text></g>
-<g class="node dag-node" data-layer="matching_out" data-node="out_widen_amount"><a><title>No match at exact, user widens to ±0.02, finds match</title><rect x="32.0" y="658.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="667.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">WIDEN AMOUNT</text>
-<text x="82.0" y="678.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">0 -&gt; ±0.02</text>
+<g class="cluster dag-cluster section-box" data-layer="matching_out"><rect x="298" y="436" width="140" height="41" fill="#FFF8E1" stroke="#888" rx="3" stroke-dasharray="8 4" stroke-width="2.5"/><text x="306" y="451" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Matching Outcome</text></g>
+<g class="node dag-node" data-layer="matching_out" data-node="out_widen_amount"><a><title>No match at exact, user widens to ±0.02, finds match</title><rect x="314.0" y="452.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="364.0" y="461.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">WIDEN AMOUNT</text>
+<text x="364.0" y="472.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">0 -&gt; ±0.02</text>
 </a></g>
-<g class="cluster dag-cluster" data-layer="journal_out"><rect x="16" y="688" width="200" height="41" fill="#E8EAF6" stroke="#888" rx="3"/><text x="24" y="703" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Journal Output</text></g>
-<g class="node dag-node" data-layer="journal_out" data-node="jrnl_rounded_shop"><a><title>Bank-rounded amount matched after widening amount</title><rect x="32.0" y="704.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
-<text x="82.0" y="713.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Expenses:Shopping</text>
-<text x="82.0" y="724.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">50.00 EUR</text>
+<g class="cluster dag-cluster" data-layer="journal_out"><rect x="298" y="485" width="140" height="41" fill="#E8EAF6" stroke="#888" rx="3"/><text x="306" y="500" font-family="DejaVu Sans,sans-serif" font-size="10" fill="#333">Journal Output</text></g>
+<g class="node dag-node" data-layer="journal_out" data-node="jrnl_rounded_shop"><a><title>Bank-rounded amount matched after widening amount</title><rect x="314.0" y="501.0" width="100" height="22" fill="white" stroke="#333" stroke-width="1" rx="3"/>
+<text x="364.0" y="510.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">Expenses:Shopping</text>
+<text x="364.0" y="521.0" text-anchor="middle" font-family="DejaVu Sans,sans-serif" font-size="9">50.00 EUR</text>
 </a></g>
-<g class="edge dag-edge" data-source="acct_eur_wallet" data-target="dirp_default"><path d="M82.0,68.0 C82.0,80.0 82.0,80.0 82.0,92.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="acct_eur_wallet" data-target="dirp_default"><path d="M82.0,68.0 C82.0,81.5 82.0,81.5 82.0,95.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
 <g class="edge dag-edge" data-source="acct_triodos_csv" data-target="acct_eur_wallet"><path d="M196.0,46.0 C196.0,20.0 82.0,20.0 82.0,46.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="cat_basic" data-target="match_default"><path d="M82.0,298.0 C82.0,310.0 82.0,310.0 82.0,322.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="catcfg_default" data-target="malgo_default"><path d="M82.0,206.0 C82.0,218.0 82.0,218.0 82.0,230.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="csv_rounded_5000" data-target="img_rounded_shop"><path d="M82.0,436.0 C82.0,448.0 82.0,448.0 82.0,460.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="dirp_default" data-target="fnames_default"><path d="M82.0,114.0 C82.0,126.0 82.0,126.0 82.0,138.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="fnames_default" data-target="catcfg_default"><path d="M82.0,160.0 C82.0,172.0 82.0,172.0 82.0,184.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="img_rounded_shop" data-target="nolbl_rounded_shop"><path d="M82.0,482.0 C82.0,501.0 82.0,501.0 82.0,520.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="lbl_rounded_shop" data-target="out_widen_amount"><path d="M82.0,634.0 C82.0,646.0 82.0,646.0 82.0,658.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="malgo_default" data-target="cat_basic"><path d="M82.0,252.0 C82.0,264.0 82.0,264.0 82.0,276.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="match_default" data-target="start_2024_1000eur"><path d="M82.0,344.0 C82.0,356.0 82.0,356.0 82.0,368.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="nolbl_rounded_shop" data-target="tui_rounded_shop"><path d="M82.0,542.0 C82.0,554.0 82.0,554.0 82.0,566.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="out_widen_amount" data-target="jrnl_rounded_shop"><path d="M82.0,680.0 C82.0,692.0 82.0,692.0 82.0,704.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="start_2024_1000eur" data-target="csv_rounded_5000"><path d="M82.0,390.0 C82.0,402.0 82.0,402.0 82.0,414.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
-<g class="edge dag-edge" data-source="tui_rounded_shop" data-target="lbl_rounded_shop"><path d="M82.0,588.0 C82.0,600.0 82.0,600.0 82.0,612.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="cat_basic" data-target="match_default"><path d="M82.0,313.0 C82.0,326.5 82.0,326.5 82.0,340.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="catcfg_default" data-target="malgo_default"><path d="M82.0,215.0 C82.0,228.5 82.0,228.5 82.0,242.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="csv_rounded_5000" data-target="img_rounded_shop"><path d="M82.0,460.0 C82.0,473.5 82.0,473.5 82.0,487.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="dirp_default" data-target="fnames_default"><path d="M82.0,117.0 C82.0,130.5 82.0,130.5 82.0,144.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="fnames_default" data-target="catcfg_default"><path d="M82.0,166.0 C82.0,179.5 82.0,179.5 82.0,193.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="img_rounded_shop" data-target="nolbl_rounded_shop"><path d="M82.0,509.0 C82.0,529.0 364.0,285.0 364.0,305.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="lbl_rounded_shop" data-target="out_widen_amount"><path d="M364.0,425.0 C364.0,438.5 364.0,438.5 364.0,452.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="malgo_default" data-target="cat_basic"><path d="M82.0,264.0 C82.0,277.5 82.0,277.5 82.0,291.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="match_default" data-target="start_2024_1000eur"><path d="M82.0,362.0 C82.0,375.5 82.0,375.5 82.0,389.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="nolbl_rounded_shop" data-target="tui_rounded_shop"><path d="M364.0,327.0 C364.0,340.5 364.0,340.5 364.0,354.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="out_widen_amount" data-target="jrnl_rounded_shop"><path d="M364.0,474.0 C364.0,487.5 364.0,487.5 364.0,501.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="start_2024_1000eur" data-target="csv_rounded_5000"><path d="M82.0,411.0 C82.0,424.5 82.0,424.5 82.0,438.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
+<g class="edge dag-edge" data-source="tui_rounded_shop" data-target="lbl_rounded_shop"><path d="M364.0,376.0 C364.0,389.5 364.0,389.5 364.0,403.0" fill="none" stroke="#EF6C00" stroke-width="1.5" marker-end="url(#arrow_EF6C00)"/></g>
 </svg>
 </div>
 </div>
@@ -337,7 +336,7 @@ Current layer: <span class="layer-name" id="layer-indicator-name">—</span>
 </div>
 </div>
 <script>
-const TIMESTAMPS = {"acct_triodos_csv": 3.16, "dirp_default": 3.16, "fnames_default": 3.16, "catcfg_default": 3.16, "malgo_default": 3.16, "cat_basic": 3.16, "cat_basic__groceries": 3.16, "match_default": 3.16, "match_default__days": 3.16, "match_default__amount_range": 3.16, "match_default__days_month_swap": 3.16, "start_2024_1000eur": 3.16, "start_2024_1000eur__opening_balance": 3.16, "start_2024_1000eur__base_currency": 3.16, "acct_eur_wallet": 5.16, "csv_rounded_5000": 7.16, "img_rounded_shop": 9.16, "nolbl_rounded_shop": 11.16, "tui_rounded_shop": 13.16, "lbl_rounded_shop": 15.16, "out_widen_amount": 17.16, "jrnl_rounded_shop": 19.16};
+const TIMESTAMPS = {"acct_triodos_csv": 3.19, "dirp_default": 3.19, "fnames_default": 3.19, "catcfg_default": 3.19, "malgo_default": 3.19, "cat_basic": 3.19, "cat_basic__groceries": 3.19, "match_default": 3.19, "match_default__days": 3.19, "match_default__amount_range": 3.19, "match_default__days_month_swap": 3.19, "start_2024_1000eur": 3.19, "start_2024_1000eur__opening_balance": 3.19, "start_2024_1000eur__base_currency": 3.19, "tui_ekoplaza_card_eur__date": 6.99, "tui_ekoplaza_card_eur__time": 6.99, "tui_ekoplaza_card_eur__category": 6.99, "tui_ekoplaza_card_eur__bank_account": 6.99, "tui_ekoplaza_card_eur__currency": 6.99, "tui_ekoplaza_card_eur__amount": 6.99, "tui_ekoplaza_card_eur__change": 6.99, "tui_ekoplaza_card_eur__shop_name": 6.99, "tui_ekoplaza_card_eur__shop_street": 6.99, "tui_ekoplaza_card_eur__shop_house_nr": 6.99, "tui_ekoplaza_card_eur__shop_zipcode": 6.99, "tui_ekoplaza_card_eur__shop_city": 6.99, "tui_ekoplaza_card_eur__shop_country": 6.99, "tui_ekoplaza_card_eur__tax": 6.99, "lbl_ekoplaza_card_eur__date": 6.99, "lbl_ekoplaza_card_eur__time": 6.99, "lbl_ekoplaza_card_eur__category": 6.99, "lbl_ekoplaza_card_eur__bank_account": 6.99, "lbl_ekoplaza_card_eur__currency": 6.99, "lbl_ekoplaza_card_eur__amount": 6.99, "lbl_ekoplaza_card_eur__change": 6.99, "lbl_ekoplaza_card_eur__shop_name": 6.99, "lbl_ekoplaza_card_eur__shop_street": 6.99, "lbl_ekoplaza_card_eur__shop_house_nr": 6.99, "lbl_ekoplaza_card_eur__shop_zipcode": 6.99, "lbl_ekoplaza_card_eur__shop_city": 6.99, "lbl_ekoplaza_card_eur__shop_country": 6.99, "lbl_ekoplaza_card_eur__tax": 6.99, "acct_eur_wallet": 8.99, "csv_rounded_5000": 10.99, "img_rounded_shop": 12.99, "nolbl_rounded_shop": 14.99, "tui_rounded_shop": 16.99, "lbl_rounded_shop": 18.99, "out_widen_amount": 20.99, "jrnl_rounded_shop": 22.99};
 </script>
 <script src="../assets/js/dag-sync.js"></script>
 <script src="../assets/js/zoom-pane.js"></script>

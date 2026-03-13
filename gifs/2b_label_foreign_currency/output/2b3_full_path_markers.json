@@ -2,20 +2,25 @@
   "markers": {
     "acct_triodos_csv": 0.0,
     "acct_eur_wallet": 23.16,
-    "dirp_default": 32.72,
-    "fnames_default": 49.96,
-    "catcfg_default": 65.4,
-    "malgo_default": 68.12,
-    "cat_basic__groceries": 74.72,
-    "cat_basic__withdrawl": 77.32,
-    "img_atm_gbp": 80.24,
-    "nolbl_atm_100gbp": 83.91
+    "acct_gbp_wallet": 32.72,
+    "acct_btc_wallet": 42.04,
+    "acct_gold_wallet": 52.48,
+    "acct_silver_wallet": 61.64,
+    "dirp_default": 70.96,
+    "fnames_default": 88.32,
+    "catcfg_default": 103.76,
+    "malgo_default": 106.48,
+    "cat_basic__groceries": 113.08,
+    "cat_basic__withdrawl": 115.68,
+    "img_atm_gbp": 118.6,
+    "nolbl_atm_100gbp": 121.34,
+    "lbl_atm_100gbp": 160.75
   },
-  "total_duration": 91.64,
+  "total_duration": 169.0,
   "segments": [
     {
-      "file": "cfg_1b1w.mp4",
-      "duration": 74.72
+      "file": "cfg_1b5a.mp4",
+      "duration": 113.08
     },
     {
       "file": "cat_basic.mp4",
@@ -23,7 +28,7 @@
     },
     {
       "file": "2b_label_foreign_currency.mp4",
-      "duration": 11.4
+      "duration": 50.4
     }
   ]
 }
