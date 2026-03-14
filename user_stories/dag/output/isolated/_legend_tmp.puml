@@ -1,8 +1,0 @@
-@startdot
-digraph legend {
-  rankdir=TB;
-  fontname="DejaVu Sans";
-  node [fontname="DejaVu Sans", fontsize=10];
-  legend_table [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="2" CELLPADDING="4" BGCOLOR="#FAFAFA"><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="12"><B>US-3.6</B></FONT></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="10"><I>Disambiguate when multiple matches<BR/>are found (2-14 candidates)</I></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8"><B>As a</B> user who buys groceries at the same<BR/>shop for similar amounts on<BR/>consecutive days (e.g. 42.17 EUR on<BR/>Jan 14, 42.17 EUR on Jan 15, 43.00<BR/>EUR on Jan 16)<BR/><B>I want to</B> see a ranked list of candidate<BR/>transactions sorted by weighted<BR/>closeness score and select the<BR/>correct one from the TUI<BR/><B>so that</B> my receipt is linked to exactly the<BR/>right bank transaction.</FONT></TD></TR><TR><TD ALIGN="CENTER"><FONT COLOR="#BF360C">&#9476; &#9476; &#9476;</FONT></TD></TR></TABLE>>, shape=plaintext, margin=0];
-}
-@enddot
