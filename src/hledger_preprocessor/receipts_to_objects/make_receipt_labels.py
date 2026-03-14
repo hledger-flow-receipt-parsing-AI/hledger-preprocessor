@@ -197,31 +197,46 @@ def export_human_label(
     # Apply recursive conversion
     receipt_dict = convert_types(receipt_dict)
 
-    # Validate currency fields in receipt and transactions
-    for item_list_key in ["net_bought_items", "net_returned_items"]:
-        item_list = receipt_dict.get(item_list_key)
-        if item_list is None or isinstance(
-            item_list, str
-        ):  # Handle None or unexpected string
+    # Convert payment_currency → currency in each transaction dict for
+    # backward-compatible JSON format.  On import the "currency" key is
+    # consumed by initialize_account_transaction which converts it back to
+    # payment_currency when it differs from base_currency.
+    for item_key in ["net_bought_items", "net_returned_items"]:
+        item = receipt_dict.get(item_key)
+        if not isinstance(item, dict):
             continue
-        for item in item_list:
-            if not isinstance(item, dict):  # Ensure item is a dictionary
+        for transaction in item.get("account_transactions", []):
+            if not isinstance(transaction, dict):
                 continue
-            for transaction in item.get("account_transactions", []):
-                if not isinstance(
-                    transaction, dict
-                ):  # Ensure transaction is a dictionary
-                    continue
-                if not isinstance(transaction.get("currency"), str):
-                    raise TypeError(
-                        "Expected str for currency in AccountTransaction after"
-                        " conversion."
+            pay_cur = transaction.pop("payment_currency", None)
+            if pay_cur is not None:
+                transaction["currency"] = pay_cur
+            else:
+                # Domestic: use the account's base_currency
+                acct = transaction.get("account")
+                if isinstance(acct, dict):
+                    transaction["currency"] = acct.get(
+                        "base_currency", ""
                     )
-                if not isinstance(transaction.get("account"), str):
-                    raise TypeError(
-                        "Expected str for account in AccountTransaction after"
-                        " conversion."
-                    )
+
+    # Validate currency fields in receipt and transactions
+    for item_key in ["net_bought_items", "net_returned_items"]:
+        item = receipt_dict.get(item_key)
+        if not isinstance(item, dict):
+            continue
+        for transaction in item.get("account_transactions", []):
+            if not isinstance(transaction, dict):
+                continue
+            if not isinstance(transaction.get("currency"), str):
+                raise TypeError(
+                    "Expected str for currency in AccountTransaction after"
+                    " conversion."
+                )
+            if not isinstance(transaction.get("account"), dict):
+                raise TypeError(
+                    "Expected dict for account in AccountTransaction after"
+                    " conversion."
+                )
     printing_receipt: Dict = copy.deepcopy(receipt_dict)
     printing_receipt.pop("config")
     if verbose:

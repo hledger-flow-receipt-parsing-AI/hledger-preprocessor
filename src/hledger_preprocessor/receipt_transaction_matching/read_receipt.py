@@ -209,6 +209,7 @@ def convert_original_transaction_dict(
         "other_party_account_name",
         "transaction_code",
         "bic",
+        "payment_currency",
         "original_transaction",
         "extra",
     }
