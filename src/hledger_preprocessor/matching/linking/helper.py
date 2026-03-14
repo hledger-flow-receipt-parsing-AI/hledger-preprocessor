@@ -101,7 +101,7 @@ def store_updated_receipt_label(
             name2="latest_receipt",
             ignore_keys_none=ignore_keys_none,
             ignore_empty_dict_keys={"extra"},
-            ignore_keys={"nr_in_batch"},
+            ignore_keys={"nr_in_batch", "config"},
         ):
 
             raise ValueError(
@@ -115,7 +115,7 @@ def store_updated_receipt_label(
             name2="original_receipt",
             ignore_keys_none=ignore_keys_none,
             ignore_empty_dict_keys={"extra", "nr_in_batch"},
-            ignore_keys={"nr_in_batch"},
+            ignore_keys={"nr_in_batch", "config"},
         ):
             print("loaded")
             pprint(loaded_receipt.get_both_item_types())

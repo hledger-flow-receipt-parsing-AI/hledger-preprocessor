@@ -9,28 +9,28 @@
     "cat_basic__groceries": 74.72,
     "cat_basic__withdrawl": 77.32,
     "start_2024_1000eur": 80.24,
-    "csv_ekoplaza_4217_jan15": 88.56,
-    "img_ekoplaza_card": 97.88,
-    "nolbl_ekoplaza_card_eur": 100.08,
-    "lbl_ekoplaza_card_eur": 142.99,
-    "tui_ekoplaza_card_eur": 108.98,
-    "tui_ekoplaza_card_eur__date": 109.53,
-    "tui_ekoplaza_card_eur__time": 109.53,
-    "tui_ekoplaza_card_eur__category": 113.42,
-    "tui_ekoplaza_card_eur__bank_account": 116.84,
-    "tui_ekoplaza_card_eur__currency": 117.81,
-    "tui_ekoplaza_card_eur__amount": 118.77,
-    "tui_ekoplaza_card_eur__change": 120.52,
-    "tui_ekoplaza_card_eur__shop_name": 126.48,
-    "tui_ekoplaza_card_eur__shop_street": 128.48,
-    "tui_ekoplaza_card_eur__shop_house_nr": 131.08,
-    "tui_ekoplaza_card_eur__shop_zipcode": 132.36,
-    "tui_ekoplaza_card_eur__shop_city": 134.12,
-    "tui_ekoplaza_card_eur__shop_country": 136.37,
-    "tui_ekoplaza_card_eur__tax": 138.13,
-    "jrnl_groceries_ekoplaza": 151.38
+    "csv_ekoplaza_4217_jan15": 90.16,
+    "img_ekoplaza_card": 99.48,
+    "nolbl_ekoplaza_card_eur": 101.67,
+    "lbl_ekoplaza_card_eur": 144.18,
+    "tui_ekoplaza_card_eur": 110.36,
+    "tui_ekoplaza_card_eur__date": 110.9,
+    "tui_ekoplaza_card_eur__time": 110.9,
+    "tui_ekoplaza_card_eur__category": 114.69,
+    "tui_ekoplaza_card_eur__bank_account": 118.11,
+    "tui_ekoplaza_card_eur__currency": 119.07,
+    "tui_ekoplaza_card_eur__amount": 120.04,
+    "tui_ekoplaza_card_eur__change": 121.79,
+    "tui_ekoplaza_card_eur__shop_name": 127.75,
+    "tui_ekoplaza_card_eur__shop_street": 129.75,
+    "tui_ekoplaza_card_eur__shop_house_nr": 132.35,
+    "tui_ekoplaza_card_eur__shop_zipcode": 133.63,
+    "tui_ekoplaza_card_eur__shop_city": 135.39,
+    "tui_ekoplaza_card_eur__shop_country": 137.64,
+    "tui_ekoplaza_card_eur__tax": 139.4,
+    "jrnl_groceries_ekoplaza": 152.53
   },
-  "total_duration": 161.38,
+  "total_duration": 164.13,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
@@ -42,7 +42,7 @@
     },
     {
       "file": "starting_journal.mp4",
-      "duration": 8.32
+      "duration": 9.92
     },
     {
       "file": "bank_csv.mp4",
@@ -50,11 +50,11 @@
     },
     {
       "file": "2b_label_receipt.mp4",
-      "duration": 53.5
+      "duration": 53.05
     },
     {
       "file": "journal_output.mp4",
-      "duration": 10.0
+      "duration": 11.6
     }
   ]
 }
