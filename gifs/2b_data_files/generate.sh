@@ -139,7 +139,8 @@ convert_gif_to_mp4 "${OUTPUT_DIR}/bank_csv_split_dinner.gif"
 log "Generating journal_output_atm_gbp typing animation..."
 python -m gifs.automation.yaml_typing_gif \
     --segments \
-        "${DATA_DIR}/journal_atm_gbp.journal=jrnl_wallet_gbp" \
+        "${DATA_DIR}/journal_atm_gbp_wallet.journal=jrnl_wallet_gbp" \
+        "${DATA_DIR}/journal_atm_gbp_triodos.journal=jrnl_triodos_debit_gbp" \
     --output "${OUTPUT_DIR}/journal_output_atm_gbp.gif" \
     --markers-output "${OUTPUT_DIR}/journal_output_atm_gbp_markers.json" \
     --title "triodos-checking.journal" \

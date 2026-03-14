@@ -1,7 +1,8 @@
 {
   "markers": {
-    "jrnl_wallet_gbp": 0.0
+    "jrnl_wallet_gbp": 0.0,
+    "jrnl_triodos_debit_gbp": 9.12
   },
-  "total_duration": 12.68,
+  "total_duration": 12.72,
   "frame_duration_ms": 40
 }
