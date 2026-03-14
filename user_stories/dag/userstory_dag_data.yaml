@@ -567,7 +567,7 @@ layers:
 
       - id: lbl_return_item
         label: "return_item\nbought 3, returned 1"
-        desc: "Net EUR 28.50 (bought 42.50 - returned 14.00)"
+        desc: "Net EUR 50.00 (bought 75.00 - returned 25.00)"
         used_by: [test]
         components: *lbl_components
 
@@ -1221,10 +1221,11 @@ stories:
     label: "Label cash receipt"
     colour: "#F44336"
     pattern: solid
-    data_use: test
+    data_use: both
     receipt_image: "coffee_cash.png"
+    gif_video: 2b2_full_path
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_coffee_cash, nolbl_coffee_cash, tui_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, start_2024_1000eur, img_coffee_cash, nolbl_coffee_cash, tui_coffee_cash, lbl_coffee_cash, out_skip_cash, jrnl_coffee_cash]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_coffee_cash, nolbl_coffee_cash, tui_coffee_cash, lbl_coffee_cash]
     segment_nodes: [img_coffee_cash, nolbl_coffee_cash, tui_coffee_cash, lbl_coffee_cash]
@@ -1254,11 +1255,11 @@ stories:
     pattern: solid
     receipt_image: "atm_london.png"
     data_use: test
-    gif_video: 2b_label_foreign_currency
+    gif_video: 2b3_full_path
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp, jrnl_triodos_debit_gbp]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp, jrnl_triodos_debit_gbp]
     demo_paths:
-      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp]
+      - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, start_2024_1000eur, csv_atm_gbp_11750, img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp, out_currency_convert, jrnl_wallet_gbp, jrnl_triodos_debit_gbp]
     segment_nodes: [img_atm_gbp, nolbl_atm_100gbp, tui_atm_100gbp, lbl_atm_100gbp]
 
   - id: US-2b.4
@@ -1294,10 +1295,10 @@ stories:
     pattern: solid
     data_use: test
     receipt_image: "split_dinner.png"
-    gif_video: 2b_label_split_payment
+    gif_video: 2b4_full_path
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, csv_split_dinner_30, img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split, out_auto_1hit, jrnl_dinner_split_card]
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, match_default, start_2024_1000eur, img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split, out_skip_cash, jrnl_dinner_split_cash]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, start_2024_1000eur, csv_split_dinner_30, img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split, out_auto_1hit, jrnl_dinner_split_card]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, start_2024_1000eur, img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split, out_skip_cash, jrnl_dinner_split_cash]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_extended, img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split]
     segment_nodes: [img_split_dinner, nolbl_dinner_split, tui_dinner_split, lbl_dinner_split]
@@ -1327,9 +1328,9 @@ stories:
     pattern: solid
     data_use: test
     receipt_image: "return_item.png"
-    gif_video: 2b_label_returned_items
+    gif_video: 2b5_full_path
     paths:
-      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, img_return_item, nolbl_return_item, tui_return_item, lbl_return_item, out_auto_1hit, jrnl_return_net]
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, start_2024_1000eur, img_return_item, nolbl_return_item, tui_return_item, lbl_return_item, out_auto_1hit, jrnl_return_net]
     demo_paths:
       - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, img_return_item, nolbl_return_item, tui_return_item, lbl_return_item]
     segment_nodes: [img_return_item, nolbl_return_item, tui_return_item, lbl_return_item]

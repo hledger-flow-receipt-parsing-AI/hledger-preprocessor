@@ -17,8 +17,9 @@
 #
 # Options:
 #   --output <dir>      Site output directory (default: /tmp/site)
-#   --config <path>     Config file for GIFs that need it (required for --gifs-config)
+#   --config <path>     Config file for GIFs that need it (auto-generated if omitted)
 #   --dim-opacity <val> Opacity for non-used DAG nodes (0.0–1.0, default: 0.18)
+#   --all-themes        Generate all 8 theme variants (default: single theme only)
 #   --no-svg            Skip PlantUML SVG generation (use PNG fallbacks)
 #   --no-render         Skip plantuml PNG rendering of artifacts
 #   --dry-run           Show what would run without executing
@@ -67,6 +68,7 @@ SERVE_PORT=""
 NO_SVG=""
 NO_RENDER=""
 DRY_RUN=""
+ALL_THEMES=""
 
 # Modules to run
 DO_ARTIFACTS=""
@@ -134,6 +136,7 @@ parse_args() {
             --no-svg)      NO_SVG=1 ;;
             --no-render)   NO_RENDER=1 ;;
             --dry-run)     DRY_RUN=1 ;;
+            --all-themes)  ALL_THEMES=1 ;;
             *)
                 error "Unknown option: $1"
                 echo "Run with --help for usage."
@@ -149,6 +152,13 @@ parse_args() {
           -z "$SERVE_PORT" ]]; then
         DO_ARTIFACTS=1
         DO_SITE=1
+    fi
+
+    # Default to single theme unless --all-themes is passed
+    if [[ -n "$ALL_THEMES" ]]; then
+        export GIF_GENERATE_THEMED=true
+    else
+        export GIF_GENERATE_THEMED=false
     fi
 }
 
@@ -182,6 +192,29 @@ check_deps() {
         error "Missing required dependencies: ${missing[*]}"
         exit 1
     fi
+}
+
+# ================================ Auto-Config =================================
+DEFAULT_CONFIG="/tmp/hledger_demo/config.yaml"
+
+ensure_config() {
+    # If --config was given, use it as-is.
+    if [[ -n "$CONFIG_PATH" ]]; then
+        return
+    fi
+
+    # Auto-generate the demo environment (creates config + test data).
+    log "No --config given — running setup_test_environment.py to generate demo data..."
+    if [[ -n "$DRY_RUN" ]]; then
+        warn "[dry-run] Would run: python -m gifs.automation.setup_test_environment"
+        CONFIG_PATH="$DEFAULT_CONFIG"
+        return
+    fi
+
+    cd "$SCRIPT_DIR"
+    python -m gifs.automation.setup_test_environment
+    CONFIG_PATH="$DEFAULT_CONFIG"
+    log "Using auto-generated config: $CONFIG_PATH"
 }
 
 # ================================ Modules ====================================
@@ -236,9 +269,6 @@ STANDALONE_GIFS=(
     1a_setup_config
     1b_add_category
     2a_crop_receipt
-    2b_label_foreign_currency
-    2b_label_split_payment
-    2b_label_returned_items
     3_match_receipt_to_csv
     3b_foreign_currency_match
     3c_widen_date_match
@@ -248,6 +278,10 @@ STANDALONE_GIFS=(
 # GIF scripts that require a config path (use init_demo / common.sh)
 CONFIG_GIFS=(
     2b_label_receipt
+    2b_label_cash_receipt
+    2b_label_foreign_currency
+    2b_label_split_payment
+    2b_label_returned_items
     4_run_pipeline
     5_show_plots
 )
@@ -263,11 +297,6 @@ run_single_gif() {
 
     log "Recording GIF: $dir_name"
 
-    if [[ -n "$DRY_RUN" ]]; then
-        warn "[dry-run] Would run: bash $gen_script"
-        return
-    fi
-
     # Determine if this script needs a config path
     local needs_config=""
     for cfg_gif in "${CONFIG_GIFS[@]}"; do
@@ -277,12 +306,21 @@ run_single_gif() {
         fi
     done
 
+    if [[ -n "$needs_config" ]]; then
+        ensure_config
+    fi
+
+    if [[ -n "$DRY_RUN" ]]; then
+        if [[ -n "$needs_config" ]]; then
+            warn "[dry-run] Would run: bash $gen_script $CONFIG_PATH"
+        else
+            warn "[dry-run] Would run: bash $gen_script"
+        fi
+        return
+    fi
+
     cd "$SCRIPT_DIR"
     if [[ -n "$needs_config" ]]; then
-        if [[ -z "$CONFIG_PATH" ]]; then
-            error "GIF '$dir_name' requires --config <path>. Skipping."
-            return 1
-        fi
         bash "$gen_script" "$CONFIG_PATH"
     else
         bash "$gen_script"
@@ -326,11 +364,7 @@ run_gifs_standalone() {
 run_gifs_config() {
     header "GIF Generation: Config-Dependent Demos"
 
-    if [[ -z "$CONFIG_PATH" ]]; then
-        error "Config-dependent GIFs require --config <path>"
-        error "Example: $0 --gifs-config --config /path/to/your/config.yaml"
-        exit 1
-    fi
+    ensure_config
 
     if [[ ! -f "$CONFIG_PATH" ]]; then
         error "Config file not found: $CONFIG_PATH"

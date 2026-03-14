@@ -383,6 +383,7 @@ def run_matching_demo(env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
                     [
                         "ignore_keys=",
                         "EXPORTING to:",
+                        "Please select an action",
                         pexpect.EOF,
                         pexpect.TIMEOUT,
                     ],
@@ -397,9 +398,15 @@ def run_matching_demo(env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
                     time.sleep(0.5)
                     nav.press_enter(pause=0.2)
                 elif index == 2:
+                    # Unexpected "No matches found" prompt in link-receipts demo
+                    raise RuntimeError(
+                        "Link-receipts demo hit 'No matches found' — "
+                        "test data should produce an exact match."
+                    )
+                elif index == 3:
                     # EOF - process finished
                     break
-                elif index == 3:
+                elif index == 4:
                     # Timeout - check if process is still alive
                     if not nav.child.isalive():
                         break

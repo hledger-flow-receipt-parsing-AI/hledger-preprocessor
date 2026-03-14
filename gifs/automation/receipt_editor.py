@@ -92,6 +92,12 @@ class ReceiptDemoValues:
     shop_city: str = "Timboektoe"
     shop_country: str = "Belgie"
 
+    # ── Second account fields (only used when add_another_account = True) ──
+    account_index_2: str = ""
+    currency_index_2: str = ""
+    amount_2: str = ""
+    change_2: str = "0"
+
     # Field 9 – Subtotal (empty string → press Enter to skip)
     subtotal: str = ""
 
@@ -101,6 +107,93 @@ class ReceiptDemoValues:
 
 # Pre-built demo values for the card receipt (US-2b.1)
 CARD_RECEIPT = ReceiptDemoValues()
+
+# Pre-built demo values for the cash receipt (US-2b.2)
+CASH_RECEIPT = ReceiptDemoValues(
+    date_digits="202502100815",
+    category="food:coffee",
+    account_index="1",  # EUR wallet (2nd account: at:wallet:physical)
+    currency_index="9",  # EUR
+    amount="20",
+    change="15",
+    add_another_account=False,
+    shop_index="0",
+    shop_name="Koffie Leute",
+    shop_street="Oudegracht",
+    shop_house_nr="12",
+    shop_zipcode="3511AB",
+    shop_city="Utrecht",
+    shop_country="Netherlands",
+    subtotal="",
+    total_tax="0.87",
+)
+
+# Pre-built demo values for the foreign-currency receipt (US-2b.3)
+# ATM withdrawal in London — 100 GBP from Triodos checking (EUR base)
+FOREIGN_CURRENCY_RECEIPT = ReceiptDemoValues(
+    date_digits="202503201400",
+    category="cash:atm_withdrawal",
+    account_index="0",  # Triodos checking
+    currency_index="11",  # POUND
+    amount="100",
+    change="0",
+    add_another_account=False,
+    shop_index="0",
+    shop_name="Barclays ATM",
+    shop_street="Oxford Street",
+    shop_house_nr="1",
+    shop_zipcode="W1D 1BS",
+    shop_city="London",
+    shop_country="United Kingdom",
+    subtotal="",
+    total_tax="0",
+)
+
+# Pre-built demo values for the split-payment receipt (US-2b.4)
+# 50 EUR dinner: 30 EUR by card (Triodos) + 20 EUR cash (wallet)
+SPLIT_PAYMENT_RECEIPT = ReceiptDemoValues(
+    date_digits="202504052030",
+    category="food:restaurant",
+    account_index="0",  # Triodos checking (1st payment: card)
+    currency_index="9",  # EUR
+    amount="30",
+    change="0",
+    add_another_account=True,
+    account_index_2="1",  # EUR wallet (2nd payment: cash)
+    currency_index_2="9",  # EUR
+    amount_2="20",
+    change_2="0",
+    shop_index="0",
+    shop_name="Restaurant De Kas",
+    shop_street="Leidseplein",
+    shop_house_nr="55",
+    shop_zipcode="1017PS",
+    shop_city="Amsterdam",
+    shop_country="Netherlands",
+    subtotal="",
+    total_tax="8.73",
+)
+
+# Pre-built demo values for the returned-items receipt (US-2b.5)
+# 3 items bought @ 25 EUR each, 1 returned → net 50 EUR
+RETURNED_ITEMS_RECEIPT = ReceiptDemoValues(
+    date_digits="202503011100",
+    category="clothing:store",
+    account_index="0",  # Triodos checking
+    currency_index="9",  # EUR
+    amount="50",
+    change="0",
+    add_another_account=False,
+    shop_index="0",
+    shop_name="H&M",
+    shop_street="Kalverstraat",
+    shop_house_nr="10",
+    shop_zipcode="1012PH",
+    shop_city="Amsterdam",
+    shop_country="Netherlands",
+    subtotal="",
+    total_tax="8.72",
+)
 
 
 def find_newest_label_json(labels_dir: str) -> Optional[str]:
@@ -315,6 +408,29 @@ def _fill_receipt_fields(
     time.sleep(0.3)
     if vals.add_another_account:
         _select_horizontal_first(nav)  # "y"
+        nav.flush_output()
+
+        # ── Second account loop ──────────────────────────────────────
+        _mark("bank_account_2")
+        _select_vertical(nav, vals.account_index_2)
+        nav.flush_output()
+
+        _mark("currency_2")
+        _select_vertical(nav, vals.currency_index_2)
+        nav.flush_output()
+
+        _mark("amount_2")
+        _fill_float(nav, vals.amount_2)
+        nav.flush_output()
+
+        _mark("change_2")
+        _fill_float(nav, vals.change_2)
+        nav.flush_output()
+
+        # Second "Add another account?" — always "n"
+        nav.wait_for("another account", timeout=5, silent=True)
+        time.sleep(0.3)
+        _select_horizontal_n(nav)
     else:
         _select_horizontal_n(nav)  # "n"
     nav.flush_output()
@@ -369,15 +485,26 @@ def _fill_receipt_fields(
 def run_label_receipt_demo(
     config_path: str,
     receipt: ReceiptDemoValues = CARD_RECEIPT,
+    *,
+    marker_img: str = "img_ekoplaza_card",
+    marker_nolbl: str = "nolbl_ekoplaza_card_eur",
+    marker_tui: str = "tui_ekoplaza_card_eur",
+    marker_lbl: str = "lbl_ekoplaza_card_eur",
+    keep_image: Optional[str] = None,
 ) -> None:
     """Run the label-receipt demo automation.
 
     Uses --tui-label-receipts to label an unlabelled receipt image,
-    demonstrating the first-time labelling flow for US-2b.1.
+    demonstrating the first-time labelling flow.
 
     Args:
         config_path: Path to the hledger-preprocessor config file.
         receipt: Values to fill into the TUI (default: CARD_RECEIPT).
+        marker_img: Node marker for the receipt image.
+        marker_nolbl: Node marker for the unlabelled state.
+        marker_tui: Node marker / prefix for TUI field timestamps.
+        marker_lbl: Node marker for the labelled state.
+        keep_image: If set, keep only the image matching this substring.
     """
     config_data = load_config_yaml(config_path)
     labels_dir = get_labels_dir(config_data)
@@ -408,8 +535,15 @@ def run_label_receipt_demo(
             for f in os.listdir(input_dir)
             if os.path.isfile(os.path.join(input_dir, f))
         )
-        for extra in images[1:]:
-            os.remove(os.path.join(input_dir, extra))
+        if keep_image:
+            # Keep only the image matching the substring
+            to_keep = [f for f in images if keep_image in f]
+            to_remove = [f for f in images if keep_image not in f]
+            for extra in to_remove:
+                os.remove(os.path.join(input_dir, extra))
+        else:
+            for extra in images[1:]:
+                os.remove(os.path.join(input_dir, extra))
 
     # Pre-create rotation/crop metadata so the interactive OpenCV steps are
     # skipped (they can't be driven by pexpect).
@@ -423,9 +557,9 @@ def run_label_receipt_demo(
     with open(before_file, "w") as f:
         json.dump({}, f)
 
-    emit_node_marker("img_ekoplaza_card")
+    emit_node_marker(marker_img)
     show_before_state(before_file, after_file)
-    emit_node_marker("nolbl_ekoplaza_card_eur")
+    emit_node_marker(marker_nolbl)
     # Record wall-clock time for this structural marker so generate.sh
     # can calibrate TUI field marker timestamps against .cast timestamps.
     _tui_markers["_calibration_nolbl"] = time.time()
@@ -474,11 +608,11 @@ def run_label_receipt_demo(
         time.sleep(0.8)
 
         # Record the TUI start marker via time.time() (no stdout output)
-        _tui_markers["tui_ekoplaza_card_eur"] = time.time()
+        _tui_markers[marker_tui] = time.time()
 
         # ── Fill in every field ─────────────────────────────────────────
         _fill_receipt_fields(
-            nav, receipt, marker_prefix="tui_ekoplaza_card_eur"
+            nav, receipt, marker_prefix=marker_tui
         )
 
         # Wait for the process to exit after the TUI saves
@@ -510,7 +644,7 @@ def run_label_receipt_demo(
     if new_label_path and os.path.isfile(new_label_path):
         shutil.copy(new_label_path, after_file)
 
-    emit_node_marker("lbl_ekoplaza_card_eur")
+    emit_node_marker(marker_lbl)
     Screen.clear()
     time.sleep(0.2)
     show_after_state(before_file, after_file)

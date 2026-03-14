@@ -147,7 +147,10 @@ def create_test_environment() -> Dict[str, Any]:
     (root / "categories.yaml").write_text(yaml.safe_dump(categories))
 
     # Create bank CSV — transaction posted 3 days later (Jan 18 instead of Jan 15)
+    # Two rows needed so csv.Sniffer().has_header() correctly returns False;
+    # a single data row gets misdetected as a header, skipping all data.
     csv_content = (
+        '02-01-2025,NL123,"5,00",debit,Bakkerij,NL789,IC,bread,"995,01"\n'
         '18-01-2025,NL123,"89,99",debit,MediaMarkt,NL456,IC,electronics'
         ' purchase,"910,01"\n'
     )
@@ -367,6 +370,7 @@ def run_matching_demo(
                     [
                         "ignore_keys=",
                         "EXPORTING to:",
+                        "Please select an action",
                         pexpect.EOF,
                         pexpect.TIMEOUT,
                     ],
@@ -379,8 +383,23 @@ def run_matching_demo(
                     time.sleep(0.5)
                     nav.press_enter(pause=0.2)
                 elif index == 2:
-                    break
+                    # "No matches found" prompt — select option 4:
+                    # "Widen the date margin"
+                    time.sleep(0.5)
+                    nav.send("4")
+                    nav.press_enter(pause=0.3)
+                    # Wait for days prompt, enter 3 (to cover the 3-day gap)
+                    nav.child.expect(
+                        "Enter a positive number of days to widen",
+                        timeout=10,
+                    )
+                    time.sleep(0.3)
+                    nav.send("3")
+                    nav.press_enter(pause=0.3)
+                    # Loop back — matching should now succeed with wider margin
                 elif index == 3:
+                    break
+                elif index == 4:
                     if not nav.child.isalive():
                         break
                     continue

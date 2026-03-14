@@ -1,0 +1,70 @@
+{
+  "markers": {
+    "acct_triodos_csv": 0.0,
+    "acct_eur_wallet": 23.16,
+    "acct_gbp_wallet": 32.72,
+    "acct_btc_wallet": 42.04,
+    "acct_gold_wallet": 52.48,
+    "acct_silver_wallet": 61.64,
+    "dirp_default": 70.96,
+    "fnames_default": 88.32,
+    "catcfg_default": 103.76,
+    "malgo_default": 106.48,
+    "cat_basic__groceries": 113.08,
+    "cat_basic__withdrawl": 115.68,
+    "start_2024_1000eur": 118.6,
+    "csv_atm_gbp_11750": 128.52,
+    "img_atm_gbp": 139.88,
+    "nolbl_atm_100gbp": 142.08,
+    "lbl_atm_100gbp": 186.92,
+    "tui_atm_100gbp": 151.5,
+    "tui_atm_100gbp__date": 152.05,
+    "tui_atm_100gbp__time": 152.05,
+    "tui_atm_100gbp__category": 155.96,
+    "tui_atm_100gbp__bank_account": 159.63,
+    "tui_atm_100gbp__currency": 160.6,
+    "tui_atm_100gbp__amount": 161.71,
+    "tui_atm_100gbp__change": 163.18,
+    "tui_atm_100gbp__shop_name": 169.17,
+    "tui_atm_100gbp__shop_street": 171.78,
+    "tui_atm_100gbp__shop_house_nr": 174.39,
+    "tui_atm_100gbp__shop_zipcode": 175.56,
+    "tui_atm_100gbp__shop_city": 177.56,
+    "tui_atm_100gbp__shop_country": 179.33,
+    "tui_atm_100gbp__tax": 182.17,
+    "out_currency_convert": 202.45,
+    "jrnl_wallet_gbp": 221.38,
+    "jrnl_triodos_debit_gbp": 230.5
+  },
+  "total_duration": 232.5,
+  "segments": [
+    {
+      "file": "cfg_1b5a.mp4",
+      "duration": 113.08
+    },
+    {
+      "file": "cat_basic.mp4",
+      "duration": 5.52
+    },
+    {
+      "file": "starting_journal.mp4",
+      "duration": 9.92
+    },
+    {
+      "file": "bank_csv_atm_gbp.mp4",
+      "duration": 11.36
+    },
+    {
+      "file": "2b_label_foreign_currency.mp4",
+      "duration": 55.44
+    },
+    {
+      "file": "3b_foreign_currency_match.mp4",
+      "duration": 26.06
+    },
+    {
+      "file": "journal_output_atm_gbp.mp4",
+      "duration": 11.12
+    }
+  ]
+}

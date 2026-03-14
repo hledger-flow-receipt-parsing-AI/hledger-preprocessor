@@ -42,7 +42,7 @@ SEGMENT_MARKERS_JSON = (
     / "gifs"
     / "2b_label_receipt"
     / "output"
-    / "2b_label_receipt_dracula_markers.json"
+    / "2b_label_receipt_markers.json"
 )
 CAST_FILE = (
     PROJECT_ROOT
@@ -360,7 +360,7 @@ GIF_FILE = (
     / "gifs"
     / "2b_label_receipt"
     / "output"
-    / "2b_label_receipt_dracula.gif"
+    / "2b_label_receipt.gif"
 )
 
 

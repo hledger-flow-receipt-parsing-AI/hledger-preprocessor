@@ -68,7 +68,7 @@ digraph userstory_dag {
     label="Matching Parameters";
     style=filled; fillcolor="#FFF3E0";
     rank=same;
-    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="days:2, amount_range:0, days_month_swap:true"];
     match_narrow [label="narrow (±1d, exact)", shape=component, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="days:1, amount_range:0 — initially too tight"];
     match_wide_both [label="wide both (±5d, ±0.05)", shape=component, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="days:5, amount_range:0.05 — triggers 15+ matches"];
     match_wide_date [label="wide date (±5d)", shape=component, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="days:5, amount_range:0"];
@@ -160,7 +160,7 @@ digraph userstory_dag {
     lbl_dinner_split [label="dinner_split\n30 card + 20 cash", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos 30 EUR + wallet 20 EUR"];
     lbl_ekoplaza_card_eur [label="ekoplaza_card\nEUR 42.17 card", shape=tab, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, 2025-01-15, groceries:ekoplaza"];
     lbl_gold_10g [label="gold_10g\n10 GRAMS", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, DirectAssetPurchases.GOLD"];
-    lbl_return_item [label="return_item\nbought 3, returned 1", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Net EUR 28.50 (bought 42.50 - returned 14.00)"];
+    lbl_return_item [label="return_item\nbought 3, returned 1", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Net EUR 50.00 (bought 75.00 - returned 25.00)"];
     lbl_rounded_shop [label="rounded_shop\nEUR 49.99 card", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, bank will show 50.00"];
     lbl_swapped_date [label="bookshop\nEUR 25.00 card", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, date entered as 01-05-2025"];
   }
@@ -232,6 +232,7 @@ digraph userstory_dag {
   cat_basic -> match_wide_date [color="#DDDDDD", penwidth=1.0, style=solid];
   cat_basic -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
   cat_extended -> match_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  cat_extended -> start_2024_1000eur [color="#DDDDDD", penwidth=1.0, style=solid];
   catcfg_default -> cat_basic [color="#DDDDDD", penwidth=1.0, style=solid];
   catcfg_default -> cat_with_income [color="#DDDDDD", penwidth=1.0, style=solid];
   catcfg_default -> malgo_default [color="#DDDDDD", penwidth=1.0, style=solid];
@@ -341,7 +342,7 @@ digraph userstory_dag {
   tui_swapped_date -> lbl_swapped_date [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_eur_wallet -> dirp_default [color="#795548", penwidth=5.0, style=solid, label="US-2b.4"];
   acct_triodos_csv -> acct_eur_wallet [color="#795548", penwidth=5.0, style=solid, label="US-2b.4"];
-  cat_extended -> match_default [color="#795548", penwidth=2.5, style=solid, label="US-2b.4"];
+  cat_extended -> start_2024_1000eur [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
   catcfg_default -> malgo_default [color="#795548", penwidth=5.0, style=solid, label="US-2b.4"];
   csv_split_dinner_30 -> img_split_dinner [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
   dirp_default -> fnames_default [color="#795548", penwidth=5.0, style=solid, label="US-2b.4"];
@@ -350,7 +351,6 @@ digraph userstory_dag {
   lbl_dinner_split -> out_auto_1hit [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
   lbl_dinner_split -> out_skip_cash [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
   malgo_default -> cat_extended [color="#795548", penwidth=2.5, style=solid, label="US-2b.4"];
-  match_default -> start_2024_1000eur [color="#795548", penwidth=5.0, style=solid, label="US-2b.4"];
   nolbl_dinner_split -> tui_dinner_split [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
   out_auto_1hit -> jrnl_dinner_split_card [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];
   out_skip_cash -> jrnl_dinner_split_cash [color="#795548", penwidth=1.5, style=solid, label="US-2b.4"];

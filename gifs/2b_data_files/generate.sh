@@ -105,5 +105,76 @@ python -m gifs.automation.yaml_typing_gif \
     --cols 85
 convert_gif_to_mp4 "${OUTPUT_DIR}/journal_output.gif"
 
+# ---------------------------------------------------------------------------
+# bank_csv_atm_gbp: ATM GBP withdrawal CSV for US-2b.3
+# ---------------------------------------------------------------------------
+log "Generating bank_csv_atm_gbp typing animation..."
+python -m gifs.automation.yaml_typing_gif \
+    --segments \
+        "${DATA_DIR}/csv_atm_gbp_11750.csv=csv_atm_gbp_11750" \
+    --output "${OUTPUT_DIR}/bank_csv_atm_gbp.gif" \
+    --markers-output "${OUTPUT_DIR}/bank_csv_atm_gbp_markers.json" \
+    --title "triodos-checking-2025.csv" \
+    --rows 35 \
+    --cols 85
+convert_gif_to_mp4 "${OUTPUT_DIR}/bank_csv_atm_gbp.gif"
+
+# ---------------------------------------------------------------------------
+# bank_csv_split_dinner: Split dinner CSV for US-2b.4
+# ---------------------------------------------------------------------------
+log "Generating bank_csv_split_dinner typing animation..."
+python -m gifs.automation.yaml_typing_gif \
+    --segments \
+        "${DATA_DIR}/csv_split_dinner_30.csv=csv_split_dinner_30" \
+    --output "${OUTPUT_DIR}/bank_csv_split_dinner.gif" \
+    --markers-output "${OUTPUT_DIR}/bank_csv_split_dinner_markers.json" \
+    --title "triodos-checking-2025.csv" \
+    --rows 35 \
+    --cols 85
+convert_gif_to_mp4 "${OUTPUT_DIR}/bank_csv_split_dinner.gif"
+
+# ---------------------------------------------------------------------------
+# journal_output_atm_gbp: ATM GBP journal for US-2b.3
+# ---------------------------------------------------------------------------
+log "Generating journal_output_atm_gbp typing animation..."
+python -m gifs.automation.yaml_typing_gif \
+    --segments \
+        "${DATA_DIR}/journal_atm_gbp_wallet.journal=jrnl_wallet_gbp" \
+        "${DATA_DIR}/journal_atm_gbp_triodos.journal=jrnl_triodos_debit_gbp" \
+    --output "${OUTPUT_DIR}/journal_output_atm_gbp.gif" \
+    --markers-output "${OUTPUT_DIR}/journal_output_atm_gbp_markers.json" \
+    --title "triodos-checking.journal" \
+    --rows 35 \
+    --cols 85
+convert_gif_to_mp4 "${OUTPUT_DIR}/journal_output_atm_gbp.gif"
+
+# ---------------------------------------------------------------------------
+# journal_output_split_dinner: Split dinner journal for US-2b.4
+# ---------------------------------------------------------------------------
+log "Generating journal_output_split_dinner typing animation..."
+python -m gifs.automation.yaml_typing_gif \
+    --segments \
+        "${DATA_DIR}/journal_split_dinner.journal=jrnl_dinner_split_card" \
+    --output "${OUTPUT_DIR}/journal_output_split_dinner.gif" \
+    --markers-output "${OUTPUT_DIR}/journal_output_split_dinner_markers.json" \
+    --title "triodos-checking.journal" \
+    --rows 35 \
+    --cols 85
+convert_gif_to_mp4 "${OUTPUT_DIR}/journal_output_split_dinner.gif"
+
+# ---------------------------------------------------------------------------
+# journal_output_return_net: Returned items journal for US-2b.5
+# ---------------------------------------------------------------------------
+log "Generating journal_output_return_net typing animation..."
+python -m gifs.automation.yaml_typing_gif \
+    --segments \
+        "${DATA_DIR}/journal_return_net.journal=jrnl_return_net" \
+    --output "${OUTPUT_DIR}/journal_output_return_net.gif" \
+    --markers-output "${OUTPUT_DIR}/journal_output_return_net_markers.json" \
+    --title "triodos-checking.journal" \
+    --rows 35 \
+    --cols 85
+convert_gif_to_mp4 "${OUTPUT_DIR}/journal_output_return_net.gif"
+
 log "All data file GIFs generated!"
 exit 0

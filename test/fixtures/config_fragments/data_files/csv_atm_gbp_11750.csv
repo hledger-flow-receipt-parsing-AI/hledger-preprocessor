@@ -1,0 +1,6 @@
+# Triodos Bank CSV Export
+# Account: NL123 — Checking (EUR)
+# Period: March 2025
+
+date,account_nr,amount,type,description,counterparty,method,memo,balance
+20-03-2025,NL123,"117,50",debit,Barclays ATM London,GB999,IC,ATM withdrawal GBP,"882,50"

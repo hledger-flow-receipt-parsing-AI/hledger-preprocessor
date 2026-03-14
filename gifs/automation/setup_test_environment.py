@@ -86,6 +86,9 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
         groceries:
           ekoplaza: {}
           supermarket: {}
+        food:
+          coffee: {}
+          restaurant: {}
         repairs:
           bike: {}
         abonnement:
@@ -99,7 +102,9 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
     # ------------------------------------------------------------------
     csv_path = root / "triodos_2025.csv"
     csv_path.write_text(
-        "15-01-2025,NL123,-42.17,debit,Ekoplaza,NL456,IC,"
+        "date,account_nr,amount,type,payee,counter_account,code,"
+        "description,balance\n"
+        "15-01-2025,NL79 TRIO 0379 2834 09,-42.17,debit,Ekoplaza,NL456,IC,"
         "groceries:ekoplaza,1000.00\n"
     )
 
@@ -168,6 +173,7 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
     fixtures_dir = project_root / "test" / "fixtures" / "receipts"
     source_files: List[Path] = [
         fixtures_dir / "groceries_ekoplaza_card.json",
+        fixtures_dir / "coffee_cash.json",
     ]
     seed_receipt_images_only(config=config, source_json_paths=source_files)
 

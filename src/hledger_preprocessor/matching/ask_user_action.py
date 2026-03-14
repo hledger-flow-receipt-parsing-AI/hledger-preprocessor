@@ -290,10 +290,10 @@ def is_new_transaction(
     return (
         receipt_transaction.account
         != search_receipt_account_transaction.account
-        or receipt_transaction.currency
-        != search_receipt_account_transaction.currency
-        or receipt_transaction.amount_paid
-        != search_receipt_account_transaction.amount_paid
+        or receipt_transaction.account.base_currency
+        != search_receipt_account_transaction.account.base_currency
+        or receipt_transaction.tendered_amount_out
+        != search_receipt_account_transaction.tendered_amount_out
         or receipt_transaction.change_returned
         != search_receipt_account_transaction.change_returned
         or receipt_transaction.original_transaction

@@ -1,11 +1,11 @@
 {
-  "frame_duration_ms": 40,
   "markers": {
     "acct_triodos_csv": 0.0,
-    "catcfg_default": 54.76,
     "dirp_default": 23.16,
     "fnames_default": 39.32,
+    "catcfg_default": 54.76,
     "malgo_default": 57.48
   },
-  "total_duration": 64.08
+  "total_duration": 64.08,
+  "frame_duration_ms": 40
 }

@@ -455,7 +455,9 @@ set_default_gif() {
         return 1
     fi
 
-    cp "$source_gif" "$OUTPUT_GIF"
+    if [[ "$(realpath "$source_gif")" != "$(realpath "$OUTPUT_GIF")" ]]; then
+        cp "$source_gif" "$OUTPUT_GIF"
+    fi
     log "Default GIF: ${OUTPUT_GIF} (from $(basename "$source_gif"))"
 }
 
