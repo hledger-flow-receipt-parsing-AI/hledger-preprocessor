@@ -998,10 +998,12 @@ def generate_story_svg_direct(
     right_max_width = 0.0
 
     if use_two_columns and right_layers:
-        # Right column x: shifted left so receipt-labelling dashed box
-        # partially overlaps the configuration dashed box, with nodes
-        # nearly touching between columns (reduces overall DAG width).
-        right_col_x = left_max_width - NODE_W
+        # Right column x: position so that the leftmost right-column node
+        # nearly touches the rightmost left-column node (~2px gap).
+        # Rightmost left node edge = left_max_width - MARGIN.
+        # Leftmost right node left edge = right_col_x + MARGIN.
+        # So: right_col_x + MARGIN = left_max_width - MARGIN + 2  →
+        right_col_x = left_max_width - 2 * MARGIN + 2
 
         # Right column y starts just below the first (widest) config layer
         # to form a "P-shape" / reversed-L layout that minimises height.

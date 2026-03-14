@@ -15,26 +15,28 @@
     "start_2024_1000eur": 118.6,
     "csv_atm_gbp_11750": 128.52,
     "img_atm_gbp": 139.88,
-    "nolbl_atm_100gbp": 143.39,
-    "lbl_atm_100gbp": 185.35,
-    "tui_atm_100gbp": 153.69,
-    "tui_atm_100gbp__date": 154.12,
-    "tui_atm_100gbp__time": 154.12,
-    "tui_atm_100gbp__category": 157.17,
-    "tui_atm_100gbp__bank_account": 160.03,
-    "tui_atm_100gbp__currency": 160.79,
-    "tui_atm_100gbp__amount": 161.65,
-    "tui_atm_100gbp__change": 162.8,
-    "tui_atm_100gbp__shop_name": 171.41,
-    "tui_atm_100gbp__shop_street": 173.45,
-    "tui_atm_100gbp__shop_house_nr": 175.49,
-    "tui_atm_100gbp__shop_zipcode": 176.4,
-    "tui_atm_100gbp__shop_city": 177.96,
-    "tui_atm_100gbp__shop_country": 179.34,
-    "tui_atm_100gbp__tax": 181.56,
-    "jrnl_wallet_gbp": 192.68
+    "nolbl_atm_100gbp": 142.11,
+    "lbl_atm_100gbp": 187.59,
+    "tui_atm_100gbp": 151.7,
+    "tui_atm_100gbp__date": 152.26,
+    "tui_atm_100gbp__time": 152.26,
+    "tui_atm_100gbp__category": 156.22,
+    "tui_atm_100gbp__bank_account": 159.94,
+    "tui_atm_100gbp__currency": 160.92,
+    "tui_atm_100gbp__amount": 162.05,
+    "tui_atm_100gbp__change": 163.54,
+    "tui_atm_100gbp__shop_name": 169.61,
+    "tui_atm_100gbp__shop_street": 172.25,
+    "tui_atm_100gbp__shop_house_nr": 174.91,
+    "tui_atm_100gbp__shop_zipcode": 176.09,
+    "tui_atm_100gbp__shop_city": 178.11,
+    "tui_atm_100gbp__shop_country": 179.91,
+    "tui_atm_100gbp__tax": 182.8,
+    "out_currency_convert": 199.81,
+    "jrnl_wallet_gbp": 217.62,
+    "jrnl_triodos_debit_gbp": 226.74
   },
-  "total_duration": 203.76,
+  "total_duration": 228.74,
   "segments": [
     {
       "file": "cfg_1b5a.mp4",
@@ -57,8 +59,12 @@
       "duration": 52.8
     },
     {
+      "file": "3b_foreign_currency_match.mp4",
+      "duration": 24.94
+    },
+    {
       "file": "journal_output_atm_gbp.mp4",
-      "duration": 11.08
+      "duration": 11.12
     }
   ]
 }

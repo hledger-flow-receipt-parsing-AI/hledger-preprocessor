@@ -93,7 +93,7 @@ digraph userstory_dag {
     label="Receipt label output JSON";
     style=filled; fillcolor="#F8BBD0";
     rank=same;
-    lbl_return_item [label="return_item\nbought 3, returned 1", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Net EUR 28.50 (bought 42.50 - returned 14.00)"];
+    lbl_return_item [label="return_item\nbought 3, returned 1", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Net EUR 50.00 (bought 75.00 - returned 25.00)"];
   }
 
   subgraph cluster_matching_out {
