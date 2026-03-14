@@ -998,8 +998,10 @@ def generate_story_svg_direct(
     right_max_width = 0.0
 
     if use_two_columns and right_layers:
-        # Right column x starts after the left column
-        right_col_x = left_max_width + MARGIN + COL_GAP
+        # Right column x: shifted left so receipt-labelling dashed box
+        # partially overlaps the configuration dashed box, with nodes
+        # nearly touching between columns (reduces overall DAG width).
+        right_col_x = left_max_width - NODE_W
 
         # Right column y starts just below the first (widest) config layer
         # to form a "P-shape" / reversed-L layout that minimises height.
@@ -4006,15 +4008,20 @@ def main() -> None:
             for idx_m, mid in enumerate(marker_sequence):
                 timestamps[mid] = round(idx_m * step, 2)
 
-        # Assign synthetic timestamps to full-path nodes that lack markers
-        # (e.g. nodes that appear in paths but not in demo_paths).  These
-        # are placed at evenly-spaced intervals after the last real marker
-        # so that clicking them in the DAG is still functional.
+        # Full-path nodes that appear in paths but not in demo_paths may
+        # have real timestamps in raw_markers (from the stitched video's
+        # sidecar JSON).  Use those first before falling back to synthetic.
         missing_nodes = [
             nid
             for nid in node_path
             if nid not in timestamps and "__" not in nid
         ]
+        for nid in list(missing_nodes):
+            if nid in raw_markers:
+                timestamps[nid] = raw_markers[nid]
+                missing_nodes.remove(nid)
+        # Remaining nodes with no marker data get synthetic timestamps
+        # at evenly-spaced intervals after the last real marker.
         if missing_nodes and timestamps:
             last_ts = max(timestamps.values())
             step = 2.0  # 2-second spacing for synthetic timestamps
