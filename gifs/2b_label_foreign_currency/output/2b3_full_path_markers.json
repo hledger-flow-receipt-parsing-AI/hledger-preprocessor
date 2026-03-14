@@ -33,10 +33,10 @@
     "tui_atm_100gbp__shop_country": 179.91,
     "tui_atm_100gbp__tax": 182.8,
     "out_currency_convert": 199.81,
-    "jrnl_wallet_gbp": 217.62,
-    "jrnl_triodos_debit_gbp": 226.74
+    "jrnl_wallet_gbp": 218.74,
+    "jrnl_triodos_debit_gbp": 227.86
   },
-  "total_duration": 228.74,
+  "total_duration": 229.86,
   "segments": [
     {
       "file": "cfg_1b5a.mp4",
@@ -60,7 +60,7 @@
     },
     {
       "file": "3b_foreign_currency_match.mp4",
-      "duration": 24.94
+      "duration": 26.06
     },
     {
       "file": "journal_output_atm_gbp.mp4",

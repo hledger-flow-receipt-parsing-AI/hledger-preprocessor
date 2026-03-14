@@ -54,7 +54,10 @@ def initialize_account_transaction(
     if account_config.has_input_csv():
 
         if "currency" in transaction.keys():
-            transaction.pop("currency")
+            currency_str = transaction.pop("currency")
+            payment_currency = Currency(currency_str) if isinstance(currency_str, str) else currency_str
+            if payment_currency != account.base_currency:
+                transaction["payment_currency"] = payment_currency
 
         # Extract the date of the transaction — safely
         if "the_date" in transaction:
@@ -113,7 +116,10 @@ def initialize_account_transaction(
         transaction["the_date"] = the_date
         transaction["account"] = account
         if "currency" in transaction.keys():
-            transaction.pop("currency")
+            currency_str = transaction.pop("currency")
+            payment_currency = Currency(currency_str) if isinstance(currency_str, str) else currency_str
+            if payment_currency != account.base_currency:
+                transaction["payment_currency"] = payment_currency
 
         if "original_transaction" in transaction.keys():
             if recursion_depth < 1:

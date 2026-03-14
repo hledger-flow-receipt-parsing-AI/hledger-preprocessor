@@ -248,12 +248,14 @@ def convert_to_exchanged_item(
                 if (
                     "currency"
                     in account_transaction_dict.keys()
-                    # and "base_currency" not in account_dict.keys()
                 ):
-                    account_transaction_dict.pop("currency")
-                    # account_dict["base_currency"] = Currency(
-                    #     account_transaction_dict["currency"]
-                    # )
+                    currency_str = account_transaction_dict.pop("currency")
+                    payment_currency = Currency(currency_str)
+                    base_cur = account_dict.get("base_currency", "")
+                    if isinstance(base_cur, str):
+                        base_cur = Currency(base_cur)
+                    if payment_currency != base_cur:
+                        account_transaction_dict["payment_currency"] = payment_currency
                 if isinstance(account_dict["base_currency"], str):
                     account_dict["base_currency"] = Currency(
                         account_dict["base_currency"]

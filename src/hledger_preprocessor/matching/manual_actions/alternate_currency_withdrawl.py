@@ -48,15 +48,6 @@ def add_estimated_conversion_ratio(
             user_input = input(prompt).strip()
             if user_input.isdigit() and 1 <= int(user_input) <= len(options):
                 selected_option = options[int(user_input) - 1]
-                # Assert that the selected currency/asset differs from the receipt currency
-                assert (
-                    selected_option.value
-                    != search_receipt_account_transaction.currency
-                ), (
-                    f"Selected currency/asset {selected_option.value} must"
-                    " differ from receipt currency"
-                    f" {search_receipt_account_transaction.currency}"
-                )
                 return selected_option
             print(
                 "Invalid input. Please enter a number between 1 and"
@@ -87,7 +78,13 @@ def add_estimated_conversion_ratio(
 
     # Prompt for a single currency or asset from the unified list
     from_currency = prompt_for_currency_or_asset()
-    to_currency = search_receipt_account_transaction.currency
+    # Use payment_currency (foreign currency) when available, otherwise base_currency
+    payment_cur = getattr(search_receipt_account_transaction, "payment_currency", None)
+    to_currency = (
+        payment_cur
+        if payment_cur is not None
+        else search_receipt_account_transaction.account.base_currency
+    )
     conversion_ratio = prompt_for_conversion_ratio(
         from_currency=from_currency, to_currency=to_currency
     )

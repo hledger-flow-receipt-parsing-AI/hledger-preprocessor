@@ -130,7 +130,7 @@ def create_test_environment() -> Dict[str, Any]:
         },
         "matching_algo": {
             "days": 2,
-            "amount_range": 0,
+            "amount_range": 0.01,
             "days_month_swap": True,
             "multiple_receipts_per_transaction": False,
         },
@@ -146,7 +146,11 @@ def create_test_environment() -> Dict[str, Any]:
     (root / "categories.yaml").write_text(yaml.safe_dump(categories))
 
     # Create bank CSV — ATM withdrawal in EUR (117.50 = 100 GBP * 1.175)
+    # Two rows needed so csv.Sniffer().has_header() correctly returns False;
+    # a single data row gets misdetected as a header, skipping all data.
     csv_content = (
+        '05-03-2025,NL123,"12,00",debit,Albert Heijn'
+        ',NL789,IC,groceries,"994,50"\n'
         '20-03-2025,NL123,"117,50",debit,Barclays ATM'
         " London,GB999,IC,ATM withdrawal"
         ' GBP,"882,50"\n'
@@ -381,10 +385,11 @@ def run_matching_demo(
                     time.sleep(0.3)
                     nav.send("10")
                     nav.press_enter(pause=0.3)
-                    # Wait for conversion ratio prompt, enter 1.175
+                    # Wait for conversion ratio prompt, enter 0.851
+                    # (1 EUR = 0.851 GBP, so 100 GBP / 0.851 ≈ 117.51 EUR)
                     nav.child.expect("Enter the conversion ratio", timeout=10)
                     time.sleep(0.3)
-                    nav.send("1.175")
+                    nav.send("0.851")
                     nav.press_enter(pause=0.3)
                     # Loop back — matching should now succeed
                 elif index == 3:
