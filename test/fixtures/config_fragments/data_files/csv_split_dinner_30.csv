@@ -1,0 +1,6 @@
+# Triodos Bank CSV Export
+# Account: NL123 — Checking (EUR)
+# Period: April 2025
+
+date,account_nr,amount,type,description,counterparty,method,memo,balance
+05-04-2025,NL123,"30,00",debit,Restaurant De Kas,NL789,IC,dinner card portion,"852,50"

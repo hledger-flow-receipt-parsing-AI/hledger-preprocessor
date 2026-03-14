@@ -9,27 +9,27 @@
     "cat_basic__groceries": 74.72,
     "cat_basic__withdrawl": 77.32,
     "start_2024_1000eur": 80.24,
-    "img_return_item": 88.56,
-    "nolbl_return_item": 92.07,
-    "lbl_return_item": 135.65,
-    "tui_return_item": 104.58,
-    "tui_return_item__date": 105.02,
-    "tui_return_item__time": 105.02,
-    "tui_return_item__category": 108.16,
-    "tui_return_item__bank_account": 110.54,
-    "tui_return_item__currency": 111.32,
-    "tui_return_item__amount": 112.1,
-    "tui_return_item__change": 113.16,
-    "tui_return_item__shop_name": 122.04,
-    "tui_return_item__shop_street": 123.26,
-    "tui_return_item__shop_house_nr": 125.26,
-    "tui_return_item__shop_zipcode": 126.3,
-    "tui_return_item__shop_city": 127.72,
-    "tui_return_item__shop_country": 129.43,
-    "tui_return_item__tax": 131.34,
-    "jrnl_groceries_ekoplaza": 143.26
+    "img_return_item": 90.16,
+    "nolbl_return_item": 93.67,
+    "lbl_return_item": 137.25,
+    "tui_return_item": 106.18,
+    "tui_return_item__date": 106.62,
+    "tui_return_item__time": 106.62,
+    "tui_return_item__category": 109.76,
+    "tui_return_item__bank_account": 112.14,
+    "tui_return_item__currency": 112.92,
+    "tui_return_item__amount": 113.7,
+    "tui_return_item__change": 114.76,
+    "tui_return_item__shop_name": 123.64,
+    "tui_return_item__shop_street": 124.86,
+    "tui_return_item__shop_house_nr": 126.86,
+    "tui_return_item__shop_zipcode": 127.9,
+    "tui_return_item__shop_city": 129.32,
+    "tui_return_item__shop_country": 131.03,
+    "tui_return_item__tax": 132.94,
+    "jrnl_return_net": 144.86
   },
-  "total_duration": 153.26,
+  "total_duration": 158.82,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
@@ -41,15 +41,15 @@
     },
     {
       "file": "starting_journal.mp4",
-      "duration": 8.32
+      "duration": 9.92
     },
     {
       "file": "2b_label_returned_items.mp4",
       "duration": 54.7
     },
     {
-      "file": "journal_output.mp4",
-      "duration": 10.0
+      "file": "journal_output_return_net.mp4",
+      "duration": 13.96
     }
   ]
 }

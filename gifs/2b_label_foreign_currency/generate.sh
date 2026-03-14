@@ -275,9 +275,9 @@ GIFS_ROOT="${SCRIPT_DIR}/.."
 CFG_VIDEO="${GIFS_ROOT}/1a_setup_config/output/cfg_1b5a.mp4"
 CAT_VIDEO="${GIFS_ROOT}/1b_add_category/output/cat_basic.mp4"
 STARTJ_VIDEO="${GIFS_ROOT}/2b_data_files/output/starting_journal.mp4"
-CSV_VIDEO="${GIFS_ROOT}/2b_data_files/output/bank_csv.mp4"
+CSV_VIDEO="${GIFS_ROOT}/2b_data_files/output/bank_csv_atm_gbp.mp4"
 RECEIPT_VIDEO="${OUTPUT_DIR}/2b_label_foreign_currency.mp4"
-JRNL_VIDEO="${GIFS_ROOT}/2b_data_files/output/journal_output.mp4"
+JRNL_VIDEO="${GIFS_ROOT}/2b_data_files/output/journal_output_atm_gbp.mp4"
 FULL_PATH_VIDEO="${OUTPUT_DIR}/2b3_full_path.mp4"
 
 ALL_SEGMENTS=("$CFG_VIDEO" "$CAT_VIDEO" "$STARTJ_VIDEO" "$CSV_VIDEO" "$RECEIPT_VIDEO" "$JRNL_VIDEO")
@@ -287,7 +287,7 @@ for seg in "${ALL_SEGMENTS[@]}"; do
 done
 
 if [[ ${#MISSING[@]} -eq 0 ]]; then
-    log "Stitching full-path video: cfg_1b5a + cat_basic + starting_journal + bank_csv + foreign_currency_receipt + journal_output"
+    log "Stitching full-path video: cfg_1b5a + cat_basic + starting_journal + bank_csv_atm_gbp + foreign_currency_receipt + journal_output_atm_gbp"
     python -m gifs.automation.stitch_full_path \
         --segments "${ALL_SEGMENTS[@]}" \
         --output "$FULL_PATH_VIDEO"
