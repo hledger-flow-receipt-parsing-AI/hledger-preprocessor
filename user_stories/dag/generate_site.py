@@ -998,12 +998,8 @@ def generate_story_svg_direct(
     right_max_width = 0.0
 
     if use_two_columns and right_layers:
-        # Right column x: position so that the leftmost right-column node
-        # nearly touches the rightmost left-column node (~2px gap).
-        # Rightmost left node edge = left_max_width - MARGIN.
-        # Leftmost right node left edge = right_col_x + MARGIN.
-        # So: right_col_x + MARGIN = left_max_width - MARGIN + 2  →
-        right_col_x = left_max_width - 2 * MARGIN + 2
+        # Right column x: small gap past the narrowest left cluster.
+        right_col_x = MARGIN + MIN_CLUSTER_W + NODE_PAD_X
 
         # Right column y starts just below the first (widest) config layer
         # to form a "P-shape" / reversed-L layout that minimises height.
@@ -1083,7 +1079,9 @@ def generate_story_svg_direct(
 
     # Compute total dimensions
     if use_two_columns:
-        total_w = right_col_x + right_max_width + MARGIN * 2
+        right_extent = right_col_x + right_max_width + MARGIN * 2
+        left_extent = left_max_width + MARGIN
+        total_w = max(right_extent, left_extent)
         total_h = max(left_col_bottom, right_col_bottom) + MARGIN
     else:
         total_w = left_max_width + MARGIN * 2
