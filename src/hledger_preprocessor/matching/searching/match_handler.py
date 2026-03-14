@@ -13,6 +13,9 @@ from hledger_preprocessor.matching.ask_user_action import (
     ReceiptMatchingAction,
 )
 from hledger_preprocessor.matching.linking.few_matches import handle_few_matches
+from hledger_preprocessor.matching.linking.helper import (
+    store_updated_receipt_label,
+)
 from hledger_preprocessor.matching.linking.many_matches import (
     handle_many_matches,
 )
@@ -69,13 +72,19 @@ def handle_receipt_item_transaction_to_csv_matches(
             if action_dataset.original_receipt is None:
                 action_dataset.original_receipt = action_dataset.receipt
             action_dataset.receipt = updated_receipt
-
-        # handle_update_receipt(action_dataset=action_dataset)
-        auto_link_receipt(
-            action_dataset=action_dataset,
-            found_csv_transaction=transaction_matches[0],
-            original_receipt_account_transaction=action_dataset.search_receipt_account_transaction,
-        )
+            # The alternate currency handler already injected the CSV
+            # transaction into the receipt, so just store the result.
+            store_updated_receipt_label(
+                latest_receipt=updated_receipt,
+                config=action_dataset.config,
+            )
+        else:
+            # handle_update_receipt(action_dataset=action_dataset)
+            auto_link_receipt(
+                action_dataset=action_dataset,
+                found_csv_transaction=transaction_matches[0],
+                original_receipt_account_transaction=action_dataset.search_receipt_account_transaction,
+            )
     elif len(transaction_matches) == 0:
         handle_no_matches(
             csv_transactions_per_account=csv_transactions_per_account,

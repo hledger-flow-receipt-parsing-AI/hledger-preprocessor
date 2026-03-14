@@ -101,7 +101,7 @@ def store_updated_receipt_label(
             name2="latest_receipt",
             ignore_keys_none=ignore_keys_none,
             ignore_empty_dict_keys={"extra"},
-            ignore_keys={"nr_in_batch", "config"},
+            ignore_keys={"nr_in_batch", "config", "payment_currency"},
         ):
 
             raise ValueError(
