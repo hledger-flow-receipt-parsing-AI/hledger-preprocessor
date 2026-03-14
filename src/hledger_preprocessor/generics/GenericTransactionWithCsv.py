@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 from typeguard import typechecked
 
 from hledger_preprocessor.config.CsvColumnMapping import CsvColumnMapping
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
@@ -21,6 +22,7 @@ class GenericCsvTransaction(Transaction):
     other_party_account_name: Optional[str] = None
     transaction_code: Optional[TransactionCode] = None
     bic: Optional[str] = None
+    payment_currency: Optional[Currency] = None
     original_transaction: Optional[
         # Union["hledger_preprocessor.triodos_logic.TriodosTransaction"]
         "GenericCsvTransaction"

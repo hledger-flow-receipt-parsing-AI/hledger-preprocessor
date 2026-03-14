@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 from typeguard import typechecked
 
 from hledger_preprocessor.config.CsvColumnMapping import CsvColumnMapping
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.TransactionObjects.Account import Account
 
@@ -24,6 +25,7 @@ class AccountTransaction(Transaction):
     account: Account
     the_date: datetime
     change_returned: float = 0.0
+    payment_currency: Optional[Currency] = None
     original_transaction: Optional[
         # Union["hledger_preprocessor.triodos_logic.TriodosTransaction"]
         Union["TriodosTransaction"]
@@ -91,7 +93,7 @@ class AccountTransaction(Transaction):
         """Return a string representation of the account transaction."""
         return (
             f"{self.account.to_string()}:"
-            f"{self.currency.name}:"
+            f"{self.account.base_currency.name}:"
             f"paid={self.tendered_amount_out:.2f}:"
             f"returned={self.change_returned:.2f}"
         )

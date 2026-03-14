@@ -51,10 +51,18 @@ def convert_search_transaction_with_csv_currency(
     if converted_net_amount_from < 0:
         raise ValueError("Converted amount paid cannot be negative")
 
-    # Update the transaction fields
-    new_transaction.tendered_amount_out = converted_net_amount_from
-    new_transaction.change_returned = 0
-    new_transaction.currency = from_currency
+    # Update the transaction fields (frozen dataclass — use object.__setattr__)
+    object.__setattr__(new_transaction, "tendered_amount_out", converted_net_amount_from)
+    object.__setattr__(new_transaction, "change_returned", 0.0)
+    # Update the account's base_currency to the from_currency
+    from hledger_preprocessor.TransactionObjects.Account import Account
+    new_account = Account(
+        base_currency=from_currency,
+        account_holder=new_transaction.account.account_holder,
+        bank=new_transaction.account.bank,
+        account_type=new_transaction.account.account_type,
+    )
+    object.__setattr__(new_transaction, "account", new_account)
 
     # Validate the new transaction
     if converted_net_amount_from == 0 and new_transaction.change_returned == 0:

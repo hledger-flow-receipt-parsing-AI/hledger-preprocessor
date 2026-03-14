@@ -1,16 +1,16 @@
 {
-  "frame_duration_ms": 40,
   "markers": {
-    "acct_btc_wallet": 42.04,
+    "acct_triodos_csv": 0.0,
     "acct_eur_wallet": 23.16,
     "acct_gbp_wallet": 32.72,
+    "acct_btc_wallet": 42.04,
     "acct_gold_wallet": 52.48,
     "acct_silver_wallet": 61.64,
-    "acct_triodos_csv": 0.0,
-    "catcfg_default": 103.76,
     "dirp_default": 70.96,
     "fnames_default": 88.32,
+    "catcfg_default": 103.76,
     "malgo_default": 106.48
   },
-  "total_duration": 113.08
+  "total_duration": 113.08,
+  "frame_duration_ms": 40
 }

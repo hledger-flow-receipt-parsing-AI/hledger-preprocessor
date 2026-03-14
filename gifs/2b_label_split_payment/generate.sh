@@ -2,143 +2,300 @@
 # =============================================================================
 # Split-Payment Receipt Labelling Demo - GIF Generator
 #
-# Demonstrates US-2b.4: Labelling a dinner receipt paid with two accounts
-# (30 EUR by card + 20 EUR in cash = 50 EUR total).
-# Shows two account_transactions in the receipt label JSON.
-#
-# This runs the REAL receipt labelling demo against
-# a test environment to show authentic output.
+# 1. Records the segment-only split-payment receipt TUI demo.
+# 2. Stitches cfg_1b1w + cat_basic + starting_journal + bank_csv +
+#    receipt segment + journal_output into a full-path video for US-2b.4
+#    (config → categories → journal → csv → receipt labelling → output).
 # =============================================================================
 
 set -euo pipefail
 
+# Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-OUTPUT_DIR="${SCRIPT_DIR}/output"
-RECORDINGS_DIR="${SCRIPT_DIR}/recordings"
-DEMO_NAME="2b_label_split_payment"
+source "${SCRIPT_DIR}/../scripts/common.sh"
 
-# Colors for output
-GREEN="\033[0;32m"
-YELLOW="\033[0;33m"
-CYAN="\033[0;36m"
-RED="\033[0;31m"
-RESET="\033[0m"
+# Initialize demo (sets up paths, runs preflight checks)
+init_demo "2b_label_split_payment" "$@"
 
-log() { echo -e "${GREEN}[+]${RESET} $*"; }
-warn() { echo -e "${YELLOW}[!]${RESET} $*"; }
-error() { echo -e "${RED}[✗]${RESET} $*"; }
-header() { echo -e "${CYAN}=== $1 ===${RESET}"; }
+# ── Step 1: Record the segment-only split-payment receipt demo ────────
+run_full_pipeline \
+    "gifs.automation.real_label_split_payment_tui_demo" \
+    "Step 2b: Label Split-Payment Receipt (Card + Cash)" \
+    50 \
+    120
 
-header "Split-Payment Receipt Labelling Demo Generator"
+# ── Step 1b: Build sidecar JSON from .cast markers ───────────────────
+log "Building markers sidecar JSON..."
+python3 -u -c "
+import json, re, sys
+sys.stdout.reconfigure(line_buffering=True)
+from pathlib import Path
+from PIL import Image
 
-# Ensure directories exist
-mkdir -p "$OUTPUT_DIR" "$RECORDINGS_DIR"
+# ── 1. Parse .cast events ───────────────────────────────────────────
+cast_path = Path('${CAST_FILE}')
+with open(cast_path) as f:
+    header = json.loads(f.readline())
+    idle_limit = header.get('idle_time_limit')
+    raw_events = []
+    for line in f:
+        row = json.loads(line)
+        raw_events.append((row[0], row[2]))
 
-# Use PYTHON env var if set, otherwise use python from PATH
-PYTHON="${PYTHON:-python}"
+raw_duration = raw_events[-1][0] if raw_events else 0.0
 
-# Check conda environment
-if ! "$PYTHON" -c "import hledger_preprocessor" 2>/dev/null; then
-    error "hledger_preprocessor not importable. Activate conda environment first."
-    warn "Run: conda activate hledger_preprocessor"
-    exit 1
+# ── 2. Read the actual GIF frame timing (ground truth) ──────────────
+gif_path = Path('${OUTPUT_DIR}/2b_label_split_payment.gif')
+img = Image.open(gif_path)
+gif_durs_ms = []
+try:
+    while True:
+        gif_durs_ms.append(img.info.get('duration', 100))
+        img.seek(img.tell() + 1)
+except EOFError:
+    pass
+gif_cum = [0.0]
+for d in gif_durs_ms:
+    gif_cum.append(gif_cum[-1] + d / 1000.0)
+gif_duration = gif_cum[-1]
+
+# ── 2b. Build agg-style compressed timeline ──────────────────────────
+# agg compresses ALL inter-event gaps > idle_time_limit down to
+# idle_time_limit.  We replicate this to get accurate GIF timestamps.
+cap = idle_limit if idle_limit else 2.0
+compressed_times = [0.0]
+for i in range(1, len(raw_events)):
+    dt = raw_events[i][0] - raw_events[i - 1][0]
+    compressed_times.append(compressed_times[-1] + min(dt, cap))
+compressed_duration = compressed_times[-1] if compressed_times else 0.0
+
+# Scale compressed timeline to match actual GIF duration
+gif_scale = (gif_duration / compressed_duration) if compressed_duration else 1.0
+
+def raw_to_gif(raw_ts):
+    # Binary search for the two bracketing events
+    lo, hi = 0, len(raw_events) - 1
+    while lo < hi - 1:
+        mid = (lo + hi) // 2
+        if raw_events[mid][0] <= raw_ts:
+            lo = mid
+        else:
+            hi = mid
+    if hi <= lo or raw_events[hi][0] == raw_events[lo][0]:
+        return compressed_times[lo] * gif_scale
+    frac = (raw_ts - raw_events[lo][0]) / (raw_events[hi][0] - raw_events[lo][0])
+    ct = compressed_times[lo] + frac * (compressed_times[hi] - compressed_times[lo])
+    return ct * gif_scale
+
+total_duration = round(gif_duration, 2)
+
+# ── 3. Extract structural markers from .cast ────────────────────────
+markers = {}
+for i, (raw_t, data) in enumerate(raw_events):
+    for m in re.finditer(r'@@NODE:(\w+)@@', data):
+        nid = m.group(1)
+        if nid not in markers:
+            markers[nid] = round(raw_to_gif(raw_t), 2)
+
+print(f'  Extracted {len(markers)} structural markers from .cast')
+print(f'  raw duration {raw_duration:.2f}s -> GIF {gif_duration:.2f}s')
+
+# ── 4. Extract TUI field markers from .cast content events ───────────
+def extract_field_markers_from_cast(events, raw_to_gif_fn):
+    key_events = []
+    for raw_t, data in events:
+        if '49;' not in data:
+            continue
+        m = re.search(r'\[\s*(\S+?)\s*\]', data)
+        if m:
+            key_events.append((raw_t, m.group(1)))
+
+    if not key_events:
+        return {}
+
+    prefix = 'tui_dinner_split'
+
+    def first_key_after(char, after):
+        for t, k in key_events:
+            if t > after and k == char:
+                return t
+        return None
+
+    def first_enter_after(after):
+        for t, k in key_events:
+            if t > after and k == 'Enter':
+                return t
+        return None
+
+    def first_typed_after(after):
+        for t, k in key_events:
+            if t > after and k not in ('Enter', 'Right'):
+                return t
+        return None
+
+    tui_render_ts = None
+    for raw_t, data in events:
+        if raw_t > 10 and 'Receipt date' in data:
+            tui_render_ts = raw_t
+            break
+
+    result = {}
+
+    if tui_render_ts is None:
+        return result
+    result[f'{prefix}'] = raw_to_gif_fn(tui_render_ts - 0.5)
+    result[f'{prefix}__date'] = raw_to_gif_fn(tui_render_ts)
+    result[f'{prefix}__time'] = raw_to_gif_fn(tui_render_ts)
+
+    # date_digits starts with '2' (2025...)
+    date_start = first_key_after('2', 10.0)
+    date_enter = first_enter_after((date_start or tui_render_ts) + 1.0)
+    if date_enter:
+        result[f'{prefix}__category'] = raw_to_gif_fn(date_enter)
+
+    # category = 'food:restaurant', first char 'f'
+    cat_start = first_key_after('f', date_enter or tui_render_ts + 2)
+    cat_enter = first_enter_after(cat_start) if cat_start else None
+    if cat_enter:
+        result[f'{prefix}__bank_account'] = raw_to_gif_fn(cat_enter)
+
+    # account_index = '0' (first payment - card)
+    acct_start = first_key_after('0', cat_enter) if cat_enter else None
+    acct_enter = first_enter_after(acct_start) if acct_start else None
+    if acct_enter:
+        result[f'{prefix}__currency'] = raw_to_gif_fn(acct_enter)
+
+    # currency_index = '9' (EUR)
+    curr_start = first_key_after('9', acct_enter) if acct_enter else None
+    curr_enter = first_enter_after(curr_start) if curr_start else None
+    if curr_enter:
+        result[f'{prefix}__amount'] = raw_to_gif_fn(curr_enter)
+
+    # amount = '30', first char '3'
+    amt_start = first_key_after('3', curr_enter) if curr_enter else None
+    amt_enter = first_enter_after((amt_start or 0) + 0.5) if amt_start else None
+    if amt_enter:
+        result[f'{prefix}__change'] = raw_to_gif_fn(amt_enter)
+
+    # change = '0'
+    change_start = first_key_after('0', amt_enter) if amt_enter else None
+    change_enter = first_enter_after(change_start) if change_start else None
+    if change_enter:
+        # add_another_account = True -> Enter directly (first option = yes)
+        add_acct_enter = first_enter_after(change_enter)
+        if add_acct_enter:
+            result[f'{prefix}__bank_account_2'] = raw_to_gif_fn(add_acct_enter)
+
+            # account_index_2 = '1' (EUR wallet - cash)
+            acct2_start = first_key_after('1', add_acct_enter)
+            acct2_enter = first_enter_after(acct2_start) if acct2_start else None
+            if acct2_enter:
+                result[f'{prefix}__currency_2'] = raw_to_gif_fn(acct2_enter)
+
+            # currency_index_2 = '9' (EUR)
+            curr2_start = first_key_after('9', acct2_enter) if acct2_enter else None
+            curr2_enter = first_enter_after(curr2_start) if curr2_start else None
+            if curr2_enter:
+                result[f'{prefix}__amount_2'] = raw_to_gif_fn(curr2_enter)
+
+            # amount_2 = '20', first char '2'
+            amt2_start = first_key_after('2', curr2_enter) if curr2_enter else None
+            amt2_enter = first_enter_after((amt2_start or 0) + 0.5) if amt2_start else None
+            if amt2_enter:
+                result[f'{prefix}__change_2'] = raw_to_gif_fn(amt2_enter)
+
+            # change_2 = '0'
+            change2_start = first_key_after('0', amt2_enter) if amt2_enter else None
+            change2_enter = first_enter_after(change2_start) if change2_start else None
+            if change2_enter:
+                # second add_another_account = False -> Right then Enter
+                right_key = first_key_after('Right', change2_enter)
+                done_enter = first_enter_after(right_key) if right_key else None
+                if done_enter:
+                    # shop_index = '0'
+                    shop_select = first_key_after('0', done_enter)
+                    shop_select_enter = first_enter_after(shop_select) if shop_select else None
+                    if shop_select_enter:
+                        result[f'{prefix}__shop_name'] = raw_to_gif_fn(shop_select_enter)
+                        prev_enter = shop_select_enter
+                    else:
+                        prev_enter = done_enter
+                else:
+                    prev_enter = change2_enter
+            else:
+                prev_enter = None
+        else:
+            prev_enter = None
+    else:
+        prev_enter = None
+
+    if prev_enter:
+        prev_ts = prev_enter
+        for field in ['shop_street', 'shop_house_nr', 'shop_zipcode',
+                      'shop_city', 'shop_country']:
+            typed_ts = first_typed_after(prev_ts)
+            if typed_ts is None:
+                break
+            enter_ts = first_enter_after(typed_ts)
+            if enter_ts is None:
+                break
+            result[f'{prefix}__{field}'] = raw_to_gif_fn(enter_ts)
+            prev_ts = enter_ts
+
+        subtotal_enter = first_enter_after(prev_ts) if prev_ts else None
+        if subtotal_enter:
+            result[f'{prefix}__tax'] = raw_to_gif_fn(subtotal_enter)
+
+    return result
+
+try:
+    field_markers = extract_field_markers_from_cast(raw_events, raw_to_gif)
+    for nid, gif_ts in field_markers.items():
+        if nid not in markers:
+            markers[nid] = round(gif_ts, 2)
+    print(f'  Extracted {len(field_markers)} TUI field markers from .cast content')
+except Exception as e:
+    import traceback
+    print(f'  WARNING: TUI field marker extraction failed: {e}', file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
+
+# ── 5. Write combined sidecar JSON ──────────────────────────────────
+out = Path('${OUTPUT_DIR}/2b_label_split_payment_markers.json')
+out.write_text(json.dumps({'markers': markers, 'total_duration': total_duration}, indent=2) + '\n')
+print(f'  Total: {len(markers)} markers -> {out}')
+"
+
+# ── Step 2: Stitch full-path video for US-2b.4 ───────────────────────
+if [[ "${SKIP_STITCH:-0}" == "1" ]]; then
+    log "Skipping stitch step (SKIP_STITCH=1)"
+else
+GIFS_ROOT="${SCRIPT_DIR}/.."
+CFG_VIDEO="${GIFS_ROOT}/1a_setup_config/output/cfg_1b1w.mp4"
+CAT_VIDEO="${GIFS_ROOT}/1b_add_category/output/cat_basic.mp4"
+STARTJ_VIDEO="${GIFS_ROOT}/2b_data_files/output/starting_journal.mp4"
+CSV_VIDEO="${GIFS_ROOT}/2b_data_files/output/bank_csv_split_dinner.mp4"
+RECEIPT_VIDEO="${OUTPUT_DIR}/2b_label_split_payment.mp4"
+JRNL_VIDEO="${GIFS_ROOT}/2b_data_files/output/journal_output_split_dinner.mp4"
+FULL_PATH_VIDEO="${OUTPUT_DIR}/2b4_full_path.mp4"
+
+ALL_SEGMENTS=("$CFG_VIDEO" "$CAT_VIDEO" "$STARTJ_VIDEO" "$CSV_VIDEO" "$RECEIPT_VIDEO" "$JRNL_VIDEO")
+MISSING=()
+for seg in "${ALL_SEGMENTS[@]}"; do
+    [[ -f "$seg" ]] || MISSING+=("$seg")
+done
+
+if [[ ${#MISSING[@]} -eq 0 ]]; then
+    log "Stitching full-path video: cfg_1b1w + cat_basic + starting_journal + bank_csv_split_dinner + split_payment_receipt + journal_output_split_dinner"
+    python -m gifs.automation.stitch_full_path \
+        --segments "${ALL_SEGMENTS[@]}" \
+        --output "$FULL_PATH_VIDEO"
+    log "Full-path video: ${FULL_PATH_VIDEO}"
+else
+    warn "Skipping full-path stitch (missing prerequisite videos)"
+    for m in "${MISSING[@]}"; do
+        warn "  Missing: $m"
+    done
 fi
-
-# Check for asciinema
-if ! command -v asciinema >/dev/null 2>&1; then
-    error "asciinema not found!"
-    warn "Install with: pip install asciinema"
-    exit 1
-fi
-
-# Check for agg (asciinema to GIF converter)
-if ! command -v asciinema-agg >/dev/null 2>&1; then
-    log "Installing agg (asciinema → GIF converter)..."
-    pip install -q agg || { error "Failed to install agg"; exit 1; }
-fi
-
-# Record the demo using asciinema
-CAST_FILE="${RECORDINGS_DIR}/${DEMO_NAME}.cast"
-log "Recording demo with asciinema..."
-rm -f "$CAST_FILE"
-
-cd "$PROJECT_ROOT"
-export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
-
-asciinema rec "$CAST_FILE" \
-    --command="$PYTHON -m gifs.automation.real_label_split_payment_demo" \
-    --title "Step 2b: Label Split-Payment Receipt (Card + Cash)" \
-    --idle-time-limit=2 \
-    --rows 38 \
-    --cols 100 \
-    -y -q
-
-log "Recording completed → ${CAST_FILE}"
-
-# Post-process the cast file (clean up escape sequences)
-log "Post-processing cast file..."
-CAST_FILE="$CAST_FILE" "$PYTHON" -m gifs.automation.cast_postprocess || true
-
-# Generate themed GIFs
-log "Generating GIFs..."
-OUTPUT_GIF="${OUTPUT_DIR}/${DEMO_NAME}.gif"
-
-# Default theme (dracula)
-asciinema-agg "$CAST_FILE" "$OUTPUT_GIF" \
-    --theme dracula \
-    --font-size 20 \
-    --renderer resvg \
-    --line-height 1.2
-
-log "Generated: ${OUTPUT_GIF}"
-
-# Optimize the GIF
-if command -v gifsicle >/dev/null 2>&1; then
-    log "Optimizing GIF with gifsicle..."
-    gifsicle -O3 "$OUTPUT_GIF" -o "${OUTPUT_GIF}.tmp" 2>/dev/null || true
-    if [[ -f "${OUTPUT_GIF}.tmp" ]]; then
-        mv "${OUTPUT_GIF}.tmp" "$OUTPUT_GIF"
-    fi
-fi
-
-# Show results
-echo
-header "Summary"
-echo
-log "Generated GIF:"
-echo "  ${OUTPUT_GIF}"
-echo "  Size: $(du -h "$OUTPUT_GIF" 2>/dev/null | cut -f1 || echo 'N/A')"
-echo
-echo "Note: This demo shows labelling a 50 EUR dinner receipt with"
-echo "  two payment accounts (30 EUR card + 20 EUR cash)."
-echo
-
-# Convert GIF to MP4 for pausable GitHub README videos
-convert_gif_to_mp4() {
-    local gif_file="$1"
-    local mp4_file="${gif_file%.gif}.mp4"
-
-    if ! command -v ffmpeg >/dev/null 2>&1; then
-        log "ffmpeg not found, skipping MP4 conversion"
-        return 0
-    fi
-
-    log "Converting GIF to MP4..."
-    if ffmpeg -y -i "$gif_file" \
-        -movflags faststart \
-        -pix_fmt yuv420p \
-        -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
-        -c:v libx264 \
-        -crf 23 \
-        -preset medium \
-        "$mp4_file" 2>/dev/null; then
-        log "MP4 created at: $mp4_file"
-    else
-        log "MP4 conversion failed (non-fatal)"
-    fi
-}
-
-convert_gif_to_mp4 "$OUTPUT_GIF"
+fi  # end SKIP_STITCH guard
 
 exit 0

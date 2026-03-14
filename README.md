@@ -88,6 +88,9 @@ Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Clic
 ### Quick build & serve
 
 ```bash
+# Re-record a GIF, rebuild site, and serve:
+./build_userstories.sh --gif 2b_label_receipt --serve
+
 # Full rebuild (artifacts + site) and serve locally:
 ./build_userstories.sh --serve
 
@@ -96,6 +99,9 @@ Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Clic
 
 # Then open http://localhost:8059
 ```
+
+Config-dependent GIFs (e.g. `2b_label_receipt`) auto-generate their demo
+environment via `setup_test_environment.py` when no `--config` is given.
 
 ### Build script usage
 
@@ -109,7 +115,7 @@ Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Clic
 ./build_userstories.sh --artifacts         # DAG diagrams + markdown only
 ./build_userstories.sh --gifs              # Re-record all GIFs
 ./build_userstories.sh --gifs-standalone   # Re-record self-contained GIFs only
-./build_userstories.sh --gifs-config       # Re-record config-dependent GIFs (requires --config)
+./build_userstories.sh --gifs-config       # Re-record config-dependent GIFs
 ./build_userstories.sh --gif <dir_name>    # Re-record a single GIF (e.g. 2b_label_receipt)
 ./build_userstories.sh --dry-run           # Show what would run without executing
 ```

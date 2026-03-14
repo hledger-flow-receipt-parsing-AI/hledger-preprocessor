@@ -1,0 +1,27 @@
+{
+  "markers": {
+    "img_split_dinner": 0.0,
+    "nolbl_dinner_split": 2.19,
+    "lbl_dinner_split": 54.83,
+    "tui_dinner_split": 12.44,
+    "tui_dinner_split__date": 12.98,
+    "tui_dinner_split__time": 12.98,
+    "tui_dinner_split__category": 16.86,
+    "tui_dinner_split__bank_account": 19.91,
+    "tui_dinner_split__currency": 20.86,
+    "tui_dinner_split__amount": 21.82,
+    "tui_dinner_split__change": 23.14,
+    "tui_dinner_split__bank_account_2": 26.86,
+    "tui_dinner_split__currency_2": 27.82,
+    "tui_dinner_split__amount_2": 28.78,
+    "tui_dinner_split__change_2": 30.09,
+    "tui_dinner_split__shop_name": 36.03,
+    "tui_dinner_split__shop_street": 39.32,
+    "tui_dinner_split__shop_house_nr": 41.67,
+    "tui_dinner_split__shop_zipcode": 42.94,
+    "tui_dinner_split__shop_city": 44.7,
+    "tui_dinner_split__shop_country": 46.81,
+    "tui_dinner_split__tax": 49.16
+  },
+  "total_duration": 63.15
+}

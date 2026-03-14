@@ -44,15 +44,6 @@ def add_estimated_conversion_ratio(
             user_input = input(prompt).strip()
             if user_input.isdigit() and 1 <= int(user_input) <= len(Currency):
                 selected_currency = list(Currency)[int(user_input) - 1]
-                # Assert that the selected currency differs from the receipt currency
-                assert (
-                    selected_currency.value
-                    != search_receipt_account_transaction.currency
-                ), (
-                    f"Transaction currency {selected_currency.value} must"
-                    " differ from receipt currency"
-                    f" {search_receipt_account_transaction.currency}"
-                )
                 return selected_currency
             print(
                 "Invalid input. Please enter a number between 1 and"
@@ -112,24 +103,30 @@ def add_estimated_conversion_ratio(
         == "y"
     )
 
+    # Use payment_currency (foreign currency) when available, otherwise base_currency
+    payment_cur = getattr(search_receipt_account_transaction, "payment_currency", None)
+    to_currency = (
+        payment_cur
+        if payment_cur is not None
+        else search_receipt_account_transaction.account.base_currency
+    )
+
     if is_direct_asset:
         from_asset: DirectAssetPurchases = prompt_for_asset()
         conversion_ratio = prompt_for_conversion_ratio(
             from_currency=from_asset,
-            to_currency=search_receipt_account_transaction.currency,
+            to_currency=to_currency,
         )
-        # return f"Estimated amount for {asset.value} purchase: {estimated_amount}"
     else:
         from_currency: Union[Currency, DirectAssetPurchases] = (
             prompt_for_currency()
         )
         conversion_ratio = prompt_for_conversion_ratio(
             from_currency=from_currency,
-            to_currency=search_receipt_account_transaction.currency,
+            to_currency=to_currency,
         )
-        # return f"Conversion ratio from {transaction_currency.value} to {search_receipt_account_transaction.currency}: {conversion_ratio}"
     return (
         from_currency,
-        search_receipt_account_transaction.currency,
+        to_currency,
         conversion_ratio,
     )
