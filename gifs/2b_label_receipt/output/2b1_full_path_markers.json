@@ -6,43 +6,43 @@
     "fnames_default": 49.96,
     "catcfg_default": 65.4,
     "malgo_default": 68.12,
-    "cat_basic__groceries": 74.72,
-    "cat_basic__withdrawl": 77.32,
-    "start_2024_1000eur": 80.24,
-    "csv_ekoplaza_4217_jan15": 90.16,
-    "img_ekoplaza_card": 99.48,
-    "nolbl_ekoplaza_card_eur": 101.65,
-    "lbl_ekoplaza_card_eur": 142.9,
-    "tui_ekoplaza_card_eur": 109.76,
-    "tui_ekoplaza_card_eur__date": 110.3,
-    "tui_ekoplaza_card_eur__time": 110.3,
-    "tui_ekoplaza_card_eur__category": 114.06,
-    "tui_ekoplaza_card_eur__bank_account": 117.46,
-    "tui_ekoplaza_card_eur__currency": 118.42,
-    "tui_ekoplaza_card_eur__amount": 119.37,
-    "tui_ekoplaza_card_eur__change": 121.11,
-    "tui_ekoplaza_card_eur__shop_name": 127.03,
-    "tui_ekoplaza_card_eur__shop_street": 129.02,
-    "tui_ekoplaza_card_eur__shop_house_nr": 131.61,
-    "tui_ekoplaza_card_eur__shop_zipcode": 132.88,
-    "tui_ekoplaza_card_eur__shop_city": 134.63,
-    "tui_ekoplaza_card_eur__shop_country": 136.85,
-    "tui_ekoplaza_card_eur__tax": 138.6,
-    "jrnl_groceries_ekoplaza": 151.18
+    "cat_basic__groceries": 73.04,
+    "cat_basic__withdrawl": 75.64,
+    "start_2024_1000eur": 76.96,
+    "csv_ekoplaza_4217_jan15": 85.28,
+    "img_ekoplaza_card": 94.6,
+    "nolbl_ekoplaza_card_eur": 96.77,
+    "lbl_ekoplaza_card_eur": 137.87,
+    "tui_ekoplaza_card_eur": 104.75,
+    "tui_ekoplaza_card_eur__date": 105.29,
+    "tui_ekoplaza_card_eur__time": 105.29,
+    "tui_ekoplaza_card_eur__category": 109.05,
+    "tui_ekoplaza_card_eur__bank_account": 112.45,
+    "tui_ekoplaza_card_eur__currency": 113.41,
+    "tui_ekoplaza_card_eur__amount": 114.36,
+    "tui_ekoplaza_card_eur__change": 116.1,
+    "tui_ekoplaza_card_eur__shop_name": 122.01,
+    "tui_ekoplaza_card_eur__shop_street": 124.0,
+    "tui_ekoplaza_card_eur__shop_house_nr": 126.59,
+    "tui_ekoplaza_card_eur__shop_zipcode": 127.86,
+    "tui_ekoplaza_card_eur__shop_city": 129.6,
+    "tui_ekoplaza_card_eur__shop_country": 131.83,
+    "tui_ekoplaza_card_eur__tax": 133.58,
+    "jrnl_groceries_ekoplaza": 143.3
   },
-  "total_duration": 162.78,
+  "total_duration": 153.3,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
-      "duration": 74.72
+      "duration": 73.04
     },
     {
       "file": "cat_basic.mp4",
-      "duration": 5.52
+      "duration": 3.92
     },
     {
       "file": "starting_journal.mp4",
-      "duration": 9.92
+      "duration": 8.32
     },
     {
       "file": "bank_csv.mp4",
@@ -50,11 +50,11 @@
     },
     {
       "file": "2b_label_receipt.mp4",
-      "duration": 51.7
+      "duration": 48.7
     },
     {
       "file": "journal_output.mp4",
-      "duration": 11.6
+      "duration": 10.0
     }
   ]
 }
