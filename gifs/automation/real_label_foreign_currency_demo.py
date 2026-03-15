@@ -102,7 +102,7 @@ def create_test_environment() -> Dict[str, Any]:
                 "account_type": "physical",
             },
             {
-                "base_currency": "POUND",
+                "base_currency": "GBP",
                 "account_holder": "at",
                 "bank": "wallet",
                 "account_type": "physical",
@@ -197,7 +197,7 @@ def create_test_environment() -> Dict[str, Any]:
                         "base_currency": "EUR",
                     },
                     "change_returned": 0,
-                    "currency": "POUND",
+                    "currency": "GBP",
                     "tendered_amount_out": 100.0,
                 }
             ],
@@ -292,7 +292,7 @@ def show_label_result(
 
     # Highlight key fields
     print(
-        f"{Colors.BOLD_YELLOW}  Key: currency = POUND (not EUR){Colors.RESET}"
+        f"{Colors.BOLD_YELLOW}  Key: currency = GBP (not EUR){Colors.RESET}"
     )
     print(
         f"{Colors.BOLD_YELLOW}  Key: tendered_amount_out = 100.00"

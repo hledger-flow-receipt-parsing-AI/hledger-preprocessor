@@ -1,12 +1,14 @@
 import logging
+from copy import deepcopy
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from typeguard import typechecked
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
 from hledger_preprocessor.config.load_config import Config
-from hledger_preprocessor.Currency import Currency, DirectAssetPurchases
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.matching.linking.helper import (
     store_updated_receipt_label,
@@ -14,15 +16,6 @@ from hledger_preprocessor.matching.linking.helper import (
 from hledger_preprocessor.matching.manual_actions.create_seach_transaction import (
     convert_search_transaction_with_csv_currency,
 )
-
-logger = logging.getLogger(__name__)
-from copy import deepcopy
-from enum import Enum
-from typing import Dict, List, Optional, Union
-
-from hledger_preprocessor.config.AccountConfig import AccountConfig
-from hledger_preprocessor.config.load_config import Config
-from hledger_preprocessor.Currency import Currency, DirectAssetPurchases
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
@@ -62,7 +55,7 @@ class ActionDataset:
 
 @dataclass
 class AlternateCurrencyWithdrawl:
-    from_currency: Union[Currency, DirectAssetPurchases]
+    from_currency: Currency
     conversion_ratio_1_from_to: float
 
 

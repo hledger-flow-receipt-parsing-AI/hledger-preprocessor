@@ -1,8 +1,8 @@
-from typing import Tuple, Union
+from typing import Tuple
 
 from typeguard import typechecked
 
-from hledger_preprocessor.Currency import Currency, DirectAssetPurchases
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.TransactionObjects.Receipt import AccountTransaction
 
 
@@ -10,8 +10,8 @@ from hledger_preprocessor.TransactionObjects.Receipt import AccountTransaction
 def add_estimated_conversion_ratio(
     *, search_receipt_account_transaction: AccountTransaction
 ) -> Tuple[
-    Union[Currency, DirectAssetPurchases],
-    Union[Currency, DirectAssetPurchases],
+    Currency,
+    Currency,
     float,
 ]:
     """
@@ -50,32 +50,10 @@ def add_estimated_conversion_ratio(
                 f" {len(Currency)}."
             )
 
-    def prompt_for_asset() -> DirectAssetPurchases:
-        """Prompts the user to select a valid asset from the DirectAssetPurchases enum."""
-        asset_options = "\n".join(
-            f"{i + 1}. {asset.value}"
-            for i, asset in enumerate(DirectAssetPurchases)
-        )
-        prompt = (
-            "\nSelect the asset sold:\n"
-            f"{asset_options}\n"
-            "Enter the number corresponding to the asset: "
-        )
-        while True:
-            user_input = input(prompt).strip()
-            if user_input.isdigit() and 1 <= int(user_input) <= len(
-                DirectAssetPurchases
-            ):
-                return list(DirectAssetPurchases)[int(user_input) - 1]
-            print(
-                "Invalid input. Please enter a number between 1 and"
-                f" {len(DirectAssetPurchases)}."
-            )
-
     def prompt_for_conversion_ratio(
         *,
-        from_currency: Union[Currency, DirectAssetPurchases],
-        to_currency: Union[Currency, DirectAssetPurchases],
+        from_currency: Currency,
+        to_currency: Currency,
     ) -> float:
         """Prompts the user for a valid conversion ratio between two currencies."""
         while True:
@@ -93,16 +71,6 @@ def add_estimated_conversion_ratio(
             except ValueError:
                 print("Invalid input. Please enter a valid number.")
 
-    is_direct_asset = (
-        input(
-            "\nIs the money taken from a direct asset (e.g., cash, gold,"
-            " silver)? (y/n): "
-        )
-        .strip()
-        .lower()
-        == "y"
-    )
-
     # Use payment_currency (foreign currency) when available, otherwise base_currency
     payment_cur = getattr(search_receipt_account_transaction, "payment_currency", None)
     to_currency = (
@@ -111,20 +79,11 @@ def add_estimated_conversion_ratio(
         else search_receipt_account_transaction.account.base_currency
     )
 
-    if is_direct_asset:
-        from_asset: DirectAssetPurchases = prompt_for_asset()
-        conversion_ratio = prompt_for_conversion_ratio(
-            from_currency=from_asset,
-            to_currency=to_currency,
-        )
-    else:
-        from_currency: Union[Currency, DirectAssetPurchases] = (
-            prompt_for_currency()
-        )
-        conversion_ratio = prompt_for_conversion_ratio(
-            from_currency=from_currency,
-            to_currency=to_currency,
-        )
+    from_currency: Currency = prompt_for_currency()
+    conversion_ratio = prompt_for_conversion_ratio(
+        from_currency=from_currency,
+        to_currency=to_currency,
+    )
     return (
         from_currency,
         to_currency,

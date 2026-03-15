@@ -97,7 +97,7 @@ functionality that does not yet exist in the codebase.
 
 **Acceptance criteria:**
 
-- Each account has a `base_currency` field (e.g. `EUR`, `USD`, `POUND`).
+- Each account has a `base_currency` field (e.g. `EUR`, `USD`, `GBP`).
 - The matching algorithm uses the base currency when comparing receipt amounts to CSV amounts.
 
 ---
@@ -235,7 +235,7 @@ functionality that does not yet exist in the codebase.
 **Acceptance criteria:**
 
 - The TUI allows selecting GBP (or any Currency enum value) as the receipt currency.
-- The receipt JSON has `currency: POUND` in the account transaction.
+- The receipt JSON has `currency: GBP` in the account transaction.
 - The account's `base_currency` (EUR) differs from the receipt currency (GBP), which triggers the alternate currency matching flow.
 
 ---
@@ -445,8 +445,8 @@ functionality that does not yet exist in the codebase.
 
 **Acceptance criteria:**
 
-- The receipt currency is `GRAMS` (or `SILVER`, etc. from `DirectAssetPurchases` enum).
-- The matching algorithm supports `DirectAssetPurchases` as a "from_currency" for the alternate currency conversion.
+- The receipt currency is `GRAMS` (or `SILVER`, etc. from `Currency.get_physical()`).
+- The matching algorithm supports physical assets (GOLD, SILVER, CASH) from `Currency` as a "from_currency" for the alternate currency conversion.
 - The journal contains a posting pair: debit `Assets:Gold` / credit `Assets:Bank:Triodos:Checking`.
 
 ---
