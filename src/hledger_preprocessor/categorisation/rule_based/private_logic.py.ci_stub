@@ -1,0 +1,38 @@
+"""CI stub for private_logic — provides minimal classification for tests and
+GIF demos.  The real private_logic.py is gitignored and contains user-specific
+transaction rules.
+"""
+
+from typing import Dict, Optional, Union
+
+from hledger_preprocessor.categorisation.Categories import (
+    Category,
+    CategoryNamespace,
+)
+from hledger_preprocessor.categorisation.helper import dict_contains_string
+from hledger_preprocessor.generics.Transaction import Transaction
+from hledger_preprocessor.TransactionObjects.Account import Account
+
+
+def private_debit_classification(
+    *,
+    transaction: Transaction,
+    tnx_dict: Dict,
+    category_namespace: CategoryNamespace,
+) -> Optional[Union[Category, Account]]:
+    """Classify debit transactions using test/demo descriptions."""
+    if dict_contains_string(d=tnx_dict, substr="ekoplaza", case_sensitive=False):
+        return category_namespace.groceries.ekoplaza
+    if dict_contains_string(d=tnx_dict, substr="groceries", case_sensitive=False):
+        return category_namespace.groceries.ekoplaza
+    return None
+
+
+def private_credit_classification(
+    *,
+    transaction: Transaction,
+    tnx_dict: Dict,
+    category_namespace: CategoryNamespace,
+) -> Optional[Union[Category, Account]]:
+    """Classify credit transactions — returns None (no private rules in CI)."""
+    return None

@@ -16,6 +16,13 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install CI stub for private_logic
+        run: |
+          target=src/hledger_preprocessor/categorisation/rule_based/private_logic.py
+          if [ ! -f "$target" ]; then
+            cp "${target}.ci_stub" "$target"
+          fi
+
       - name: Install project and test dependencies
         run: |
           pip install -e .
