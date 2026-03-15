@@ -24,10 +24,12 @@ class Currency(Enum):
     # "Fiat"
     EUR = "EUR"
     USD = "USD"
-    POUND = "POUND"
+    GBP = "GBP"
 
+    # Physical assets
     GOLD = "GOLD"
     SILVER = "SILVER"
+    CASH = "CASH"
 
     @classmethod
     @typechecked
@@ -37,7 +39,7 @@ class Currency(Enum):
     @classmethod
     @typechecked
     def get_fiat(cls) -> List["Currency"]:
-        return [cls.EUR, cls.USD, cls.POUND]
+        return [cls.EUR, cls.USD, cls.GBP]
 
     @classmethod
     @typechecked
@@ -47,14 +49,7 @@ class Currency(Enum):
     @classmethod
     @typechecked
     def get_physical(cls) -> List["Currency"]:
-        return [cls.SILVER, cls.GOLD]
-
-
-class DirectAssetPurchases(Enum):
-    CASH = "cash"
-    GOLD = "gold"
-    SILVER = "silver"
-    # Add other asset categories as needed
+        return [cls.SILVER, cls.GOLD, cls.CASH]
 
 
 # Function to load latest rates from CSV

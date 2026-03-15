@@ -16,7 +16,7 @@ account_configs:
     tnx_date_columns: None
     account_type: physical
   - input_csv_filename: None
-    base_currency: POUND
+    base_currency: GBP
     account_holder: at
     bank: wallet
     csv_column_mapping: None

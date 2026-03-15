@@ -543,7 +543,7 @@ layers:
 
       - id: lbl_gold_10g
         label: "gold_10g\n10 GRAMS"
-        desc: "Triodos account, DirectAssetPurchases.GOLD"
+        desc: "Triodos account, Currency.GOLD"
         used_by: [test]
         components: *lbl_components
 
@@ -655,7 +655,7 @@ layers:
 
       - id: out_asset_convert
         label: "ASSET CONVERT\ngold rate"
-        desc: "DirectAssetPurchases conversion (GRAMS -> EUR)"
+        desc: "Physical asset conversion (GRAMS -> EUR)"
         used_by: [test]
 
       - id: out_csv_only_classify
@@ -979,7 +979,7 @@ stories:
       amounts during matching.
     acceptance_criteria:
       - >-
-        Each account has a `base_currency` field (e.g. `EUR`, `USD`, `POUND`).
+        Each account has a `base_currency` field (e.g. `EUR`, `USD`, `GBP`).
       - >-
         The matching algorithm uses the base currency when comparing receipt amounts
         to CSV amounts.
@@ -1246,7 +1246,7 @@ stories:
         The TUI allows selecting GBP (or any Currency enum value) as the receipt
         currency.
       - >-
-        The receipt JSON has `currency: POUND` in the account transaction.
+        The receipt JSON has `currency: GBP` in the account transaction.
       - >-
         The account's `base_currency` (EUR) differs from the receipt currency (GBP),
         which triggers the alternate currency matching flow.
@@ -1684,11 +1684,11 @@ stories:
       posting.
     acceptance_criteria:
       - >-
-        The receipt currency is `GRAMS` (or `SILVER`, etc. from `DirectAssetPurchases`
+        The receipt currency is `GRAMS` (or `SILVER`, etc. from `Currency.get_physical()`
         enum).
       - >-
-        The matching algorithm supports `DirectAssetPurchases` as a "from_currency"
-        for the alternate currency conversion.
+        The matching algorithm supports physical assets (GOLD, SILVER, CASH) from
+        `Currency` as a "from_currency" for the alternate currency conversion.
       - >-
         The journal contains a posting pair: debit `Assets:Gold` / credit
         `Assets:Bank:Triodos:Checking`.
