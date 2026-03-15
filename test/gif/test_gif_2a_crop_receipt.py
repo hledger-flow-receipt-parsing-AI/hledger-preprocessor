@@ -5,7 +5,7 @@ This test uses the actual source code drawing functions, so when src is updated,
 the GIF will reflect those changes.
 """
 
-from test.e2e.gif_test_helpers import (
+from test.gif.gif_test_helpers import (
     get_demo_env,
     get_project_root,
     run_demo_script,

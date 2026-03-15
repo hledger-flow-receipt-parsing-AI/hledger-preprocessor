@@ -6,7 +6,7 @@ Demonstrates the full hledger-preprocessor pipeline (./start.sh):
 3. hledger_plot (journals -> SVG plots)
 """
 
-from test.e2e.gif_test_helpers import run_gif_test
+from test.gif.gif_test_helpers import run_gif_test
 
 
 def test_gif_4_run_pipeline(temp_finance_root, monkeypatch):

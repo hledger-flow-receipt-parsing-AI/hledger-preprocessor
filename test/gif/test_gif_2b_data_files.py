@@ -8,7 +8,7 @@ the full-path DAG of US-2b.1:
 """
 
 import json
-from test.e2e.gif_test_helpers import (
+from test.gif.gif_test_helpers import (
     get_demo_env,
     get_project_root,
     run_demo_script,
