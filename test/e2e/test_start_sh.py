@@ -958,8 +958,13 @@ description %description
 
 
 @pytest.mark.skipif(
-    not (_has_gpt4all and _has_hledger_flow and _has_hledger_plot),
-    reason="Requires gpt4all, hledger-flow and hledger_plot",
+    not (
+        _has_gpt4all
+        and _has_hledger_flow
+        and _has_hledger_plot
+        and shutil.which("conda")
+    ),
+    reason="Requires gpt4all, hledger-flow, hledger_plot and conda",
 )
 class TestStartShScript:
     """Test the actual ./start.sh script end-to-end.
@@ -1330,8 +1335,13 @@ echo "start.sh completed successfully!"
 
 
 @pytest.mark.skipif(
-    not (_has_gpt4all and _has_hledger_flow and _has_hledger_plot),
-    reason="Requires gpt4all, hledger-flow and hledger_plot",
+    not (
+        _has_gpt4all
+        and _has_hledger_flow
+        and _has_hledger_plot
+        and shutil.which("conda")
+    ),
+    reason="Requires gpt4all, hledger-flow, hledger_plot and conda",
 )
 class TestStartShGifGeneration:
     """Test GIF generation for start.sh pipeline (Issue #142, scenario 1.1).
