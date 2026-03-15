@@ -31,14 +31,28 @@ jobs:
             cp "${target}.ci_stub" "$target"
           fi
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y hledger
+
+      - name: Install hledger-flow
+        run: |
+          curl -sL https://github.com/apauley/hledger-flow/releases/download/v0.16.2/hledger-flow-linux-x64.tar.gz \
+            | sudo tar xz -C /usr/local/bin
+          sudo chmod +x /usr/local/bin/hledger-flow
+
       - name: Install project and test dependencies
         run: |
           pip install -e .
+          pip install "git+https://github.com/hledger-flow-receipt-parsing-AI/hledger-plot.git"
           pip install pytest pyyaml Pillow numpy chardet iso8601 \
                       python-dateutil urwid screeninfo plotly pandas \
-                      pexpect pyte
+                      pexpect pyte dash requests matplotlib
 
       - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/ci/gpt4all_stub
         run: python -m pytest
 
   gifs:
