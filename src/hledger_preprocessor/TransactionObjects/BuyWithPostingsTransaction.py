@@ -15,24 +15,6 @@ from hledger_preprocessor.TransactionObjects.Posting import (
 )
 
 
-class BuyWithPostingsTransactionParserSettings:
-    def get_field_names(self) -> List[str]:
-        return [
-            "account_holder",
-            "bank",
-            "account_type",
-            "the_date",
-            "receipt_category",
-            "credit_postings",
-            "debit_postings",
-            "ai_classification",
-            "logic_classification",
-        ]
-
-    def uses_header(self) -> bool:
-        return True
-
-
 @dataclass
 class BuyWithPostingsTransaction:
     account_holder: str
@@ -103,22 +85,6 @@ class BuyWithPostingsTransaction:
 
         csv_content.append("".join(str(data_row)))
         return "\n".join(csv_content)
-
-    @typechecked
-    def create_csv_rules_filecontent(self, n: int) -> str:
-        """
-        # Write the n.csv.rules file with content:
-        # skip
-        ## name the csv fields, and assign some of them as journal entry fields
-        # fields  date,account1,account2,..,accountN,,amount1,amount2,...,amountN
-
-
-        """
-        # For example, if the script is expected to create a file, you could check its existence:
-
-        expected_journal_filepath: str = f"{self.existent_tmp_dir}/{n}.journal"
-
-        self.assertTrue(os.path.exists(expected_journal_filepath))
 
     @typechecked
     def generate_rules_filecontent(self) -> str:

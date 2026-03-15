@@ -23,26 +23,6 @@ from hledger_preprocessor.TransactionObjects.ShopId import ShopId
 
 
 @typechecked
-def parse_shop_id(*, shop_id_str: str) -> ShopId:
-    try:
-        shop_id_dict = json.loads(shop_id_str)
-        address_dict = shop_id_dict["address"]
-        return ShopId(
-            name=shop_id_dict["name"],
-            address=Address(
-                street=address_dict["street"],
-                house_nr=address_dict["house_nr"],
-                zipcode=address_dict["zipcode"],
-                city=address_dict["city"],
-                country=address_dict["country"],
-            ),
-            shop_account_nr=shop_id_dict.get("shop_account_nr"),
-        )
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Failed to parse ShopId JSON: {shop_id_str}") from e
-
-
-@typechecked
 def parse_account(
     *, currency: Currency, account_str: Optional[str]
 ) -> Optional[Account]:

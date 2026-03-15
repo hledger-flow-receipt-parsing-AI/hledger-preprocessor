@@ -187,15 +187,7 @@ def find_matching_receipt_transaction_and_inject_csv_transaction(
             collect_non_csv_transactions(receipt=receipt)
         )
         for receipt_account_transaction in all_account_transactions:
-            # TODO: determine if replacement should be preserved or not.
-            # has_converted, new_receipt = convert_tnx_type_if_needed(
-            #     config=config,
-            #     receipt=receipt,
-            #     csv_tnx=found_csv_transaction,
-            #     receipt_account_transaction=receipt_account_transaction,
-            # )
-            # if has_converted:
-            #     return new_receipt
+            
             if Transaction.get_hash(
                 receipt_account_transaction
             ) == Transaction.get_hash(original_receipt_account_transaction):

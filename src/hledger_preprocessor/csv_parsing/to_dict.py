@@ -4,20 +4,6 @@ from enum import Enum
 from typing import Any, Dict
 
 
-def _default_serializer(obj: Any) -> Any:
-    """Handle types that json.dumps can't serialize natively"""
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    if isinstance(obj, Enum):
-        return obj.value
-    if is_dataclass(obj):
-        return to_dict(obj)  # recursive!
-    if hasattr(obj, "value") and isinstance(obj.value, (str, int, float, bool)):
-        return obj.value
-    raise TypeError(
-        f"Object of type {obj.__class__.__name__} is not serializable"
-    )
-
 
 def to_dict(obj: Any, *, preserve_order: bool = True) -> Dict[str, Any]:
     """
