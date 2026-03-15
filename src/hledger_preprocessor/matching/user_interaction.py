@@ -93,7 +93,7 @@ def prompt_user_for_no_matches(
             hledger_account_infos=get_all_accounts(
                 config=action_dataset.config,
                 labelled_receipts=action_dataset.labelled_receipts,
-            ),
+            )[0],
             receipt_nr=0,
             total_nr_of_receipts=1,
             labelled_receipts=[],

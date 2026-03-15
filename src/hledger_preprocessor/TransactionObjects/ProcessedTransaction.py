@@ -47,6 +47,35 @@ class ProcessedTransaction:
         # Inject enrichment data into the dictionary
         if self.parent_receipt:
             data["receipt_link"] = self.parent_receipt.raw_img_filepath
+
+            # Inject withdrawal metadata for multi-posting journal entries.
+            wm = self.parent_receipt.withdrawal_metadata
+            if wm is not None:
+                src = wm.source_account_transaction
+                data["withdrawal_source_account"] = (
+                    f"{src.account.account_holder}:"
+                    f"{src.account.bank}:{src.account.account_type}"
+                )
+                data["withdrawal_source_amount"] = str(
+                    src.tendered_amount_out
+                )
+                data["withdrawal_source_currency"] = (
+                    src.account.base_currency.value
+                )
+                data["withdrawal_atm_fee"] = str(wm.atm_operator_fee)
+                if wm.withdrawn_amount is not None:
+                    data["withdrawal_dest_amount"] = str(wm.withdrawn_amount)
+                else:
+                    data["withdrawal_dest_amount"] = ""
+                if wm.exchange_rate is not None:
+                    data["withdrawal_exchange_rate"] = str(wm.exchange_rate)
+                else:
+                    data["withdrawal_exchange_rate"] = ""
+                if wm.bank_fx_fee is not None:
+                    data["withdrawal_bank_fx_fee"] = str(wm.bank_fx_fee)
+                else:
+                    data["withdrawal_bank_fx_fee"] = ""
+
         # data["ai_classifications"] = self.ai_classifications
         # data["logic_classifications"] = self.logic_classifications
 

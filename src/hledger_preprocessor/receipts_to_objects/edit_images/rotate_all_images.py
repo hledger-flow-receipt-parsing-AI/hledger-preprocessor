@@ -42,7 +42,10 @@ def rotate_and_save_image(
         return False
 
     # Convert PIL image to OpenCV format for display
-    cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+    if pil_image.mode == "RGBA":
+        cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGBA2BGR)
+    else:
+        cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
     rotation_angle = 0  # Cumulative rotation in degrees
     angle_history = [0]  # Store history of rotation angles, starting with 0
 
@@ -88,17 +91,16 @@ def rotate_and_save_image(
                     rotated_image = pil_image.rotate(
                         -rotation_angle, expand=True
                     )
-                    rotated_image.save(output_path)
-                    print(
-                        f"Rotated: {rotation_angle} [degrees], image saved to"
-                        f" {output_path}"
-                    )
                 else:
-                    pil_image.save(output_path)
-                    print(
-                        f"Rotated: {rotation_angle} [degrees], image saved to"
-                        f" {output_path}"
-                    )
+                    rotated_image = pil_image
+                # Convert RGBA to RGB for JPEG output.
+                if rotated_image.mode == "RGBA":
+                    rotated_image = rotated_image.convert("RGB")
+                rotated_image.save(output_path)
+                print(
+                    f"Rotated: {rotation_angle} [degrees], image saved to"
+                    f" {output_path}"
+                )
 
                 break
             elif key == ord("r"):  # Rotate right (clockwise)
@@ -127,9 +129,14 @@ def rotate_and_save_image(
 
             # Update displayed image
             pil_image_rotated = pil_image.rotate(-rotation_angle, expand=True)
-            cv_image = cv2.cvtColor(
-                np.array(pil_image_rotated), cv2.COLOR_RGB2BGR
-            )
+            if pil_image_rotated.mode == "RGBA":
+                cv_image = cv2.cvtColor(
+                    np.array(pil_image_rotated), cv2.COLOR_RGBA2BGR
+                )
+            else:
+                cv_image = cv2.cvtColor(
+                    np.array(pil_image_rotated), cv2.COLOR_RGB2BGR
+                )
             display_image = resize_to_fit(cv_image, max_width, max_height)
             # Update window size if image dimensions change after rotation
             cv2.resizeWindow(

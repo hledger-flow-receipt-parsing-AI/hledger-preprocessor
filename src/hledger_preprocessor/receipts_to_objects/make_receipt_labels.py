@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 
 from typeguard import typechecked
 
+from hledger_preprocessor.config.AccountConfig import AccountConfig
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import (
     raw_receipt_img_filepath_to_cropped,
@@ -22,6 +23,7 @@ from hledger_preprocessor.generics.enums import (
     EnumEncoder,
     LogicType,
 )
+from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.management.get_all_hledger_flow_accounts import (
     get_all_accounts,
 )
@@ -79,15 +81,18 @@ def manually_make_receipt_labels(
 
         if not os.path.isfile(label_filepath):
 
+            hledger_account_infos, csv_transactions_per_account = (
+                get_all_accounts(
+                    config=config,
+                    labelled_receipts=labelled_receipts,
+                )
+            )
             receipt_label: Receipt = make_receipt_label(
                 config=config,
                 raw_receipt_img_filepath=raw_receipt_img_filepath,
                 cropped_receipt_img_filepath=cropped_receipt_img_filepath,
-                # TODO: determine whether this should be Transactions.Triodos or Transactions.Assets
-                hledger_account_infos=get_all_accounts(
-                    config=config,
-                    labelled_receipts=labelled_receipts,
-                ),
+                hledger_account_infos=hledger_account_infos,
+                csv_transactions_per_account=csv_transactions_per_account,
                 receipt_nr=receipt_nr,
                 total_nr_of_receipts=len(raw_receipt_img_filepaths),
                 labelled_receipts=labelled_receipts,
@@ -120,6 +125,9 @@ def ask_questions(
     hledger_account_infos: set[HledgerFlowAccountInfo],
     labelled_receipts: List[Receipt],
     prefilled_receipt: Optional[Receipt],
+    csv_transactions_per_account: Optional[
+        Dict[AccountConfig, Dict[int, List[Transaction]]]
+    ] = None,
 ) -> Receipt:
     """Asks the relevant questions to the user about the receipt to generate
     the labels."""
@@ -144,6 +152,7 @@ def ask_questions(
         accounts_without_csv=accounts_without_csv,
         labelled_receipts=[],
         prefilled_receipt=prefilled_receipt,
+        csv_transactions_per_account=csv_transactions_per_account,
     )
 
 
@@ -257,6 +266,9 @@ def make_receipt_label(
     total_nr_of_receipts: int,
     labelled_receipts: List[Receipt],
     prefilled_receipt: Optional[Receipt] = None,
+    csv_transactions_per_account: Optional[
+        Dict[AccountConfig, Dict[int, List[Transaction]]]
+    ] = None,
 ) -> Receipt:
     """
     Opens an image, asks the user questions about it, and returns the answers.
@@ -317,6 +329,7 @@ def make_receipt_label(
         labelled_receipts=labelled_receipts,
         raw_receipt_img_filepath=raw_receipt_img_filepath,
         prefilled_receipt=prefilled_receipt,
+        csv_transactions_per_account=csv_transactions_per_account,
     )
 
     plt.close()

@@ -26,6 +26,13 @@ class RulesContentCreator:
     # example_transaction: Transaction
     status: str
 
+    WITHDRAWAL_FIELDS = (
+        "withdrawal_source_account,withdrawal_source_amount,"
+        "withdrawal_source_currency,withdrawal_atm_fee,"
+        "withdrawal_dest_amount,withdrawal_exchange_rate,"
+        "withdrawal_bank_fx_fee"
+    )
+
     @typechecked
     def create_rulecontent(self) -> str:
         content = ""
@@ -35,15 +42,6 @@ class RulesContentCreator:
             " it does not have a header row, skip 0 rows.\n"
         )
         if self.account_config.has_input_csv():
-            # TODO: resolve, the input csv may or may not contain a header but the 2-preprocessed csv file does not.
-            # if has_header0(
-            #     csv_file_path=self.account_config.get_abs_csv_filepath(
-            #         dir_paths_config=self.config.dir_paths
-            #     )
-            # ):
-            #     content += "skip 1\n\n"
-            # else:
-            #     content += "skip 0\n\n"
             content += "skip 1\n\n"
         else:
             content += (  # Assumes no input transactions don't have header.
@@ -51,21 +49,25 @@ class RulesContentCreator:
             )
 
         # Write fields
+        base_fields = ", ".join(
+            self.account_config.get_hledger_csv_column_names()
+        )
         content += (
-            "fields"
-            f" {', '.join(self.account_config.get_hledger_csv_column_names())},ExampleRuleBasedModel,ExampleAIModel\n\n"
+            f"fields {base_fields},"
+            f"ExampleRuleBasedModel,ExampleAIModel,"
+            f"{self.WITHDRAWAL_FIELDS}\n\n"
         )
 
         # Write currency
-        content += (
-            # f"currency {self.account_config.account.base_currency.value}\n"
-            f"currency %currency\n"
-        )
-        # content += f"date-format %Y-%m-%d\n"
+        content += f"currency %currency\n"
         content += f"date-format %Y-%m-%d-%H-%M-%S\n"
 
         # Write status
         content += f"status {self.status}\n\n"
+
+        # Withdrawal rules — matched BEFORE regular expense/income rules.
+        # When withdrawal_source_account is non-empty, produce multi-posting.
+        content += self._create_withdrawal_rules()
 
         # amount stands for net amount out of account. If it is positive, it is an expense.
         content += f"""if %amount ^[1-9]
@@ -101,6 +103,46 @@ description %description
 # end\n\n"""
 
         return content
+
+    @typechecked
+    def _create_withdrawal_rules(self) -> str:
+        """Generate hledger rules for withdrawal transactions.
+
+        Produces multi-posting journal entries:
+          account1: destination (cash/wallet) — amount in dest currency
+          account2: ATM operator fee expense (if non-zero)
+          account3: source bank account — negative source amount @@ dest total
+        """
+        rules = "# Withdrawal rules (multi-posting)\n"
+
+        # Domestic withdrawal (no conversion details).
+        rules += """if %withdrawal_source_account .
+& %withdrawal_dest_amount ^$
+description ATM Withdrawal
+ account1 assets:%account_holder:%bank:%account_type
+ amount1 %amount
+ account2 assets:%withdrawal_source_account
+# end
+
+"""
+
+        # Foreign withdrawal with conversion details.
+        rules += """if %withdrawal_source_account .
+& %withdrawal_dest_amount .
+description ATM Withdrawal (foreign currency)
+ account1 assets:%account_holder:%bank:%account_type
+ amount1 %withdrawal_dest_amount
+ currency1 %currency
+ account2 expenses:atm:operator-fee
+ amount2 %withdrawal_atm_fee
+ currency2 %currency
+ account3 assets:%withdrawal_source_account
+ amount3 -%withdrawal_source_amount
+ currency3 %withdrawal_source_currency
+# end
+
+"""
+        return rules
 
 
 @typechecked
