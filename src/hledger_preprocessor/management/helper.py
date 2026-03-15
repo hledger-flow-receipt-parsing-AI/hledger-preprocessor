@@ -39,39 +39,6 @@ from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 # Action 0.
 
-
-@typechecked
-def concatenate_asset_csvs(*, config: Config) -> None:
-    asset_path: Path = Path(config.get_asset_path(assert_exists=False))
-
-    # Ensure the output assets directory exists
-
-    asset_path.mkdir(exist_ok=True)
-
-    # Get all year directories (assuming they are named as years, e.g., "2023")
-    year_dirs = [
-        d for d in asset_path.iterdir() if d.is_dir() and d.name.isdigit()
-    ]
-
-    # Process each currency
-    for currency in Currency:
-        currency_files = []
-        # Look for files in each year directory
-        for year_dir in year_dirs:
-            file_path = year_dir / f"Currency.{currency.value}.csv"
-            if file_path.exists():
-                currency_files.append(file_path)
-
-        if currency_files:
-            # Concatenate all CSV files for this currency
-            dfs = [pd.read_csv(file) for file in currency_files]
-            combined_df = pd.concat(dfs, ignore_index=True)
-
-            # Save to output file
-            output_file = asset_path / f"Currency.{currency.value}.csv"
-            combined_df.to_csv(output_file, index=False)
-
-
 @typechecked
 def edit_receipt(*, config: Config, labelled_receipts: List[Receipt]) -> None:
 

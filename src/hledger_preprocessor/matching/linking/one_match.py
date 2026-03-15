@@ -65,12 +65,6 @@ def auto_link_receipt(
             "Link was not properly made, csv_transaction is not yet in receipt."
         )
 
-    # Load the csv_transaction from file and assert it is the same one as the incoming one.
-    # retrieve_csv_transaction_from_hash(
-    #     config=action_dataset.config,
-    #     some_hash=found_csv_transaction.get_hash(),
-    #     labelled_receipts=action_dataset.labelled_receipts,
-    # )
 
     # TODO: Assert the csv_transaction is not yet in the AccountTransaction.
 
@@ -100,19 +94,3 @@ def auto_link_receipt(
     # I. Write a function that returns that CSV transaction based on the info stored in the receipt transaction.
     # II. Write a function that returns that receipt transaction based on the receipt_raw_input_img in the csv_transaction, (by within the receipt, looking at the transactions and finding the hash that matches the hash of the csv_transaction.)
 
-
-@typechecked
-def base_transaction_fields_equal(t1: Transaction, t2: Transaction) -> bool:
-    """
-    Check if the core Transaction fields (from the base class) are identical.
-    Ignores subclass-specific fields.
-    """
-    # Get the exact fields defined directly on the base Transaction class
-    base_fields = (
-        Transaction.__dataclass_fields__.keys()
-    )  # e.g., 'account', 'the_date', 'tendered_amount_out', 'change_returned'
-
-    for field in base_fields:
-        if getattr(t1, field) != getattr(t2, field):
-            return False
-    return True
