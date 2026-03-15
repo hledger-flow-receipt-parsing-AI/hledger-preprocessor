@@ -127,6 +127,18 @@ def create_arg_parser() -> argparse.ArgumentParser:
         help="Make hledger-flow preprocess the exported asset csvs.",
     )
 
+    # CSV column mapping.
+    parser.add_argument(
+        "-m",
+        "--map-csv",
+        type=str,
+        required=False,
+        help=(
+            "Path to a CSV file whose columns you want to interactively map"
+            " to transaction fields. The mapping is saved into your config."
+        ),
+    )
+
     # Debugging functionality.
     parser.add_argument(
         "-q",
