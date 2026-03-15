@@ -48,6 +48,20 @@ def main() -> None:
     ## NEW
     args: Namespace = parser.parse_args()
     assert_args_are_valid(args=args)
+
+    # --map-csv runs before anything else: it only needs the config path,
+    # not a fully loaded Config (the CSV may not be in config yet).
+    if args.map_csv:
+        from hledger_preprocessor.csv_mapping.mapping_tui import (
+            run_csv_mapping_tui,
+        )
+
+        run_csv_mapping_tui(
+            csv_filepath=args.map_csv,
+            config_path=args.config,
+        )
+        return  # mapping done — exit
+
     config: Config = load_config(
         config_path=args.config,
         pre_processed_output_dir=args.pre_processed_output_dir,
