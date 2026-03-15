@@ -1,0 +1,45 @@
+{
+  "ai_receipt_categorisation": null,
+  "net_bought_items": {
+    "account_transactions": [
+      {
+        "account": {
+          "account_holder": "at",
+          "account_type": "checking",
+          "bank": "triodos",
+          "base_currency": "EUR"
+        },
+        "change_returned": 0,
+        "currency": "GBP",
+        "tendered_amount_out": 100.0
+      }
+    ],
+    "category": null,
+    "description": "cash:atm_withdrawal",
+    "group_discount": 0,
+    "quantity": 1,
+    "round_amount": null,
+    "tax_per_unit": 0,
+    "the_date": "2025-03-20T14:00:00",
+    "unit_price": null
+  },
+  "net_returned_items": null,
+  "raw_img_filepath": "/home/a/finance/receipt_images_input/atm_london.jpg",
+  "receipt_category": "cash:atm_withdrawal",
+  "receipt_owner_address": null,
+  "shop_identifier": {
+    "address": {
+      "city": "London",
+      "country": "United Kingdom",
+      "house_nr": "1",
+      "street": "Oxford Street",
+      "zipcode": "W1D 1BS"
+    },
+    "name": "Barclays ATM",
+    "shop_account_nr": null
+  },
+  "subtotal": null,
+  "the_date": "2025-03-20T14:00:00",
+  "total_tax": 0,
+  "transaction_hash": null
+}

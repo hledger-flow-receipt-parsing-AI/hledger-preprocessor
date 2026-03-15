@@ -32,6 +32,25 @@ from hledger_preprocessor.TransactionObjects.TransactedItemType import (
 
 @typechecked
 @dataclass
+class WithdrawalMetadata:
+    """Metadata for ATM withdrawal receipts."""
+
+    source_account_transaction: AccountTransaction
+    atm_operator_fee: float = 0.0
+    withdrawn_amount: Optional[float] = None
+    exchange_rate: Optional[float] = None
+    bank_fx_fee: Optional[float] = None
+
+    @property
+    def is_foreign(self) -> bool:
+        return (
+            self.withdrawn_amount is not None
+            or self.exchange_rate is not None
+        )
+
+
+@typechecked
+@dataclass
 class Receipt:
     config: Config
     raw_img_filepath: str
@@ -45,6 +64,7 @@ class Receipt:
     ai_receipt_categorisation: Optional[Dict[str, str]] = None
     transaction_hash: Optional[str] = None
     receipt_category: Optional[str] = None
+    withdrawal_metadata: Optional[WithdrawalMetadata] = None
 
     def __post_init__(self):
 

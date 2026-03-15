@@ -54,14 +54,16 @@ def edit_receipt(*, config: Config, labelled_receipts: List[Receipt]) -> None:
         raw_receipt_img_filepath=selected_receipt.raw_img_filepath,
     )
 
+    hledger_account_infos, csv_transactions_per_account = get_all_accounts(
+        config=config,
+        labelled_receipts=labelled_receipts,
+    )
     modified_receipt: Receipt = make_receipt_label(
         config=config,
         raw_receipt_img_filepath=selected_receipt.raw_img_filepath,
         cropped_receipt_img_filepath=cropped_receipt_img_filepath,
-        hledger_account_infos=get_all_accounts(
-            config=config,
-            labelled_receipts=labelled_receipts,
-        ),
+        hledger_account_infos=hledger_account_infos,
+        csv_transactions_per_account=csv_transactions_per_account,
         receipt_nr=0,
         total_nr_of_receipts=1,
         labelled_receipts=[],

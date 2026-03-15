@@ -1,4 +1,3 @@
-from pprint import pprint
 from typing import Union
 
 from typeguard import typechecked
@@ -11,6 +10,9 @@ from hledger_preprocessor.categorisation.helper import dict_contains_string
 from hledger_preprocessor.categorisation.rule_based.private_logic import (
     private_credit_classification,
     private_debit_classification,
+)
+from hledger_preprocessor.categorisation.UncategorisedTransactionError import (
+    UncategorisedTransactionError,
 )
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
@@ -124,14 +126,10 @@ class ExampleRuleBasedModel:
                 category_namespace=category_namespace,
             )
         else:
-
-            pprint(transaction, width=200)
-            input(
-                "\nPlease add a rule for expense.\nPress enter to see the next"
-                " uncategorised transaction.\nAfter adding rules to categorise"
-                " all transactions, run again."
+            raise UncategorisedTransactionError(
+                transaction=transaction,
+                transaction_type="expense",
             )
-            # raise NotImplementedError("hi")
 
     @typechecked
     def _classify_credit(
@@ -156,10 +154,7 @@ class ExampleRuleBasedModel:
                 category_namespace=category_namespace,
             )
         else:
-
-            pprint(transaction, width=200)
-            input(
-                "\nPlease add a rule for income.\nPress enter to see the next"
-                " uncategorised transaction.\nAfter adding rules to categorise"
-                " all transactions, run again."
+            raise UncategorisedTransactionError(
+                transaction=transaction,
+                transaction_type="income",
             )
