@@ -3,7 +3,7 @@
 Demonstrates labelling a receipt using the TUI interface.
 """
 
-from test.e2e.gif_test_helpers import run_gif_test
+from test.gif.gif_test_helpers import run_gif_test
 
 
 def test_gif_2b_label_receipt(temp_finance_root, monkeypatch):

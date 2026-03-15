@@ -6,7 +6,7 @@ covering every node in the full DAG path.
 """
 
 import json
-from test.e2e.gif_test_helpers import (
+from test.gif.gif_test_helpers import (
     get_demo_env,
     get_project_root,
     run_demo_script,

@@ -4,7 +4,7 @@ Generates 2 per-node category GIFs, each with its own sidecar markers JSON.
 """
 
 import json
-from test.e2e.gif_test_helpers import (
+from test.gif.gif_test_helpers import (
     get_demo_env,
     get_project_root,
     run_demo_script,

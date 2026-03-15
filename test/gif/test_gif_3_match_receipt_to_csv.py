@@ -5,7 +5,7 @@ This demo creates its own test environment internally, so it doesn't
 need an external config file.
 """
 
-from test.e2e.gif_test_helpers import run_gif_test
+from test.gif.gif_test_helpers import run_gif_test
 
 
 def test_gif_3_match_receipt_to_csv(temp_finance_root, monkeypatch):

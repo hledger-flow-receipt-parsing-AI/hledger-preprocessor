@@ -15,7 +15,7 @@ Two levels of verification:
 
 Run:
     source ~/miniconda3/etc/profile.d/conda.sh && conda activate hledger_preprocessor
-    pytest test/e2e/test_highlight_alignment.py -v
+    pytest test/gif/test_highlight_alignment.py -v
 """
 
 import json

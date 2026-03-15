@@ -159,7 +159,7 @@ digraph userstory_dag {
     lbl_delayed_shop [label="delayed_shop\nEUR 49.99 card", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, receipt dated Jan 15"];
     lbl_dinner_split [label="dinner_split\n30 card + 20 cash", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos 30 EUR + wallet 20 EUR"];
     lbl_ekoplaza_card_eur [label="ekoplaza_card\nEUR 42.17 card", shape=tab, penwidth=3.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, 2025-01-15, groceries:ekoplaza"];
-    lbl_gold_10g [label="gold_10g\n10 GRAMS", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, DirectAssetPurchases.GOLD"];
+    lbl_gold_10g [label="gold_10g\n10 GRAMS", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, Currency.GOLD"];
     lbl_return_item [label="return_item\nbought 3, returned 1", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Net EUR 50.00 (bought 75.00 - returned 25.00)"];
     lbl_rounded_shop [label="rounded_shop\nEUR 49.99 card", shape=tab, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, bank will show 50.00"];
     lbl_swapped_date [label="bookshop\nEUR 25.00 card", shape=tab, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Triodos account, date entered as 01-05-2025"];
@@ -169,7 +169,7 @@ digraph userstory_dag {
     label="Matching Outcome";
     style=filled; fillcolor="#FFF8E1";
     rank=same;
-    out_asset_convert [label="ASSET CONVERT\ngold rate", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="DirectAssetPurchases conversion (GRAMS -> EUR)"];
+    out_asset_convert [label="ASSET CONVERT\ngold rate", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Physical asset conversion (GRAMS -> EUR)"];
     out_auto_1hit [label="AUTO-LINK\n1 match found", shape=diamond, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="Exact date+amount, no TUI needed"];
     out_correct_receipt [label="CORRECT RECEIPT\nedit inline", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="User fixes receipt label, matcher retries"];
     out_csv_only_classify [label="CLASSIFY\nrule/AI based", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="CSV transaction classified without receipt"];

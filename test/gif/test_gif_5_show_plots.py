@@ -4,7 +4,7 @@ Demonstrates hledger_plot visualizations (Sankey + Treemap).
 Shows the interactive Dash dashboard with financial plots.
 """
 
-from test.e2e.gif_test_helpers import run_gif_test
+from test.gif.gif_test_helpers import run_gif_test
 
 
 def test_gif_5_show_plots(temp_finance_root, monkeypatch):
