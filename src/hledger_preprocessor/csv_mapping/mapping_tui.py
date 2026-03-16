@@ -193,24 +193,51 @@ DATETIME_FIELD = "the_datetime"
 _DATE_TIME_GROUP = {DATE_FIELD, TIME_FIELD}
 _DATETIME_GROUP = {DATETIME_FIELD}
 
+# Separator sentinel — rendered as a blank line, not selectable.
+_SEP = "__sep__"
+
 # Exchange/trading fields (stored in GenericCsvTransaction.extra)
 EXCHANGE_FIELDS: List[Tuple[str, str]] = [
-    ("quote_currency", "Quote currency"),
-    ("quote_price", "Quote price"),
-    ("received_currency", "Received currency"),
-    ("received_price", "Received price"),
-    ("fee_currency", "Fee currency"),
+    ("tendered_amount_out", "Amount out of this account"),
+    ("payment_currency", "Currency out of this account"),
+    ("received_amount", "Amount into this account"),
+    ("received_currency", "Currency into this account"),
+    ("quote_price", "Price per unit"),
+    ("quote_currency", "Currency of quote price"),
     ("fee_amount", "Fee amount"),
+    ("fee_currency", "Fee currency"),
 ]
 
 FIELD_CHOICES: List[Tuple[Optional[str], str]] = [
     (None, "Skip"),
+    # ── Date/time ──
     (DATE_FIELD, "date (Date — combine with time)"),
     (TIME_FIELD, "time (Time — combine with date)"),
     (DATETIME_FIELD, "datetime (Datetime — single column)"),
-] + [(name, f"{name} ({label})") for name, label in MAPPABLE_FIELDS
-     if name != "the_date"
-] + [(name, f"{name} ({label})") for name, label in EXCHANGE_FIELDS]
+    (_SEP, ""),
+    # ── Amounts ──
+    ("tendered_amount_out", "tendered_amount_out (Amount out of this account)"),
+    ("payment_currency", "payment_currency (Currency out of this account)"),
+    (_SEP, ""),
+    ("received_amount", "received_amount (Amount into this account)"),
+    ("received_currency", "received_currency (Currency into this account)"),
+    (_SEP, ""),
+    ("quote_price", "quote_price (Price per unit)"),
+    ("quote_currency", "quote_currency (Currency of quote price)"),
+    (_SEP, ""),
+    ("fee_amount", "fee_amount (Fee amount)"),
+    ("fee_currency", "fee_currency (Fee currency)"),
+    (_SEP, ""),
+    # ── Metadata ──
+    ("description", "description (Description)"),
+    ("other_party_name", "other_party_name (Other party name)"),
+    ("other_party_account_name",
+     "other_party_account_name (Other party account)"),
+    ("transaction_code",
+     "transaction_code (Transaction code Debit/Credit)"),
+    ("balance_after", "balance_after (Balance after transaction)"),
+    ("bic", "bic (BIC Bank Identifier Code)"),
+]
 
 
 def _is_grayed_out(field: Optional[str], used: set) -> bool:
@@ -478,6 +505,15 @@ class _SplitPaneTUI:
         )
         self._flush()
 
+    def _move_choice(self, direction: int) -> None:
+        """Move choice_idx by *direction* (-1 or +1), skipping separators."""
+        n = len(self.choice_items)
+        idx = self.choice_idx + direction
+        while 0 <= idx < n and self.choice_items[idx][0] == _SEP:
+            idx += direction
+        if 0 <= idx < n:
+            self.choice_idx = idx
+
     def scroll_table(self, direction: str) -> None:
         term_w, term_h = _term_size()
         top_data_rows = max(1, term_h - self.BOTTOM_PANE_LINES - 4)
@@ -603,17 +639,17 @@ class _SplitPaneTUI:
                 self.scroll_table(key[4:])
                 self.draw()
             elif key == "up":
-                if self.choice_idx > 0:
-                    self.choice_idx -= 1
-                    self._build_choice_lines(header, sample_str, auto)
-                    self._redraw_bottom_only()
+                self._move_choice(-1)
+                self._build_choice_lines(header, sample_str, auto)
+                self._redraw_bottom_only()
             elif key == "down":
-                if self.choice_idx < len(self.choice_items) - 1:
-                    self.choice_idx += 1
-                    self._build_choice_lines(header, sample_str, auto)
-                    self._redraw_bottom_only()
+                self._move_choice(1)
+                self._build_choice_lines(header, sample_str, auto)
+                self._redraw_bottom_only()
             elif key == "enter":
                 field = self.choice_items[self.choice_idx][0]
+                if field == _SEP:
+                    continue
 
                 # Block mutually exclusive / grayed-out picks
                 if field and _is_grayed_out(field, used):
@@ -658,14 +694,9 @@ class _SplitPaneTUI:
                         continue
                     elif confirm_key in ("up", "down"):
                         self.error_msg = ""
-                        if confirm_key == "up" and self.choice_idx > 0:
-                            self.choice_idx -= 1
-                        elif (
-                            confirm_key == "down"
-                            and self.choice_idx
-                            < len(self.choice_items) - 1
-                        ):
-                            self.choice_idx += 1
+                        self._move_choice(
+                            -1 if confirm_key == "up" else 1
+                        )
                         self._build_choice_lines(
                             header, sample_str, auto
                         )
@@ -680,8 +711,10 @@ class _SplitPaneTUI:
                 self.highlight_col = -1
                 self.error_msg = ""
                 if field:
-                    _all_labels = dict(MAPPABLE_FIELDS + EXCHANGE_FIELDS)
-                    label = _all_labels.get(field, field)
+                    _choice_labels = {
+                        f: d for f, d in FIELD_CHOICES if f and f != _SEP
+                    }
+                    label = _choice_labels.get(field, field)
                     self.answer_log.append(
                         f"Col {col_idx} '{header}' "
                         f"\u2192 {FG_GREEN}{field} ({label}){RESET}"
@@ -717,6 +750,9 @@ class _SplitPaneTUI:
             )
 
         for i, (field, display) in enumerate(self.choice_items):
+            if field == _SEP:
+                lines.append("")
+                continue
             grayed = _is_grayed_out(field, self.choice_used)
             if i == self.choice_idx:
                 if grayed:
