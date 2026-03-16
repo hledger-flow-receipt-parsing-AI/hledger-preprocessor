@@ -66,7 +66,7 @@ def parse_generic_bank_transaction(
             "balance_after",
             "amount_after_tnx",
             "quote_price",
-            "received_price",
+            "received_amount",
             "fee_amount",
         ]:
             # Handle European number format: 1.234,56 → 1234.56
