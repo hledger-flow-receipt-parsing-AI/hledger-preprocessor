@@ -15,7 +15,10 @@ from typing import Dict, List, Optional, Tuple
 import yaml
 from typeguard import typechecked
 
-from hledger_preprocessor.config.AccountConfig import AccountConfig
+from hledger_preprocessor.config.AccountConfig import (
+    AccountConfig,
+    SplitGroup,
+)
 from hledger_preprocessor.config.CsvColumnMapping import CsvColumnMapping
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.TransactionObjects.Account import Account
@@ -192,6 +195,8 @@ DATETIME_FIELD = "the_datetime"
 # Groups for mutual exclusivity
 _DATE_TIME_GROUP = {DATE_FIELD, TIME_FIELD}
 _DATETIME_GROUP = {DATETIME_FIELD}
+_QUOTE_PRICE_GROUP = {"quote_price"}
+_EXCHANGE_RATE_GROUP = {"exchange_rate"}
 
 # Separator sentinel — rendered as a blank line, not selectable.
 _SEP = "__sep__"
@@ -222,8 +227,9 @@ FIELD_CHOICES: List[Tuple[Optional[str], str]] = [
     ("received_amount", "received_amount (Amount into this account)"),
     ("received_currency", "received_currency (Currency into this account)"),
     (_SEP, ""),
-    ("quote_price", "quote_price (Price per unit)"),
-    ("quote_currency", "quote_currency (Currency of quote price)"),
+    ("quote_price", "quote_price (Price per unit in quote currency)"),
+    ("exchange_rate", "exchange_rate (1 quote = X base — inverse of quote price)"),
+    ("quote_currency", "quote_currency (Currency of quote/exchange rate)"),
     (_SEP, ""),
     ("fee_amount", "fee_amount (Fee amount)"),
     ("fee_currency", "fee_currency (Fee currency)"),
@@ -249,6 +255,11 @@ def _is_grayed_out(field: Optional[str], used: set) -> bool:
         return True
     # If datetime is used, gray out date and time
     if field in _DATE_TIME_GROUP and used & _DATETIME_GROUP:
+        return True
+    # Quote price / exchange rate mutual exclusivity
+    if field in _QUOTE_PRICE_GROUP and used & _EXCHANGE_RATE_GROUP:
+        return True
+    if field in _EXCHANGE_RATE_GROUP and used & _QUOTE_PRICE_GROUP:
         return True
     # Normal "already used" check
     if field in used:
@@ -768,6 +779,76 @@ class _SplitPaneTUI:
 
         self.bottom_lines = lines
 
+    def ask_column_select(self, prompt: str) -> int:
+        """Let user select a CSV column using left/right arrows + Enter.
+
+        Highlights the selected column in the table pane.
+        """
+        self.highlight_col = 0
+        self.input_active = False
+        self.choice_active = False
+        self.error_msg = ""
+        self.bottom_lines = [
+            f"  {BOLD}{prompt}{RESET}",
+            f"  {DIM}\u2190\u2192 select column  Enter=confirm{RESET}",
+        ]
+        self.draw()
+
+        while True:
+            key = _read_key_raw(self.fd)
+            if key == "right":
+                if self.highlight_col < self.n_cols - 1:
+                    self.highlight_col += 1
+                    # Auto-scroll table if needed
+                    term_w, _ = _term_size()
+                    check = 2 if self.col_offset > 0 else 0
+                    for ci in range(self.col_offset, self.n_cols):
+                        check += self.col_widths[ci] + 2
+                        if ci == self.highlight_col and check > term_w:
+                            self.col_offset = self.highlight_col
+                            break
+                    hdr = self.preview.headers[self.highlight_col]
+                    self.bottom_lines = [
+                        f"  {BOLD}{prompt}{RESET}",
+                        (
+                            f"  Column {self.highlight_col}: "
+                            f"{FG_CYAN}{BOLD}{hdr}{RESET}"
+                        ),
+                        f"  {DIM}\u2190\u2192 select column  "
+                        f"Enter=confirm{RESET}",
+                    ]
+                    self.draw()
+            elif key == "left":
+                if self.highlight_col > 0:
+                    self.highlight_col -= 1
+                    if self.highlight_col < self.col_offset:
+                        self.col_offset = self.highlight_col
+                    hdr = self.preview.headers[self.highlight_col]
+                    self.bottom_lines = [
+                        f"  {BOLD}{prompt}{RESET}",
+                        (
+                            f"  Column {self.highlight_col}: "
+                            f"{FG_CYAN}{BOLD}{hdr}{RESET}"
+                        ),
+                        f"  {DIM}\u2190\u2192 select column  "
+                        f"Enter=confirm{RESET}",
+                    ]
+                    self.draw()
+            elif key.startswith("alt-"):
+                self.scroll_table(key[4:])
+                self.draw()
+            elif key == "enter":
+                selected = self.highlight_col
+                hdr = self.preview.headers[selected]
+                self.highlight_col = -1
+                self.answer_log.append(
+                    f"{prompt}: column {selected} "
+                    f"({FG_GREEN}{hdr}{RESET})"
+                )
+                return selected
+            elif key == "ctrl-c":
+                raise KeyboardInterrupt
+
     def ask_confirm(self, prompt: str) -> bool:
         """Ask yes/no confirmation."""
         self.input_prompt = f"{prompt} [Y/n]: "
@@ -795,6 +876,106 @@ class _SplitPaneTUI:
             elif len(key) == 1 and key.isprintable():
                 self.input_buf += key
                 self._redraw_input_line()
+
+
+# ── Mapping helpers ───────────────────────────────────────────────────
+
+# Map internal TUI field names to hledger names
+_HLEDGER_NAMES = {
+    DATE_FIELD: "date",
+    TIME_FIELD: "time",
+    DATETIME_FIELD: "date",
+}
+
+# Map internal TUI field names to config names
+_FIELD_TO_CONFIG = {
+    DATE_FIELD: "the_date",
+    TIME_FIELD: "the_time",
+    DATETIME_FIELD: "the_date",
+}
+
+
+def _run_column_mapping(
+    tui: "_SplitPaneTUI",
+    auto_mappings: "List[AutoMapping]",
+    preview: CsvPreview,
+    group_label: str = "",
+) -> List[Tuple[Optional[str], str]]:
+    """Run the column mapping loop and return chosen (field, hledger_name) pairs.
+
+    Validates that required fields (date + amount) are mapped.
+    """
+    if group_label:
+        tui.answer_log.append("")
+        tui.answer_log.append(
+            f"{BOLD}Mapping for group: {FG_CYAN}{group_label}{RESET}"
+        )
+        tui.draw()
+
+    used_fields: set = set()
+    chosen: List[Tuple[Optional[str], str]] = []
+
+    for col_idx, auto in enumerate(auto_mappings):
+        pick = tui.ask_choice(col_idx, auto, used_fields, chosen)
+        field = FIELD_CHOICES[pick][0]
+        if field:
+            used_fields.add(field)
+            hledger_name = _HLEDGER_NAMES.get(
+                field, DEFAULT_HLEDGER_NAMES.get(field, "")
+            )
+            chosen.append((field, hledger_name))
+        else:
+            chosen.append(("", ""))
+
+    # Validate
+    mapped = {pair[0] for pair in chosen if pair[0]}
+    errors: List[str] = []
+    has_datetime = DATETIME_FIELD in mapped
+    has_date = DATE_FIELD in mapped
+    has_time = TIME_FIELD in mapped
+    if not has_datetime and not (has_date and has_time):
+        if has_date and not has_time:
+            errors.append("'time' must also be mapped (or use 'datetime').")
+        elif has_time and not has_date:
+            errors.append("'date' must also be mapped (or use 'datetime').")
+        else:
+            errors.append(
+                "Date must be mapped: use 'datetime' for a single "
+                "column, or 'date'+'time' for separate columns."
+            )
+    if "tendered_amount_out" not in mapped:
+        errors.append("'tendered_amount_out' (Amount) must be mapped.")
+
+    if errors:
+        tui.error_msg = " | ".join(errors)
+        tui.draw()
+        raise ValueError("Required fields not mapped. Re-run --map-csv.")
+
+    return chosen
+
+
+def _chosen_to_config_pairs(
+    chosen: List[Tuple[Optional[str], str]],
+) -> List[Tuple[str, str]]:
+    """Convert TUI field names to config field names."""
+    return [
+        (_FIELD_TO_CONFIG.get(f, f) if f else "", h) for f, h in chosen
+    ]
+
+
+def _config_pairs_to_tuples(
+    config_pairs: List[Tuple[str, str]],
+) -> Tuple[Tuple[str, str], ...]:
+    return tuple((f or "", h or "") for f, h in config_pairs)
+
+
+def _extract_tnx_date_pairs(
+    config_pairs: List[Tuple[str, str]],
+) -> List[Tuple[str, str]]:
+    return [
+        pair for pair in config_pairs
+        if pair[0] in ("the_date", "the_time", "description")
+    ]
 
 
 # ── Main TUI flow ────────────────────────────────────────────────────
@@ -826,77 +1007,200 @@ def run_csv_mapping_tui(
         )
         base_currency = tui.ask_currency()
 
-        # ── Column mapping ───────────────────────────────────────
-        used_fields: set = set()
+        # ── Template detection ───────────────────────────────────
+        from hledger_preprocessor.csv_mapping.templates import detect_template
+
+        detected_template = detect_template(preview.headers)
+        template_applied = False
+        split_column: Optional[int] = None
+        split_groups_data: Optional[
+            List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
+        ] = None  # [(values, chosen), ...]
+        decimal_format: Optional[str] = None
         chosen: List[Tuple[Optional[str], str]] = []
 
-        # Map internal TUI field names to hledger names
-        _HLEDGER_NAMES = {
-            DATE_FIELD: "date",
-            TIME_FIELD: "time",
-            DATETIME_FIELD: "date",
-        }
+        if detected_template:
+            use_tmpl = tui.ask_confirm(
+                f"Detected {detected_template.name} CSV format. "
+                f"Apply template?"
+            )
+            if use_tmpl:
+                template_applied = True
+                split_column = detected_template.split_column
+                decimal_format = detected_template.decimal_format
+                if detected_template.groups:
+                    split_groups_data = []
+                    for tg in detected_template.groups:
+                        tui.answer_log.append(
+                            f"{DIM}Template: group "
+                            f"{FG_CYAN}{', '.join(tg.values)}{RESET}"
+                        )
+                        for ci, (field, hname) in enumerate(
+                            tg.column_mappings
+                        ):
+                            hdr = preview.headers[ci]
+                            if field:
+                                tui.answer_log.append(
+                                    f"  {hdr} \u2192 "
+                                    f"{FG_GREEN}{field}{RESET}"
+                                )
+                            else:
+                                tui.answer_log.append(
+                                    f"  {hdr} \u2192 skip"
+                                )
+                        split_groups_data.append(
+                            (tg.values, list(tg.column_mappings))
+                        )
+                    tui.draw()
+                else:
+                    # Template with no split — single mapping
+                    chosen = list(detected_template.groups[0].column_mappings)
+                    for ci, (field, _) in enumerate(chosen):
+                        hdr = preview.headers[ci]
+                        if field:
+                            tui.answer_log.append(
+                                f"  {hdr} \u2192 "
+                                f"{FG_GREEN}{field} (template){RESET}"
+                            )
+                        else:
+                            tui.answer_log.append(
+                                f"  {hdr} \u2192 skip (template)"
+                            )
+                    tui.draw()
 
-        for col_idx, auto in enumerate(auto_mappings):
-            pick = tui.ask_choice(col_idx, auto, used_fields, chosen)
-            field = FIELD_CHOICES[pick][0]
-            if field:
-                used_fields.add(field)
-                hledger_name = _HLEDGER_NAMES.get(
-                    field, DEFAULT_HLEDGER_NAMES.get(field, "")
+        if not template_applied:
+            # ── Split-by-type question ───────────────────────────
+            wants_split = tui.ask_confirm(
+                "Split CSV by a type column? (for mixed row types)"
+            )
+
+            if wants_split:
+                split_column = tui.ask_column_select(
+                    "Select the column that contains the row type"
                 )
-                chosen.append((field, hledger_name))
+
+                # Discover unique values from sample rows
+                unique_vals = sorted(set(
+                    row[split_column].strip()
+                    for row in preview.sample_rows
+                    if split_column < len(row) and row[split_column].strip()
+                ))
+                tui.answer_log.append(
+                    f"  Unique values: {FG_CYAN}"
+                    f"{', '.join(unique_vals)}{RESET}"
+                )
+                tui.draw()
+
+                # Collect groups until all values are assigned
+                remaining = set(unique_vals)
+                split_groups_data = []
+                group_num = 1
+
+                while remaining:
+                    vals_str = tui.ask_string(
+                        f"Group {group_num} values (comma-separated, "
+                        f"remaining: {', '.join(sorted(remaining))})"
+                    )
+                    vals = tuple(v.strip() for v in vals_str.split(","))
+                    invalid = set(vals) - set(unique_vals)
+                    if invalid:
+                        tui.error_msg = (
+                            f"Unknown values: {', '.join(invalid)}"
+                        )
+                        tui.draw()
+                        continue
+                    not_remaining = set(vals) - remaining
+                    if not_remaining:
+                        tui.error_msg = (
+                            f"Already assigned: {', '.join(not_remaining)}"
+                        )
+                        tui.draw()
+                        continue
+
+                    remaining -= set(vals)
+                    tui.answer_log.append(
+                        f"  Group {group_num}: "
+                        f"{FG_GREEN}{', '.join(vals)}{RESET}"
+                    )
+
+                    # Run column mapping for this group
+                    group_chosen = _run_column_mapping(
+                        tui, auto_mappings, preview,
+                        group_label=", ".join(vals),
+                    )
+                    split_groups_data.append((vals, group_chosen))
+                    group_num += 1
             else:
-                chosen.append(("", ""))
+                # ── Single column mapping (no split) ─────────────
+                chosen = _run_column_mapping(
+                    tui, auto_mappings, preview
+                )
 
-        # ── Validate ─────────────────────────────────────────────
-        mapped = {pair[0] for pair in chosen if pair[0]}
-        errors: List[str] = []
-        has_datetime = DATETIME_FIELD in mapped
-        has_date = DATE_FIELD in mapped
-        has_time = TIME_FIELD in mapped
-        if not has_datetime and not (has_date and has_time):
-            if has_date and not has_time:
-                errors.append(
-                    "'time' must also be mapped (or use 'datetime')."
-                )
-            elif has_time and not has_date:
-                errors.append(
-                    "'date' must also be mapped (or use 'datetime')."
-                )
-            else:
-                errors.append(
-                    "Date must be mapped: use 'datetime' for a single "
-                    "column, or 'date'+'time' for separate columns."
-                )
-        if "tendered_amount_out" not in mapped:
-            errors.append("'tendered_amount_out' (Amount) must be mapped.")
+        # ── Decimal format ───────────────────────────────────────
+        if decimal_format is None:
+            decimal_format = _detect_decimal_format(
+                preview, chosen, split_groups_data
+            )
+        if decimal_format:
+            tui.answer_log.append(
+                f"Decimal format: {FG_GREEN}{decimal_format}{RESET}"
+            )
+        else:
+            fmt = tui.ask_string(
+                "Decimal format: 'eu' (1.234,56) or 'dot' (1,234.56)",
+                default="dot",
+            )
+            decimal_format = fmt
 
-        if errors:
-            tui.error_msg = " | ".join(errors)
-            tui.draw()
-            # Restore terminal before raising
+        # ── Preview ──────────────────────────────────────────────
+        preview_lines = _build_preview_lines(
+            preview=preview,
+            chosen=chosen,
+            split_column=split_column,
+            split_groups_data=split_groups_data,
+            decimal_format=decimal_format,
+        )
+        for line in preview_lines:
+            tui.answer_log.append(line)
+        tui.draw()
+
+        preview_ok = tui.ask_confirm("Does the preview look correct?")
+        if not preview_ok:
             raise ValueError(
-                "Required fields not mapped. Re-run --map-csv."
+                "Preview rejected. Re-run --map-csv to adjust."
             )
 
         # ── Summary + confirm ────────────────────────────────────
         tui.answer_log.append("")
-        tui.answer_log.append(
-            f"{BOLD}Mapping summary:{RESET}"
-        )
+        tui.answer_log.append(f"{BOLD}Mapping summary:{RESET}")
         tui.answer_log.append(
             f"Account: {account_holder}:{bank}:{account_type}  "
             f"Currency: {base_currency.value}"
         )
-        for ci, (field, _) in enumerate(chosen):
-            hdr = preview.headers[ci]
-            if field:
+        if split_groups_data:
+            tui.answer_log.append(
+                f"Split column: {split_column} "
+                f"({preview.headers[split_column]})"
+            )
+            for vals, grp_chosen in split_groups_data:
                 tui.answer_log.append(
-                    f"  {hdr} \u2192 {FG_GREEN}{field}{RESET}"
+                    f"  Group [{', '.join(vals)}]:"
                 )
-            else:
-                tui.answer_log.append(f"  {hdr} \u2192 skip")
+                for ci, (field, _) in enumerate(grp_chosen):
+                    hdr = preview.headers[ci]
+                    if field:
+                        tui.answer_log.append(
+                            f"    {hdr} \u2192 {FG_GREEN}{field}{RESET}"
+                        )
+        else:
+            for ci, (field, _) in enumerate(chosen):
+                hdr = preview.headers[ci]
+                if field:
+                    tui.answer_log.append(
+                        f"  {hdr} \u2192 {FG_GREEN}{field}{RESET}"
+                    )
+                else:
+                    tui.answer_log.append(f"  {hdr} \u2192 skip")
 
         confirmed = tui.ask_confirm("Save this mapping to config?")
 
@@ -911,24 +1215,7 @@ def run_csv_mapping_tui(
         raise SystemExit(0)
 
     # ── Build objects ────────────────────────────────────────────
-    # Convert internal field names to config names:
-    #   the_date_only -> the_date, the_time_only -> the_time,
-    #   the_datetime -> the_date
-    _FIELD_TO_CONFIG = {
-        DATE_FIELD: "the_date",
-        TIME_FIELD: "the_time",
-        DATETIME_FIELD: "the_date",
-    }
-    mapping_tuples: Tuple[Tuple[str, str], ...] = tuple(
-        (_FIELD_TO_CONFIG.get(f, f) or "", h or "") for f, h in chosen
-    )
-    tnx_date_tuples: Tuple[Tuple[str, str], ...] = tuple(
-        pair for pair in mapping_tuples
-        if pair[0] in ("the_date", "the_time", "description")
-    )
-
-    csv_column_mapping = CsvColumnMapping(csv_column_mapping=mapping_tuples)
-    tnx_date_columns = CsvColumnMapping(csv_column_mapping=tnx_date_tuples)
+    csv_filename = os.path.basename(csv_filepath)
 
     account = Account(
         base_currency=base_currency,
@@ -937,21 +1224,52 @@ def run_csv_mapping_tui(
         account_type=account_type,
     )
 
-    csv_filename = os.path.basename(csv_filepath)
+    if split_groups_data:
+        # Build SplitGroup objects
+        built_split_groups = []
+        for vals, grp_chosen in split_groups_data:
+            cfg_pairs = _chosen_to_config_pairs(grp_chosen)
+            mapping_t = _config_pairs_to_tuples(cfg_pairs)
+            tnx_t = tuple(
+                _extract_tnx_date_pairs(cfg_pairs)
+            )
+            built_split_groups.append(SplitGroup(
+                values=vals,
+                csv_column_mapping=CsvColumnMapping(
+                    csv_column_mapping=mapping_t,
+                ),
+                tnx_date_columns=CsvColumnMapping(
+                    csv_column_mapping=tnx_t,
+                ),
+            ))
 
-    account_config = AccountConfig(
-        account=account,
-        input_csv_filename=csv_filename,
-        csv_column_mapping=csv_column_mapping,
-        tnx_date_columns=tnx_date_columns,
-    )
+        account_config = AccountConfig(
+            account=account,
+            input_csv_filename=csv_filename,
+            csv_column_mapping=None,
+            tnx_date_columns=None,
+            split_column=split_column,
+            split_groups=tuple(built_split_groups),
+            decimal_format=decimal_format,
+        )
+    else:
+        config_pairs = _chosen_to_config_pairs(chosen)
+        mapping_tuples = _config_pairs_to_tuples(config_pairs)
+        tnx_date_tuples = tuple(_extract_tnx_date_pairs(config_pairs))
+
+        account_config = AccountConfig(
+            account=account,
+            input_csv_filename=csv_filename,
+            csv_column_mapping=CsvColumnMapping(
+                csv_column_mapping=mapping_tuples,
+            ),
+            tnx_date_columns=CsvColumnMapping(
+                csv_column_mapping=tnx_date_tuples,
+            ),
+            decimal_format=decimal_format,
+        )
 
     # ── Save to config.yaml ──────────────────────────────────────
-    # Use converted config names for persistence
-    config_pairs: List[Tuple[Optional[str], str]] = [
-        (_FIELD_TO_CONFIG.get(f, f) if f else "", h)
-        for f, h in chosen
-    ]
     was_replaced = _save_to_config(
         config_path=config_path,
         csv_filename=csv_filename,
@@ -959,11 +1277,10 @@ def run_csv_mapping_tui(
         bank=bank,
         account_type=account_type,
         base_currency=base_currency.value,
-        mapping_pairs=config_pairs,
-        tnx_date_pairs=[
-            pair for pair in config_pairs
-            if pair[0] in ("the_date", "the_time", "description")
-        ],
+        chosen=chosen,
+        split_column=split_column,
+        split_groups_data=split_groups_data,
+        decimal_format=decimal_format,
     )
 
     # Print summary after exiting raw mode
@@ -973,12 +1290,209 @@ def run_csv_mapping_tui(
         f"  Account: {account_holder}:{bank}:{account_type}  "
         f"Currency: {base_currency.value}"
     )
-    for ci, (f, h) in enumerate(config_pairs):
-        hdr = preview.headers[ci]
-        if f:
-            print(f"    {hdr} \u2192 {f}")
+    if split_groups_data:
+        for vals, grp_chosen in split_groups_data:
+            print(f"  Group [{', '.join(vals)}]:")
+            cfg_pairs = _chosen_to_config_pairs(grp_chosen)
+            for ci, (f, h) in enumerate(cfg_pairs):
+                hdr = preview.headers[ci]
+                if f:
+                    print(f"    {hdr} \u2192 {f}")
+    else:
+        cfg_pairs = _chosen_to_config_pairs(chosen)
+        for ci, (f, h) in enumerate(cfg_pairs):
+            hdr = preview.headers[ci]
+            if f:
+                print(f"    {hdr} \u2192 {f}")
     print()
     return account_config
+
+
+# ── Preview helpers ──────────────────────────────────────────────────
+
+
+def _parse_numeric(value: str, decimal_format: Optional[str]) -> Optional[float]:
+    """Parse a numeric string respecting the decimal format."""
+    if not value:
+        return None
+    if decimal_format == "dot":
+        cleaned = value.replace(",", "")
+    elif decimal_format == "eu":
+        cleaned = value.replace(".", "").replace(",", ".")
+    else:
+        # Auto-detect heuristic
+        cleaned = _auto_clean_numeric(value)
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def _auto_clean_numeric(value: str) -> str:
+    has_comma = "," in value
+    has_dot = "." in value
+    if has_comma and has_dot:
+        if value.rfind(",") > value.rfind("."):
+            return value.replace(".", "").replace(",", ".")
+        else:
+            return value.replace(",", "")
+    elif has_comma and not has_dot:
+        parts = value.split(",")
+        if len(parts) == 2 and len(parts[1]) <= 2:
+            return value.replace(",", ".")
+        return value.replace(",", "")
+    return value
+
+
+def _detect_decimal_format(
+    preview: CsvPreview,
+    chosen: List[Tuple[Optional[str], str]],
+    split_groups_data: Optional[
+        List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
+    ],
+) -> Optional[str]:
+    """Examine numeric sample values to guess eu vs dot format."""
+    numeric_fields = {
+        "tendered_amount_out", "received_amount", "fee_amount",
+        "quote_price", "exchange_rate", "balance_after",
+    }
+
+    # Gather all (col_idx, field) pairs from chosen or split_groups
+    pairs_to_check: List[Tuple[int, str]] = []
+    if split_groups_data:
+        for _, grp_chosen in split_groups_data:
+            for ci, (field, _) in enumerate(grp_chosen):
+                if field in numeric_fields:
+                    pairs_to_check.append((ci, field))
+    elif chosen:
+        for ci, (field, _) in enumerate(chosen):
+            if field in numeric_fields:
+                pairs_to_check.append((ci, field))
+
+    for col_idx, _ in pairs_to_check:
+        for row in preview.sample_rows:
+            if col_idx >= len(row):
+                continue
+            val = row[col_idx].strip()
+            if not val or val == "0":
+                continue
+            if "." in val and "," not in val:
+                parts = val.split(".")
+                if len(parts) == 2 and len(parts[1]) > 2:
+                    return "dot"
+            if "," in val and "." not in val:
+                parts = val.split(",")
+                if len(parts) == 2 and len(parts[1]) <= 2:
+                    return "eu"
+            if "," in val and "." in val:
+                if val.rfind(",") > val.rfind("."):
+                    return "eu"
+                else:
+                    return "dot"
+    return None
+
+
+def _build_preview_lines(
+    *,
+    preview: CsvPreview,
+    chosen: List[Tuple[Optional[str], str]],
+    split_column: Optional[int],
+    split_groups_data: Optional[
+        List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
+    ],
+    decimal_format: Optional[str],
+    max_rows: int = 5,
+) -> List[str]:
+    """Parse sample rows using the mapping and return preview lines."""
+    lines: List[str] = []
+    lines.append("")
+    lines.append(f"{BOLD}Preview of parsed transactions:{RESET}")
+
+    if split_groups_data and split_column is not None:
+        # Build value→chosen lookup
+        val_to_chosen = {}
+        for vals, grp_chosen in split_groups_data:
+            for v in vals:
+                val_to_chosen[v] = grp_chosen
+
+        count = 0
+        for row in preview.sample_rows:
+            if count >= max_rows:
+                break
+            if split_column >= len(row):
+                continue
+            row_type = row[split_column].strip()
+            mapping = val_to_chosen.get(row_type)
+            if mapping is None:
+                lines.append(
+                    f"  {FG_RED}Row type '{row_type}' not mapped{RESET}"
+                )
+                count += 1
+                continue
+            line = _format_preview_row(row, mapping, decimal_format, row_type)
+            lines.append(line)
+            count += 1
+    elif chosen:
+        count = 0
+        for row in preview.sample_rows:
+            if count >= max_rows:
+                break
+            line = _format_preview_row(row, chosen, decimal_format)
+            lines.append(line)
+            count += 1
+
+    if not any("  " in ln for ln in lines[2:]):
+        lines.append(f"  {FG_RED}No rows to preview{RESET}")
+
+    return lines
+
+
+def _format_preview_row(
+    row: List[str],
+    mapping: List[Tuple[Optional[str], str]],
+    decimal_format: Optional[str],
+    row_type: Optional[str] = None,
+) -> str:
+    """Format a single preview row based on the mapping."""
+    parsed: Dict[str, str] = {}
+    for ci, (field, _) in enumerate(mapping):
+        if not field or ci >= len(row):
+            continue
+        val = row[ci].strip()
+        if field in (
+            "tendered_amount_out", "received_amount", "fee_amount",
+            "quote_price", "exchange_rate", "balance_after",
+        ):
+            num = _parse_numeric(val, decimal_format)
+            parsed[field] = str(num) if num is not None else ""
+        elif field in (DATE_FIELD, DATETIME_FIELD):
+            parsed["date"] = val
+        elif field == TIME_FIELD:
+            parsed["time"] = val
+        else:
+            parsed[field] = val
+
+    date_str = parsed.get("date", "")
+    time_str = parsed.get("time", "")
+    if time_str and date_str:
+        date_str = f"{date_str} {time_str}"
+    amount = parsed.get("tendered_amount_out", "")
+    currency = parsed.get("payment_currency", "")
+    desc = parsed.get("description", "")
+
+    extras = []
+    for key in ("quote_price", "exchange_rate", "received_amount",
+                "fee_amount"):
+        if key in parsed and parsed[key]:
+            extras.append(f"{key}={parsed[key]}")
+    extra_str = " ".join(extras)
+
+    type_tag = f"[{row_type}] " if row_type else ""
+    return (
+        f"  {DIM}{type_tag}{date_str:<22}{RESET} "
+        f"{amount:>12} {currency:<5} {desc[:25]:<25} "
+        f"{DIM}{extra_str}{RESET}"
+    )
 
 
 # ── YAML persistence ──────────────────────────────────────────────────
@@ -993,25 +1507,54 @@ def _save_to_config(
     bank: str,
     account_type: str,
     base_currency: str,
-    mapping_pairs: List[Tuple[Optional[str], str]],
-    tnx_date_pairs: List[Tuple[Optional[str], str]],
+    chosen: List[Tuple[Optional[str], str]],
+    split_column: Optional[int],
+    split_groups_data: Optional[
+        List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
+    ],
+    decimal_format: Optional[str],
 ) -> bool:
     with open(config_path) as f:
         config_dict = yaml.safe_load(f)
 
-    new_entry = {
+    new_entry: Dict = {
         "input_csv_filename": csv_filename,
         "base_currency": base_currency,
         "account_holder": account_holder,
         "bank": bank,
         "account_type": account_type,
-        "csv_column_mapping": [
-            [f or "", h or ""] for f, h in mapping_pairs
-        ],
-        "tnx_date_columns": [
-            [f or "", h or ""] for f, h in tnx_date_pairs
-        ],
     }
+
+    if decimal_format:
+        new_entry["decimal_format"] = decimal_format
+
+    if split_groups_data and split_column is not None:
+        new_entry["split_column"] = split_column
+        new_entry["csv_column_mapping"] = None
+        new_entry["tnx_date_columns"] = None
+        groups_yaml = []
+        for vals, grp_chosen in split_groups_data:
+            cfg_pairs = _chosen_to_config_pairs(grp_chosen)
+            tnx_pairs = _extract_tnx_date_pairs(cfg_pairs)
+            groups_yaml.append({
+                "values": list(vals),
+                "csv_column_mapping": [
+                    [f or "", h or ""] for f, h in cfg_pairs
+                ],
+                "tnx_date_columns": [
+                    [f or "", h or ""] for f, h in tnx_pairs
+                ],
+            })
+        new_entry["split_groups"] = groups_yaml
+    else:
+        config_pairs = _chosen_to_config_pairs(chosen)
+        tnx_pairs = _extract_tnx_date_pairs(config_pairs)
+        new_entry["csv_column_mapping"] = [
+            [f or "", h or ""] for f, h in config_pairs
+        ]
+        new_entry["tnx_date_columns"] = [
+            [f or "", h or ""] for f, h in tnx_pairs
+        ]
 
     if "account_configs" not in config_dict:
         config_dict["account_configs"] = []

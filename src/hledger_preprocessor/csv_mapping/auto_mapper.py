@@ -31,6 +31,7 @@ DEFAULT_HLEDGER_NAMES: Dict[str, str] = {
     "balance_after": "",
     "bic": "",
     "payment_currency": "currency",
+    "exchange_rate": "",
 }
 
 # Header patterns for auto-matching (case-insensitive).
