@@ -6,11 +6,12 @@ questions at the bottom.  Alt+arrows scroll the table while answering.
 """
 
 import os
+import select
 import sys
 import shutil
 import termios
 import tty
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 from typeguard import typechecked
@@ -280,6 +281,54 @@ def _get_default_idx(auto: AutoMapping) -> int:
     return 0
 
 
+# ── Negation support ─────────────────────────────────────────────────
+
+NEGATE_PREFIX = "negate:"
+
+_NUMERIC_FIELDS = {
+    "tendered_amount_out", "received_amount", "fee_amount",
+    "quote_price", "exchange_rate", "balance_after",
+}
+
+
+def _strip_negate(field: str) -> Tuple[str, bool]:
+    """Return (base_field, is_negated) from a possibly prefixed field name."""
+    if field.startswith(NEGATE_PREFIX):
+        return field[len(NEGATE_PREFIX):], True
+    return field, False
+
+
+def _flip_sign_str(val: str) -> str:
+    """Flip the sign of a numeric string for display.
+
+    ``"50"`` → ``"-50"``, ``"-3.14"`` → ``"3.14"``, non-numeric unchanged.
+    """
+    v = val.strip()
+    if not v:
+        return val
+    if v.startswith("-"):
+        return v[1:]
+    # Check it looks numeric (digits, dots, commas, optional leading sign)
+    stripped = v.lstrip("+")
+    test = stripped.replace(",", "").replace(".", "").replace(" ", "")
+    if test.isdigit():
+        return "-" + stripped
+    return val
+
+
+# ── Go-back signal ───────────────────────────────────────────────────
+
+
+class GoBack(Exception):
+    """Raised when the user presses Escape to go back to the previous step."""
+    pass
+
+
+class PreviewRejected(Exception):
+    """Raised when the user answers 'n' to preview confirmation."""
+    pass
+
+
 # ── Key reading ──────────────────────────────────────────────────────
 
 
@@ -287,6 +336,11 @@ def _read_key_raw(fd: int) -> str:
     """Read a single keypress from raw fd. Returns named keys."""
     ch = os.read(fd, 1).decode("utf-8", errors="replace")
     if ch == "\x1b":
+        # Wait up to 50ms for a follow-up byte (escape sequence).
+        # If nothing arrives, it was a bare Escape press.
+        ready, _, _ = select.select([fd], [], [], 0.05)
+        if not ready:
+            return "esc"
         ch2 = os.read(fd, 1).decode("utf-8", errors="replace")
         if ch2 == "[":
             ch3 = os.read(fd, 1).decode("utf-8", errors="replace")
@@ -371,6 +425,9 @@ class _SplitPaneTUI:
         # Error message to show temporarily
         self.error_msg = ""
 
+        # Columns whose values should be shown with flipped sign in the table
+        self.negate_cols: set = set()
+
         # Terminal state
         self.fd = sys.stdin.fileno()
         self.old_termios = termios.tcgetattr(self.fd)
@@ -434,9 +491,15 @@ class _SplitPaneTUI:
         self._nl()
 
         for ri in range(self.row_offset, vis_rows_end):
+            row = self.preview.sample_rows[ri]
+            if self.negate_cols:
+                row = list(row)
+                for ci in self.negate_cols:
+                    if ci < len(row):
+                        row[ci] = _flip_sign_str(row[ci])
             self._write(
                 _render_clipped_row(
-                    self.preview.sample_rows[ri], self.col_widths,
+                    row, self.col_widths,
                     self.col_offset, self.n_cols, term_w,
                     highlight_col=self.highlight_col,
                 )
@@ -468,7 +531,7 @@ class _SplitPaneTUI:
         for entry in self.answer_log:
             lines_to_show.append(f"{DIM}  {entry}{RESET}")
 
-        if self.choice_active:
+        if self.choice_active or self.bottom_lines:
             for bl in self.bottom_lines:
                 lines_to_show.append(bl)
 
@@ -482,6 +545,7 @@ class _SplitPaneTUI:
         elif self.choice_active:
             hint = (
                 f"  {DIM}\u2191\u2193 select  Enter=confirm  "
+                f"Esc=back  "
                 f"Alt+\u2190\u2192\u2191\u2193 scroll table{RESET}"
             )
             lines_to_show.append(hint)
@@ -546,6 +610,7 @@ class _SplitPaneTUI:
         self.input_buf = ""
         self.input_active = True
         self.choice_active = False
+        self.bottom_lines = []
         self.error_msg = ""
         self.draw()
 
@@ -565,6 +630,9 @@ class _SplitPaneTUI:
                 if self.input_buf:
                     self.input_buf = self.input_buf[:-1]
                     self._redraw_input_line()
+            elif key == "esc":
+                self.input_active = False
+                raise GoBack
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
             elif len(key) == 1 and key.isprintable():
@@ -600,12 +668,19 @@ class _SplitPaneTUI:
         auto: AutoMapping,
         used: set,
         chosen: List[Tuple[Optional[str], str]],
+        default_field: Optional[str] = None,
+        use_auto_default: bool = True,
     ) -> int:
         """Ask user to pick a field mapping via up/down selection.
 
         If the user picks an already-mapped field, they are asked whether
         to *replace* the earlier mapping (the old column becomes skipped)
         or to pick something else.
+
+        *default_field*: if given, pre-select this field instead of the
+        auto-mapper's suggestion (used for pre-filling from a previous
+        group's mapping).  When *None* and *use_auto_default* is False,
+        defaults to Skip (index 0).
         """
         self.highlight_col = col_idx
         self.choice_used = used
@@ -613,8 +688,19 @@ class _SplitPaneTUI:
         self.input_active = False
         self.error_msg = ""
 
-        # If auto-detection proposes an already-used field, default to Skip
-        default_idx = _get_default_idx(auto)
+        # Determine default selection
+        if default_field is not None:
+            # Pre-fill: find the matching field in FIELD_CHOICES
+            default_idx = 0
+            for i, (f, _) in enumerate(FIELD_CHOICES):
+                if f == default_field:
+                    default_idx = i
+                    break
+        elif not use_auto_default:
+            # Previous group chose Skip for this column
+            default_idx = 0
+        else:
+            default_idx = _get_default_idx(auto)
         proposed = FIELD_CHOICES[default_idx][0]
         if proposed and proposed in used:
             default_idx = 0
@@ -735,6 +821,11 @@ class _SplitPaneTUI:
                         f"Col {col_idx} '{header}' \u2192 skip"
                     )
                 return self.choice_idx
+            elif key == "esc":
+                self.choice_active = False
+                self.highlight_col = -1
+                self.error_msg = ""
+                raise GoBack
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
 
@@ -788,9 +879,14 @@ class _SplitPaneTUI:
         self.input_active = False
         self.choice_active = False
         self.error_msg = ""
+        hdr = self.preview.headers[0]
         self.bottom_lines = [
             f"  {BOLD}{prompt}{RESET}",
-            f"  {DIM}\u2190\u2192 select column  Enter=confirm{RESET}",
+            (
+                f"  Column {self.highlight_col}: "
+                f"{FG_CYAN}{BOLD}{hdr}{RESET}"
+            ),
+            f"  {DIM}\u2190\u2192 select column  Enter=confirm  Esc=back{RESET}",
         ]
         self.draw()
 
@@ -815,7 +911,7 @@ class _SplitPaneTUI:
                             f"{FG_CYAN}{BOLD}{hdr}{RESET}"
                         ),
                         f"  {DIM}\u2190\u2192 select column  "
-                        f"Enter=confirm{RESET}",
+                        f"Enter=confirm  Esc=back{RESET}",
                     ]
                     self.draw()
             elif key == "left":
@@ -831,7 +927,7 @@ class _SplitPaneTUI:
                             f"{FG_CYAN}{BOLD}{hdr}{RESET}"
                         ),
                         f"  {DIM}\u2190\u2192 select column  "
-                        f"Enter=confirm{RESET}",
+                        f"Enter=confirm  Esc=back{RESET}",
                     ]
                     self.draw()
             elif key.startswith("alt-"):
@@ -841,11 +937,16 @@ class _SplitPaneTUI:
                 selected = self.highlight_col
                 hdr = self.preview.headers[selected]
                 self.highlight_col = -1
+                self.bottom_lines = []
                 self.answer_log.append(
                     f"{prompt}: column {selected} "
                     f"({FG_GREEN}{hdr}{RESET})"
                 )
                 return selected
+            elif key == "esc":
+                self.highlight_col = -1
+                self.bottom_lines = []
+                raise GoBack
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
 
@@ -855,6 +956,7 @@ class _SplitPaneTUI:
         self.input_buf = ""
         self.input_active = True
         self.choice_active = False
+        self.bottom_lines = []
         self.error_msg = ""
         self.draw()
 
@@ -871,11 +973,112 @@ class _SplitPaneTUI:
                 if self.input_buf:
                     self.input_buf = self.input_buf[:-1]
                     self._redraw_input_line()
+            elif key == "esc":
+                self.input_active = False
+                raise GoBack
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
             elif len(key) == 1 and key.isprintable():
                 self.input_buf += key
                 self._redraw_input_line()
+
+    def ask_negate_table(
+        self,
+        numeric_entries: List[Tuple[int, str, str]],
+    ) -> List[int]:
+        """Let the user toggle negation on numeric columns.
+
+        Uses the existing CSV table highlight — left/right jumps between
+        numeric columns only, Enter/Space toggles the sign (values flip
+        visually in the table), Tab confirms.
+
+        *numeric_entries*: ``(col_idx, header, field_name)`` per column.
+        Returns col indices the user chose to negate.
+        """
+        if not numeric_entries:
+            return []
+
+        self.input_active = False
+        self.choice_active = False
+        self.error_msg = ""
+
+        negated: List[bool] = [False] * len(numeric_entries)
+        cursor = 0
+
+        def _sync() -> None:
+            ci, hdr, field = numeric_entries[cursor]
+            self.highlight_col = ci
+            # Auto-scroll so highlighted column is visible
+            if ci < self.col_offset:
+                self.col_offset = ci
+            term_w, _ = _term_size()
+            check = 2 if self.col_offset > 0 else 0
+            for c in range(self.col_offset, self.n_cols):
+                check += self.col_widths[c] + 2
+                if c == ci and check > term_w:
+                    self.col_offset = ci
+                    break
+            self.negate_cols = {
+                numeric_entries[i][0]
+                for i in range(len(numeric_entries))
+                if negated[i]
+            }
+            mark = (
+                f"{FG_YELLOW}x{RESET}"
+                if negated[cursor]
+                else " "
+            )
+            self.bottom_lines = [
+                (
+                    f"  {BOLD}Negate columns:{RESET}  "
+                    f"Col {ci} {hdr} \u2192 {field}  "
+                    f"[{mark}]"
+                ),
+                (
+                    f"  {DIM}\u2190\u2192 prev/next numeric col  "
+                    f"Enter/Space=toggle  "
+                    f"Tab=done  Esc=back{RESET}"
+                ),
+            ]
+
+        _sync()
+        self.draw()
+
+        while True:
+            key = _read_key_raw(self.fd)
+            if key.startswith("alt-"):
+                self.scroll_table(key[4:])
+                self.draw()
+            elif key in ("left", "up"):
+                if cursor > 0:
+                    cursor -= 1
+                    _sync()
+                    self.draw()
+            elif key in ("right", "down"):
+                if cursor < len(numeric_entries) - 1:
+                    cursor += 1
+                    _sync()
+                    self.draw()
+            elif key in ("enter", " "):
+                negated[cursor] = not negated[cursor]
+                _sync()
+                self.draw()
+            elif key == "tab":
+                self.highlight_col = -1
+                self.negate_cols = set()
+                self.bottom_lines = []
+                return [
+                    numeric_entries[i][0]
+                    for i in range(len(numeric_entries))
+                    if negated[i]
+                ]
+            elif key == "esc":
+                self.highlight_col = -1
+                self.negate_cols = set()
+                self.bottom_lines = []
+                raise GoBack
+            elif key == "ctrl-c":
+                raise KeyboardInterrupt
 
 
 # ── Mapping helpers ───────────────────────────────────────────────────
@@ -895,40 +1098,148 @@ _FIELD_TO_CONFIG = {
 }
 
 
+def _ask_negate_for_chosen(
+    tui: "_SplitPaneTUI",
+    chosen: List[Tuple[Optional[str], str]],
+    preview: CsvPreview,
+) -> None:
+    """Show the negate toggle table for numeric columns in *chosen*.
+
+    Modifies *chosen* in-place, adding ``NEGATE_PREFIX`` to negated fields.
+    Raises ``GoBack`` if the user presses Escape (caller should handle).
+    """
+    numeric_entries: List[Tuple[int, str, str]] = []
+    for ci, (field, _) in enumerate(chosen):
+        base = _strip_negate(field)[0] if field else ""
+        if base in _NUMERIC_FIELDS:
+            hdr = preview.headers[ci]
+            numeric_entries.append((ci, hdr, base))
+
+    if not numeric_entries:
+        return
+
+    negated_cols = tui.ask_negate_table(numeric_entries)
+
+    for ci in negated_cols:
+        field, hname = chosen[ci]
+        if field and not field.startswith(NEGATE_PREFIX):
+            chosen[ci] = (NEGATE_PREFIX + field, hname)
+            tui.answer_log.append(
+                f"  {FG_YELLOW}Col {ci} '{preview.headers[ci]}' "
+                f"\u2192 negated{RESET}"
+            )
+
+
 def _run_column_mapping(
     tui: "_SplitPaneTUI",
     auto_mappings: "List[AutoMapping]",
     preview: CsvPreview,
     group_label: str = "",
+    previous_chosen: Optional[List[Tuple[Optional[str], str]]] = None,
 ) -> List[Tuple[Optional[str], str]]:
     """Run the column mapping loop and return chosen (field, hledger_name) pairs.
 
     Validates that required fields (date + amount) are mapped.
+
+    Supports back-navigation: pressing Escape goes back one column,
+    or propagates ``GoBack`` out if already at column 0.
+
+    *previous_chosen*: if given, pre-fill each column's default from
+    the previous group's mapping so the user can quickly confirm or
+    change only the columns that differ.
     """
+    log_at_start = len(tui.answer_log)
+
     if group_label:
         tui.answer_log.append("")
         tui.answer_log.append(
             f"{BOLD}Mapping for group: {FG_CYAN}{group_label}{RESET}"
         )
+        if previous_chosen:
+            tui.answer_log.append(
+                f"  {DIM}(pre-filled from previous group — "
+                f"change only what differs){RESET}"
+            )
         tui.draw()
 
     used_fields: set = set()
     chosen: List[Tuple[Optional[str], str]] = []
+    # Track answer_log length before each column for rollback
+    col_log_snapshots: List[int] = []
 
-    for col_idx, auto in enumerate(auto_mappings):
-        pick = tui.ask_choice(col_idx, auto, used_fields, chosen)
-        field = FIELD_CHOICES[pick][0]
-        if field:
-            used_fields.add(field)
-            hledger_name = _HLEDGER_NAMES.get(
-                field, DEFAULT_HLEDGER_NAMES.get(field, "")
-            )
-            chosen.append((field, hledger_name))
-        else:
-            chosen.append(("", ""))
+    # Outer loop: runs column mapping then negate table.
+    # GoBack from negate table re-enters column mapping at last column.
+    negate_done = False
+    col_idx = 0
+    while not negate_done:
+        while col_idx < len(auto_mappings):
+            auto = auto_mappings[col_idx]
+            col_log_snapshots.append(len(tui.answer_log))
 
-    # Validate
-    mapped = {pair[0] for pair in chosen if pair[0]}
+            # Pre-fill from previous group's mapping if available.
+            # Use a sentinel to distinguish "no previous" from "previous=Skip".
+            _NO_PREV = object()
+            default_field = _NO_PREV
+            if previous_chosen and col_idx < len(previous_chosen):
+                prev_field = previous_chosen[col_idx][0]
+                # Strip negate prefix for choice default (FIELD_CHOICES has base names)
+                if prev_field:
+                    default_field = _strip_negate(prev_field)[0]
+                else:
+                    default_field = None
+
+            try:
+                pick = tui.ask_choice(
+                    col_idx, auto, used_fields, chosen,
+                    default_field=default_field if default_field is not _NO_PREV else None,
+                    use_auto_default=default_field is _NO_PREV,
+                )
+            except GoBack:
+                # Trim log for this column
+                tui.answer_log = tui.answer_log[:col_log_snapshots.pop()]
+                if col_idx > 0:
+                    # Undo the previous column's choice
+                    prev = chosen.pop()
+                    if prev[0]:
+                        used_fields.discard(_strip_negate(prev[0])[0])
+                    col_idx -= 1
+                    # Also trim the previous column's log entries
+                    tui.answer_log = tui.answer_log[:col_log_snapshots.pop()]
+                else:
+                    # At first column — propagate GoBack to the caller
+                    tui.answer_log = tui.answer_log[:log_at_start]
+                    raise
+                tui.draw()
+                continue
+
+            field = FIELD_CHOICES[pick][0]
+            if field:
+                used_fields.add(field)
+                hledger_name = _HLEDGER_NAMES.get(
+                    field, DEFAULT_HLEDGER_NAMES.get(field, "")
+                )
+                chosen.append((field, hledger_name))
+            else:
+                chosen.append(("", ""))
+            col_idx += 1
+
+        # ── Negate toggle for numeric columns ──
+        negate_log_snap = len(tui.answer_log)
+        try:
+            _ask_negate_for_chosen(tui, chosen, preview)
+            negate_done = True
+        except GoBack:
+            # Go back to re-ask the last column
+            tui.answer_log = tui.answer_log[:negate_log_snap]
+            last = chosen.pop()
+            if last[0]:
+                used_fields.discard(_strip_negate(last[0])[0])
+            col_idx = len(chosen)
+            tui.answer_log = tui.answer_log[:col_log_snapshots.pop()]
+            tui.draw()
+
+    # Validate (strip negate prefix for field name checks)
+    mapped = {_strip_negate(pair[0])[0] for pair in chosen if pair[0]}
     errors: List[str] = []
     has_datetime = DATETIME_FIELD in mapped
     has_date = DATE_FIELD in mapped
@@ -949,7 +1260,8 @@ def _run_column_mapping(
     if errors:
         tui.error_msg = " | ".join(errors)
         tui.draw()
-        raise ValueError("Required fields not mapped. Re-run --map-csv.")
+        # Let the user go back to fix it rather than crashing
+        raise GoBack
 
     return chosen
 
@@ -957,10 +1269,21 @@ def _run_column_mapping(
 def _chosen_to_config_pairs(
     chosen: List[Tuple[Optional[str], str]],
 ) -> List[Tuple[str, str]]:
-    """Convert TUI field names to config field names."""
-    return [
-        (_FIELD_TO_CONFIG.get(f, f) if f else "", h) for f, h in chosen
-    ]
+    """Convert TUI field names to config field names.
+
+    Preserves the ``negate:`` prefix through the translation.
+    """
+    result = []
+    for f, h in chosen:
+        if not f:
+            result.append(("", h))
+            continue
+        base, negated = _strip_negate(f)
+        config_name = _FIELD_TO_CONFIG.get(base, base)
+        if negated:
+            config_name = NEGATE_PREFIX + config_name
+        result.append((config_name, h))
+    return result
 
 
 def _config_pairs_to_tuples(
@@ -978,7 +1301,421 @@ def _extract_tnx_date_pairs(
     ]
 
 
+def _append_mapping_summary(
+    tui: "_SplitPaneTUI",
+    preview: CsvPreview,
+    chosen: List[Tuple[Optional[str], str]],
+    split_groups_data: Optional[
+        List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
+    ],
+) -> None:
+    """Append a compact mapping summary to ``tui.answer_log``."""
+    tui.answer_log.append("")
+    tui.answer_log.append(f"{BOLD}Column mapping:{RESET}")
+
+    if split_groups_data:
+        for vals, grp_chosen in split_groups_data:
+            tui.answer_log.append(
+                f"  {FG_CYAN}{', '.join(vals)}{RESET}:"
+            )
+            for ci, (field_raw, _) in enumerate(grp_chosen):
+                if not field_raw:
+                    continue
+                hdr = preview.headers[ci]
+                base, neg = _strip_negate(field_raw)
+                neg_tag = f" {FG_YELLOW}(neg){RESET}" if neg else ""
+                tui.answer_log.append(
+                    f"    {hdr} \u2192 {FG_GREEN}{base}{RESET}{neg_tag}"
+                )
+    elif chosen:
+        for ci, (field_raw, _) in enumerate(chosen):
+            if not field_raw:
+                continue
+            hdr = preview.headers[ci]
+            base, neg = _strip_negate(field_raw)
+            neg_tag = f" {FG_YELLOW}(neg){RESET}" if neg else ""
+            tui.answer_log.append(
+                f"  {hdr} \u2192 {FG_GREEN}{base}{RESET}{neg_tag}"
+            )
+
+
+# ── Step helpers for the main TUI flow ────────────────────────────────
+
+
+def _run_mapping_step(
+    tui: _SplitPaneTUI,
+    state: Dict[str, Any],
+    preview: CsvPreview,
+    auto_mappings: List[AutoMapping],
+) -> None:
+    """Run template detection + split decision + column mapping.
+
+    Stores results in *state*: ``template_applied``, ``split_column``,
+    ``split_groups_data``, ``chosen``, and possibly ``decimal_format``
+    (from template).  Raises ``GoBack`` to go back to the previous step.
+
+    When ``state["_reedit_mapping"]`` is True, skips template/split
+    questions and re-enters column mapping with existing choices as
+    pre-fill defaults (used after preview rejection).
+    """
+    from hledger_preprocessor.csv_mapping.templates import detect_template
+
+    # Re-edit mode: re-enter column mapping with existing choices as pre-fill
+    reedit = state.pop("_reedit_mapping", False)
+    if reedit:
+        old_split_groups_data = state.get("split_groups_data")
+        old_chosen = state.get("chosen", [])
+
+        if old_split_groups_data:
+            # Re-map the last group with previous choices as pre-fill
+            new_groups = []
+            for gi, (vals, grp_chosen) in enumerate(old_split_groups_data):
+                prev = new_groups[-1][1] if new_groups else None
+                new_chosen = _run_column_mapping(
+                    tui, auto_mappings, preview,
+                    group_label=", ".join(vals),
+                    previous_chosen=grp_chosen,
+                )
+                new_groups.append((vals, new_chosen))
+            state["split_groups_data"] = new_groups
+        else:
+            state["chosen"] = _run_column_mapping(
+                tui, auto_mappings, preview,
+                previous_chosen=old_chosen,
+            )
+        _append_mapping_summary(
+            tui, preview, state.get("chosen", []),
+            state.get("split_groups_data"),
+        )
+        tui.draw()
+        return
+
+    detected_template = detect_template(preview.headers)
+    template_applied = False
+    split_column: Optional[int] = None
+    split_groups_data: Optional[
+        List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
+    ] = None
+    decimal_format: Optional[str] = None
+    chosen: List[Tuple[Optional[str], str]] = []
+
+    if detected_template:
+        use_tmpl = tui.ask_confirm(
+            f"Detected {detected_template.name} CSV format. "
+            f"Apply template?"
+        )
+        if use_tmpl:
+            template_applied = True
+            split_column = detected_template.split_column
+            decimal_format = detected_template.decimal_format
+            if detected_template.groups:
+                split_groups_data = []
+                for tg in detected_template.groups:
+                    tui.answer_log.append(
+                        f"{DIM}Template: group "
+                        f"{FG_CYAN}{', '.join(tg.values)}{RESET}"
+                    )
+                    for ci, (field, hname) in enumerate(
+                        tg.column_mappings
+                    ):
+                        hdr = preview.headers[ci]
+                        if field:
+                            tui.answer_log.append(
+                                f"  {hdr} \u2192 "
+                                f"{FG_GREEN}{field}{RESET}"
+                            )
+                        else:
+                            tui.answer_log.append(
+                                f"  {hdr} \u2192 skip"
+                            )
+                    split_groups_data.append(
+                        (tg.values, list(tg.column_mappings))
+                    )
+                tui.draw()
+            else:
+                chosen = list(detected_template.groups[0].column_mappings)
+                for ci, (field, _) in enumerate(chosen):
+                    hdr = preview.headers[ci]
+                    if field:
+                        tui.answer_log.append(
+                            f"  {hdr} \u2192 "
+                            f"{FG_GREEN}{field} (template){RESET}"
+                        )
+                    else:
+                        tui.answer_log.append(
+                            f"  {hdr} \u2192 skip (template)"
+                        )
+                tui.draw()
+
+    if not template_applied:
+        wants_split = tui.ask_confirm(
+            "Split CSV by a type column? (for mixed row types)"
+        )
+
+        if wants_split:
+            split_column = tui.ask_column_select(
+                "Select the column on which the transaction "
+                "types will be split"
+            )
+
+            unique_vals = sorted(set(
+                row[split_column].strip()
+                for row in preview.sample_rows
+                if split_column < len(row) and row[split_column].strip()
+            ))
+            tui.answer_log.append(
+                f"  Unique values: {FG_CYAN}"
+                f"{', '.join(unique_vals)}{RESET}"
+            )
+            tui.draw()
+
+            # Phase 1: Collect ALL groups with back-navigation
+            group_values_list: List[Tuple[str, ...]] = []
+            remaining = set(unique_vals)
+            group_num = 1
+            group_log_snapshots: List[int] = []
+
+            while remaining:
+                group_log_snapshots.append(len(tui.answer_log))
+                try:
+                    vals_str = tui.ask_string(
+                        f"Group {group_num} values (comma-separated, "
+                        f"remaining: {', '.join(sorted(remaining))})"
+                    )
+                except GoBack:
+                    group_log_snapshots.pop()
+                    if group_values_list:
+                        last = group_values_list.pop()
+                        remaining |= set(last)
+                        group_num -= 1
+                        # Trim the previous group's log entry
+                        tui.answer_log = tui.answer_log[
+                            :group_log_snapshots.pop()
+                        ]
+                        tui.draw()
+                    else:
+                        raise  # propagate to main loop
+                    continue
+
+                vals = tuple(v.strip() for v in vals_str.split(","))
+                invalid = set(vals) - set(unique_vals)
+                if invalid:
+                    tui.error_msg = (
+                        f"Unknown values: {', '.join(invalid)}"
+                    )
+                    # Undo the log entry ask_string added
+                    tui.answer_log = tui.answer_log[
+                        :group_log_snapshots.pop()
+                    ]
+                    tui.draw()
+                    continue
+                not_remaining = set(vals) - remaining
+                if not_remaining:
+                    tui.error_msg = (
+                        f"Already assigned: {', '.join(not_remaining)}"
+                    )
+                    tui.answer_log = tui.answer_log[
+                        :group_log_snapshots.pop()
+                    ]
+                    tui.draw()
+                    continue
+
+                remaining -= set(vals)
+                group_values_list.append(vals)
+                tui.answer_log.append(
+                    f"  Group {group_num}: "
+                    f"{FG_GREEN}{', '.join(vals)}{RESET}"
+                )
+                group_num += 1
+
+            tui.answer_log.append("")
+            tui.answer_log.append(
+                f"{BOLD}{len(group_values_list)} groups defined. "
+                f"Now map columns for each group.{RESET}"
+            )
+            tui.draw()
+
+            # Phase 2: Map columns for each group with back-navigation
+            split_groups_data = []
+            prev_chosen: Optional[
+                List[Tuple[Optional[str], str]]
+            ] = None
+
+            gi = 0
+            group_map_log: List[int] = []
+            while gi < len(group_values_list):
+                vals = group_values_list[gi]
+                group_map_log.append(len(tui.answer_log))
+                try:
+                    group_chosen = _run_column_mapping(
+                        tui, auto_mappings, preview,
+                        group_label=", ".join(vals),
+                        previous_chosen=prev_chosen,
+                    )
+                except GoBack:
+                    tui.answer_log = tui.answer_log[
+                        :group_map_log.pop()
+                    ]
+                    if gi > 0:
+                        split_groups_data.pop()
+                        prev_chosen = (
+                            split_groups_data[-1][1]
+                            if split_groups_data else None
+                        )
+                        gi -= 1
+                    else:
+                        raise  # propagate to main loop
+                    tui.draw()
+                    continue
+                split_groups_data.append((vals, group_chosen))
+                prev_chosen = group_chosen
+                gi += 1
+        else:
+            chosen = _run_column_mapping(
+                tui, auto_mappings, preview
+            )
+
+    state["template_applied"] = template_applied
+    state["split_column"] = split_column
+    state["split_groups_data"] = split_groups_data
+    state["chosen"] = chosen
+    if decimal_format is not None:
+        state["decimal_format"] = decimal_format
+
+    # Show mapping summary in the answer log
+    _append_mapping_summary(
+        tui, preview, chosen, split_groups_data,
+    )
+    tui.draw()
+
+
+def _run_decimal_step(
+    tui: _SplitPaneTUI,
+    state: Dict[str, Any],
+    preview: CsvPreview,
+) -> None:
+    """Detect or ask for decimal format. Stores in ``state["decimal_format"]``."""
+    chosen = state.get("chosen", [])
+    split_groups_data = state.get("split_groups_data")
+
+    if "decimal_format" in state and state["decimal_format"] is not None:
+        # Template already set it — just display
+        tui.answer_log.append(
+            f"Decimal format: {FG_GREEN}"
+            f"{state['decimal_format']}{RESET}"
+        )
+        state["_decimal_was_asked"] = False
+        return
+
+    decimal_format = _detect_decimal_format(
+        preview, chosen, split_groups_data
+    )
+    if decimal_format:
+        tui.answer_log.append(
+            f"Decimal format: {FG_GREEN}{decimal_format}{RESET}"
+        )
+        state["_decimal_was_asked"] = False
+    else:
+        fmt = tui.ask_string(
+            "Decimal format: 'eu' (1.234,56) or 'dot' (1,234.56)",
+            default="dot",
+        )
+        decimal_format = fmt
+        state["_decimal_was_asked"] = True
+    state["decimal_format"] = decimal_format
+
+
+def _run_preview_step(
+    tui: _SplitPaneTUI,
+    state: Dict[str, Any],
+    preview: CsvPreview,
+) -> None:
+    """Show preview of parsed transactions.
+
+    Raises ``GoBack`` on Escape, ``PreviewRejected`` when user answers 'n'.
+    """
+    preview_lines = _build_preview_lines(
+        preview=preview,
+        chosen=state.get("chosen", []),
+        split_column=state.get("split_column"),
+        split_groups_data=state.get("split_groups_data"),
+        decimal_format=state.get("decimal_format"),
+    )
+    for line in preview_lines:
+        tui.answer_log.append(line)
+    tui.draw()
+
+    preview_ok = tui.ask_confirm("Does the preview look correct?")
+    if not preview_ok:
+        raise PreviewRejected
+
+
+def _run_summary_step(
+    tui: _SplitPaneTUI,
+    state: Dict[str, Any],
+    preview: CsvPreview,
+) -> None:
+    """Show mapping summary and ask for save confirmation."""
+    account_holder = state["account_holder"]
+    bank = state["bank"]
+    account_type = state["account_type"]
+    base_currency = state["base_currency"]
+    split_groups_data = state.get("split_groups_data")
+    split_column = state.get("split_column")
+    chosen = state.get("chosen", [])
+
+    tui.answer_log.append("")
+    tui.answer_log.append(f"{BOLD}Mapping summary:{RESET}")
+    tui.answer_log.append(
+        f"Account: {account_holder}:{bank}:{account_type}  "
+        f"Currency: {base_currency.value}"
+    )
+    if split_groups_data:
+        tui.answer_log.append(
+            f"Split column: {split_column} "
+            f"({preview.headers[split_column]})"
+        )
+        for vals, grp_chosen in split_groups_data:
+            tui.answer_log.append(
+                f"  Group [{', '.join(vals)}]:"
+            )
+            for ci, (field_raw, _) in enumerate(grp_chosen):
+                hdr = preview.headers[ci]
+                if field_raw:
+                    base, neg = _strip_negate(field_raw)
+                    neg_tag = f" {FG_YELLOW}(negated){RESET}" if neg else ""
+                    tui.answer_log.append(
+                        f"    {hdr} \u2192 {FG_GREEN}{base}{RESET}{neg_tag}"
+                    )
+    else:
+        for ci, (field_raw, _) in enumerate(chosen):
+            hdr = preview.headers[ci]
+            if field_raw:
+                base, neg = _strip_negate(field_raw)
+                neg_tag = f" {FG_YELLOW}(negated){RESET}" if neg else ""
+                tui.answer_log.append(
+                    f"  {hdr} \u2192 {FG_GREEN}{base}{RESET}{neg_tag}"
+                )
+            else:
+                tui.answer_log.append(f"  {hdr} \u2192 skip")
+
+    confirmed = tui.ask_confirm("Save this mapping to config?")
+    state["confirmed"] = confirmed
+
+
 # ── Main TUI flow ────────────────────────────────────────────────────
+
+
+_STEPS = [
+    "account_holder",    # 0
+    "bank",              # 1
+    "account_type",      # 2
+    "base_currency",     # 3
+    "mapping",           # 4 — template + split + column mapping
+    "decimal_format",    # 5
+    "preview",           # 6
+    "summary",           # 7
+]
 
 
 @typechecked
@@ -987,222 +1724,110 @@ def run_csv_mapping_tui(
     csv_filepath: str,
     config_path: str,
 ) -> AccountConfig:
-    """Interactive terminal TUI that maps CSV columns to transaction fields."""
+    """Interactive terminal TUI that maps CSV columns to transaction fields.
+
+    Supports back-navigation: press Escape at any question to return
+    to the previous step.
+    """
     preview = read_csv_preview(csv_filepath=csv_filepath)
     auto_mappings = auto_map_columns(csv_preview=preview)
 
     tui = _SplitPaneTUI(preview, auto_mappings)
 
+    state: Dict[str, Any] = {}
+    step = 0
+    log_snapshots: List[int] = []
+    # Track which completed steps had user interaction (asked a question).
+    # Non-interactive steps (auto-detected values) are skipped when going back.
+    interactive_steps: Dict[int, bool] = {}
+
     sys.stdout.write(CURSOR_HIDE)
     tui._enter_raw()
     try:
-        # ── Account details ──────────────────────────────────────
-        tui.bottom_lines = []
-        tui.draw()
+        while step < len(_STEPS):
+            current = _STEPS[step]
 
-        account_holder = tui.ask_string("Account holder (e.g. 'at')")
-        bank = tui.ask_string("Bank / exchange (e.g. 'bitvavo')")
-        account_type = tui.ask_string(
-            "Account type (e.g. 'checking', 'trading')"
-        )
-        base_currency = tui.ask_currency()
-
-        # ── Template detection ───────────────────────────────────
-        from hledger_preprocessor.csv_mapping.templates import detect_template
-
-        detected_template = detect_template(preview.headers)
-        template_applied = False
-        split_column: Optional[int] = None
-        split_groups_data: Optional[
-            List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
-        ] = None  # [(values, chosen), ...]
-        decimal_format: Optional[str] = None
-        chosen: List[Tuple[Optional[str], str]] = []
-
-        if detected_template:
-            use_tmpl = tui.ask_confirm(
-                f"Detected {detected_template.name} CSV format. "
-                f"Apply template?"
-            )
-            if use_tmpl:
-                template_applied = True
-                split_column = detected_template.split_column
-                decimal_format = detected_template.decimal_format
-                if detected_template.groups:
-                    split_groups_data = []
-                    for tg in detected_template.groups:
-                        tui.answer_log.append(
-                            f"{DIM}Template: group "
-                            f"{FG_CYAN}{', '.join(tg.values)}{RESET}"
-                        )
-                        for ci, (field, hname) in enumerate(
-                            tg.column_mappings
-                        ):
-                            hdr = preview.headers[ci]
-                            if field:
-                                tui.answer_log.append(
-                                    f"  {hdr} \u2192 "
-                                    f"{FG_GREEN}{field}{RESET}"
-                                )
-                            else:
-                                tui.answer_log.append(
-                                    f"  {hdr} \u2192 skip"
-                                )
-                        split_groups_data.append(
-                            (tg.values, list(tg.column_mappings))
-                        )
-                    tui.draw()
-                else:
-                    # Template with no split — single mapping
-                    chosen = list(detected_template.groups[0].column_mappings)
-                    for ci, (field, _) in enumerate(chosen):
-                        hdr = preview.headers[ci]
-                        if field:
-                            tui.answer_log.append(
-                                f"  {hdr} \u2192 "
-                                f"{FG_GREEN}{field} (template){RESET}"
-                            )
-                        else:
-                            tui.answer_log.append(
-                                f"  {hdr} \u2192 skip (template)"
-                            )
-                    tui.draw()
-
-        if not template_applied:
-            # ── Split-by-type question ───────────────────────────
-            wants_split = tui.ask_confirm(
-                "Split CSV by a type column? (for mixed row types)"
-            )
-
-            if wants_split:
-                split_column = tui.ask_column_select(
-                    "Select the column that contains the row type"
-                )
-
-                # Discover unique values from sample rows
-                unique_vals = sorted(set(
-                    row[split_column].strip()
-                    for row in preview.sample_rows
-                    if split_column < len(row) and row[split_column].strip()
-                ))
-                tui.answer_log.append(
-                    f"  Unique values: {FG_CYAN}"
-                    f"{', '.join(unique_vals)}{RESET}"
-                )
-                tui.draw()
-
-                # Collect groups until all values are assigned
-                remaining = set(unique_vals)
-                split_groups_data = []
-                group_num = 1
-
-                while remaining:
-                    vals_str = tui.ask_string(
-                        f"Group {group_num} values (comma-separated, "
-                        f"remaining: {', '.join(sorted(remaining))})"
-                    )
-                    vals = tuple(v.strip() for v in vals_str.split(","))
-                    invalid = set(vals) - set(unique_vals)
-                    if invalid:
-                        tui.error_msg = (
-                            f"Unknown values: {', '.join(invalid)}"
-                        )
-                        tui.draw()
-                        continue
-                    not_remaining = set(vals) - remaining
-                    if not_remaining:
-                        tui.error_msg = (
-                            f"Already assigned: {', '.join(not_remaining)}"
-                        )
-                        tui.draw()
-                        continue
-
-                    remaining -= set(vals)
-                    tui.answer_log.append(
-                        f"  Group {group_num}: "
-                        f"{FG_GREEN}{', '.join(vals)}{RESET}"
-                    )
-
-                    # Run column mapping for this group
-                    group_chosen = _run_column_mapping(
-                        tui, auto_mappings, preview,
-                        group_label=", ".join(vals),
-                    )
-                    split_groups_data.append((vals, group_chosen))
-                    group_num += 1
+            # Manage answer_log snapshots for rollback
+            if step >= len(log_snapshots):
+                log_snapshots.append(len(tui.answer_log))
             else:
-                # ── Single column mapping (no split) ─────────────
-                chosen = _run_column_mapping(
-                    tui, auto_mappings, preview
-                )
+                # Re-entering a step after going back: truncate log
+                tui.answer_log = tui.answer_log[:log_snapshots[step]]
+                log_snapshots = log_snapshots[:step + 1]
 
-        # ── Decimal format ───────────────────────────────────────
-        if decimal_format is None:
-            decimal_format = _detect_decimal_format(
-                preview, chosen, split_groups_data
-            )
-        if decimal_format:
-            tui.answer_log.append(
-                f"Decimal format: {FG_GREEN}{decimal_format}{RESET}"
-            )
-        else:
-            fmt = tui.ask_string(
-                "Decimal format: 'eu' (1.234,56) or 'dot' (1,234.56)",
-                default="dot",
-            )
-            decimal_format = fmt
-
-        # ── Preview ──────────────────────────────────────────────
-        preview_lines = _build_preview_lines(
-            preview=preview,
-            chosen=chosen,
-            split_column=split_column,
-            split_groups_data=split_groups_data,
-            decimal_format=decimal_format,
-        )
-        for line in preview_lines:
-            tui.answer_log.append(line)
-        tui.draw()
-
-        preview_ok = tui.ask_confirm("Does the preview look correct?")
-        if not preview_ok:
-            raise ValueError(
-                "Preview rejected. Re-run --map-csv to adjust."
-            )
-
-        # ── Summary + confirm ────────────────────────────────────
-        tui.answer_log.append("")
-        tui.answer_log.append(f"{BOLD}Mapping summary:{RESET}")
-        tui.answer_log.append(
-            f"Account: {account_holder}:{bank}:{account_type}  "
-            f"Currency: {base_currency.value}"
-        )
-        if split_groups_data:
-            tui.answer_log.append(
-                f"Split column: {split_column} "
-                f"({preview.headers[split_column]})"
-            )
-            for vals, grp_chosen in split_groups_data:
-                tui.answer_log.append(
-                    f"  Group [{', '.join(vals)}]:"
-                )
-                for ci, (field, _) in enumerate(grp_chosen):
-                    hdr = preview.headers[ci]
-                    if field:
-                        tui.answer_log.append(
-                            f"    {hdr} \u2192 {FG_GREEN}{field}{RESET}"
-                        )
-        else:
-            for ci, (field, _) in enumerate(chosen):
-                hdr = preview.headers[ci]
-                if field:
-                    tui.answer_log.append(
-                        f"  {hdr} \u2192 {FG_GREEN}{field}{RESET}"
+            try:
+                if current == "account_holder":
+                    tui.bottom_lines = []
+                    tui.draw()
+                    state["account_holder"] = tui.ask_string(
+                        "Account holder (e.g. 'at')"
                     )
-                else:
-                    tui.answer_log.append(f"  {hdr} \u2192 skip")
 
-        confirmed = tui.ask_confirm("Save this mapping to config?")
+                elif current == "bank":
+                    state["bank"] = tui.ask_string(
+                        "Bank / exchange (e.g. 'bitvavo')"
+                    )
+
+                elif current == "account_type":
+                    state["account_type"] = tui.ask_string(
+                        "Account type (e.g. 'checking', 'trading')"
+                    )
+
+                elif current == "base_currency":
+                    state["base_currency"] = tui.ask_currency()
+
+                elif current == "mapping":
+                    # Clear mapping-related state on re-entry,
+                    # unless we are re-editing after preview rejection
+                    if not state.get("_reedit_mapping"):
+                        for k in (
+                            "template_applied", "split_column",
+                            "split_groups_data", "chosen",
+                            "decimal_format",
+                        ):
+                            state.pop(k, None)
+                    _run_mapping_step(
+                        tui, state, preview, auto_mappings
+                    )
+
+                elif current == "decimal_format":
+                    _run_decimal_step(tui, state, preview)
+
+                elif current == "preview":
+                    _run_preview_step(tui, state, preview)
+
+                elif current == "summary":
+                    _run_summary_step(tui, state, preview)
+
+                # Track whether this step asked the user a question.
+                # Non-interactive steps are skipped when going back.
+                interactive_steps[step] = True
+                if current == "decimal_format":
+                    interactive_steps[step] = state.get(
+                        "_decimal_was_asked", False
+                    )
+
+                step += 1
+
+            except PreviewRejected:
+                # Go back to mapping step with existing choices as
+                # pre-fill so the user can tweak without starting over
+                state["_reedit_mapping"] = True
+                mapping_step_idx = _STEPS.index("mapping")
+                step = mapping_step_idx
+
+            except GoBack:
+                if step > 0:
+                    step -= 1
+                    # Skip back past non-interactive steps
+                    while (
+                        step > 0
+                        and not interactive_steps.get(step, True)
+                    ):
+                        step -= 1
+                else:
+                    tui.error_msg = "Already at the first question."
+                    tui.draw()
 
     finally:
         tui._restore_term()
@@ -1210,12 +1835,20 @@ def run_csv_mapping_tui(
         sys.stdout.write("\033[2J\033[H")
         sys.stdout.flush()
 
-    if not confirmed:
+    if not state.get("confirmed"):
         print("  Aborted — nothing saved.")
         raise SystemExit(0)
 
     # ── Build objects ────────────────────────────────────────────
     csv_filename = os.path.basename(csv_filepath)
+    account_holder = state["account_holder"]
+    bank = state["bank"]
+    account_type = state["account_type"]
+    base_currency = state["base_currency"]
+    split_column = state.get("split_column")
+    split_groups_data = state.get("split_groups_data")
+    chosen = state.get("chosen", [])
+    decimal_format = state.get("decimal_format")
 
     account = Account(
         base_currency=base_currency,
@@ -1225,7 +1858,6 @@ def run_csv_mapping_tui(
     )
 
     if split_groups_data:
-        # Build SplitGroup objects
         built_split_groups = []
         for vals, grp_chosen in split_groups_data:
             cfg_pairs = _chosen_to_config_pairs(grp_chosen)
@@ -1297,13 +1929,17 @@ def run_csv_mapping_tui(
             for ci, (f, h) in enumerate(cfg_pairs):
                 hdr = preview.headers[ci]
                 if f:
-                    print(f"    {hdr} \u2192 {f}")
+                    base, neg = _strip_negate(f)
+                    neg_tag = " (negated)" if neg else ""
+                    print(f"    {hdr} \u2192 {base}{neg_tag}")
     else:
         cfg_pairs = _chosen_to_config_pairs(chosen)
         for ci, (f, h) in enumerate(cfg_pairs):
             hdr = preview.headers[ci]
             if f:
-                print(f"    {hdr} \u2192 {f}")
+                base, neg = _strip_negate(f)
+                neg_tag = " (negated)" if neg else ""
+                print(f"    {hdr} \u2192 {base}{neg_tag}")
     print()
     return account_config
 
@@ -1455,22 +2091,22 @@ def _format_preview_row(
 ) -> str:
     """Format a single preview row based on the mapping."""
     parsed: Dict[str, str] = {}
-    for ci, (field, _) in enumerate(mapping):
-        if not field or ci >= len(row):
+    for ci, (field_raw, _) in enumerate(mapping):
+        if not field_raw or ci >= len(row):
             continue
+        base_field, negated = _strip_negate(field_raw)
         val = row[ci].strip()
-        if field in (
-            "tendered_amount_out", "received_amount", "fee_amount",
-            "quote_price", "exchange_rate", "balance_after",
-        ):
+        if base_field in _NUMERIC_FIELDS:
             num = _parse_numeric(val, decimal_format)
-            parsed[field] = str(num) if num is not None else ""
-        elif field in (DATE_FIELD, DATETIME_FIELD):
+            if num is not None and negated:
+                num = -num
+            parsed[base_field] = str(num) if num is not None else ""
+        elif base_field in (DATE_FIELD, DATETIME_FIELD):
             parsed["date"] = val
-        elif field == TIME_FIELD:
+        elif base_field == TIME_FIELD:
             parsed["time"] = val
         else:
-            parsed[field] = val
+            parsed[base_field] = val
 
     date_str = parsed.get("date", "")
     time_str = parsed.get("time", "")

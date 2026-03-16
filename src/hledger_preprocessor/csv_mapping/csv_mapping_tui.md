@@ -164,8 +164,10 @@ After mapping is complete (either template or manual), before save confirmation:
 5. `python -m pytest test/ -v` — all tests pass
 
 
-## Next steps.
-Instead of printing the column names and indices and asking for the number, just highlight the first column and make the selector move left right with arrows and let user select it with enter.
+## Implemented UX improvements
+- Column selector: `ask_column_select()` highlights columns in the table, navigates with left/right arrows, confirms with Enter
+- Group segregation: all groups are collected first (Phase 1), then each group is mapped (Phase 2)
+- Pre-fill: subsequent groups pre-select the previous group's mapping as defaults — user only changes what differs
 
-For the groups, first finish the whole group segregration before moving onto mapping each group.
-For the second group pre-fill with answers of previous group and allow user to edit/change them. (To prevent double allocation) (or allow user to mark answwer/mapping as generic/for all groups).
+- ensure the user can negate a column. from -5 to 5 or vice versa.
+- Ensure the user goes back to the last question (of the filled data, instead of the previous question of do you want to prefill data) after: answering n on "  Does the preview look correct? [Y/n]: ".
