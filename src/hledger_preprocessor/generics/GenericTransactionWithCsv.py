@@ -97,6 +97,7 @@ class GenericCsvTransaction(Transaction):
             # Skip explicitly empty placeholders
             if attr_name in ("None", "", None) or hledger_col_name == "":
                 result[hledger_col_name] = None
+                continue
 
             # Special case for the date – we always format the same way
             if hledger_col_name == "date":
@@ -106,10 +107,14 @@ class GenericCsvTransaction(Transaction):
             elif hledger_col_name == "amount":
                 value = float(self.tendered_amount_out - self.change_returned)
             elif attr_name != None and attr_name != "":
-                # Dynamically fetch the attribute from self
-                value = getattr(self, attr_name)
+                # Dynamically fetch the attribute from self, falling
+                # back to the extra dict for fields not on the dataclass
+                # (e.g. exchange fields like quote_currency, fee_amount).
+                value = getattr(self, attr_name, None)
+                if value is None:
+                    value = self.extra.get(attr_name)
             else:
-                pass
+                value = None
             if value is None:  # also catches empty string, [], etc.
                 result[hledger_col_name] = None
 

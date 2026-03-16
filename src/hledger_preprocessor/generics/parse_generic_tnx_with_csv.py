@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict
 from typing import List as TList
 
+import dateutil.parser as date_parser
 from typeguard import typechecked
 
 from hledger_preprocessor.config.AccountConfig import (
@@ -43,6 +44,7 @@ def parse_generic_bank_transaction(
 
     description_parts = []
     bank_date_str = None
+    bank_time_str = None
 
     # Map CSV columns according to config
     for (py_field, _hledger_field), value in zip(
@@ -54,6 +56,8 @@ def parse_generic_bank_transaction(
             continue
         elif py_field == "the_date":
             bank_date_str = value
+        elif py_field == "the_time":
+            bank_time_str = value
         elif py_field == "description":
             description_parts.append(value)
         elif py_field in [
@@ -61,6 +65,9 @@ def parse_generic_bank_transaction(
             "amount_in_account",
             "balance_after",
             "amount_after_tnx",
+            "quote_price",
+            "received_price",
+            "fee_amount",
         ]:
             # Handle European number format: 1.234,56 → 1234.56
             cleaned = value.replace(".", "").replace(",", ".")
@@ -107,9 +114,23 @@ def parse_generic_bank_transaction(
         else None
     )
 
+    # Combine separate date + time columns if both are mapped
+    if bank_time_str and bank_date_str:
+        bank_date_str = f"{bank_date_str} {bank_time_str}"
+
+    # Normalize bank_date_str to %d-%m-%Y (the format expected by
+    # get_date_from_bank_date_or_shop_date_description / parse_date).
+    # CSV files may use different date formats (ISO, European, etc.).
+    if bank_date_str:
+        try:
+            parsed_dt = date_parser.parse(bank_date_str)
+            bank_date_str = parsed_dt.strftime("%d-%m-%Y")
+        except (ValueError, TypeError):
+            pass  # Leave as-is and let parse_date raise the error
+
     # Determine best date
     the_date: datetime = get_date_from_bank_date_or_shop_date_description(
-        bank_date_str=bank_date_str, description=description
+        bank_date_str=bank_date_str, description=description or ""
     )
 
     field_values["the_date"] = the_date

@@ -181,16 +181,63 @@ def _render_clipped_row(
 
 # ── Field choices ────────────────────────────────────────────────────
 
+# Date/time fields: "the_date_only" and "the_time_only" are mutually
+# exclusive with "the_datetime".  Internally they all map to "the_date"
+# in the config output, but "the_date_only"+"the_time_only" tells the
+# parser to concatenate two columns.
+DATE_FIELD = "the_date_only"
+TIME_FIELD = "the_time_only"
+DATETIME_FIELD = "the_datetime"
+
+# Groups for mutual exclusivity
+_DATE_TIME_GROUP = {DATE_FIELD, TIME_FIELD}
+_DATETIME_GROUP = {DATETIME_FIELD}
+
+# Exchange/trading fields (stored in GenericCsvTransaction.extra)
+EXCHANGE_FIELDS: List[Tuple[str, str]] = [
+    ("quote_currency", "Quote currency"),
+    ("quote_price", "Quote price"),
+    ("received_currency", "Received currency"),
+    ("received_price", "Received price"),
+    ("fee_currency", "Fee currency"),
+    ("fee_amount", "Fee amount"),
+]
+
 FIELD_CHOICES: List[Tuple[Optional[str], str]] = [
     (None, "Skip"),
-] + [(name, f"{name} ({label})") for name, label in MAPPABLE_FIELDS]
+    (DATE_FIELD, "date (Date — combine with time)"),
+    (TIME_FIELD, "time (Time — combine with date)"),
+    (DATETIME_FIELD, "datetime (Datetime — single column)"),
+] + [(name, f"{name} ({label})") for name, label in MAPPABLE_FIELDS
+     if name != "the_date"
+] + [(name, f"{name} ({label})") for name, label in EXCHANGE_FIELDS]
+
+
+def _is_grayed_out(field: Optional[str], used: set) -> bool:
+    """Check if a field should be grayed out due to mutual exclusivity."""
+    if field is None:
+        return False
+    # If any date/time field is used, gray out datetime
+    if field in _DATETIME_GROUP and used & _DATE_TIME_GROUP:
+        return True
+    # If datetime is used, gray out date and time
+    if field in _DATE_TIME_GROUP and used & _DATETIME_GROUP:
+        return True
+    # Normal "already used" check
+    if field in used:
+        return True
+    return False
 
 
 def _get_default_idx(auto: AutoMapping) -> int:
     if auto.proposed_field is None:
         return 0
+    # Map auto-mapper's "the_date" to our "the_datetime" as initial default
+    target = auto.proposed_field
+    if target == "the_date":
+        target = DATETIME_FIELD
     for i, (field, _) in enumerate(FIELD_CHOICES):
-        if field == auto.proposed_field:
+        if field == target:
             return i
     return 0
 
@@ -404,11 +451,23 @@ class _SplitPaneTUI:
         if len(lines_to_show) > available_bottom:
             lines_to_show = lines_to_show[-available_bottom:]
 
-        for line in lines_to_show:
+        for i, line in enumerate(lines_to_show):
             self._write(line)
-            self._nl()
+            # Don't emit \r\n after the last line when input is active,
+            # so the cursor stays on the input prompt line for
+            # _redraw_input_line() to overwrite in-place.
+            if i < len(lines_to_show) - 1 or not self.input_active:
+                self._nl()
 
         self._flush()
+
+    def _redraw_bottom_only(self) -> None:
+        """Redraw only the bottom pane — avoids full-screen flicker."""
+        term_w, term_h, top_data_rows, divider_line = self._get_layout()
+        bottom_start = divider_line + 1
+        # Move cursor to the bottom pane start row, clear from there down
+        self._write(f"\033[{bottom_start};1H\033[J")
+        self._draw_bottom(term_w, term_h, bottom_start)
 
     def _redraw_input_line(self) -> None:
         """Redraw just the input line in place — no flicker."""
@@ -493,15 +552,25 @@ class _SplitPaneTUI:
         col_idx: int,
         auto: AutoMapping,
         used: set,
+        chosen: List[Tuple[Optional[str], str]],
     ) -> int:
-        """Ask user to pick a field mapping via up/down selection."""
+        """Ask user to pick a field mapping via up/down selection.
+
+        If the user picks an already-mapped field, they are asked whether
+        to *replace* the earlier mapping (the old column becomes skipped)
+        or to pick something else.
+        """
         self.highlight_col = col_idx
         self.choice_used = used
         self.choice_active = True
         self.input_active = False
         self.error_msg = ""
 
+        # If auto-detection proposes an already-used field, default to Skip
         default_idx = _get_default_idx(auto)
+        proposed = FIELD_CHOICES[default_idx][0]
+        if proposed and proposed in used:
+            default_idx = 0
         self.choice_idx = default_idx
         self.choice_items = list(FIELD_CHOICES)
 
@@ -516,7 +585,6 @@ class _SplitPaneTUI:
         # Ensure the highlighted column is visible in the table
         if col_idx < self.col_offset:
             self.col_offset = col_idx
-        # If col_idx is off-screen to the right, scroll to show it
         term_w, _ = _term_size()
         check = 2 if self.col_offset > 0 else 0
         for ci in range(self.col_offset, self.n_cols):
@@ -538,26 +606,82 @@ class _SplitPaneTUI:
                 if self.choice_idx > 0:
                     self.choice_idx -= 1
                     self._build_choice_lines(header, sample_str, auto)
-                    self.draw()
+                    self._redraw_bottom_only()
             elif key == "down":
                 if self.choice_idx < len(self.choice_items) - 1:
                     self.choice_idx += 1
                     self._build_choice_lines(header, sample_str, auto)
-                    self.draw()
+                    self._redraw_bottom_only()
             elif key == "enter":
                 field = self.choice_items[self.choice_idx][0]
-                if field and field in used:
+
+                # Block mutually exclusive / grayed-out picks
+                if field and _is_grayed_out(field, used):
                     self.error_msg = (
-                        f"'{field}' already mapped. Pick another or Skip."
+                        f"'{field}' is unavailable. "
+                        f"\u2191\u2193 to pick another."
                     )
-                    self.draw()
+                    self._redraw_bottom_only()
                     continue
+
+                # Block already-used fields (with replace option)
+                if field and field in used:
+                    old_col = -1
+                    for ci, (f, _) in enumerate(chosen):
+                        if f == field:
+                            old_col = ci
+                            break
+                    old_hdr = (
+                        self.preview.headers[old_col]
+                        if old_col >= 0
+                        else "?"
+                    )
+                    self.error_msg = (
+                        f"'{field}' mapped to col {old_col} '{old_hdr}'. "
+                        f"Enter=replace, \u2191\u2193=pick other"
+                    )
+                    self._redraw_bottom_only()
+                    confirm_key = _read_key_raw(self.fd)
+                    if confirm_key == "enter":
+                        if old_col >= 0:
+                            chosen[old_col] = ("", "")
+                            used.discard(field)
+                            self.answer_log.append(
+                                f"{DIM}Col {old_col} '{old_hdr}' "
+                                f"unmapped (replaced){RESET}"
+                            )
+                        self.error_msg = ""
+                    elif confirm_key.startswith("alt-"):
+                        self.scroll_table(confirm_key[4:])
+                        self.error_msg = ""
+                        self.draw()
+                        continue
+                    elif confirm_key in ("up", "down"):
+                        self.error_msg = ""
+                        if confirm_key == "up" and self.choice_idx > 0:
+                            self.choice_idx -= 1
+                        elif (
+                            confirm_key == "down"
+                            and self.choice_idx
+                            < len(self.choice_items) - 1
+                        ):
+                            self.choice_idx += 1
+                        self._build_choice_lines(
+                            header, sample_str, auto
+                        )
+                        self._redraw_bottom_only()
+                        continue
+                    else:
+                        self.error_msg = ""
+                        self._redraw_bottom_only()
+                        continue
+
                 self.choice_active = False
                 self.highlight_col = -1
                 self.error_msg = ""
-                # Log the answer
                 if field:
-                    label = dict(MAPPABLE_FIELDS).get(field, field)
+                    _all_labels = dict(MAPPABLE_FIELDS + EXCHANGE_FIELDS)
+                    label = _all_labels.get(field, field)
                     self.answer_log.append(
                         f"Col {col_idx} '{header}' "
                         f"\u2192 {FG_GREEN}{field} ({label}){RESET}"
@@ -593,11 +717,16 @@ class _SplitPaneTUI:
             )
 
         for i, (field, display) in enumerate(self.choice_items):
+            grayed = _is_grayed_out(field, self.choice_used)
             if i == self.choice_idx:
-                marker = f"{FG_GREEN}{BOLD}\u25b6"
-                lines.append(f"  {marker} {display}{RESET}")
-            elif field and field in self.choice_used:
-                lines.append(f"  {DIM}  {display} (mapped){RESET}")
+                if grayed:
+                    marker = f"{FG_RED}{BOLD}\u25b6"
+                    lines.append(f"  {marker} {display} (unavailable){RESET}")
+                else:
+                    marker = f"{FG_GREEN}{BOLD}\u25b6"
+                    lines.append(f"  {marker} {display}{RESET}")
+            elif grayed:
+                lines.append(f"  {DIM}  {display} (unavailable){RESET}")
             else:
                 lines.append(f"    {display}")
 
@@ -665,12 +794,21 @@ def run_csv_mapping_tui(
         used_fields: set = set()
         chosen: List[Tuple[Optional[str], str]] = []
 
+        # Map internal TUI field names to hledger names
+        _HLEDGER_NAMES = {
+            DATE_FIELD: "date",
+            TIME_FIELD: "time",
+            DATETIME_FIELD: "date",
+        }
+
         for col_idx, auto in enumerate(auto_mappings):
-            pick = tui.ask_choice(col_idx, auto, used_fields)
+            pick = tui.ask_choice(col_idx, auto, used_fields, chosen)
             field = FIELD_CHOICES[pick][0]
             if field:
                 used_fields.add(field)
-                hledger_name = DEFAULT_HLEDGER_NAMES.get(field, "")
+                hledger_name = _HLEDGER_NAMES.get(
+                    field, DEFAULT_HLEDGER_NAMES.get(field, "")
+                )
                 chosen.append((field, hledger_name))
             else:
                 chosen.append(("", ""))
@@ -678,8 +816,23 @@ def run_csv_mapping_tui(
         # ── Validate ─────────────────────────────────────────────
         mapped = {pair[0] for pair in chosen if pair[0]}
         errors: List[str] = []
-        if "the_date" not in mapped:
-            errors.append("'the_date' (Date) must be mapped.")
+        has_datetime = DATETIME_FIELD in mapped
+        has_date = DATE_FIELD in mapped
+        has_time = TIME_FIELD in mapped
+        if not has_datetime and not (has_date and has_time):
+            if has_date and not has_time:
+                errors.append(
+                    "'time' must also be mapped (or use 'datetime')."
+                )
+            elif has_time and not has_date:
+                errors.append(
+                    "'date' must also be mapped (or use 'datetime')."
+                )
+            else:
+                errors.append(
+                    "Date must be mapped: use 'datetime' for a single "
+                    "column, or 'date'+'time' for separate columns."
+                )
         if "tendered_amount_out" not in mapped:
             errors.append("'tendered_amount_out' (Amount) must be mapped.")
 
@@ -722,11 +875,20 @@ def run_csv_mapping_tui(
         raise SystemExit(0)
 
     # ── Build objects ────────────────────────────────────────────
+    # Convert internal field names to config names:
+    #   the_date_only -> the_date, the_time_only -> the_time,
+    #   the_datetime -> the_date
+    _FIELD_TO_CONFIG = {
+        DATE_FIELD: "the_date",
+        TIME_FIELD: "the_time",
+        DATETIME_FIELD: "the_date",
+    }
     mapping_tuples: Tuple[Tuple[str, str], ...] = tuple(
-        (f or "", h or "") for f, h in chosen
+        (_FIELD_TO_CONFIG.get(f, f) or "", h or "") for f, h in chosen
     )
     tnx_date_tuples: Tuple[Tuple[str, str], ...] = tuple(
-        pair for pair in mapping_tuples if pair[0] in ("the_date", "description")
+        pair for pair in mapping_tuples
+        if pair[0] in ("the_date", "the_time", "description")
     )
 
     csv_column_mapping = CsvColumnMapping(csv_column_mapping=mapping_tuples)
@@ -749,29 +911,36 @@ def run_csv_mapping_tui(
     )
 
     # ── Save to config.yaml ──────────────────────────────────────
-    _save_to_config(
+    # Use converted config names for persistence
+    config_pairs: List[Tuple[Optional[str], str]] = [
+        (_FIELD_TO_CONFIG.get(f, f) if f else "", h)
+        for f, h in chosen
+    ]
+    was_replaced = _save_to_config(
         config_path=config_path,
         csv_filename=csv_filename,
         account_holder=account_holder,
         bank=bank,
         account_type=account_type,
         base_currency=base_currency.value,
-        mapping_pairs=chosen,
+        mapping_pairs=config_pairs,
         tnx_date_pairs=[
-            pair for pair in chosen if pair[0] in ("the_date", "description")
+            pair for pair in config_pairs
+            if pair[0] in ("the_date", "the_time", "description")
         ],
     )
 
     # Print summary after exiting raw mode
-    print(f"\n  {FG_GREEN}{BOLD}\u2713 Saved to {config_path}{RESET}")
+    action = "Updated" if was_replaced else "Saved"
+    print(f"\n  {FG_GREEN}{BOLD}\u2713 {action} in {config_path}{RESET}")
     print(
         f"  Account: {account_holder}:{bank}:{account_type}  "
         f"Currency: {base_currency.value}"
     )
-    for ci, (field, _) in enumerate(chosen):
+    for ci, (f, h) in enumerate(config_pairs):
         hdr = preview.headers[ci]
-        if field:
-            print(f"    {hdr} \u2192 {field}")
+        if f:
+            print(f"    {hdr} \u2192 {f}")
     print()
     return account_config
 
@@ -790,7 +959,7 @@ def _save_to_config(
     base_currency: str,
     mapping_pairs: List[Tuple[Optional[str], str]],
     tnx_date_pairs: List[Tuple[Optional[str], str]],
-) -> None:
+) -> bool:
     with open(config_path) as f:
         config_dict = yaml.safe_load(f)
 
@@ -810,9 +979,19 @@ def _save_to_config(
 
     if "account_configs" not in config_dict:
         config_dict["account_configs"] = []
-    config_dict["account_configs"].append(new_entry)
+
+    # Replace existing entry for the same CSV file, or append new
+    replaced = False
+    for i, existing in enumerate(config_dict["account_configs"]):
+        if existing.get("input_csv_filename") == csv_filename:
+            config_dict["account_configs"][i] = new_entry
+            replaced = True
+            break
+    if not replaced:
+        config_dict["account_configs"].append(new_entry)
 
     with open(config_path, "w") as f:
         yaml.safe_dump(
             config_dict, f, default_flow_style=False, sort_keys=False
         )
+    return replaced
