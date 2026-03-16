@@ -47,10 +47,25 @@ def parse_generic_bank_transaction(
     bank_time_str = None
 
     # Map CSV columns according to config
-    for (py_field, _hledger_field), value in zip(
+    _NEGATE_PREFIX = "negate:"
+    _NUMERIC_FIELDS = {
+        "tendered_amount_out", "amount_in_account", "balance_after",
+        "amount_after_tnx", "quote_price", "exchange_rate",
+        "received_amount", "fee_amount",
+    }
+
+    for (py_field_raw, _hledger_field), value in zip(
         csv_column_mapping.csv_column_mapping, row
     ):
         value = value.strip() if value else ""
+
+        # Handle negate: prefix
+        negate = False
+        if py_field_raw.startswith(_NEGATE_PREFIX):
+            py_field = py_field_raw[len(_NEGATE_PREFIX):]
+            negate = True
+        else:
+            py_field = py_field_raw
 
         if py_field == "None" or not py_field:
             continue
@@ -60,16 +75,7 @@ def parse_generic_bank_transaction(
             bank_time_str = value
         elif py_field == "description":
             description_parts.append(value)
-        elif py_field in [
-            "tendered_amount_out",
-            "amount_in_account",
-            "balance_after",
-            "amount_after_tnx",
-            "quote_price",
-            "exchange_rate",
-            "received_amount",
-            "fee_amount",
-        ]:
+        elif py_field in _NUMERIC_FIELDS:
             decimal_fmt = getattr(account_config, "decimal_format", None)
             if decimal_fmt == "dot":
                 cleaned = value.replace(",", "")
@@ -79,9 +85,12 @@ def parse_generic_bank_transaction(
                 # Legacy default: European number format
                 cleaned = value.replace(".", "").replace(",", ".")
             try:
-                field_values[py_field] = float(cleaned) if cleaned else None
+                parsed_val = float(cleaned) if cleaned else None
             except ValueError:
-                field_values[py_field] = None
+                parsed_val = None
+            if parsed_val is not None and negate:
+                parsed_val = -parsed_val
+            field_values[py_field] = parsed_val
 
         elif py_field == "transaction_code":  # Custom for Tridos:
             field_values[py_field] = TransactionCode.normalize_transaction_code(
