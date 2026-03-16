@@ -66,11 +66,18 @@ def parse_generic_bank_transaction(
             "balance_after",
             "amount_after_tnx",
             "quote_price",
+            "exchange_rate",
             "received_amount",
             "fee_amount",
         ]:
-            # Handle European number format: 1.234,56 → 1234.56
-            cleaned = value.replace(".", "").replace(",", ".")
+            decimal_fmt = getattr(account_config, "decimal_format", None)
+            if decimal_fmt == "dot":
+                cleaned = value.replace(",", "")
+            elif decimal_fmt == "eu":
+                cleaned = value.replace(".", "").replace(",", ".")
+            else:
+                # Legacy default: European number format
+                cleaned = value.replace(".", "").replace(",", ".")
             try:
                 field_values[py_field] = float(cleaned) if cleaned else None
             except ValueError:

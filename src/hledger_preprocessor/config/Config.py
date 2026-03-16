@@ -11,6 +11,7 @@ from hledger_preprocessor.categorisation.load_categories import (
 from hledger_preprocessor.config.AccountConfig import (
     AccountConfig,
     CsvColumnMapping,
+    SplitGroup,
 )
 from hledger_preprocessor.config.CategorisationConfig import (
     CategorisationConfig,
@@ -288,9 +289,34 @@ def create_account_config_from_yaml(
         "tnx_date_columns", account_config_dict.get("tnx_date_columns")
     )
 
+    # --- Split-by-type (optional) ---
+    split_column = account_config_dict.get("split_column")
+    split_groups_raw = account_config_dict.get("split_groups")
+    split_groups = None
+    if split_column is not None and split_groups_raw:
+        groups = []
+        for sg in split_groups_raw:
+            sg_mapping = _normalize_and_verify_column_mapping(
+                "split_groups[].csv_column_mapping", sg.get("csv_column_mapping")
+            )
+            sg_tnx = _normalize_and_verify_column_mapping(
+                "split_groups[].tnx_date_columns", sg.get("tnx_date_columns")
+            )
+            groups.append(SplitGroup(
+                values=tuple(str(v) for v in sg["values"]),
+                csv_column_mapping=CsvColumnMapping(csv_column_mapping=sg_mapping),
+                tnx_date_columns=CsvColumnMapping(csv_column_mapping=sg_tnx),
+            ))
+        split_groups = tuple(groups)
+
+    decimal_format = account_config_dict.get("decimal_format")
+
     return AccountConfig(
         input_csv_filename=account_config_dict["input_csv_filename"],
         csv_column_mapping=CsvColumnMapping(csv_column_mapping=csv_mapping),
         tnx_date_columns=CsvColumnMapping(csv_column_mapping=tnx_date_columns),
         account=account_obj,
+        split_column=split_column,
+        split_groups=split_groups,
+        decimal_format=decimal_format,
     )

@@ -1,7 +1,7 @@
 # Type alias for clarity
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from typeguard import typechecked
 
@@ -16,12 +16,28 @@ from hledger_preprocessor.TransactionObjects.AccountTransaction import (
 )
 
 
+@dataclass(frozen=True)
+class SplitGroup:
+    """A group of row-type values that share the same column mapping."""
+    values: Tuple[str, ...]
+    csv_column_mapping: CsvColumnMapping
+    tnx_date_columns: CsvColumnMapping
+
+
 @dataclass(frozen=True, unsafe_hash=True)
 class AccountConfig:
     account: Account
     input_csv_filename: Optional[str]
     csv_column_mapping: Optional[CsvColumnMapping]  # = field(default=None)
     tnx_date_columns: Optional[CsvColumnMapping]  # = field(default=None)
+
+    # Split-by-type: logically split a single CSV into groups with
+    # different column mappings based on values in one column.
+    split_column: Optional[int] = None
+    split_groups: Optional[Tuple[SplitGroup, ...]] = None
+
+    # Decimal format: "eu" (1.234,56) or "dot" (1,234.56) or None (legacy=eu)
+    decimal_format: Optional[str] = None
 
     # Field exists, no default, not part of __init__
 
@@ -89,3 +105,63 @@ class AccountConfig:
             # return (
             #     dummy_account_tnx.csv_column_mapping.get_hledger_csv_column_names()
             # )
+
+    @typechecked
+    def parse_csv_rows(
+        self,
+        *,
+        rows: List[List[str]],
+        start_index: int,
+    ) -> List[GenericCsvTransaction]:
+        """Parse CSV rows, handling split-by-type when configured.
+
+        When split_column is set, each row is routed to the SplitGroup
+        whose values contain the row's type, and that group's
+        csv_column_mapping is used.  Otherwise the single
+        csv_column_mapping on this AccountConfig is used for all rows.
+
+        Returns a flat list of GenericCsvTransaction (preserving order).
+        """
+        from hledger_preprocessor.generics.parse_generic_tnx_with_csv import (
+            parse_generic_bank_transaction,
+        )
+
+        transactions: List[GenericCsvTransaction] = []
+
+        if self.split_column is not None and self.split_groups:
+            # Build value→group lookup
+            value_to_group = {}
+            for group in self.split_groups:
+                for val in group.values:
+                    value_to_group[val] = group
+
+            for index in range(start_index, len(rows)):
+                row = rows[index]
+                if self.split_column >= len(row):
+                    continue
+                row_type = row[self.split_column].strip()
+                group = value_to_group.get(row_type)
+                if group is None:
+                    raise ValueError(
+                        f"Row {index}: type '{row_type}' not covered by "
+                        f"any split group. Known types: "
+                        f"{sorted(value_to_group.keys())}"
+                    )
+                transaction = parse_generic_bank_transaction(
+                    row=row,
+                    nr_in_batch=index,
+                    account_config=self,
+                    csv_column_mapping=group.csv_column_mapping,
+                )
+                transactions.append(transaction)
+        else:
+            for index in range(start_index, len(rows)):
+                transaction = parse_generic_bank_transaction(
+                    row=rows[index],
+                    nr_in_batch=index,
+                    account_config=self,
+                    csv_column_mapping=self.csv_column_mapping,
+                )
+                transactions.append(transaction)
+
+        return transactions
