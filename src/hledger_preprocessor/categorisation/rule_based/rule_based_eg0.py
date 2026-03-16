@@ -64,22 +64,21 @@ class ExampleRuleBasedModel:
         if transaction is None:
             raise ValueError("Transaction cannot be None.")
         if isinstance(transaction, GenericCsvTransaction):
-            if (
-                TransactionCode.normalize_transaction_code(
+            # Use explicit transaction_code if available, otherwise
+            # derive from amount sign (covers CSVs without a
+            # transaction_code column).
+            if transaction.transaction_code is not None:
+                code = TransactionCode.normalize_transaction_code(
                     transaction_code=transaction.transaction_code
                 )
-                == TransactionCode.DEBIT
-            ):
+            else:
+                code = transaction.get_transaction_code()
+            if code == TransactionCode.DEBIT:
                 return self._classify_debit(
                     transaction=transaction,
                     category_namespace=category_namespace,
                 )
-            elif (
-                TransactionCode.normalize_transaction_code(
-                    transaction_code=transaction.transaction_code
-                )
-                == TransactionCode.CREDIT
-            ):
+            elif code == TransactionCode.CREDIT:
                 return self._classify_credit(
                     transaction=transaction,
                     category_namespace=category_namespace,
