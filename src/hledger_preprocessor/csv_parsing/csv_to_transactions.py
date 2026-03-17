@@ -19,9 +19,6 @@ from hledger_preprocessor.file_reading_and_writing import (
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
-from hledger_preprocessor.generics.parse_generic_tnx_with_csv import (
-    parse_generic_bank_transaction,
-)
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
     ProcessedTransaction,

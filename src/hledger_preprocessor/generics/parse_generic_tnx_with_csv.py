@@ -159,6 +159,9 @@ def parse_generic_bank_transaction(
     }
     kwargs = {k: v for k, v in field_values.items() if k in known_fields}
     extra = {k: v for k, v in field_values.items() if k not in known_fields}
+    # Stash the mapping used to parse this row so that split-mode
+    # transactions can be exported with the correct column ordering.
+    extra["_csv_column_mapping"] = csv_column_mapping
     kwargs["extra"] = extra
 
     if "change_returned" not in kwargs.keys():
