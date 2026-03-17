@@ -74,14 +74,40 @@ def _term_size() -> Tuple[int, int]:
 def _compute_col_widths(
     preview: CsvPreview, max_col_w: int = 30
 ) -> List[int]:
+    """Column widths based on data values only (headers wrap to fit)."""
     widths: List[int] = []
     for i, h in enumerate(preview.headers):
-        w = len(h)
+        # Start from header's longest single word so the column is at
+        # least wide enough for one word of the header to fit.
+        longest_word = max(
+            (len(w) for w in h.split()), default=len(h)
+        )
+        w = longest_word
         for row in preview.sample_rows:
             if i < len(row):
                 w = max(w, len(row[i]))
         widths.append(min(w, max_col_w))
     return widths
+
+
+def _wrap_header(text: str, width: int) -> List[str]:
+    """Word-wrap *text* into lines of at most *width* characters."""
+    if len(text) <= width:
+        return [text]
+    words = text.split()
+    lines: List[str] = []
+    cur = ""
+    for word in words:
+        if not cur:
+            cur = word
+        elif len(cur) + 1 + len(word) <= width:
+            cur += " " + word
+        else:
+            lines.append(cur)
+            cur = word
+    if cur:
+        lines.append(cur)
+    return lines if lines else [text]
 
 
 # ── Clipped row renderer ────────────────────────────────────────────
@@ -95,6 +121,8 @@ def _render_clipped_row(
     term_w: int,
     is_header: bool = False,
     highlight_col: int = -1,
+    dim_cols: Optional[set] = None,
+    is_mapping_row: bool = False,
 ) -> str:
     """Build a row string of exactly term_w visible chars.
 
@@ -146,11 +174,18 @@ def _render_clipped_row(
         cell = f" {val:<{w}} "
         cell_vis_len = w + 2
 
+        is_dim = dim_cols is not None and ci in dim_cols
+
         remain = effective_w - pos
         if cell_vis_len > remain:
             # Partial column — fill the remaining effective space
             _put_ansi(_col_style(ci))
-            _put_ansi(FG_WHITE)
+            if is_mapping_row:
+                _put_ansi(FG_GREEN if val and val != "-" else DIM)
+            elif is_dim:
+                _put_ansi(DIM)
+            else:
+                _put_ansi(FG_WHITE)
             if is_header:
                 _put_ansi(BOLD)
             if ci == highlight_col:
@@ -160,7 +195,12 @@ def _render_clipped_row(
             break
 
         _put_ansi(_col_style(ci))
-        _put_ansi(FG_WHITE)
+        if is_mapping_row:
+            _put_ansi(FG_GREEN if val and val != "-" else DIM)
+        elif is_dim:
+            _put_ansi(DIM)
+        else:
+            _put_ansi(FG_WHITE)
         if is_header:
             _put_ansi(BOLD)
         if ci == highlight_col:
@@ -394,9 +434,15 @@ class _SplitPaneTUI:
     ) -> None:
         self.preview = preview
         self.auto_mappings = auto_mappings
-        self.col_widths = _compute_col_widths(preview)
+        self._base_col_widths = _compute_col_widths(preview)
+        self.col_widths = list(self._base_col_widths)
         self.n_cols = len(preview.headers)
         self.n_rows = len(preview.sample_rows)
+
+        # Word-wrapped headers (recomputed when col_widths change)
+        self._wrapped_headers: List[List[str]] = []
+        self._header_line_count: int = 1
+        self._rewrap_headers()
 
         # Table scroll state
         self.col_offset = 0
@@ -428,9 +474,47 @@ class _SplitPaneTUI:
         # Columns whose values should be shown with flipped sign in the table
         self.negate_cols: set = set()
 
+        # Columns to dim (e.g. skipped columns during negate step)
+        self.dim_cols: set = set()
+
+        # Extra row below data showing the mapped field per column.
+        # Empty list = not shown.  When populated, one entry per column.
+        self.mapping_row: List[str] = []
+
         # Terminal state
         self.fd = sys.stdin.fileno()
         self.old_termios = termios.tcgetattr(self.fd)
+
+    def _rewrap_headers(self) -> None:
+        """Recompute word-wrapped headers for current col_widths."""
+        self._wrapped_headers = [
+            _wrap_header(h, self.col_widths[i])
+            for i, h in enumerate(self.preview.headers)
+        ]
+        self._header_line_count = max(
+            (len(wh) for wh in self._wrapped_headers), default=1
+        )
+
+    def _recompute_widths(self) -> None:
+        """Recompute col_widths from base data widths + mapping_row, then rewrap headers."""
+        changed = False
+        for ci in range(self.n_cols):
+            base = self._base_col_widths[ci]
+            if self.mapping_row and ci < len(self.mapping_row):
+                val = self.mapping_row[ci]
+                new_w = max(base, len(val)) if val and val != "-" else base
+            else:
+                new_w = base
+            if self.col_widths[ci] != new_w:
+                self.col_widths[ci] = new_w
+                changed = True
+        if changed:
+            self._rewrap_headers()
+
+    def set_mapping_row(self, row: List[str]) -> None:
+        """Set mapping_row and recompute column widths + header wrapping."""
+        self.mapping_row = row
+        self._recompute_widths()
 
     def _enter_raw(self) -> None:
         tty.setraw(self.fd)
@@ -452,9 +536,17 @@ class _SplitPaneTUI:
         """Return (term_w, term_h, top_data_rows, divider_line)."""
         term_w, term_h = _term_size()
         bottom_size = self.BOTTOM_PANE_LINES
-        top_data_rows = max(1, term_h - bottom_size - 4)
-        # divider_line = 1 title + 1 above + 1 header + data + 1 below
-        divider_line = 3 + min(top_data_rows, self.n_rows) + 1
+        mapping_extra = 1 if self.mapping_row else 0
+        header_extra = self._header_line_count - 1  # extra lines beyond 1
+        # overhead: 1 title + 1 above-indicator + header lines + 1 below + 1 divider
+        overhead = 4 + header_extra + mapping_extra
+        top_data_rows = max(1, term_h - bottom_size - overhead)
+        # divider_line = 1 title + 1 above + headers + data + mapping + 1 below
+        divider_line = (
+            2 + self._header_line_count
+            + min(top_data_rows, self.n_rows)
+            + mapping_extra + 1
+        )
         return term_w, term_h, top_data_rows, divider_line
 
     def draw(self) -> None:
@@ -481,14 +573,24 @@ class _SplitPaneTUI:
             )
         self._nl()
 
-        self._write(
-            _render_clipped_row(
-                self.preview.headers, self.col_widths,
-                self.col_offset, self.n_cols, term_w,
-                is_header=True, highlight_col=self.highlight_col,
+        _dc = self.dim_cols or None
+        # Render word-wrapped header rows
+        for hl in range(self._header_line_count):
+            hdr_line = [
+                (self._wrapped_headers[ci][hl]
+                 if hl < len(self._wrapped_headers[ci])
+                 else "")
+                for ci in range(self.n_cols)
+            ]
+            self._write(
+                _render_clipped_row(
+                    hdr_line, self.col_widths,
+                    self.col_offset, self.n_cols, term_w,
+                    is_header=True, highlight_col=self.highlight_col,
+                    dim_cols=_dc,
+                )
             )
-        )
-        self._nl()
+            self._nl()
 
         for ri in range(self.row_offset, vis_rows_end):
             row = self.preview.sample_rows[ri]
@@ -502,6 +604,20 @@ class _SplitPaneTUI:
                     row, self.col_widths,
                     self.col_offset, self.n_cols, term_w,
                     highlight_col=self.highlight_col,
+                    dim_cols=_dc,
+                )
+            )
+            self._nl()
+
+        # Mapping row — extra row showing the mapped field per column
+        if self.mapping_row:
+            self._write(
+                _render_clipped_row(
+                    self.mapping_row, self.col_widths,
+                    self.col_offset, self.n_cols, term_w,
+                    highlight_col=self.highlight_col,
+                    is_mapping_row=True,
+                    dim_cols=_dc,
                 )
             )
             self._nl()
@@ -1083,6 +1199,21 @@ class _SplitPaneTUI:
 
 # ── Mapping helpers ───────────────────────────────────────────────────
 
+
+def _chosen_to_mapping_row(
+    chosen: List[Tuple[Optional[str], str]],
+) -> List[str]:
+    """Build a mapping_row list from chosen pairs."""
+    row: List[str] = []
+    for field_raw, _ in chosen:
+        if not field_raw:
+            row.append("-")
+        else:
+            base, neg = _strip_negate(field_raw)
+            row.append(f"{base}(neg)" if neg else base)
+    return row
+
+
 # Map internal TUI field names to hledger names
 _HLEDGER_NAMES = {
     DATE_FIELD: "date",
@@ -1109,25 +1240,28 @@ def _ask_negate_for_chosen(
     Raises ``GoBack`` if the user presses Escape (caller should handle).
     """
     numeric_entries: List[Tuple[int, str, str]] = []
+    skipped_cols: set = set()
     for ci, (field, _) in enumerate(chosen):
         base = _strip_negate(field)[0] if field else ""
         if base in _NUMERIC_FIELDS:
             hdr = preview.headers[ci]
             numeric_entries.append((ci, hdr, base))
+        elif not field:
+            skipped_cols.add(ci)
 
     if not numeric_entries:
         return
 
-    negated_cols = tui.ask_negate_table(numeric_entries)
+    tui.dim_cols = skipped_cols
+    try:
+        negated_cols = tui.ask_negate_table(numeric_entries)
+    finally:
+        tui.dim_cols = set()
 
     for ci in negated_cols:
         field, hname = chosen[ci]
         if field and not field.startswith(NEGATE_PREFIX):
             chosen[ci] = (NEGATE_PREFIX + field, hname)
-            tui.answer_log.append(
-                f"  {FG_YELLOW}Col {ci} '{preview.headers[ci]}' "
-                f"\u2192 negated{RESET}"
-            )
 
 
 def _run_column_mapping(
@@ -1162,10 +1296,16 @@ def _run_column_mapping(
             )
         tui.draw()
 
+    n_map_cols = len(auto_mappings)
+    tui.set_mapping_row([""] * n_map_cols)
+
     used_fields: set = set()
     chosen: List[Tuple[Optional[str], str]] = []
-    # Track answer_log length before each column for rollback
-    col_log_snapshots: List[int] = []
+
+    def _sync_mapping_row() -> None:
+        """Rebuild mapping_row from chosen so far."""
+        filled = _chosen_to_mapping_row(chosen)
+        tui.set_mapping_row(filled + [""] * (n_map_cols - len(filled)))
 
     # Outer loop: runs column mapping then negate table.
     # GoBack from negate table re-enters column mapping at last column.
@@ -1174,7 +1314,6 @@ def _run_column_mapping(
     while not negate_done:
         while col_idx < len(auto_mappings):
             auto = auto_mappings[col_idx]
-            col_log_snapshots.append(len(tui.answer_log))
 
             # Pre-fill from previous group's mapping if available.
             # Use a sentinel to distinguish "no previous" from "previous=Skip".
@@ -1188,6 +1327,7 @@ def _run_column_mapping(
                 else:
                     default_field = None
 
+            log_before = len(tui.answer_log)
             try:
                 pick = tui.ask_choice(
                     col_idx, auto, used_fields, chosen,
@@ -1195,22 +1335,26 @@ def _run_column_mapping(
                     use_auto_default=default_field is _NO_PREV,
                 )
             except GoBack:
-                # Trim log for this column
-                tui.answer_log = tui.answer_log[:col_log_snapshots.pop()]
+                # Trim any log entries ask_choice may have added
+                tui.answer_log = tui.answer_log[:log_before]
                 if col_idx > 0:
                     # Undo the previous column's choice
                     prev = chosen.pop()
                     if prev[0]:
                         used_fields.discard(_strip_negate(prev[0])[0])
                     col_idx -= 1
-                    # Also trim the previous column's log entries
-                    tui.answer_log = tui.answer_log[:col_log_snapshots.pop()]
+                    _sync_mapping_row()
                 else:
                     # At first column — propagate GoBack to the caller
                     tui.answer_log = tui.answer_log[:log_at_start]
+                    tui.set_mapping_row([])
                     raise
                 tui.draw()
                 continue
+
+            # Suppress the verbose log entry from ask_choice — the mapping
+            # row in the table now serves as the visual summary.
+            tui.answer_log = tui.answer_log[:log_before]
 
             field = FIELD_CHOICES[pick][0]
             if field:
@@ -1221,21 +1365,22 @@ def _run_column_mapping(
                 chosen.append((field, hledger_name))
             else:
                 chosen.append(("", ""))
+
+            _sync_mapping_row()
             col_idx += 1
 
         # ── Negate toggle for numeric columns ──
-        negate_log_snap = len(tui.answer_log)
         try:
             _ask_negate_for_chosen(tui, chosen, preview)
+            _sync_mapping_row()
             negate_done = True
         except GoBack:
             # Go back to re-ask the last column
-            tui.answer_log = tui.answer_log[:negate_log_snap]
             last = chosen.pop()
             if last[0]:
                 used_fields.discard(_strip_negate(last[0])[0])
             col_idx = len(chosen)
-            tui.answer_log = tui.answer_log[:col_log_snapshots.pop()]
+            _sync_mapping_row()
             tui.draw()
 
     # Validate (strip negate prefix for field name checks)
@@ -1301,43 +1446,6 @@ def _extract_tnx_date_pairs(
     ]
 
 
-def _append_mapping_summary(
-    tui: "_SplitPaneTUI",
-    preview: CsvPreview,
-    chosen: List[Tuple[Optional[str], str]],
-    split_groups_data: Optional[
-        List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
-    ],
-) -> None:
-    """Append a compact mapping summary to ``tui.answer_log``."""
-    tui.answer_log.append("")
-    tui.answer_log.append(f"{BOLD}Column mapping:{RESET}")
-
-    if split_groups_data:
-        for vals, grp_chosen in split_groups_data:
-            tui.answer_log.append(
-                f"  {FG_CYAN}{', '.join(vals)}{RESET}:"
-            )
-            for ci, (field_raw, _) in enumerate(grp_chosen):
-                if not field_raw:
-                    continue
-                hdr = preview.headers[ci]
-                base, neg = _strip_negate(field_raw)
-                neg_tag = f" {FG_YELLOW}(neg){RESET}" if neg else ""
-                tui.answer_log.append(
-                    f"    {hdr} \u2192 {FG_GREEN}{base}{RESET}{neg_tag}"
-                )
-    elif chosen:
-        for ci, (field_raw, _) in enumerate(chosen):
-            if not field_raw:
-                continue
-            hdr = preview.headers[ci]
-            base, neg = _strip_negate(field_raw)
-            neg_tag = f" {FG_YELLOW}(neg){RESET}" if neg else ""
-            tui.answer_log.append(
-                f"  {hdr} \u2192 {FG_GREEN}{base}{RESET}{neg_tag}"
-            )
-
 
 # ── Step helpers for the main TUI flow ────────────────────────────────
 
@@ -1383,11 +1491,6 @@ def _run_mapping_step(
                 tui, auto_mappings, preview,
                 previous_chosen=old_chosen,
             )
-        _append_mapping_summary(
-            tui, preview, state.get("chosen", []),
-            state.get("split_groups_data"),
-        )
-        tui.draw()
         return
 
     detected_template = detect_template(preview.headers)
@@ -1411,40 +1514,18 @@ def _run_mapping_step(
             if detected_template.groups:
                 split_groups_data = []
                 for tg in detected_template.groups:
-                    tui.answer_log.append(
-                        f"{DIM}Template: group "
-                        f"{FG_CYAN}{', '.join(tg.values)}{RESET}"
-                    )
-                    for ci, (field, hname) in enumerate(
-                        tg.column_mappings
-                    ):
-                        hdr = preview.headers[ci]
-                        if field:
-                            tui.answer_log.append(
-                                f"  {hdr} \u2192 "
-                                f"{FG_GREEN}{field}{RESET}"
-                            )
-                        else:
-                            tui.answer_log.append(
-                                f"  {hdr} \u2192 skip"
-                            )
+                    grp_chosen = list(tg.column_mappings)
                     split_groups_data.append(
-                        (tg.values, list(tg.column_mappings))
+                        (tg.values, grp_chosen)
                     )
+                # Show last group's mapping in the table row
+                tui.set_mapping_row(_chosen_to_mapping_row(
+                    split_groups_data[-1][1]
+                ))
                 tui.draw()
             else:
                 chosen = list(detected_template.groups[0].column_mappings)
-                for ci, (field, _) in enumerate(chosen):
-                    hdr = preview.headers[ci]
-                    if field:
-                        tui.answer_log.append(
-                            f"  {hdr} \u2192 "
-                            f"{FG_GREEN}{field} (template){RESET}"
-                        )
-                    else:
-                        tui.answer_log.append(
-                            f"  {hdr} \u2192 skip (template)"
-                        )
+                tui.set_mapping_row(_chosen_to_mapping_row(chosen))
                 tui.draw()
 
     if not template_applied:
@@ -1564,6 +1645,7 @@ def _run_mapping_step(
                         )
                         gi -= 1
                     else:
+                        tui.set_mapping_row([])
                         raise  # propagate to main loop
                     tui.draw()
                     continue
@@ -1582,11 +1664,6 @@ def _run_mapping_step(
     if decimal_format is not None:
         state["decimal_format"] = decimal_format
 
-    # Show mapping summary in the answer log
-    _append_mapping_summary(
-        tui, preview, chosen, split_groups_data,
-    )
-    tui.draw()
 
 
 def _run_decimal_step(
@@ -1675,31 +1752,15 @@ def _run_summary_step(
             f"Split column: {split_column} "
             f"({preview.headers[split_column]})"
         )
-        for vals, grp_chosen in split_groups_data:
-            tui.answer_log.append(
-                f"  Group [{', '.join(vals)}]:"
-            )
-            for ci, (field_raw, _) in enumerate(grp_chosen):
-                hdr = preview.headers[ci]
-                if field_raw:
-                    base, neg = _strip_negate(field_raw)
-                    neg_tag = f" {FG_YELLOW}(negated){RESET}" if neg else ""
-                    tui.answer_log.append(
-                        f"    {hdr} \u2192 {FG_GREEN}{base}{RESET}{neg_tag}"
-                    )
+        # Show last group's mapping in the table row
+        tui.set_mapping_row(_chosen_to_mapping_row(
+            split_groups_data[-1][1]
+        ))
     else:
-        for ci, (field_raw, _) in enumerate(chosen):
-            hdr = preview.headers[ci]
-            if field_raw:
-                base, neg = _strip_negate(field_raw)
-                neg_tag = f" {FG_YELLOW}(negated){RESET}" if neg else ""
-                tui.answer_log.append(
-                    f"  {hdr} \u2192 {FG_GREEN}{base}{RESET}{neg_tag}"
-                )
-            else:
-                tui.answer_log.append(f"  {hdr} \u2192 skip")
+        tui.set_mapping_row(_chosen_to_mapping_row(chosen))
 
     confirmed = tui.ask_confirm("Save this mapping to config?")
+    tui.set_mapping_row([])
     state["confirmed"] = confirmed
 
 
