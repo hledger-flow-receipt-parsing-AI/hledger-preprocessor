@@ -82,6 +82,10 @@ class AccountConfig:
     def get_hledger_csv_column_names(self) -> List[str]:
 
         if self.has_input_csv():
+            # In split mode csv_column_mapping is None; use first group's.
+            mapping = self.csv_column_mapping
+            if (mapping is None or mapping.csv_column_mapping is None) and self.split_groups:
+                mapping = self.split_groups[0].csv_column_mapping
             dummy_csv_tnx: GenericCsvTransaction = GenericCsvTransaction(
                 the_date=datetime.now(),
                 account=self.account,
@@ -90,7 +94,7 @@ class AccountConfig:
             )
             return list(
                 dummy_csv_tnx.to_hledger_dict(
-                    csv_column_mapping=self.csv_column_mapping
+                    csv_column_mapping=mapping
                 ).keys()
             )
             # return self.csv_column_mapping.get_hledger_csv_column_names()
