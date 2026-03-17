@@ -477,6 +477,9 @@ class _SplitPaneTUI:
         # Columns to dim (e.g. skipped columns during negate step)
         self.dim_cols: set = set()
 
+        # Row indices to dim (e.g. rows not in current split group)
+        self.dim_rows: set = set()
+
         # Extra row below data showing the mapped field per column.
         # Empty list = not shown.  When populated, one entry per column.
         self.mapping_row: List[str] = []
@@ -592,6 +595,7 @@ class _SplitPaneTUI:
             )
             self._nl()
 
+        _all_cols = set(range(self.n_cols)) if self.dim_rows else None
         for ri in range(self.row_offset, vis_rows_end):
             row = self.preview.sample_rows[ri]
             if self.negate_cols:
@@ -599,12 +603,13 @@ class _SplitPaneTUI:
                 for ci in self.negate_cols:
                     if ci < len(row):
                         row[ci] = _flip_sign_str(row[ci])
+            row_dc = _all_cols if ri in self.dim_rows else _dc
             self._write(
                 _render_clipped_row(
                     row, self.col_widths,
                     self.col_offset, self.n_cols, term_w,
                     highlight_col=self.highlight_col,
-                    dim_cols=_dc,
+                    dim_cols=row_dc,
                 )
             )
             self._nl()
@@ -1233,11 +1238,16 @@ def _ask_negate_for_chosen(
     tui: "_SplitPaneTUI",
     chosen: List[Tuple[Optional[str], str]],
     preview: CsvPreview,
+    split_column: Optional[int] = None,
+    group_values: Optional[Tuple[str, ...]] = None,
 ) -> None:
     """Show the negate toggle table for numeric columns in *chosen*.
 
     Modifies *chosen* in-place, adding ``NEGATE_PREFIX`` to negated fields.
     Raises ``GoBack`` if the user presses Escape (caller should handle).
+
+    *split_column* / *group_values*: when set, rows whose split-column
+    value is not in *group_values* are dimmed.
     """
     numeric_entries: List[Tuple[int, str, str]] = []
     skipped_cols: set = set()
@@ -1252,11 +1262,23 @@ def _ask_negate_for_chosen(
     if not numeric_entries:
         return
 
+    # Compute rows to dim (rows not in this split group)
+    dim_rows: set = set()
+    if split_column is not None and group_values is not None:
+        for ri, row in enumerate(preview.sample_rows):
+            if split_column < len(row):
+                if row[split_column].strip() not in group_values:
+                    dim_rows.add(ri)
+            else:
+                dim_rows.add(ri)
+
     tui.dim_cols = skipped_cols
+    tui.dim_rows = dim_rows
     try:
         negated_cols = tui.ask_negate_table(numeric_entries)
     finally:
         tui.dim_cols = set()
+        tui.dim_rows = set()
 
     for ci in negated_cols:
         field, hname = chosen[ci]
@@ -1270,6 +1292,8 @@ def _run_column_mapping(
     preview: CsvPreview,
     group_label: str = "",
     previous_chosen: Optional[List[Tuple[Optional[str], str]]] = None,
+    split_column: Optional[int] = None,
+    group_values: Optional[Tuple[str, ...]] = None,
 ) -> List[Tuple[Optional[str], str]]:
     """Run the column mapping loop and return chosen (field, hledger_name) pairs.
 
@@ -1371,7 +1395,11 @@ def _run_column_mapping(
 
         # ── Negate toggle for numeric columns ──
         try:
-            _ask_negate_for_chosen(tui, chosen, preview)
+            _ask_negate_for_chosen(
+                tui, chosen, preview,
+                split_column=split_column,
+                group_values=group_values,
+            )
             _sync_mapping_row()
             negate_done = True
         except GoBack:
@@ -1473,6 +1501,7 @@ def _run_mapping_step(
     if reedit:
         old_split_groups_data = state.get("split_groups_data")
         old_chosen = state.get("chosen", [])
+        reedit_split_col = state.get("split_column")
 
         if old_split_groups_data:
             # Re-map the last group with previous choices as pre-fill
@@ -1483,6 +1512,8 @@ def _run_mapping_step(
                     tui, auto_mappings, preview,
                     group_label=", ".join(vals),
                     previous_chosen=grp_chosen,
+                    split_column=reedit_split_col,
+                    group_values=vals,
                 )
                 new_groups.append((vals, new_chosen))
             state["split_groups_data"] = new_groups
@@ -1632,6 +1663,8 @@ def _run_mapping_step(
                         tui, auto_mappings, preview,
                         group_label=", ".join(vals),
                         previous_chosen=prev_chosen,
+                        split_column=split_column,
+                        group_values=vals,
                     )
                 except GoBack:
                     tui.answer_log = tui.answer_log[
