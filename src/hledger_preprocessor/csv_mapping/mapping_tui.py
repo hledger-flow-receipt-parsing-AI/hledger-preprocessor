@@ -1238,16 +1238,14 @@ def _ask_negate_for_chosen(
     tui: "_SplitPaneTUI",
     chosen: List[Tuple[Optional[str], str]],
     preview: CsvPreview,
-    split_column: Optional[int] = None,
-    group_values: Optional[Tuple[str, ...]] = None,
 ) -> None:
     """Show the negate toggle table for numeric columns in *chosen*.
 
     Modifies *chosen* in-place, adding ``NEGATE_PREFIX`` to negated fields.
     Raises ``GoBack`` if the user presses Escape (caller should handle).
 
-    *split_column* / *group_values*: when set, rows whose split-column
-    value is not in *group_values* are dimmed.
+    Expects the caller to manage ``tui.dim_rows`` (for split-group
+    row dimming) — this function only manages ``tui.dim_cols``.
     """
     numeric_entries: List[Tuple[int, str, str]] = []
     skipped_cols: set = set()
@@ -1262,23 +1260,11 @@ def _ask_negate_for_chosen(
     if not numeric_entries:
         return
 
-    # Compute rows to dim (rows not in this split group)
-    dim_rows: set = set()
-    if split_column is not None and group_values is not None:
-        for ri, row in enumerate(preview.sample_rows):
-            if split_column < len(row):
-                if row[split_column].strip() not in group_values:
-                    dim_rows.add(ri)
-            else:
-                dim_rows.add(ri)
-
     tui.dim_cols = skipped_cols
-    tui.dim_rows = dim_rows
     try:
         negated_cols = tui.ask_negate_table(numeric_entries)
     finally:
         tui.dim_cols = set()
-        tui.dim_rows = set()
 
     for ci in negated_cols:
         field, hname = chosen[ci]
@@ -1322,6 +1308,14 @@ def _run_column_mapping(
 
     n_map_cols = len(auto_mappings)
     tui.set_mapping_row([""] * n_map_cols)
+
+    # Dim rows not in this split group for the entire mapping phase
+    if split_column is not None and group_values is not None:
+        tui.dim_rows = {
+            ri for ri, row in enumerate(preview.sample_rows)
+            if split_column >= len(row)
+            or row[split_column].strip() not in group_values
+        }
 
     used_fields: set = set()
     chosen: List[Tuple[Optional[str], str]] = []
@@ -1372,6 +1366,7 @@ def _run_column_mapping(
                     # At first column — propagate GoBack to the caller
                     tui.answer_log = tui.answer_log[:log_at_start]
                     tui.set_mapping_row([])
+                    tui.dim_rows = set()
                     raise
                 tui.draw()
                 continue
@@ -1394,12 +1389,10 @@ def _run_column_mapping(
             col_idx += 1
 
         # ── Negate toggle for numeric columns ──
+        # Reset scroll so the table starts from the left
+        tui.col_offset = 0
         try:
-            _ask_negate_for_chosen(
-                tui, chosen, preview,
-                split_column=split_column,
-                group_values=group_values,
-            )
+            _ask_negate_for_chosen(tui, chosen, preview)
             _sync_mapping_row()
             negate_done = True
         except GoBack:
@@ -1410,6 +1403,8 @@ def _run_column_mapping(
             col_idx = len(chosen)
             _sync_mapping_row()
             tui.draw()
+
+    tui.dim_rows = set()
 
     # Validate (strip negate prefix for field name checks)
     mapped = {_strip_negate(pair[0])[0] for pair in chosen if pair[0]}
