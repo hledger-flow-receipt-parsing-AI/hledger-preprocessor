@@ -94,16 +94,24 @@ class AccountConfig:
     def get_hledger_csv_column_names(self) -> List[str]:
 
         if self.has_input_csv():
-            # In split mode csv_column_mapping is None; use first group's.
-            mapping = self.csv_column_mapping
-            if (mapping is None or mapping.csv_column_mapping is None) and self.split_groups:
-                mapping = self.split_groups[0].csv_column_mapping
             dummy_csv_tnx: GenericCsvTransaction = GenericCsvTransaction(
                 the_date=datetime.now(),
                 account=self.account,
                 tendered_amount_out=1,  # TODO: don't use this hardcoding.
                 change_returned=0,  # TODO: don't use this hardcoding.
             )
+            # In split mode, collect the union of all groups' columns so the
+            # rules file and preprocessed CSV share one consistent layout.
+            if (self.csv_column_mapping is None or self.csv_column_mapping.csv_column_mapping is None) and self.split_groups:
+                all_keys: List[str] = []
+                for group in self.split_groups:
+                    for k in dummy_csv_tnx.to_hledger_dict(
+                        csv_column_mapping=group.csv_column_mapping
+                    ).keys():
+                        if k not in all_keys:
+                            all_keys.append(k)
+                return all_keys
+            mapping = self.csv_column_mapping
             return list(
                 dummy_csv_tnx.to_hledger_dict(
                     csv_column_mapping=mapping
