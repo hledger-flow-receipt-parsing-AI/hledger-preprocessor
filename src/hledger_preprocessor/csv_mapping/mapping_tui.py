@@ -18,6 +18,7 @@ from typeguard import typechecked
 
 from hledger_preprocessor.config.AccountConfig import (
     AccountConfig,
+    LinkedAccount,
     SplitGroup,
 )
 from hledger_preprocessor.config.CsvColumnMapping import CsvColumnMapping
@@ -74,8 +75,13 @@ def _term_size() -> Tuple[int, int]:
 def _compute_col_widths(
     preview: CsvPreview, max_col_w: int = 30
 ) -> List[int]:
-    """Column widths based on data values only (headers wrap to fit)."""
+    """Column widths based on data values only (headers wrap to fit).
+
+    Scans all data rows so that reordered rows (e.g. one of each
+    split-group type) are never truncated.
+    """
     widths: List[int] = []
+    rows = preview.all_data_rows or preview.sample_rows
     for i, h in enumerate(preview.headers):
         # Start from header's longest single word so the column is at
         # least wide enough for one word of the header to fit.
@@ -83,7 +89,7 @@ def _compute_col_widths(
             (len(w) for w in h.split()), default=len(h)
         )
         w = longest_word
-        for row in preview.sample_rows:
+        for row in rows:
             if i < len(row):
                 w = max(w, len(row[i]))
         widths.append(min(w, max_col_w))
@@ -284,7 +290,17 @@ FIELD_CHOICES: List[Tuple[Optional[str], str]] = [
      "transaction_code (Transaction code Debit/Credit)"),
     ("balance_after", "balance_after (Balance after transaction)"),
     ("bic", "bic (BIC Bank Identifier Code)"),
+    (_SEP, ""),
+    ("__custom__", "new field (create a custom field name)"),
 ]
+
+_CUSTOM_FIELD = "__custom__"
+
+# Common suffix appended to nav_hint in the top bar.
+_SCROLL_HINT = (
+    "  |  Ctrl+\u2191\u2193=scroll rows  Alt+\u2190\u2192=scroll cols"
+    "  |  Ctrl+C=quit"
+)
 
 
 def _is_grayed_out(field: Optional[str], used: set) -> bool:
@@ -400,6 +416,11 @@ def _read_key_raw(fd: int) -> str:
                             "A": "shift-up", "B": "shift-down",
                             "C": "shift-right", "D": "shift-left",
                         }.get(ch6, "unknown")
+                    if ch5 == "5":  # Ctrl modifier
+                        return {
+                            "A": "ctrl-up", "B": "ctrl-down",
+                            "C": "ctrl-right", "D": "ctrl-left",
+                        }.get(ch6, "unknown")
                 return "unknown"
             if ch3 == "Z":  # Shift+Tab
                 return "shift-tab"
@@ -437,7 +458,10 @@ class _SplitPaneTUI:
         self._base_col_widths = _compute_col_widths(preview)
         self.col_widths = list(self._base_col_widths)
         self.n_cols = len(preview.headers)
-        self.n_rows = len(preview.sample_rows)
+        # Display rows: all CSV data rows; can be reordered to show
+        # variety at the top (e.g. one of each split-group type).
+        self.display_rows: List[List[str]] = list(preview.all_data_rows)
+        self.n_rows = len(self.display_rows)
 
         # Word-wrapped headers (recomputed when col_widths change)
         self._wrapped_headers: List[List[str]] = []
@@ -453,6 +477,9 @@ class _SplitPaneTUI:
 
         # Bottom pane content lines (list of ANSI-styled strings)
         self.bottom_lines: List[str] = []
+
+        # Resolved field from last ask_choice (handles custom fields)
+        self.last_chosen_field: Optional[str] = None
 
         # For text input
         self.input_buf = ""
@@ -479,6 +506,12 @@ class _SplitPaneTUI:
 
         # Row indices to dim (e.g. rows not in current split group)
         self.dim_rows: set = set()
+
+        # Required fields status line (shown during column mapping)
+        self.required_status: str = ""
+
+        # Navigation hint shown right-aligned in the top bar
+        self.nav_hint: str = ""
 
         # Extra row below data showing the mapped field per column.
         # Empty list = not shown.  When populated, one entry per column.
@@ -518,6 +551,26 @@ class _SplitPaneTUI:
         """Set mapping_row and recompute column widths + header wrapping."""
         self.mapping_row = row
         self._recompute_widths()
+
+    def reorder_rows_for_split(self, split_column: int) -> None:
+        """Reorder display_rows so at least one row of each unique
+        split-column value appears at the top, followed by the rest."""
+        seen: set = set()
+        top: List[List[str]] = []
+        rest: List[List[str]] = []
+        for row in self.display_rows:
+            val = (
+                row[split_column].strip()
+                if split_column < len(row)
+                else ""
+            )
+            if val and val not in seen:
+                seen.add(val)
+                top.append(row)
+            else:
+                rest.append(row)
+        self.display_rows = top + rest
+        self.row_offset = 0
 
     def _enter_raw(self) -> None:
         tty.setraw(self.fd)
@@ -561,18 +614,30 @@ class _SplitPaneTUI:
         self._write("\033[H\033[2J")
 
         # ── TOP PANE: CSV table ──────────────────────────────────
-        title = (
+        title_left = (
             f" CSV: {os.path.basename(self.preview.filepath)}  "
             f"({self.n_cols} cols, {self.preview.total_rows} rows)"
         )
+        hint = self.nav_hint
+        if hint:
+            # Pad between title and hint
+            pad = term_w - len(title_left) - len(hint) - 1
+            if pad < 1:
+                # Not enough room for hint — just show title
+                bar = f"{title_left[:term_w]:<{term_w}}"
+            else:
+                bar = f"{title_left}{' ' * pad}{hint} "
+        else:
+            bar = f"{title_left[:term_w]:<{term_w}}"
         self._write(
-            f"{BOLD}{BG_DARK}{FG_WHITE}{title[:term_w]:<{term_w}}{RESET}"
+            f"{BOLD}{BG_DARK}{FG_WHITE}{bar}{RESET}"
         )
         self._nl()
 
         if self.row_offset > 0:
             self._write(
-                f"{DIM}  \u2191 {self.row_offset} row(s) above{RESET}"
+                f"{DIM}  .. {self.row_offset} row(s) above "
+                f"(Ctrl+\u2191 to scroll){RESET}"
             )
         self._nl()
 
@@ -597,7 +662,7 @@ class _SplitPaneTUI:
 
         _all_cols = set(range(self.n_cols)) if self.dim_rows else None
         for ri in range(self.row_offset, vis_rows_end):
-            row = self.preview.sample_rows[ri]
+            row = self.display_rows[ri]
             if self.negate_cols:
                 row = list(row)
                 for ci in self.negate_cols:
@@ -630,7 +695,8 @@ class _SplitPaneTUI:
         remaining_below = self.n_rows - vis_rows_end
         if remaining_below > 0:
             self._write(
-                f"{DIM}  \u2193 {remaining_below} row(s) below{RESET}"
+                f"{DIM}  .. {remaining_below} row(s) below "
+                f"(Ctrl+\u2193 to scroll){RESET}"
             )
         self._nl()
 
@@ -652,6 +718,9 @@ class _SplitPaneTUI:
         for entry in self.answer_log:
             lines_to_show.append(f"{DIM}  {entry}{RESET}")
 
+        if self.required_status:
+            lines_to_show.append(f"  {self.required_status}")
+
         if self.choice_active or self.bottom_lines:
             for bl in self.bottom_lines:
                 lines_to_show.append(bl)
@@ -664,12 +733,7 @@ class _SplitPaneTUI:
                 f"  {FG_CYAN}{self.input_prompt}{RESET}{self.input_buf}"
             )
         elif self.choice_active:
-            hint = (
-                f"  {DIM}\u2191\u2193 select  Enter=confirm  "
-                f"Esc=back  "
-                f"Alt+\u2190\u2192\u2191\u2193 scroll table{RESET}"
-            )
-            lines_to_show.append(hint)
+            pass  # nav hints already in top bar
 
         if len(lines_to_show) > available_bottom:
             lines_to_show = lines_to_show[-available_bottom:]
@@ -710,6 +774,17 @@ class _SplitPaneTUI:
         if 0 <= idx < n:
             self.choice_idx = idx
 
+    def _is_scroll_key(self, key: str) -> bool:
+        """Return True if *key* is a table-scroll key (alt- or ctrl-arrow)."""
+        return key in (
+            "alt-up", "alt-down", "alt-left", "alt-right",
+            "ctrl-up", "ctrl-down", "ctrl-left", "ctrl-right",
+        )
+
+    def _scroll_direction(self, key: str) -> str:
+        """Extract direction from a scroll key like 'alt-up' or 'ctrl-down'."""
+        return key.split("-", 1)[1]
+
     def scroll_table(self, direction: str) -> None:
         term_w, term_h = _term_size()
         top_data_rows = max(1, term_h - self.BOTTOM_PANE_LINES - 4)
@@ -724,8 +799,17 @@ class _SplitPaneTUI:
         elif direction == "up" and self.row_offset > 0:
             self.row_offset -= 1
 
-    def ask_string(self, prompt: str, default: str = "") -> str:
-        """Ask for text input. Alt+arrows scroll the table."""
+    def ask_string(
+        self,
+        prompt: str,
+        default: str = "",
+        completions: Optional[List[str]] = None,
+    ) -> str:
+        """Ask for text input. Alt+arrows scroll the table.
+
+        *completions*: if given, Tab completes the current token
+        (the part after the last comma) against these values.
+        """
         hint = f" [{default}]" if default else ""
         self.input_prompt = f"{prompt}{hint}: "
         self.input_buf = ""
@@ -733,31 +817,59 @@ class _SplitPaneTUI:
         self.choice_active = False
         self.bottom_lines = []
         self.error_msg = ""
+        tab_hint = "  Tab=complete" if completions else ""
+        self.nav_hint = f"Enter=confirm{tab_hint}  Esc=back{_SCROLL_HINT}"
         self.draw()
 
         while True:
             key = _read_key_raw(self.fd)
-            if key.startswith("alt-"):
-                self.scroll_table(key[4:])
+            if self._is_scroll_key(key):
+                self.scroll_table(self._scroll_direction(key))
                 self.draw()
             elif key == "enter":
                 result = self.input_buf.strip() if self.input_buf.strip() else default
                 self.input_active = False
+                self.nav_hint = ""
                 self.answer_log.append(
                     f"{prompt}: {FG_GREEN}{result}{RESET}"
                 )
                 return result
+            elif key == "tab" and completions:
+                # Complete the current token (after last comma)
+                parts = self.input_buf.rsplit(",", 1)
+                prefix = parts[-1].strip().lower()
+                already = {
+                    p.strip() for p in self.input_buf.split(",")
+                    if p.strip()
+                } - {parts[-1].strip()}
+                candidates = [
+                    c for c in completions
+                    if c.lower().startswith(prefix)
+                    and c not in already
+                ]
+                if len(candidates) == 1:
+                    before = parts[0] + "," if len(parts) > 1 else ""
+                    self.input_buf = before + candidates[0]
+                    self._redraw_input_line()
+                elif candidates:
+                    self.error_msg = (
+                        f"Matches: {', '.join(candidates)}"
+                    )
+                    self._redraw_input_line()
+                    self.draw()
             elif key == "backspace":
                 if self.input_buf:
                     self.input_buf = self.input_buf[:-1]
                     self._redraw_input_line()
             elif key == "esc":
                 self.input_active = False
+                self.nav_hint = ""
                 raise GoBack
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
             elif len(key) == 1 and key.isprintable():
                 self.input_buf += key
+                self.error_msg = ""
                 self._redraw_input_line()
 
     def ask_currency(self) -> Currency:
@@ -808,6 +920,7 @@ class _SplitPaneTUI:
         self.choice_active = True
         self.input_active = False
         self.error_msg = ""
+        self.nav_hint = "Up/Down=select  Enter=confirm  Esc=back" + _SCROLL_HINT
 
         # Determine default selection
         if default_field is not None:
@@ -831,7 +944,7 @@ class _SplitPaneTUI:
         header = self.preview.headers[col_idx]
         samples = [
             row[col_idx]
-            for row in self.preview.sample_rows
+            for row in self.display_rows[:10]
             if col_idx < len(row)
         ]
         sample_str = ", ".join(f'"{s}"' for s in samples[:3])
@@ -853,8 +966,8 @@ class _SplitPaneTUI:
 
         while True:
             key = _read_key_raw(self.fd)
-            if key.startswith("alt-"):
-                self.scroll_table(key[4:])
+            if self._is_scroll_key(key):
+                self.scroll_table(self._scroll_direction(key))
                 self.draw()
             elif key == "up":
                 self._move_choice(-1)
@@ -868,6 +981,40 @@ class _SplitPaneTUI:
                 field = self.choice_items[self.choice_idx][0]
                 if field == _SEP:
                     continue
+
+                # Handle custom field creation
+                if field == _CUSTOM_FIELD:
+                    self.choice_active = False
+                    try:
+                        custom_name = self.ask_string(
+                            "Custom field name"
+                        )
+                    except GoBack:
+                        self.choice_active = True
+                        self.choice_items = list(FIELD_CHOICES)
+                        self._build_choice_lines(
+                            header, sample_str, auto
+                        )
+                        self.draw()
+                        continue
+                    if not custom_name:
+                        self.choice_active = True
+                        self.error_msg = "Field name cannot be empty."
+                        self._build_choice_lines(
+                            header, sample_str, auto
+                        )
+                        self.draw()
+                        continue
+                    # Insert the custom field before __custom__
+                    custom_idx = self.choice_idx
+                    self.choice_items.insert(
+                        custom_idx,
+                        (custom_name, f"{custom_name} (custom)")
+                    )
+                    self.choice_idx = custom_idx
+                    field = custom_name
+                    self.choice_active = True
+                    # Fall through to the normal field handling below
 
                 # Block mutually exclusive / grayed-out picks
                 if field and _is_grayed_out(field, used):
@@ -905,8 +1052,8 @@ class _SplitPaneTUI:
                                 f"unmapped (replaced){RESET}"
                             )
                         self.error_msg = ""
-                    elif confirm_key.startswith("alt-"):
-                        self.scroll_table(confirm_key[4:])
+                    elif self._is_scroll_key(confirm_key):
+                        self.scroll_table(self._scroll_direction(confirm_key))
                         self.error_msg = ""
                         self.draw()
                         continue
@@ -928,6 +1075,8 @@ class _SplitPaneTUI:
                 self.choice_active = False
                 self.highlight_col = -1
                 self.error_msg = ""
+                self.nav_hint = ""
+                self.last_chosen_field = field
                 if field:
                     _choice_labels = {
                         f: d for f, d in FIELD_CHOICES if f and f != _SEP
@@ -946,6 +1095,7 @@ class _SplitPaneTUI:
                 self.choice_active = False
                 self.highlight_col = -1
                 self.error_msg = ""
+                self.nav_hint = ""
                 raise GoBack
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
@@ -1000,6 +1150,7 @@ class _SplitPaneTUI:
         self.input_active = False
         self.choice_active = False
         self.error_msg = ""
+        self.nav_hint = "Left/Right=select  Enter=confirm  Esc=back" + _SCROLL_HINT
         hdr = self.preview.headers[0]
         self.bottom_lines = [
             f"  {BOLD}{prompt}{RESET}",
@@ -1007,9 +1158,18 @@ class _SplitPaneTUI:
                 f"  Column {self.highlight_col}: "
                 f"{FG_CYAN}{BOLD}{hdr}{RESET}"
             ),
-            f"  {DIM}\u2190\u2192 select column  Enter=confirm  Esc=back{RESET}",
         ]
         self.draw()
+
+        def _update_col_lines() -> None:
+            hdr = self.preview.headers[self.highlight_col]
+            self.bottom_lines = [
+                f"  {BOLD}{prompt}{RESET}",
+                (
+                    f"  Column {self.highlight_col}: "
+                    f"{FG_CYAN}{BOLD}{hdr}{RESET}"
+                ),
+            ]
 
         while True:
             key = _read_key_raw(self.fd)
@@ -1024,41 +1184,24 @@ class _SplitPaneTUI:
                         if ci == self.highlight_col and check > term_w:
                             self.col_offset = self.highlight_col
                             break
-                    hdr = self.preview.headers[self.highlight_col]
-                    self.bottom_lines = [
-                        f"  {BOLD}{prompt}{RESET}",
-                        (
-                            f"  Column {self.highlight_col}: "
-                            f"{FG_CYAN}{BOLD}{hdr}{RESET}"
-                        ),
-                        f"  {DIM}\u2190\u2192 select column  "
-                        f"Enter=confirm  Esc=back{RESET}",
-                    ]
+                    _update_col_lines()
                     self.draw()
             elif key == "left":
                 if self.highlight_col > 0:
                     self.highlight_col -= 1
                     if self.highlight_col < self.col_offset:
                         self.col_offset = self.highlight_col
-                    hdr = self.preview.headers[self.highlight_col]
-                    self.bottom_lines = [
-                        f"  {BOLD}{prompt}{RESET}",
-                        (
-                            f"  Column {self.highlight_col}: "
-                            f"{FG_CYAN}{BOLD}{hdr}{RESET}"
-                        ),
-                        f"  {DIM}\u2190\u2192 select column  "
-                        f"Enter=confirm  Esc=back{RESET}",
-                    ]
+                    _update_col_lines()
                     self.draw()
-            elif key.startswith("alt-"):
-                self.scroll_table(key[4:])
+            elif self._is_scroll_key(key):
+                self.scroll_table(self._scroll_direction(key))
                 self.draw()
             elif key == "enter":
                 selected = self.highlight_col
                 hdr = self.preview.headers[selected]
                 self.highlight_col = -1
                 self.bottom_lines = []
+                self.nav_hint = ""
                 self.answer_log.append(
                     f"{prompt}: column {selected} "
                     f"({FG_GREEN}{hdr}{RESET})"
@@ -1067,6 +1210,7 @@ class _SplitPaneTUI:
             elif key == "esc":
                 self.highlight_col = -1
                 self.bottom_lines = []
+                self.nav_hint = ""
                 raise GoBack
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
@@ -1079,16 +1223,18 @@ class _SplitPaneTUI:
         self.choice_active = False
         self.bottom_lines = []
         self.error_msg = ""
+        self.nav_hint = "Y/Enter=yes  N=no  Esc=back" + _SCROLL_HINT
         self.draw()
 
         while True:
             key = _read_key_raw(self.fd)
-            if key.startswith("alt-"):
-                self.scroll_table(key[4:])
+            if self._is_scroll_key(key):
+                self.scroll_table(self._scroll_direction(key))
                 self.draw()
             elif key == "enter":
                 val = self.input_buf.strip().lower()
                 self.input_active = False
+                self.nav_hint = ""
                 return val in ("", "y", "yes")
             elif key == "backspace":
                 if self.input_buf:
@@ -1096,6 +1242,7 @@ class _SplitPaneTUI:
                     self._redraw_input_line()
             elif key == "esc":
                 self.input_active = False
+                self.nav_hint = ""
                 raise GoBack
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
@@ -1122,6 +1269,7 @@ class _SplitPaneTUI:
         self.input_active = False
         self.choice_active = False
         self.error_msg = ""
+        self.nav_hint = "Left/Right=navigate  Enter/Space=toggle  Tab=done  Esc=back" + _SCROLL_HINT
 
         negated: List[bool] = [False] * len(numeric_entries)
         cursor = 0
@@ -1155,11 +1303,6 @@ class _SplitPaneTUI:
                     f"Col {ci} {hdr} \u2192 {field}  "
                     f"[{mark}]"
                 ),
-                (
-                    f"  {DIM}\u2190\u2192 prev/next numeric col  "
-                    f"Enter/Space=toggle  "
-                    f"Tab=done  Esc=back{RESET}"
-                ),
             ]
 
         _sync()
@@ -1167,8 +1310,8 @@ class _SplitPaneTUI:
 
         while True:
             key = _read_key_raw(self.fd)
-            if key.startswith("alt-"):
-                self.scroll_table(key[4:])
+            if self._is_scroll_key(key):
+                self.scroll_table(self._scroll_direction(key))
                 self.draw()
             elif key in ("left", "up"):
                 if cursor > 0:
@@ -1188,6 +1331,7 @@ class _SplitPaneTUI:
                 self.highlight_col = -1
                 self.negate_cols = set()
                 self.bottom_lines = []
+                self.nav_hint = ""
                 return [
                     numeric_entries[i][0]
                     for i in range(len(numeric_entries))
@@ -1197,12 +1341,32 @@ class _SplitPaneTUI:
                 self.highlight_col = -1
                 self.negate_cols = set()
                 self.bottom_lines = []
+                self.nav_hint = ""
                 raise GoBack
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
 
 
 # ── Mapping helpers ───────────────────────────────────────────────────
+
+
+def _update_required_status(tui: "_SplitPaneTUI", used_fields: set) -> None:
+    """Update the required fields status line on the TUI."""
+    has_date = (
+        DATE_FIELD in used_fields
+        or DATETIME_FIELD in used_fields
+    )
+    has_amount = "tendered_amount_out" in used_fields
+    parts = []
+    if has_date:
+        parts.append(f"{FG_GREEN}date \u2713{RESET}")
+    else:
+        parts.append(f"{FG_RED}date \u2717{RESET}")
+    if has_amount:
+        parts.append(f"{FG_GREEN}amount \u2713{RESET}")
+    else:
+        parts.append(f"{FG_RED}amount \u2717{RESET}")
+    tui.required_status = f"{BOLD}Required:{RESET} " + "  ".join(parts)
 
 
 def _chosen_to_mapping_row(
@@ -1312,7 +1476,7 @@ def _run_column_mapping(
     # Dim rows not in this split group for the entire mapping phase
     if split_column is not None and group_values is not None:
         tui.dim_rows = {
-            ri for ri, row in enumerate(preview.sample_rows)
+            ri for ri, row in enumerate(tui.display_rows)
             if split_column >= len(row)
             or row[split_column].strip() not in group_values
         }
@@ -1325,11 +1489,15 @@ def _run_column_mapping(
         filled = _chosen_to_mapping_row(chosen)
         tui.set_mapping_row(filled + [""] * (n_map_cols - len(filled)))
 
-    # Outer loop: runs column mapping then negate table.
+    _update_required_status(tui, used_fields)
+
+    # Outer loop: runs column mapping then negate table then validation.
     # GoBack from negate table re-enters column mapping at last column.
-    negate_done = False
+    # Validation failure re-enters from col 0 with existing choices as
+    # defaults so the user can quickly fix only the column that matters.
+    validated = False
     col_idx = 0
-    while not negate_done:
+    while not validated:
         while col_idx < len(auto_mappings):
             auto = auto_mappings[col_idx]
 
@@ -1362,10 +1530,12 @@ def _run_column_mapping(
                         used_fields.discard(_strip_negate(prev[0])[0])
                     col_idx -= 1
                     _sync_mapping_row()
+                    _update_required_status(tui, used_fields)
                 else:
                     # At first column — propagate GoBack to the caller
                     tui.answer_log = tui.answer_log[:log_at_start]
                     tui.set_mapping_row([])
+                    tui.required_status = ""
                     tui.dim_rows = set()
                     raise
                 tui.draw()
@@ -1375,17 +1545,18 @@ def _run_column_mapping(
             # row in the table now serves as the visual summary.
             tui.answer_log = tui.answer_log[:log_before]
 
-            field = FIELD_CHOICES[pick][0]
+            field = tui.last_chosen_field
             if field:
                 used_fields.add(field)
                 hledger_name = _HLEDGER_NAMES.get(
-                    field, DEFAULT_HLEDGER_NAMES.get(field, "")
+                    field, DEFAULT_HLEDGER_NAMES.get(field, field)
                 )
                 chosen.append((field, hledger_name))
             else:
                 chosen.append(("", ""))
 
             _sync_mapping_row()
+            _update_required_status(tui, used_fields)
             col_idx += 1
 
         # ── Negate toggle for numeric columns ──
@@ -1394,7 +1565,6 @@ def _run_column_mapping(
         try:
             _ask_negate_for_chosen(tui, chosen, preview)
             _sync_mapping_row()
-            negate_done = True
         except GoBack:
             # Go back to re-ask the last column
             last = chosen.pop()
@@ -1403,33 +1573,52 @@ def _run_column_mapping(
             col_idx = len(chosen)
             _sync_mapping_row()
             tui.draw()
+            continue
+
+        # Validate (strip negate prefix for field name checks)
+        mapped = {_strip_negate(pair[0])[0] for pair in chosen if pair[0]}
+        errors: List[str] = []
+        has_datetime = DATETIME_FIELD in mapped
+        has_date = DATE_FIELD in mapped
+        has_time = TIME_FIELD in mapped
+        if not has_datetime and not (has_date and has_time):
+            if has_date and not has_time:
+                errors.append("'time' must also be mapped (or use 'datetime').")
+            elif has_time and not has_date:
+                errors.append("'date' must also be mapped (or use 'datetime').")
+            else:
+                errors.append(
+                    "Date must be mapped: use 'datetime' for a single "
+                    "column, or 'date'+'time' for separate columns."
+                )
+        if "tendered_amount_out" not in mapped:
+            errors.append("'tendered_amount_out' (Amount) must be mapped.")
+
+        if errors:
+            tui.error_msg = (
+                " | ".join(errors)
+                + "  Press Enter to re-map columns."
+            )
+            tui.draw()
+            # Wait for a keypress so the user can read the error.
+            _read_key_raw(tui.fd)
+            tui.error_msg = ""
+            # Re-enter column mapping from col 0, pre-filling each column
+            # with the current choice so the user can press Enter to keep
+            # or change only the columns that need fixing.
+            previous_chosen = list(chosen)
+            chosen.clear()
+            used_fields.clear()
+            col_idx = 0
+            _sync_mapping_row()
+            _update_required_status(tui, used_fields)
+            continue
+
+        # Validation passed
+        validated = True
 
     tui.dim_rows = set()
-
-    # Validate (strip negate prefix for field name checks)
-    mapped = {_strip_negate(pair[0])[0] for pair in chosen if pair[0]}
-    errors: List[str] = []
-    has_datetime = DATETIME_FIELD in mapped
-    has_date = DATE_FIELD in mapped
-    has_time = TIME_FIELD in mapped
-    if not has_datetime and not (has_date and has_time):
-        if has_date and not has_time:
-            errors.append("'time' must also be mapped (or use 'datetime').")
-        elif has_time and not has_date:
-            errors.append("'date' must also be mapped (or use 'datetime').")
-        else:
-            errors.append(
-                "Date must be mapped: use 'datetime' for a single "
-                "column, or 'date'+'time' for separate columns."
-            )
-    if "tendered_amount_out" not in mapped:
-        errors.append("'tendered_amount_out' (Amount) must be mapped.")
-
-    if errors:
-        tui.error_msg = " | ".join(errors)
-        tui.draw()
-        # Let the user go back to fix it rather than crashing
-        raise GoBack
+    tui.required_status = ""
 
     return chosen
 
@@ -1554,6 +1743,30 @@ def _run_mapping_step(
                 tui.set_mapping_row(_chosen_to_mapping_row(chosen))
                 tui.draw()
 
+            # Offer to review/edit the template mappings
+            review = tui.ask_confirm(
+                "Review/edit column mappings?"
+            )
+            if review:
+                if split_groups_data:
+                    new_groups = []
+                    for vals, grp_chosen in split_groups_data:
+                        prev = new_groups[-1][1] if new_groups else None
+                        new_chosen = _run_column_mapping(
+                            tui, auto_mappings, preview,
+                            group_label=", ".join(vals),
+                            previous_chosen=grp_chosen,
+                            split_column=split_column,
+                            group_values=list(vals),
+                        )
+                        new_groups.append((vals, new_chosen))
+                    split_groups_data = new_groups
+                else:
+                    chosen = _run_column_mapping(
+                        tui, auto_mappings, preview,
+                        previous_chosen=chosen,
+                    )
+
     if not template_applied:
         wants_split = tui.ask_confirm(
             "Split CSV by a type column? (for mixed row types)"
@@ -1565,9 +1778,14 @@ def _run_mapping_step(
                 "types will be split"
             )
 
+            # Reorder table rows so at least one of each unique
+            # split-column value is visible at the top.
+            tui.reorder_rows_for_split(split_column)
+            tui.draw()
+
             unique_vals = sorted(set(
                 row[split_column].strip()
-                for row in preview.sample_rows
+                for row in preview.all_data_rows
                 if split_column < len(row) and row[split_column].strip()
             ))
             tui.answer_log.append(
@@ -1584,10 +1802,21 @@ def _run_mapping_step(
 
             while remaining:
                 group_log_snapshots.append(len(tui.answer_log))
+                # Pre-fill with all remaining when at least 1 group
+                # is already defined (user presses Enter to accept).
+                prefill = (
+                    ",".join(sorted(remaining))
+                    if group_values_list
+                    else ""
+                )
+                sorted_remaining = sorted(remaining)
+                prompt_remaining = ", ".join(sorted_remaining)
                 try:
                     vals_str = tui.ask_string(
                         f"Group {group_num} values (comma-separated, "
-                        f"remaining: {', '.join(sorted(remaining))})"
+                        f"remaining: {prompt_remaining})",
+                        default=prefill,
+                        completions=sorted_remaining,
                     )
                 except GoBack:
                     group_log_snapshots.pop()
@@ -1602,6 +1831,15 @@ def _run_mapping_step(
                         tui.draw()
                     else:
                         raise  # propagate to main loop
+                    continue
+
+                # Empty input (no default) → reject
+                if not vals_str.strip():
+                    tui.error_msg = "Enter at least one value."
+                    tui.answer_log = tui.answer_log[
+                        :group_log_snapshots.pop()
+                    ]
+                    tui.draw()
                     continue
 
                 vals = tuple(v.strip() for v in vals_str.split(","))
@@ -1686,12 +1924,205 @@ def _run_mapping_step(
             )
 
     state["template_applied"] = template_applied
+    state["detected_template"] = detected_template if template_applied else None
     state["split_column"] = split_column
     state["split_groups_data"] = split_groups_data
     state["chosen"] = chosen
     if decimal_format is not None:
         state["decimal_format"] = decimal_format
 
+
+
+def _load_existing_accounts(config_path: str) -> List[Dict[str, str]]:
+    """Load existing account configs from YAML, returning account identifiers."""
+    try:
+        with open(config_path) as f:
+            config_dict = yaml.safe_load(f)
+        accounts = []
+        for ac in config_dict.get("account_configs", []):
+            if ac.get("input_csv_filename"):
+                accounts.append({
+                    "account_holder": ac["account_holder"],
+                    "bank": ac["bank"],
+                    "account_type": ac["account_type"],
+                })
+        return accounts
+    except (FileNotFoundError, KeyError, TypeError):
+        return []
+
+
+def _run_linked_accounts_step(
+    tui: _SplitPaneTUI,
+    state: Dict[str, Any],
+    config_path: str,
+) -> None:
+    """Ask if this account transacts with other tracked accounts.
+
+    Stores results in ``state["linked_accounts_data"]``: a list of dicts
+    with ``account_holder``, ``bank``, ``account_type``, ``transfer_types``.
+    Raises ``GoBack`` on Escape.
+    """
+    wants_links = tui.ask_confirm(
+        "Does this account transact with other tracked accounts?"
+    )
+    if not wants_links:
+        state["linked_accounts_data"] = []
+        state["_linked_was_asked"] = True
+        return
+
+    # Load existing accounts from config
+    existing = _load_existing_accounts(config_path)
+    # Exclude the account being configured
+    current_id = (
+        f"{state['account_holder']}:{state['bank']}:{state['account_type']}"
+    )
+    existing = [
+        a for a in existing
+        if f"{a['account_holder']}:{a['bank']}:{a['account_type']}" != current_id
+    ]
+
+    if not existing:
+        # No other accounts configured yet — allow declaring a pending link
+        tui.answer_log.append(
+            f"  {DIM}No other accounts in config yet.{RESET}"
+        )
+        tui.draw()
+        wants_pending = tui.ask_confirm(
+            "Declare a pending link (enter account details manually)?"
+        )
+        if not wants_pending:
+            state["linked_accounts_data"] = []
+            state["_linked_was_asked"] = True
+            return
+
+        ah = tui.ask_string("Linked account holder (e.g. 'at')")
+        bank = tui.ask_string("Linked bank (e.g. 'triodos')")
+        at = tui.ask_string("Linked account type (e.g. 'checking')")
+
+        # Ask transfer types from current account's split groups
+        transfer_types: List[str] = []
+        split_groups_data = state.get("split_groups_data")
+        if split_groups_data:
+            all_types = []
+            for vals, _ in split_groups_data:
+                all_types.extend(vals)
+            types_str = tui.ask_string(
+                f"Transfer types to suppress (comma-separated, "
+                f"available: {', '.join(all_types)}, or empty for none)"
+            )
+            if types_str.strip():
+                transfer_types = [
+                    t.strip() for t in types_str.split(",") if t.strip()
+                ]
+
+        state["linked_accounts_data"] = [{
+            "account_holder": ah,
+            "bank": bank,
+            "account_type": at,
+            "transfer_types": transfer_types,
+        }]
+        state["_linked_was_asked"] = True
+        return
+
+    # Show existing accounts as numbered list
+    linked: List[Dict[str, Any]] = []
+    done = False
+    # We rebuild the account-list portion of the log each iteration,
+    # but keep everything before it (and any "Linked:" entries) stable.
+    log_base = len(tui.answer_log)
+    # Offset within log where the account list starts (after any Linked lines)
+    list_start = log_base
+    while not done:
+        # Rebuild only the account list (after any Linked entries)
+        tui.answer_log = tui.answer_log[:list_start]
+        tui.answer_log.append(
+            f"  {BOLD}Available accounts:{RESET}"
+        )
+        all_linked = len(linked) == len(existing)
+        for i, a in enumerate(existing):
+            acct_str = (
+                f"{a['account_holder']}:{a['bank']}:{a['account_type']}"
+            )
+            already = any(
+                f"{la['account_holder']}:{la['bank']}:{la['account_type']}"
+                == acct_str for la in linked
+            )
+            tag = f"  {FG_GREEN}(linked){RESET}" if already else ""
+            tui.answer_log.append(
+                f"  {i + 1}. {acct_str}{tag}"
+            )
+        if all_linked:
+            tui.answer_log.append(
+                f"  {DIM}All accounts linked.{RESET}"
+            )
+        tui.draw()
+
+        if all_linked:
+            done = True
+            continue
+
+        choice_str = tui.ask_string(
+            "Enter account number to link (or 'done' to finish)"
+        )
+        if choice_str.lower() in ("done", "d", ""):
+            done = True
+            continue
+
+        try:
+            idx = int(choice_str) - 1
+            if idx < 0 or idx >= len(existing):
+                tui.error_msg = f"Invalid number. Enter 1-{len(existing)}."
+                continue
+        except ValueError:
+            tui.error_msg = "Enter a number or 'done'."
+            continue
+
+        selected = existing[idx]
+        acct_str = (
+            f"{selected['account_holder']}:{selected['bank']}"
+            f":{selected['account_type']}"
+        )
+
+        # Check if already linked
+        if any(
+            f"{la['account_holder']}:{la['bank']}:{la['account_type']}"
+            == acct_str for la in linked
+        ):
+            tui.error_msg = f"{acct_str} is already linked."
+            continue
+
+        # Ask transfer types
+        transfer_types = []
+        split_groups_data = state.get("split_groups_data")
+        if split_groups_data:
+            all_types = []
+            for vals, _ in split_groups_data:
+                all_types.extend(vals)
+            types_str = tui.ask_string(
+                f"Transfer types to/from {acct_str} "
+                f"(comma-separated, available: {', '.join(all_types)}, "
+                f"or empty for none)"
+            )
+            if types_str.strip():
+                transfer_types = [
+                    t.strip() for t in types_str.split(",") if t.strip()
+                ]
+
+        linked.append({
+            "account_holder": selected["account_holder"],
+            "bank": selected["bank"],
+            "account_type": selected["account_type"],
+            "transfer_types": transfer_types,
+        })
+        tui.answer_log.append(
+            f"  {FG_GREEN}Linked: {acct_str} "
+            f"(types: {', '.join(transfer_types) or 'none'}){RESET}"
+        )
+        # Move list_start past the Linked entry so it's preserved
+        list_start = len(tui.answer_log)
+
+    state["linked_accounts_data"] = linked
+    state["_linked_was_asked"] = True
 
 
 def _run_decimal_step(
@@ -1791,6 +2222,15 @@ def _run_summary_step(
     tui.set_mapping_row([])
     state["confirmed"] = confirmed
 
+    if confirmed:
+        detected = state.get("detected_template")
+        if detected:
+            update_tmpl = tui.ask_confirm(
+                f"Also update the {detected.name} template with "
+                f"these mappings?"
+            )
+            state["update_template"] = update_tmpl
+
 
 # ── Main TUI flow ────────────────────────────────────────────────────
 
@@ -1801,9 +2241,10 @@ _STEPS = [
     "account_type",      # 2
     "base_currency",     # 3
     "mapping",           # 4 — template + split + column mapping
-    "decimal_format",    # 5
-    "preview",           # 6
-    "summary",           # 7
+    "linked_accounts",   # 5 — inter-account transfer links
+    "decimal_format",    # 6
+    "preview",           # 7
+    "summary",           # 8
 ]
 
 
@@ -1879,6 +2320,9 @@ def run_csv_mapping_tui(
                         tui, state, preview, auto_mappings
                     )
 
+                elif current == "linked_accounts":
+                    _run_linked_accounts_step(tui, state, config_path)
+
                 elif current == "decimal_format":
                     _run_decimal_step(tui, state, preview)
 
@@ -1918,6 +2362,9 @@ def run_csv_mapping_tui(
                     tui.error_msg = "Already at the first question."
                     tui.draw()
 
+            except KeyboardInterrupt:
+                break
+
     finally:
         tui._restore_term()
         sys.stdout.write(CURSOR_SHOW)
@@ -1946,6 +2393,20 @@ def run_csv_mapping_tui(
         account_type=account_type,
     )
 
+    # Build LinkedAccount objects
+    built_linked_accounts = None
+    raw_linked = state.get("linked_accounts_data")
+    if raw_linked:
+        built_linked_accounts = tuple(
+            LinkedAccount(
+                account_holder=la["account_holder"],
+                bank=la["bank"],
+                account_type=la["account_type"],
+                transfer_types=tuple(la.get("transfer_types", [])),
+            )
+            for la in raw_linked
+        )
+
     if split_groups_data:
         built_split_groups = []
         for vals, grp_chosen in split_groups_data:
@@ -1972,6 +2433,7 @@ def run_csv_mapping_tui(
             split_column=split_column,
             split_groups=tuple(built_split_groups),
             decimal_format=decimal_format,
+            linked_accounts=built_linked_accounts,
         )
     else:
         config_pairs = _chosen_to_config_pairs(chosen)
@@ -1988,9 +2450,11 @@ def run_csv_mapping_tui(
                 csv_column_mapping=tnx_date_tuples,
             ),
             decimal_format=decimal_format,
+            linked_accounts=built_linked_accounts,
         )
 
     # ── Save to config.yaml ──────────────────────────────────────
+    linked_accounts_data = state.get("linked_accounts_data")
     was_replaced = _save_to_config(
         config_path=config_path,
         csv_filename=csv_filename,
@@ -2002,6 +2466,7 @@ def run_csv_mapping_tui(
         split_column=split_column,
         split_groups_data=split_groups_data,
         decimal_format=decimal_format,
+        linked_accounts_data=linked_accounts_data,
     )
 
     # Print summary after exiting raw mode
@@ -2029,8 +2494,128 @@ def run_csv_mapping_tui(
                 base, neg = _strip_negate(f)
                 neg_tag = " (negated)" if neg else ""
                 print(f"    {hdr} \u2192 {base}{neg_tag}")
+    # ── Optionally update the template source ─────────────────────
+    if state.get("update_template"):
+        detected = state["detected_template"]
+        _update_template_source(
+            detected, preview.headers, split_groups_data, chosen,
+            split_column, decimal_format,
+        )
+        print(
+            f"  {FG_GREEN}{BOLD}\u2713 Updated {detected.name} template "
+            f"in templates.py{RESET}"
+        )
+
     print()
     return account_config
+
+
+def _update_template_source(
+    template: "CsvTemplate",
+    headers: List[str],
+    split_groups_data: Optional[
+        List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
+    ],
+    chosen: List[Tuple[Optional[str], str]],
+    split_column: Optional[int],
+    decimal_format: Optional[str],
+) -> None:
+    """Rewrite the template's section in templates.py with new mappings."""
+    from hledger_preprocessor.csv_mapping.templates import CsvTemplate  # noqa: F811
+
+    templates_path = os.path.join(
+        os.path.dirname(__file__), "templates.py"
+    )
+    with open(templates_path) as f:
+        src = f.read()
+
+    name_upper = template.name.upper()
+
+    # Generate new group definitions
+    group_blocks = []
+    group_var_names = []
+
+    groups_data = split_groups_data or [((), chosen)]
+    for gi, (vals, grp_chosen) in enumerate(groups_data):
+        if split_groups_data and len(groups_data) > 1:
+            suffix = f"GROUP{gi}"
+            label = ", ".join(vals)
+            var_name = f"_{name_upper}_{suffix}"
+        elif split_groups_data:
+            label = ", ".join(vals)
+            var_name = f"_{name_upper}_GROUP0"
+        else:
+            label = "default"
+            var_name = f"_{name_upper}_DEFAULT"
+        group_var_names.append(var_name)
+
+        lines = [
+            f"{var_name} = TemplateGroup(",
+            f"    values={vals!r},",
+            f"    column_mappings=[",
+        ]
+        for ci, (field, hdr_name) in enumerate(grp_chosen):
+            f_str = f'"{field}"' if field else '""'
+            h_str = f'"{hdr_name}"' if hdr_name else '""'
+            col_hdr = headers[ci] if ci < len(headers) else f"col{ci}"
+            padding = " " * max(1, 45 - len(f"        ({f_str}, {h_str}),"))
+            lines.append(
+                f"        ({f_str}, {h_str}),{padding}# {ci}: {col_hdr}"
+            )
+        lines.append("    ],")
+        lines.append(")")
+        group_blocks.append("\n".join(lines))
+
+    # Generate the CsvTemplate definition
+    groups_list = ", ".join(group_var_names)
+    dec_fmt = decimal_format or template.decimal_format
+    det_headers = sorted(template.detection_headers)
+    det_lines = ",\n        ".join(f'"{h}"' for h in det_headers)
+
+    tmpl_var = f"{name_upper}_TEMPLATE"
+    tmpl_block = (
+        f"{tmpl_var} = CsvTemplate(\n"
+        f"    name=\"{template.name}\",\n"
+        f"    decimal_format=\"{dec_fmt}\",\n"
+        f"    split_column={split_column},\n"
+        f"    groups=[{groups_list}],\n"
+        f"    detection_headers=frozenset({{\n"
+        f"        {det_lines},\n"
+        f"    }}),\n"
+        f")"
+    )
+
+    # Find the template section in the source: from "# ── {Name} ──" to
+    # the next "# ──" line or the Registry line
+    import re as _re
+    section_pattern = _re.compile(
+        rf"^# ── {_re.escape(template.name)} ──.*?\n"
+        r"(.*?)"
+        r"(?=^# ── )",
+        _re.MULTILINE | _re.DOTALL,
+    )
+    match = section_pattern.search(src)
+    if not match:
+        print(
+            f"  Warning: Could not find {template.name} section "
+            f"in templates.py — template not updated."
+        )
+        return
+
+    # Build replacement section
+    separator = "\u2500" * (68 - len(template.name) - 5)
+    new_section = (
+        f"# \u2500\u2500 {template.name} {separator}\n"
+        f"# Columns: {', '.join(headers)}\n"
+        f"\n"
+        + "\n\n".join(group_blocks)
+        + f"\n\n{tmpl_block}\n\n"
+    )
+
+    new_src = src[:match.start()] + new_section + src[match.end():]
+
+    with open(templates_path, "w") as f:
+        f.write(new_src)
 
 
 # ── Preview helpers ──────────────────────────────────────────────────
@@ -2238,6 +2823,7 @@ def _save_to_config(
         List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
     ],
     decimal_format: Optional[str],
+    linked_accounts_data: Optional[List[Dict[str, Any]]] = None,
 ) -> bool:
     with open(config_path) as f:
         config_dict = yaml.safe_load(f)
@@ -2281,6 +2867,18 @@ def _save_to_config(
             [f or "", h or ""] for f, h in tnx_pairs
         ]
 
+    # Serialize linked accounts
+    if linked_accounts_data:
+        new_entry["linked_accounts"] = [
+            {
+                "account_holder": la["account_holder"],
+                "bank": la["bank"],
+                "account_type": la["account_type"],
+                "transfer_types": la.get("transfer_types", []),
+            }
+            for la in linked_accounts_data
+        ]
+
     if "account_configs" not in config_dict:
         config_dict["account_configs"] = []
 
@@ -2294,8 +2892,64 @@ def _save_to_config(
     if not replaced:
         config_dict["account_configs"].append(new_entry)
 
+    # Bidirectional: add reverse links to counterpart accounts
+    if linked_accounts_data:
+        current_id = {
+            "account_holder": account_holder,
+            "bank": bank,
+            "account_type": account_type,
+        }
+        for la in linked_accounts_data:
+            _add_reverse_link(
+                config_dict["account_configs"],
+                target_ah=la["account_holder"],
+                target_bank=la["bank"],
+                target_at=la["account_type"],
+                reverse_link=current_id,
+            )
+
     with open(config_path, "w") as f:
         yaml.safe_dump(
             config_dict, f, default_flow_style=False, sort_keys=False
         )
     return replaced
+
+
+def _add_reverse_link(
+    account_configs: List[Dict],
+    *,
+    target_ah: str,
+    target_bank: str,
+    target_at: str,
+    reverse_link: Dict[str, str],
+) -> None:
+    """Add a reverse linked_account entry to the target account config."""
+    for ac in account_configs:
+        if (
+            ac.get("account_holder") == target_ah
+            and ac.get("bank") == target_bank
+            and ac.get("account_type") == target_at
+        ):
+            existing_links = ac.get("linked_accounts", [])
+            # Check if reverse link already exists
+            rev_id = (
+                f"{reverse_link['account_holder']}:"
+                f"{reverse_link['bank']}:"
+                f"{reverse_link['account_type']}"
+            )
+            for link in existing_links:
+                link_id = (
+                    f"{link['account_holder']}:"
+                    f"{link['bank']}:"
+                    f"{link['account_type']}"
+                )
+                if link_id == rev_id:
+                    return  # Already linked
+            existing_links.append({
+                "account_holder": reverse_link["account_holder"],
+                "bank": reverse_link["bank"],
+                "account_type": reverse_link["account_type"],
+                "transfer_types": [],
+            })
+            ac["linked_accounts"] = existing_links
+            return

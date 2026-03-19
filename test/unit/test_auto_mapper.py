@@ -28,6 +28,7 @@ def test_auto_map_triodos_columns():
                 "1200.00",
             ],
         ],
+        all_data_rows=[],
         total_rows=100,
         filepath="/tmp/triodos.csv",
     )
@@ -81,6 +82,7 @@ def test_auto_map_bitvavo_columns():
                 "NL73***68",
             ],
         ],
+        all_data_rows=[],
         total_rows=50,
         filepath="/tmp/bitvavo.csv",
     )
@@ -100,6 +102,7 @@ def test_auto_map_unknown_headers_skip():
     preview = CsvPreview(
         headers=["Foo", "Bar", "Baz"],
         sample_rows=[["a", "b", "c"]],
+        all_data_rows=[],
         total_rows=1,
         filepath="/tmp/unknown.csv",
     )
@@ -121,6 +124,7 @@ def test_auto_map_value_type_fallback():
             ["2025-01-01", "100.00", "hello"],
             ["2025-02-15", "200.50", "world"],
         ],
+        all_data_rows=[],
         total_rows=2,
         filepath="/tmp/nolabels.csv",
     )
@@ -137,6 +141,7 @@ def test_no_duplicate_field_assignments():
     preview = CsvPreview(
         headers=["Date", "Date2", "Amount", "Amount2"],
         sample_rows=[["2025-01-01", "2025-01-02", "100", "200"]],
+        all_data_rows=[],
         total_rows=1,
         filepath="/tmp/dupes.csv",
     )

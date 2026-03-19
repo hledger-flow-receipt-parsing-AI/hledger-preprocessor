@@ -14,6 +14,7 @@ from hledger_preprocessor.file_reading_and_writing import (
 class CsvPreview:
     headers: List[str]
     sample_rows: List[List[str]]
+    all_data_rows: List[List[str]]
     total_rows: int
     filepath: str
 
@@ -51,6 +52,7 @@ def read_csv_preview(
     return CsvPreview(
         headers=headers,
         sample_rows=data_rows[:max_sample_rows],
+        all_data_rows=data_rows,
         total_rows=len(data_rows),
         filepath=csv_filepath,
     )
