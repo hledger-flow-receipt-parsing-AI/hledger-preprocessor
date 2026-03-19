@@ -139,6 +139,20 @@ class GenericCsvTransaction(Transaction):
         else:
             raise ValueError("Did not create a filled hledger dict.")
 
+    @typechecked
+    def get_transaction_code(self) -> TransactionCode:
+        net = self.tendered_amount_out - self.change_returned
+        if net > 0:
+            return TransactionCode.DEBIT
+        elif net < 0:
+            return TransactionCode.CREDIT
+        # Net is 0 — check received_amount (deposit-only mappings have
+        # tendered_amount_out defaulted to 0).
+        received = self.extra.get("received_amount")
+        if received is not None and received != 0:
+            return TransactionCode.CREDIT if received > 0 else TransactionCode.DEBIT
+        raise ValueError("Net transacted amount cannot be 0.")
+
     def get_hash(self) -> int:
         import hashlib
 
