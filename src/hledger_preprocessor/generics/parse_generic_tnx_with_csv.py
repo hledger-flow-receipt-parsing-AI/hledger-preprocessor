@@ -164,6 +164,8 @@ def parse_generic_bank_transaction(
     extra["_csv_column_mapping"] = csv_column_mapping
     kwargs["extra"] = extra
 
-    if "change_returned" not in kwargs.keys():
+    if kwargs.get("change_returned") is None:
         kwargs["change_returned"] = 0
+    if kwargs.get("tendered_amount_out") is None:
+        kwargs["tendered_amount_out"] = 0.0
     return GenericCsvTransaction(**kwargs)

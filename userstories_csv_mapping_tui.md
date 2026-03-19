@@ -9,7 +9,7 @@
 ## 1. High-Level Flow
 
 The TUI is a **split-pane terminal UI** (top: scrollable CSV table, bottom:
-questions/choices). It walks the user through an 8-step wizard:
+questions/choices). It walks the user through a 9-step wizard:
 
 | # | Step ID          | Description                                  | Interactive? |
 |---|------------------|----------------------------------------------|-------------|
@@ -18,12 +18,44 @@ questions/choices). It walks the user through an 8-step wizard:
 | 2 | account_type     | Ask account type                             | Always      |
 | 3 | base_currency    | Ask default currency (validated enum)        | Always      |
 | 4 | mapping          | Template detect + split decision + col map   | Always      |
-| 5 | decimal_format   | Auto-detect or ask eu/dot format             | Sometimes   |
-| 6 | preview          | Show parsed transaction preview              | Always      |
-| 7 | summary          | Show mapping summary + confirm save          | Always      |
+| 5 | linked_accounts  | Ask about inter-account transfer links       | Sometimes   |
+| 6 | decimal_format   | Auto-detect or ask eu/dot format             | Sometimes   |
+| 7 | preview          | Show parsed transaction preview              | Always      |
+| 8 | summary          | Show mapping summary + confirm save          | Always      |
+
+**Config loading**: Before the wizard starts, if an existing config entry
+matches the current CSV file, the user is offered to load it (see US-1.1).
 
 **Back-navigation** (Escape) goes back one step. Non-interactive steps (e.g.
-auto-detected decimal format) are skipped when going back.
+auto-detected decimal format, or linked_accounts when already answered inline)
+are skipped when going back.
+
+---
+
+### US-1.1: Config Loading at Startup
+
+Before the wizard begins, the TUI checks if `config.yaml` already contains an
+entry for the current CSV file (matched by `input_csv_filename`).
+
+- If found: `"Existing config found for <filename> (<holder>/<bank>/<type>). Load it? [Y/n]"`
+  - **Yes**: Pre-populate all state (account_holder, bank, account_type,
+    base_currency, split column, split groups with column mappings, decimal
+    format, linked accounts). Show loaded values in the answer log. Detect
+    template against CSV headers (for template update question at summary).
+    Jump directly to the mapping step in **re-edit mode** (US-6.4.10), so the
+    user can review/tweak column mappings without re-answering metadata
+    questions.
+  - **No** (or Escape): Start the wizard from step 0 normally.
+
+**Back-navigation from loaded config**: Steps 0–3 are recorded as interactive
+in `log_snapshots`, so Escape from the mapping step goes back through the
+pre-loaded account metadata steps. The user can change any loaded value.
+
+**Reverse field-name translation**: Config field names are translated back to
+TUI field names via `_config_pairs_to_chosen()`. The `the_date` config field
+is disambiguated by checking whether `the_time` also appears — if yes,
+`the_date` maps to `the_date_only`; otherwise to `the_datetime`. The `negate:`
+prefix is preserved.
 
 ---
 
@@ -69,7 +101,19 @@ auto-detected decimal format) are skipped when going back.
 - `↑ N row(s) above` when rows are scrolled down.
 - `↓ N row(s) below` when more rows exist below the visible area.
 
-### US-2.4: Column Highlighting
+### US-2.4: Navigation Hint Bar
+
+Each input mode sets a context-appropriate navigation hint in the title bar.
+The hint is displayed right-aligned in the top title bar of the CSV table
+pane. Examples:
+
+- **Text input**: `"Enter=confirm  Tab=complete  Esc=back  |  Ctrl+Up/Down=scroll rows  Alt+Left/Right=scroll cols  |  Ctrl+C=quit"`
+- **Choice selection**: `"Up/Down=select  Enter=confirm  Esc=back  |  ..."`
+- **Confirm prompt**: `"Y/Enter=yes  N=no  Esc=back  |  ..."`
+- **Column select**: `"Left/Right=select  Enter=confirm  Esc=back  |  ..."`
+- **Negate table**: `"Left/Right=navigate  Enter/Space=toggle  Esc=back  |  ..."`
+
+### US-2.5: Column Highlighting
 
 When a column is being mapped, it gets an **underline** style in the table.
 The underline applies to every row (header, data, mapping) for that column
@@ -115,13 +159,14 @@ If a cell value exceeds the column width, it is truncated with an ellipsis
 
 ## 4. Table Scrolling
 
-### US-4.1: Alt+Arrow Scrolling
+### US-4.1: Alt+Arrow / Ctrl+Arrow Scrolling
 
 During any question/choice, the user can scroll the table:
-- **Alt+Left / Alt+Right**: Scroll columns left/right.
-- **Alt+Up / Alt+Down**: Scroll rows up/down.
+- **Alt+Left / Alt+Right** or **Ctrl+Left / Ctrl+Right**: Scroll columns left/right.
+- **Alt+Up / Alt+Down** or **Ctrl+Up / Ctrl+Down**: Scroll rows up/down.
 
-Scrolling triggers a full redraw.
+Both modifier keys (Alt and Ctrl) work interchangeably for all scroll
+directions. Scrolling triggers a full redraw.
 
 ### US-4.2: Auto-Scroll to Highlighted Column
 
@@ -140,20 +185,21 @@ is hidden during the TUI session and restored on exit.
 
 ### US-5.2: Key Bindings (Global)
 
-| Key             | Action                                      |
-|-----------------|---------------------------------------------|
-| Alt+Arrow keys  | Scroll table (all input modes)              |
-| Escape          | Go back to previous step/column             |
-| Ctrl+C          | Abort (KeyboardInterrupt)                   |
+| Key                          | Action                                      |
+|------------------------------|---------------------------------------------|
+| Alt+Arrow keys / Ctrl+Arrow  | Scroll table (all input modes)              |
+| Escape                       | Go back to previous step/column             |
+| Ctrl+C                       | Abort (KeyboardInterrupt)                   |
 
 ### US-5.3: Key Bindings (Text Input — `ask_string`)
 
-| Key       | Action                          |
-|-----------|---------------------------------|
-| Enter     | Confirm (use default if empty)  |
-| Backspace | Delete last character            |
-| Printable | Append character to input        |
-| Escape    | Go back                          |
+| Key       | Action                                        |
+|-----------|-----------------------------------------------|
+| Enter     | Confirm (use default if empty)                |
+| Tab       | Auto-complete from completions list (if any)  |
+| Backspace | Delete last character                         |
+| Printable | Append character to input                     |
+| Escape    | Go back                                       |
 
 ### US-5.4: Key Bindings (Choice Selection — `ask_choice`)
 
@@ -173,13 +219,13 @@ is hidden during the TUI session and restored on exit.
 
 ### US-5.6: Key Bindings (Negate Table — `ask_negate_table`)
 
-| Key           | Action                                      |
-|---------------|---------------------------------------------|
-| Left/Right    | Jump to previous/next numeric column        |
-| Up/Down       | Same as Left/Right                          |
-| Enter/Space   | Toggle negation on current column           |
-| Tab           | Confirm and finish negate step              |
-| Escape        | Go back to re-ask last column mapping       |
+| Key           | Action                                               |
+|---------------|------------------------------------------------------|
+| Left/Right    | Jump to previous/next numeric column                 |
+| Up/Down       | Same as Left/Right                                   |
+| Enter/Space   | Toggle negation on current column                    |
+| Right/Down    | When on the **last** numeric column: confirm & finish|
+| Escape        | Go back to re-ask last column mapping                |
 
 ---
 
@@ -224,8 +270,18 @@ This is a compound step with sub-flows:
   in the CSV headers.
 - If detected: ask `"Detected {name} CSV format. Apply template? [Y/n]"`.
   - If Yes: apply template's column mappings, split column, decimal format,
-    and groups. Show the last group's mapping row in the table. Skip to next
-    step.
+    and groups. Show the last group's mapping row in the table.
+    - If the template has split groups: show current group assignments in the
+      answer log, then ask `"Edit group assignments? [Y/n]"`.
+      - If Yes: show unique column values, let user re-define groups
+        (comma-separated string input). Rebuild `split_groups_data` with new
+        groups, carrying over column mappings from the closest-matching old
+        group.
+    - Ask `"Review/edit column mappings? [Y/n]"`.
+      - If Yes: run column mapping for each group (or the single mapping)
+        with the template's mappings as pre-fill defaults. The user can press
+        Enter to keep each existing mapping or change only what needs fixing.
+      - If No: skip to next step with the template mappings as-is.
   - If No: continue to manual mapping.
 
 #### US-6.4.2: Split Decision
@@ -300,34 +356,92 @@ After the last column is mapped:
   `exchange_rate`, `balance_after`.
 - Skipped (unmapped) columns are **dimmed** in the table during this step.
 - Current numeric column is highlighted (underline).
-- Left/Right jumps between numeric columns only.
+- Left/Right (and Up/Down) jump between numeric columns only.
 - Enter/Space toggles negation. When negated:
   - The mapping row shows `field(neg)` (e.g. `tendered_amount_out(neg)`).
   - Data values in that column are shown with **flipped signs** (e.g. `50` →
     `-50`, `-3.14` → `3.14`).
-- Tab confirms. The `negate:` prefix is added to the field name internally
-  (e.g. `negate:tendered_amount_out`).
+- **Confirming**: Right/Down when on the **last** numeric column confirms and
+  exits the negate step. The `negate:` prefix is added to the field name
+  internally (e.g. `negate:tendered_amount_out`).
+- **Pre-negated support**: When entering from a loaded config or a previous
+  group's mapping, previously negated columns start with their toggle already
+  set to `[x]`. The `previous_chosen` parameter is inspected for `negate:`
+  prefixes.
 - Bottom pane shows: `"Negate columns: Col N Header → field [x]"` and
-  hints: `"←→ prev/next numeric col  Enter/Space=toggle  Tab=done  Esc=back"`.
+  hints: `"Left/Right=navigate  Enter/Space=toggle  Esc=back"`.
 
 #### US-6.4.9: Validation After Mapping
 
 After column mapping + negate completes, validate:
 - **Date is mapped**: Either `the_datetime` alone, or both `the_date_only` and
   `the_time_only`. Error if only one of date/time without the other.
-- **Amount is mapped**: `tendered_amount_out` must be mapped.
+- **Amount is mapped**: At least one of `tendered_amount_out` or
+  `received_amount` must be mapped. Neither is individually required.
 
-If validation fails, show error message and raise GoBack so the user can fix.
+If validation fails, show error(s) joined with `" | "` plus
+`"Press Enter to re-map columns."` Wait for any keypress, then re-enter
+column mapping from column 0 with current choices as `previous_chosen`
+defaults, so the user can quickly fix only what's wrong.
+
+#### US-6.4.11: Inline Linked Account Question
+
+After validation passes, if exactly one of `tendered_amount_out` /
+`received_amount` is missing (i.e. only one direction is mapped), and the
+account is not already linked for this group:
+
+- Load existing accounts from `config.yaml` (excluding the current account).
+- If other accounts exist: show them as tab-completable choices and ask
+  `"Link <group_values> from/to which account?"`. The user can tab-complete
+  or type `none` to skip.
+- If no other accounts exist: ask `"Enter linked account manually for
+  <group_values>?"`, then prompt for account holder, bank, and account type.
+- Linked account data (with `transfer_types` from the group values) is stored
+  in `state["linked_accounts_data"]`.
+- **Deduplication**: If `state["linked_accounts_data"]` already contains an
+  entry whose `transfer_types` overlap with the current group's values, the
+  question is skipped (prevents duplicates when re-editing a loaded config).
 
 #### US-6.4.10: Re-edit After Preview Rejection
 
-When the user rejects the preview (step 6), the flow returns to step 4
+When the user rejects the preview (step 7), the flow returns to step 4
 (mapping) with `_reedit_mapping = True`. In this mode:
 - Template detection and split questions are **skipped**.
 - Column mapping re-enters with existing choices as **pre-fill defaults**.
 - The user can tweak individual column mappings without starting over.
 
-### US-6.5: Decimal Format (Step 5)
+### US-6.5: Linked Accounts (Step 5)
+
+This step handles inter-account transfer links (e.g. a deposit from a bank
+account into a trading account).
+
+**Skip condition**: If `state["linked_accounts_data"]` is already populated
+(from inline linking during column mapping — see US-6.4.11), the step is
+non-interactive and returns immediately.
+
+**Otherwise**:
+
+1. Ask `"Does this account transact with other tracked accounts? [Y/n]"`.
+   - If No: set `linked_accounts_data = []`, return.
+
+2. Load existing accounts from `config.yaml`, excluding the current account.
+
+3. **If no other accounts exist**:
+   - Show `"No other accounts in config yet."`.
+   - Ask `"Declare a pending link (enter account details manually)? [Y/n]"`.
+   - If Yes: prompt for account holder, bank, and account type strings. Then
+     if split groups exist, ask for transfer types (comma-separated from the
+     split group values).
+
+4. **If other accounts exist**:
+   - Show numbered list of available accounts (with `(linked)` tags for
+     already-linked ones).
+   - Loop: `"Enter account number to link (or 'done' to finish)"`.
+   - For each selected account, if split groups exist: ask
+     `"Transfer types to/from <acct> (comma-separated, available: ...)"`.
+   - Continue until user enters "done" or all accounts are linked.
+
+### US-6.6: Decimal Format (Step 6)
 
 - **Auto-detection**: Examine numeric column values for comma/dot patterns.
   - `"."` with >2 decimal digits → `"dot"`.
@@ -338,7 +452,7 @@ When the user rejects the preview (step 6), the flow returns to step 4
 - If template already set it: same behavior (non-interactive).
 - If not detectable: ask `"Decimal format: 'eu' (1.234,56) or 'dot' (1,234.56)"` with default `"dot"`. This step is **interactive**.
 
-### US-6.6: Preview (Step 6)
+### US-6.7: Preview (Step 7)
 
 - Parse up to 5 sample rows using the mapping and decimal format.
 - For split mode: route each row to its group's mapping based on the split
@@ -351,15 +465,22 @@ When the user rejects the preview (step 6), the flow returns to step 4
 - After display: ask `"Does the preview look correct? [Y/n]"`.
   - Yes → proceed to summary.
   - No → raise PreviewRejected → go back to mapping re-edit (US-6.4.10).
-  - Escape → GoBack to previous step (decimal format if interactive, else mapping).
+  - Escape → GoBack to previous step (decimal format if interactive, else
+    linked_accounts if interactive, else mapping).
 
-### US-6.7: Summary (Step 7)
+### US-6.8: Summary (Step 8)
 
 - Show: `"Mapping summary:"`, account info, split column (if any).
 - The mapping row in the table shows the final mapping.
 - Ask: `"Save this mapping to config? [Y/n]"`.
-  - Yes → save to YAML config and exit.
+  - Yes → save to YAML config.
   - No → exit without saving ("`Aborted — nothing saved.`").
+- **Template update question**: If confirmed **and** a template was detected
+  (either during this session or from a loaded config), ask:
+  `"Also update the <template_name> template with these mappings? [Y/n]"`.
+  - If Yes: rewrite the template's definition in `templates.py` with the new
+    group definitions and CsvTemplate.
+  - If No: skip template update.
 
 ---
 
@@ -393,6 +514,8 @@ The field choice list presented for each column:
 | `transaction_code`          | transaction_code (Transaction code Debit/Credit)         |                  |
 | `balance_after`             | balance_after (Balance after transaction)                |                  |
 | `bic`                       | bic (BIC Bank Identifier Code)                           |                  |
+| *(separator)*               |                                                          |                  |
+| `__custom__`                | new field (create a custom field name)                   |                  |
 
 ### US-7.1: Separators
 
@@ -407,7 +530,15 @@ selectable — Up/Down arrow skips them.
 - **quote group** (`quote_price`) and **exchange group** (`exchange_rate`) are
   mutually exclusive. Same graying behavior.
 
-### US-7.3: Already-Used Fields
+### US-7.3: Custom Field (`__custom__`)
+
+Selecting `__custom__` prompts `"Custom field name"` as a text input. The
+entered name is inserted into the choice list just before `__custom__`, with
+display label `"<name> (custom)"`. The field is then selected and processing
+continues as normal. If the name is empty or GoBack is raised, the choice list
+re-appears.
+
+### US-7.4: Already-Used Fields
 
 Fields that are already mapped to another column show `(unavailable)` and are
 dimmed. If the user selects an unavailable field:
@@ -416,7 +547,7 @@ dimmed. If the user selects an unavailable field:
 - Up/Down: continues browsing the list.
 - Any other key: cancels.
 
-### US-7.4: Choice Display
+### US-7.5: Choice Display
 
 ```
   Column 3: Type   "buy", "sell", "deposit"
@@ -573,9 +704,9 @@ is rebuilt. At column 0, GoBack propagates to the main step loop.
 
 ### US-12.4: Preview Rejection
 
-When the user answers "No" to the preview confirmation:
+When the user answers "No" to the preview confirmation (step 7):
 - PreviewRejected is raised.
-- The flow jumps back to the mapping step with `_reedit_mapping = True`.
+- The flow jumps back to step 4 (mapping) with `_reedit_mapping = True`.
 - All column mappings are preserved as pre-fill defaults.
 - Template detection and split questions are skipped.
 
@@ -637,6 +768,8 @@ The TUI produces an `AccountConfig` with:
 - `split_groups`: tuple of `SplitGroup` objects (each with values, csv_column_mapping,
   tnx_date_columns).
 - `decimal_format`: `"eu"`, `"dot"`, or None.
+- `linked_accounts`: tuple of `LinkedAccount` objects (each with account_holder,
+  bank, account_type, transfer_types), or None.
 
 ### US-14.4: YAML Persistence
 
@@ -670,6 +803,12 @@ account_configs:
       - values: [buy, sell]
         csv_column_mapping:
           ...
+    linked_accounts:
+      - account_holder: at
+        bank: triodos
+        account_type: checking
+        transfer_types:
+          - deposit
 ```
 
 Non-split mode:
@@ -688,6 +827,12 @@ Non-split mode:
     tnx_date_columns:
       - [the_date, date]
       - [description, description]
+    linked_accounts:
+      - account_holder: at
+        bank: wallet
+        account_type: physical
+        transfer_types:
+          - deposit
 ```
 
 If an entry for the same `input_csv_filename` already exists, it is **replaced**
@@ -765,8 +910,9 @@ Does not accept the selection.
 ### US-18.4: Mapping Validation Error
 
 Missing required fields shown as joined error:
-`"Date must be mapped: ... | 'tendered_amount_out' (Amount) must be mapped."`.
-Raises GoBack for the user to fix.
+`"Date must be mapped: ... | At least one amount (tendered_amount_out or received_amount) must be mapped."`.
+Shows `"Press Enter to re-map columns."`, waits for keypress, then re-enters
+column mapping with current choices as defaults.
 
 ---
 
@@ -826,6 +972,12 @@ TemplateGroup:
     values: Tuple[str, ...]
     column_mappings: List[Tuple[Optional[str], str]]
 
+LinkedAccount:
+    account_holder: str
+    bank: str
+    account_type: str
+    transfer_types: Tuple[str, ...]
+
 AccountConfig:
     account: Account
     input_csv_filename: Optional[str]
@@ -834,6 +986,7 @@ AccountConfig:
     split_column: Optional[int]
     split_groups: Optional[Tuple[SplitGroup, ...]]
     decimal_format: Optional[str]
+    linked_accounts: Optional[Tuple[LinkedAccount, ...]]
 
 SplitGroup:
     values: Tuple[str, ...]
