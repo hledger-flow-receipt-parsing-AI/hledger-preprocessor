@@ -1269,7 +1269,7 @@ class _SplitPaneTUI:
         self.input_active = False
         self.choice_active = False
         self.error_msg = ""
-        self.nav_hint = "Left/Right=navigate  Enter/Space=toggle  Tab=done  Esc=back" + _SCROLL_HINT
+        self.nav_hint = "Left/Right=navigate  Enter/Space=toggle  Esc=back" + _SCROLL_HINT
 
         negated: List[bool] = [False] * len(numeric_entries)
         cursor = 0
@@ -1323,20 +1323,21 @@ class _SplitPaneTUI:
                     cursor += 1
                     _sync()
                     self.draw()
+                elif cursor == len(numeric_entries) - 1:
+                    # Past last column → done
+                    self.highlight_col = -1
+                    self.negate_cols = set()
+                    self.bottom_lines = []
+                    self.nav_hint = ""
+                    return [
+                        numeric_entries[i][0]
+                        for i in range(len(numeric_entries))
+                        if negated[i]
+                    ]
             elif key in ("enter", " "):
                 negated[cursor] = not negated[cursor]
                 _sync()
                 self.draw()
-            elif key == "tab":
-                self.highlight_col = -1
-                self.negate_cols = set()
-                self.bottom_lines = []
-                self.nav_hint = ""
-                return [
-                    numeric_entries[i][0]
-                    for i in range(len(numeric_entries))
-                    if negated[i]
-                ]
             elif key == "esc":
                 self.highlight_col = -1
                 self.negate_cols = set()
@@ -1444,6 +1445,9 @@ def _run_column_mapping(
     previous_chosen: Optional[List[Tuple[Optional[str], str]]] = None,
     split_column: Optional[int] = None,
     group_values: Optional[Tuple[str, ...]] = None,
+    start_at_negate: bool = False,
+    state: Optional[Dict[str, Any]] = None,
+    config_path: Optional[str] = None,
 ) -> List[Tuple[Optional[str], str]]:
     """Run the column mapping loop and return chosen (field, hledger_name) pairs.
 
@@ -1455,6 +1459,10 @@ def _run_column_mapping(
     *previous_chosen*: if given, pre-fill each column's default from
     the previous group's mapping so the user can quickly confirm or
     change only the columns that differ.
+
+    *start_at_negate*: if True, skip column selection and jump straight
+    to the negate step (used when going back from the next group).
+    Requires *previous_chosen* to contain the completed mapping.
     """
     log_at_start = len(tui.answer_log)
 
@@ -1497,6 +1505,17 @@ def _run_column_mapping(
     # defaults so the user can quickly fix only the column that matters.
     validated = False
     col_idx = 0
+    skip_to_negate = start_at_negate
+    if skip_to_negate and previous_chosen:
+        # Populate chosen/used_fields from previous_chosen (strip negate)
+        for field, hname in previous_chosen:
+            base = _strip_negate(field)[0] if field else None
+            chosen.append((base, hname) if base else ("", ""))
+            if base:
+                used_fields.add(base)
+        col_idx = len(chosen)
+        _sync_mapping_row()
+        _update_required_status(tui, used_fields)
     while not validated:
         while col_idx < len(auto_mappings):
             auto = auto_mappings[col_idx]
@@ -1591,8 +1610,14 @@ def _run_column_mapping(
                     "Date must be mapped: use 'datetime' for a single "
                     "column, or 'date'+'time' for separate columns."
                 )
-        if "tendered_amount_out" not in mapped:
-            errors.append("'tendered_amount_out' (Amount) must be mapped.")
+
+        has_out = "tendered_amount_out" in mapped
+        has_in = "received_amount" in mapped
+        if not has_out and not has_in:
+            errors.append(
+                "At least one of 'tendered_amount_out' or "
+                "'received_amount' must be mapped."
+            )
 
         if errors:
             tui.error_msg = (
@@ -1613,6 +1638,105 @@ def _run_column_mapping(
             _sync_mapping_row()
             _update_required_status(tui, used_fields)
             continue
+
+        # If exactly one of amount_out/amount_in is missing, this group
+        # needs a linked account (the other side of the transfer).
+        if (has_out != has_in) and state is not None and config_path:
+            missing = (
+                "tendered_amount_out" if not has_out
+                else "received_amount"
+            )
+            direction = "from" if not has_in else "to"
+            existing = _load_existing_accounts(config_path)
+            current_id = (
+                f"{state['account_holder']}:{state['bank']}"
+                f":{state['account_type']}"
+            )
+            existing = [
+                a for a in existing
+                if (
+                    f"{a['account_holder']}:{a['bank']}"
+                    f":{a['account_type']}"
+                ) != current_id
+            ]
+            group_label_str = group_label or "this mapping"
+            if existing:
+                acct_strs = [
+                    f"{a['account_holder']}:{a['bank']}:{a['account_type']}"
+                    for a in existing
+                ]
+                tui.answer_log.append(
+                    f"  {DIM}'{missing}' not mapped — "
+                    f"transfers {direction} a linked account.{RESET}"
+                )
+                tui.draw()
+                link_str = tui.ask_string(
+                    f"Link {group_label_str} {direction} which account? "
+                    f"({', '.join(acct_strs)})",
+                    completions=acct_strs,
+                )
+                # Parse the linked account
+                parts = link_str.split(":")
+                if len(parts) == 3:
+                    link_data = {
+                        "account_holder": parts[0],
+                        "bank": parts[1],
+                        "account_type": parts[2],
+                        "transfer_types": list(
+                            group_values
+                        ) if group_values else [],
+                    }
+                    linked_list = state.setdefault(
+                        "linked_accounts_data", []
+                    )
+                    linked_list.append(link_data)
+                    tui.answer_log.append(
+                        f"  {FG_GREEN}Linked: {link_str} "
+                        f"(types: "
+                        f"{', '.join(link_data['transfer_types'])})"
+                        f"{RESET}"
+                    )
+            else:
+                tui.answer_log.append(
+                    f"  {DIM}'{missing}' not mapped — "
+                    f"no other accounts in config to link.{RESET}"
+                )
+                # Ask for manual entry
+                tui.draw()
+                wants_manual = tui.ask_confirm(
+                    f"Enter linked account manually for "
+                    f"{group_label_str}?"
+                )
+                if wants_manual:
+                    ah = tui.ask_string(
+                        "Linked account holder (e.g. 'at')"
+                    )
+                    bank = tui.ask_string(
+                        "Linked bank (e.g. 'triodos')"
+                    )
+                    at = tui.ask_string(
+                        "Linked account type (e.g. 'checking')"
+                    )
+                    link_data = {
+                        "account_holder": ah,
+                        "bank": bank,
+                        "account_type": at,
+                        "transfer_types": list(
+                            group_values
+                        ) if group_values else [],
+                    }
+                    linked_list = state.setdefault(
+                        "linked_accounts_data", []
+                    )
+                    linked_list.append(link_data)
+                    acct_str = f"{ah}:{bank}:{at}"
+                    tui.answer_log.append(
+                        f"  {FG_GREEN}Linked: {acct_str} "
+                        f"(types: "
+                        f"{', '.join(link_data['transfer_types'])})"
+                        f"{RESET}"
+                    )
+                tui.draw()
 
         # Validation passed
         validated = True
@@ -1667,6 +1791,7 @@ def _run_mapping_step(
     state: Dict[str, Any],
     preview: CsvPreview,
     auto_mappings: List[AutoMapping],
+    config_path: str = "",
 ) -> None:
     """Run template detection + split decision + column mapping.
 
@@ -1698,6 +1823,7 @@ def _run_mapping_step(
                     previous_chosen=grp_chosen,
                     split_column=reedit_split_col,
                     group_values=vals,
+                    state=state, config_path=config_path,
                 )
                 new_groups.append((vals, new_chosen))
             state["split_groups_data"] = new_groups
@@ -1705,6 +1831,7 @@ def _run_mapping_step(
             state["chosen"] = _run_column_mapping(
                 tui, auto_mappings, preview,
                 previous_chosen=old_chosen,
+                state=state, config_path=config_path,
             )
         return
 
@@ -1743,7 +1870,122 @@ def _run_mapping_step(
                 tui.set_mapping_row(_chosen_to_mapping_row(chosen))
                 tui.draw()
 
-            # Offer to review/edit the template mappings
+            # Offer to review/edit groups and column mappings
+            if split_groups_data and split_column is not None:
+                # Show current group assignments
+                unique_vals = sorted(set(
+                    row[split_column].strip()
+                    for row in preview.all_data_rows
+                    if split_column < len(row)
+                    and row[split_column].strip()
+                ))
+                for gi, (vals, _) in enumerate(split_groups_data):
+                    tui.answer_log.append(
+                        f"  Group {gi + 1}: "
+                        f"{FG_GREEN}{', '.join(vals)}{RESET}"
+                    )
+                tui.draw()
+
+                edit_groups = tui.ask_confirm(
+                    "Edit group assignments?"
+                )
+                if edit_groups:
+                    tui.reorder_rows_for_split(split_column)
+                    tui.answer_log.append(
+                        f"  Unique values: {FG_CYAN}"
+                        f"{', '.join(unique_vals)}{RESET}"
+                    )
+                    tui.draw()
+
+                    # Re-collect groups using same Phase 1 logic
+                    new_group_values: List[Tuple[str, ...]] = []
+                    remaining = set(unique_vals)
+                    group_num = 1
+                    # Pre-fill from template groups
+                    tmpl_groups_iter = iter(split_groups_data)
+                    while remaining:
+                        tmpl_grp = next(tmpl_groups_iter, None)
+                        if tmpl_grp and new_group_values:
+                            prefill = ",".join(
+                                v for v in tmpl_grp[0]
+                                if v in remaining
+                            )
+                        elif new_group_values:
+                            prefill = ",".join(sorted(remaining))
+                        else:
+                            tmpl_prefill = (
+                                ",".join(
+                                    v for v in tmpl_grp[0]
+                                    if v in remaining
+                                ) if tmpl_grp else ""
+                            )
+                            prefill = tmpl_prefill
+
+                        sorted_remaining = sorted(remaining)
+                        vals_str = tui.ask_string(
+                            f"Group {group_num} values "
+                            f"(remaining: "
+                            f"{', '.join(sorted_remaining)})",
+                            default=prefill,
+                            completions=sorted_remaining,
+                        )
+                        if not vals_str.strip():
+                            tui.error_msg = "Enter at least one value."
+                            tui.draw()
+                            continue
+                        vals = tuple(
+                            v.strip() for v in vals_str.split(",")
+                        )
+                        invalid = set(vals) - set(unique_vals)
+                        if invalid:
+                            tui.error_msg = (
+                                f"Unknown: {', '.join(invalid)}"
+                            )
+                            tui.draw()
+                            continue
+                        not_remaining = set(vals) - remaining
+                        if not_remaining:
+                            tui.error_msg = (
+                                f"Already assigned: "
+                                f"{', '.join(not_remaining)}"
+                            )
+                            tui.draw()
+                            continue
+
+                        remaining -= set(vals)
+                        new_group_values.append(vals)
+                        tui.answer_log.append(
+                            f"  Group {group_num}: "
+                            f"{FG_GREEN}{', '.join(vals)}{RESET}"
+                        )
+                        group_num += 1
+
+                    # Rebuild split_groups_data with new group values,
+                    # carrying over column mappings from the closest
+                    # matching old group (or the first group as fallback)
+                    old_groups = {
+                        frozenset(v): c
+                        for v, c in split_groups_data
+                    }
+                    new_split = []
+                    for new_vals in new_group_values:
+                        # Try to find an old group with overlapping values
+                        best_mapping = None
+                        best_overlap = 0
+                        for old_vs, old_c in split_groups_data:
+                            overlap = len(
+                                set(new_vals) & set(old_vs)
+                            )
+                            if overlap > best_overlap:
+                                best_overlap = overlap
+                                best_mapping = old_c
+                        if best_mapping is None:
+                            best_mapping = split_groups_data[0][1]
+                        new_split.append(
+                            (new_vals, list(best_mapping))
+                        )
+                    split_groups_data = new_split
+
             review = tui.ask_confirm(
                 "Review/edit column mappings?"
             )
@@ -1758,6 +2000,7 @@ def _run_mapping_step(
                             previous_chosen=grp_chosen,
                             split_column=split_column,
                             group_values=list(vals),
+                            state=state, config_path=config_path,
                         )
                         new_groups.append((vals, new_chosen))
                     split_groups_data = new_groups
@@ -1765,6 +2008,7 @@ def _run_mapping_step(
                     chosen = _run_column_mapping(
                         tui, auto_mappings, preview,
                         previous_chosen=chosen,
+                        state=state, config_path=config_path,
                     )
 
     if not template_applied:
@@ -1888,6 +2132,7 @@ def _run_mapping_step(
 
             gi = 0
             group_map_log: List[int] = []
+            reenter_negate = False
             while gi < len(group_values_list):
                 vals = group_values_list[gi]
                 group_map_log.append(len(tui.answer_log))
@@ -1898,18 +2143,20 @@ def _run_mapping_step(
                         previous_chosen=prev_chosen,
                         split_column=split_column,
                         group_values=vals,
+                        start_at_negate=reenter_negate,
+                        state=state, config_path=config_path,
                     )
+                    reenter_negate = False
                 except GoBack:
                     tui.answer_log = tui.answer_log[
                         :group_map_log.pop()
                     ]
                     if gi > 0:
-                        split_groups_data.pop()
-                        prev_chosen = (
-                            split_groups_data[-1][1]
-                            if split_groups_data else None
-                        )
+                        # Go back to negate step of previous group
+                        prev_group_chosen = split_groups_data.pop()
+                        prev_chosen = prev_group_chosen[1]
                         gi -= 1
+                        reenter_negate = True
                     else:
                         tui.set_mapping_row([])
                         raise  # propagate to main loop
@@ -1920,7 +2167,8 @@ def _run_mapping_step(
                 gi += 1
         else:
             chosen = _run_column_mapping(
-                tui, auto_mappings, preview
+                tui, auto_mappings, preview,
+                state=state, config_path=config_path,
             )
 
     state["template_applied"] = template_applied
@@ -1931,6 +2179,150 @@ def _run_mapping_step(
     if decimal_format is not None:
         state["decimal_format"] = decimal_format
 
+
+# ── Reverse mapping: config field names → TUI field names ─────────
+
+_CONFIG_TO_FIELD = {
+    "the_time": TIME_FIELD,
+    # "the_date" is ambiguous: it could be DATE_FIELD or DATETIME_FIELD.
+    # Resolved by _config_pairs_to_chosen() based on whether "the_time"
+    # is also present in the same mapping.
+}
+
+
+def _config_pairs_to_chosen(
+    config_pairs: List[List[str]],
+    num_headers: int,
+) -> List[Tuple[Optional[str], str]]:
+    """Convert config field-name pairs back to TUI chosen format.
+
+    Reverses ``_chosen_to_config_pairs``: maps config names like
+    ``the_date``, ``the_time`` back to TUI names like ``the_date_only``,
+    ``the_time_only``, ``the_datetime``.  Preserves the ``negate:`` prefix.
+    """
+    # Determine if "the_time" appears anywhere — that disambiguates
+    # "the_date" → DATE_FIELD vs DATETIME_FIELD.
+    has_time = any(
+        _strip_negate(pair[0])[0] == "the_time"
+        for pair in config_pairs
+        if pair[0]
+    )
+
+    result: List[Tuple[Optional[str], str]] = []
+    for pair in config_pairs:
+        field_name, header_name = pair[0], pair[1]
+        if not field_name:
+            result.append((None, header_name))
+            continue
+
+        base, negated = _strip_negate(field_name)
+
+        # Reverse the _FIELD_TO_CONFIG mapping
+        if base == "the_date":
+            base = DATE_FIELD if has_time else DATETIME_FIELD
+        elif base == "the_time":
+            base = TIME_FIELD
+        # All other field names are the same in TUI and config
+
+        if negated:
+            base = NEGATE_PREFIX + base
+        result.append((base, header_name))
+
+    # Pad to match number of CSV headers if config has fewer entries
+    while len(result) < num_headers:
+        result.append((None, ""))
+
+    return result
+
+
+def _load_config_for_csv(
+    config_path: str, csv_filename: str,
+) -> Optional[Dict[str, Any]]:
+    """Load an existing account config entry for *csv_filename*.
+
+    Returns a dict suitable for pre-populating the TUI ``state``, or
+    ``None`` if no matching entry is found.  The dict contains:
+
+    - ``account_holder``, ``bank``, ``account_type``: str
+    - ``base_currency``: ``Currency`` enum member
+    - ``split_column``: Optional[int]
+    - ``split_groups_data``: Optional list of (values_tuple, chosen_list)
+    - ``chosen``: list of (field, header) tuples (empty if split_groups)
+    - ``decimal_format``: Optional[str]
+    - ``linked_accounts_data``: Optional list of dicts
+    """
+    try:
+        with open(config_path) as f:
+            config_dict = yaml.safe_load(f)
+    except (FileNotFoundError, TypeError):
+        return None
+
+    for ac in config_dict.get("account_configs", []):
+        if ac.get("input_csv_filename") != csv_filename:
+            continue
+
+        # Found a matching entry
+        result: Dict[str, Any] = {}
+        result["account_holder"] = ac["account_holder"]
+        result["bank"] = ac["bank"]
+        result["account_type"] = ac["account_type"]
+
+        # Resolve currency
+        raw_currency = ac.get("base_currency", "")
+        for c in Currency:
+            if c.value == raw_currency:
+                result["base_currency"] = c
+                break
+        else:
+            return None  # Unknown currency — can't load
+
+        result["decimal_format"] = ac.get("decimal_format")
+
+        split_col = ac.get("split_column")
+        result["split_column"] = split_col
+
+        split_groups_raw = ac.get("split_groups")
+        if split_col is not None and split_groups_raw:
+            groups_data = []
+            for sg in split_groups_raw:
+                vals = tuple(str(v) for v in sg["values"])
+                cfg_pairs = sg.get("csv_column_mapping", [])
+                num_cols = max(
+                    len(cfg_pairs),
+                    max((len(sg.get("csv_column_mapping", [])),), default=0),
+                )
+                chosen = _config_pairs_to_chosen(cfg_pairs, num_cols)
+                groups_data.append((vals, chosen))
+            result["split_groups_data"] = groups_data
+            result["chosen"] = []
+        else:
+            cfg_pairs = ac.get("csv_column_mapping", [])
+            if cfg_pairs:
+                result["chosen"] = _config_pairs_to_chosen(
+                    cfg_pairs, len(cfg_pairs),
+                )
+            else:
+                result["chosen"] = []
+            result["split_groups_data"] = None
+
+        # Linked accounts
+        raw_linked = ac.get("linked_accounts")
+        if raw_linked:
+            result["linked_accounts_data"] = [
+                {
+                    "account_holder": la["account_holder"],
+                    "bank": la["bank"],
+                    "account_type": la["account_type"],
+                    "transfer_types": la.get("transfer_types", []),
+                }
+                for la in raw_linked
+            ]
+        else:
+            result["linked_accounts_data"] = None
+
+        return result
+
+    return None
 
 
 def _load_existing_accounts(config_path: str) -> List[Dict[str, str]]:
@@ -1961,7 +2353,15 @@ def _run_linked_accounts_step(
     Stores results in ``state["linked_accounts_data"]``: a list of dicts
     with ``account_holder``, ``bank``, ``account_type``, ``transfer_types``.
     Raises ``GoBack`` on Escape.
+
+    Skips if links were already established during column mapping
+    (when a group was missing tendered_amount_out or received_amount).
     """
+    if state.get("linked_accounts_data"):
+        # Links were already set during column mapping
+        state["_linked_was_asked"] = True
+        return
+
     wants_links = tui.ask_confirm(
         "Does this account transact with other tracked accounts?"
     )
@@ -2271,9 +2671,85 @@ def run_csv_mapping_tui(
     # Non-interactive steps (auto-detected values) are skipped when going back.
     interactive_steps: Dict[int, bool] = {}
 
+    csv_filename = os.path.basename(csv_filepath)
+
     sys.stdout.write(CURSOR_HIDE)
     tui._enter_raw()
     try:
+        # Check for existing config entry and offer to load it
+        existing_cfg = _load_config_for_csv(config_path, csv_filename)
+        if existing_cfg:
+            acct_id = (
+                f"{existing_cfg['account_holder']}:"
+                f"{existing_cfg['bank']}:"
+                f"{existing_cfg['account_type']}"
+            )
+            tui.bottom_lines = []
+            tui.draw()
+            try:
+                load_it = tui.ask_confirm(
+                    f"Existing config found for {csv_filename} "
+                    f"({acct_id}). Load it?"
+                )
+            except GoBack:
+                load_it = False
+            if load_it:
+                # Pre-populate state from loaded config
+                state["account_holder"] = existing_cfg["account_holder"]
+                state["bank"] = existing_cfg["bank"]
+                state["account_type"] = existing_cfg["account_type"]
+                state["base_currency"] = existing_cfg["base_currency"]
+                state["split_column"] = existing_cfg["split_column"]
+                state["split_groups_data"] = existing_cfg["split_groups_data"]
+                state["chosen"] = existing_cfg["chosen"]
+                state["decimal_format"] = existing_cfg["decimal_format"]
+                if existing_cfg.get("linked_accounts_data"):
+                    state["linked_accounts_data"] = (
+                        existing_cfg["linked_accounts_data"]
+                    )
+
+                # Show what was loaded in the answer log, recording
+                # snapshots so Esc can roll back per-step.
+                log_snapshots.append(len(tui.answer_log))  # step 0
+                interactive_steps[0] = True
+                tui.answer_log.append(
+                    f"  Account holder: "
+                    f"{FG_GREEN}{state['account_holder']}{RESET}"
+                )
+
+                log_snapshots.append(len(tui.answer_log))  # step 1
+                interactive_steps[1] = True
+                tui.answer_log.append(
+                    f"  Bank: {FG_GREEN}{state['bank']}{RESET}"
+                )
+
+                log_snapshots.append(len(tui.answer_log))  # step 2
+                interactive_steps[2] = True
+                tui.answer_log.append(
+                    f"  Account type: "
+                    f"{FG_GREEN}{state['account_type']}{RESET}"
+                )
+
+                log_snapshots.append(len(tui.answer_log))  # step 3
+                interactive_steps[3] = True
+                tui.answer_log.append(
+                    f"  Currency: "
+                    f"{FG_GREEN}{state['base_currency'].value}{RESET}"
+                )
+
+                if state["split_groups_data"]:
+                    for gi, (vals, _) in enumerate(
+                        state["split_groups_data"]
+                    ):
+                        tui.answer_log.append(
+                            f"  Group {gi + 1}: "
+                            f"{FG_GREEN}{', '.join(vals)}{RESET}"
+                        )
+
+                # Jump to mapping step in re-edit mode
+                state["_reedit_mapping"] = True
+                step = _STEPS.index("mapping")
+
         while step < len(_STEPS):
             current = _STEPS[step]
 
@@ -2313,11 +2789,12 @@ def run_csv_mapping_tui(
                         for k in (
                             "template_applied", "split_column",
                             "split_groups_data", "chosen",
-                            "decimal_format",
+                            "decimal_format", "linked_accounts_data",
                         ):
                             state.pop(k, None)
                     _run_mapping_step(
-                        tui, state, preview, auto_mappings
+                        tui, state, preview, auto_mappings,
+                        config_path=config_path,
                     )
 
                 elif current == "linked_accounts":
