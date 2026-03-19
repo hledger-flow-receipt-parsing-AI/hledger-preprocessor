@@ -102,8 +102,16 @@ class GenericCsvTransaction(Transaction):
             # Special case for the date – we always format the same way
             if hledger_col_name == "date":
                 value = self.the_date.strftime("%Y-%m-%d-%H-%M-%S")
-            elif hledger_col_name == "currency":
-                value = self.account.base_currency.value
+            elif hledger_col_name == "base_currency":
+                # Use the mapped attribute (e.g. payment_currency) if it
+                # exists on the transaction; fall back to the account default.
+                value = getattr(self, attr_name, None)
+                if value is None:
+                    value = self.extra.get(attr_name)
+                if value is None:
+                    value = self.account.base_currency.value
+                elif hasattr(value, "value"):
+                    value = value.value
             elif hledger_col_name == "amount":
                 value = float(self.tendered_amount_out - self.change_returned)
             elif attr_name != None and attr_name != "":
@@ -126,7 +134,7 @@ class GenericCsvTransaction(Transaction):
         # result["change_returned"] = self.change_returned
         # If the mapping produced something, return it
         if result:
-            result["currency"] = self.account.base_currency.value
+            result.setdefault("base_currency", self.account.base_currency.value)
             result["account_holder"] = self.account.account_holder
             result["bank"] = self.account.bank
             result["account_type"] = self.account.account_type

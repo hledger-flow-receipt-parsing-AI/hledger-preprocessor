@@ -30,7 +30,7 @@ DEFAULT_HLEDGER_NAMES: Dict[str, str] = {
     "transaction_code": "",
     "balance_after": "",
     "bic": "",
-    "payment_currency": "currency",
+    "payment_currency": "base_currency",
     "exchange_rate": "",
     "quote_currency": "quote_currency",
     "quote_price": "quote_price",

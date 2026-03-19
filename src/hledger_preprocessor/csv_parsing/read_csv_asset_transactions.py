@@ -70,7 +70,7 @@ def read_csv_to_asset_transactions(
             else:
                 raise ValueError(f"Did not find key in:{row}")
 
-            currency = Currency(row["currency"])
+            currency = Currency(row.get("base_currency") or row["currency"])
 
             # Handle optional fields
             asset_account: Account = Account(
