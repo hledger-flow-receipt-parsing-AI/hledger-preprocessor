@@ -69,6 +69,10 @@ class RulesContentCreator:
         # When withdrawal_source_account is non-empty, produce multi-posting.
         content += self._create_withdrawal_rules()
 
+        # Crypto trade rules — matched BEFORE regular expense/income rules.
+        # When received_currency is non-empty, produce multi-posting.
+        content += self._create_crypto_trade_rules()
+
         # amount stands for net amount out of account. If it is positive, it is an expense.
         content += f"""if %amount ^[1-9]
 description %description
@@ -139,6 +143,33 @@ description ATM Withdrawal (foreign currency)
  account3 assets:%withdrawal_source_account
  amount3 -%withdrawal_source_amount
  currency3 %withdrawal_source_currency
+# end
+
+"""
+        return rules
+
+    @typechecked
+    def _create_crypto_trade_rules(self) -> str:
+        """Generate hledger rules for crypto trade transactions.
+
+        When received_currency is non-empty (a trade), produce multi-posting:
+          account1: received asset — amount in received currency
+          account2: fee expense
+          account3: source account — amount out in source currency
+        """
+        rules = "# Crypto trade rules (multi-posting)\n"
+
+        rules += """if %received_currency .
+description %description
+ account1 assets:%account_holder:%bank:%account_type:%received_currency
+ amount1 %received_amount
+ currency1 %received_currency
+ account2 expenses:fees:%bank
+ amount2 %fee_amount
+ currency2 %fee_currency
+ account3 assets:%account_holder:%bank:%account_type
+ amount3 %amount
+ currency3 %currency
 # end
 
 """

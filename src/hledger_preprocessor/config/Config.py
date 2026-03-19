@@ -11,6 +11,7 @@ from hledger_preprocessor.categorisation.load_categories import (
 from hledger_preprocessor.config.AccountConfig import (
     AccountConfig,
     CsvColumnMapping,
+    LinkedAccount,
     SplitGroup,
 )
 from hledger_preprocessor.config.CategorisationConfig import (
@@ -311,6 +312,22 @@ def create_account_config_from_yaml(
 
     decimal_format = account_config_dict.get("decimal_format")
 
+    # --- Linked accounts (optional) ---
+    linked_accounts_raw = account_config_dict.get("linked_accounts")
+    linked_accounts = None
+    if linked_accounts_raw:
+        accounts = []
+        for la in linked_accounts_raw:
+            accounts.append(LinkedAccount(
+                account_holder=la["account_holder"],
+                bank=la["bank"],
+                account_type=la["account_type"],
+                transfer_types=tuple(
+                    str(v) for v in la.get("transfer_types", [])
+                ),
+            ))
+        linked_accounts = tuple(accounts)
+
     return AccountConfig(
         input_csv_filename=account_config_dict["input_csv_filename"],
         csv_column_mapping=CsvColumnMapping(csv_column_mapping=csv_mapping),
@@ -319,4 +336,5 @@ def create_account_config_from_yaml(
         split_column=split_column,
         split_groups=split_groups,
         decimal_format=decimal_format,
+        linked_accounts=linked_accounts,
     )

@@ -32,6 +32,12 @@ DEFAULT_HLEDGER_NAMES: Dict[str, str] = {
     "bic": "",
     "payment_currency": "currency",
     "exchange_rate": "",
+    "quote_currency": "quote_currency",
+    "quote_price": "quote_price",
+    "received_currency": "received_currency",
+    "received_amount": "received_amount",
+    "fee_currency": "fee_currency",
+    "fee_amount": "fee_amount",
 }
 
 # Header patterns for auto-matching (case-insensitive).

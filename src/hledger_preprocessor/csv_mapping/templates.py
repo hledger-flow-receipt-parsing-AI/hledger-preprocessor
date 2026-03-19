@@ -40,12 +40,12 @@ _BITVAVO_DEPOSITS = TemplateGroup(
         ("", ""),                                      # 3: Type
         ("payment_currency", "currency"),              # 4: Currency
         ("tendered_amount_out", "amount"),              # 5: Amount
-        ("", ""),                                      # 6: Quote Currency
-        ("", ""),                                      # 7: Quote Price
-        ("", ""),                                      # 8: Received / Paid Currency
-        ("", ""),                                      # 9: Received / Paid Amount
-        ("fee_currency", ""),                          # 10: Fee currency
-        ("fee_amount", ""),                            # 11: Fee amount
+        ("quote_currency", "quote_currency"),          # 6: Quote Currency
+        ("quote_price", "quote_price"),                # 7: Quote Price
+        ("received_currency", "received_currency"),    # 8: Received / Paid Currency
+        ("received_amount", "received_amount"),        # 9: Received / Paid Amount
+        ("fee_currency", "fee_currency"),              # 10: Fee currency
+        ("fee_amount", "fee_amount"),                  # 11: Fee amount
         ("", ""),                                      # 12: Status
         ("description", "description"),                # 13: Transaction ID
         ("", ""),                                      # 14: Address
@@ -61,12 +61,12 @@ _BITVAVO_TRADES = TemplateGroup(
         ("", ""),                                      # 3: Type
         ("payment_currency", "currency"),              # 4: Currency
         ("tendered_amount_out", "amount"),              # 5: Amount
-        ("quote_currency", ""),                        # 6: Quote Currency
-        ("quote_price", ""),                           # 7: Quote Price
-        ("received_currency", ""),                     # 8: Received / Paid Currency
-        ("received_amount", ""),                       # 9: Received / Paid Amount
-        ("fee_currency", ""),                          # 10: Fee currency
-        ("fee_amount", ""),                            # 11: Fee amount
+        ("quote_currency", "quote_currency"),          # 6: Quote Currency
+        ("quote_price", "quote_price"),                # 7: Quote Price
+        ("received_currency", "received_currency"),    # 8: Received / Paid Currency
+        ("received_amount", "received_amount"),        # 9: Received / Paid Amount
+        ("fee_currency", "fee_currency"),              # 10: Fee currency
+        ("fee_amount", "fee_amount"),                  # 11: Fee amount
         ("", ""),                                      # 12: Status
         ("description", "description"),                # 13: Transaction ID
         ("", ""),                                      # 14: Address

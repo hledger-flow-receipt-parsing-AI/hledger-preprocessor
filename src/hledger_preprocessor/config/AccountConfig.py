@@ -24,6 +24,15 @@ class SplitGroup:
     tnx_date_columns: CsvColumnMapping
 
 
+@dataclass(frozen=True)
+class LinkedAccount:
+    """A reference to another tracked account that transacts with this one."""
+    account_holder: str
+    bank: str
+    account_type: str
+    transfer_types: Tuple[str, ...]  # split group values to suppress, empty = none
+
+
 @dataclass(frozen=True, unsafe_hash=True)
 class AccountConfig:
     account: Account
@@ -38,6 +47,9 @@ class AccountConfig:
 
     # Decimal format: "eu" (1.234,56) or "dot" (1,234.56) or None (legacy=eu)
     decimal_format: Optional[str] = None
+
+    # Linked accounts: other tracked accounts that transact with this one
+    linked_accounts: Optional[Tuple[LinkedAccount, ...]] = None
 
     # Field exists, no default, not part of __init__
 
@@ -157,6 +169,7 @@ class AccountConfig:
                     account_config=self,
                     csv_column_mapping=group.csv_column_mapping,
                 )
+                transaction.extra["_row_type"] = row_type
                 transactions.append(transaction)
         else:
             for index in range(start_index, len(rows)):
