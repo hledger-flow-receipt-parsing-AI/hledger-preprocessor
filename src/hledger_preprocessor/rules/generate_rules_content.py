@@ -70,8 +70,13 @@ class RulesContentCreator:
         content += self._create_withdrawal_rules()
 
         # Crypto trade rules — matched BEFORE regular expense/income rules.
-        # When received_currency is non-empty, produce multi-posting.
+        # When received_currency AND quote_price are non-empty, produce
+        # multi-posting with per-unit cost notation.
         content += self._create_crypto_trade_rules()
+
+        # Deposit/transfer rules — when received_amount is present but no
+        # quote_price (not a trade), use linked account if configured.
+        content += self._create_deposit_rules()
 
         # amount stands for net amount out of account. If it is positive, it is an expense.
         content += f"""if %amount ^[1-9]
@@ -152,27 +157,81 @@ description ATM Withdrawal (foreign currency)
     def _create_crypto_trade_rules(self) -> str:
         """Generate hledger rules for crypto trade transactions.
 
-        When received_currency is non-empty (a trade), produce multi-posting:
-          account1: received asset — amount in received currency
-          account2: fee expense
-          account3: source account — amount out in source currency
+        Uses per-unit cost notation (``@``) so hledger can verify the
+        multi-commodity transaction balances.  The fee is posted
+        separately so the bank's fee/markup is explicit.
+
+        Postings:
+          1. received asset with per-unit cost (@ quote_price)
+          2. fee expense in fee currency
+          3. source account — amount out in payment currency (balancing)
         """
-        rules = "# Crypto trade rules (multi-posting)\n"
+        rules = "# Crypto trade rules (multi-posting, with cost notation)\n"
 
         rules += """if %received_currency .
+& %quote_price .
 description %description
  account1 assets:%account_holder:%bank:%account_type:%received_currency
- amount1 %received_amount
- currency1 %received_currency
+ amount1 %received_amount %received_currency @ %quote_price %currency
  account2 expenses:fees:%bank
  amount2 %fee_amount
  currency2 %fee_currency
- account3 assets:%account_holder:%bank:%account_type
+ account3 assets:%account_holder:%bank:%account_type:%currency
  amount3 %amount
  currency3 %currency
 # end
 
 """
+        return rules
+
+
+    @typechecked
+    def _create_deposit_rules(self) -> str:
+        """Generate rules for deposit/transfer transactions.
+
+        Matches rows where received_currency is set but quote_price is
+        empty (i.e. a simple transfer, not a trade).  Uses the linked
+        account from config as the counterparty.
+        """
+        rules = "# Deposit/transfer rules\n"
+
+        linked = self.account_config.linked_accounts or ()
+        for la in linked:
+            counterparty = (
+                f"assets:{la.account_holder}:{la.bank}:{la.account_type}"
+            )
+            if la.transfer_types:
+                # Only generate for groups that match the linked transfer
+                # types.  The rule can't condition on split-column value
+                # directly, but received_currency + empty quote_price +
+                # non-zero received_amount is sufficient for deposits.
+                pass  # Fall through to the common rule below
+
+            rules += f"""if %received_currency .
+& %quote_price ^$
+description %description
+ account1 assets:%account_holder:%bank:%account_type:%received_currency
+ amount1 %received_amount
+ currency1 %received_currency
+ account2 {counterparty}
+# end
+
+"""
+            break  # Use the first matching linked account
+
+        if not linked:
+            # No linked account configured — fall back to income.
+            rules += """if %received_currency .
+& %quote_price ^$
+description %description
+ account1 assets:%account_holder:%bank:%account_type:%received_currency
+ amount1 %received_amount
+ currency1 %received_currency
+ account2 income:unknown
+# end
+
+"""
+
         return rules
 
 
