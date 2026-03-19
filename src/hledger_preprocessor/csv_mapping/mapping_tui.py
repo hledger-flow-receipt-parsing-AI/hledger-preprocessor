@@ -1253,6 +1253,7 @@ class _SplitPaneTUI:
     def ask_negate_table(
         self,
         numeric_entries: List[Tuple[int, str, str]],
+        pre_negated: Optional[List[bool]] = None,
     ) -> List[int]:
         """Let the user toggle negation on numeric columns.
 
@@ -1261,6 +1262,7 @@ class _SplitPaneTUI:
         visually in the table), Tab confirms.
 
         *numeric_entries*: ``(col_idx, header, field_name)`` per column.
+        *pre_negated*: if given, initial toggle state for each entry.
         Returns col indices the user chose to negate.
         """
         if not numeric_entries:
@@ -1271,7 +1273,7 @@ class _SplitPaneTUI:
         self.error_msg = ""
         self.nav_hint = "Left/Right=navigate  Enter/Space=toggle  Esc=back" + _SCROLL_HINT
 
-        negated: List[bool] = [False] * len(numeric_entries)
+        negated: List[bool] = list(pre_negated) if pre_negated else [False] * len(numeric_entries)
         cursor = 0
 
         def _sync() -> None:
@@ -1403,11 +1405,15 @@ def _ask_negate_for_chosen(
     tui: "_SplitPaneTUI",
     chosen: List[Tuple[Optional[str], str]],
     preview: CsvPreview,
+    previous_chosen: Optional[List[Tuple[Optional[str], str]]] = None,
 ) -> None:
     """Show the negate toggle table for numeric columns in *chosen*.
 
     Modifies *chosen* in-place, adding ``NEGATE_PREFIX`` to negated fields.
     Raises ``GoBack`` if the user presses Escape (caller should handle).
+
+    *previous_chosen*: if given, pre-populate the negate toggles from
+    previously negated fields (used when re-editing after config load).
 
     Expects the caller to manage ``tui.dim_rows`` (for split-group
     row dimming) — this function only manages ``tui.dim_cols``.
@@ -1425,9 +1431,22 @@ def _ask_negate_for_chosen(
     if not numeric_entries:
         return
 
+    # Detect which columns were previously negated
+    pre_negated: Optional[List[bool]] = None
+    if previous_chosen:
+        pre_negated = []
+        for ci, _, _ in numeric_entries:
+            if ci < len(previous_chosen):
+                prev_field = previous_chosen[ci][0]
+                pre_negated.append(
+                    bool(prev_field and prev_field.startswith(NEGATE_PREFIX))
+                )
+            else:
+                pre_negated.append(False)
+
     tui.dim_cols = skipped_cols
     try:
-        negated_cols = tui.ask_negate_table(numeric_entries)
+        negated_cols = tui.ask_negate_table(numeric_entries, pre_negated)
     finally:
         tui.dim_cols = set()
 
@@ -1582,7 +1601,7 @@ def _run_column_mapping(
         # Reset scroll so the table starts from the left
         tui.col_offset = 0
         try:
-            _ask_negate_for_chosen(tui, chosen, preview)
+            _ask_negate_for_chosen(tui, chosen, preview, previous_chosen)
             _sync_mapping_row()
         except GoBack:
             # Go back to re-ask the last column
@@ -1641,7 +1660,19 @@ def _run_column_mapping(
 
         # If exactly one of amount_out/amount_in is missing, this group
         # needs a linked account (the other side of the transfer).
-        if (has_out != has_in) and state is not None and config_path:
+        # Skip if links for this group already exist (e.g. loaded from config).
+        _already_linked = False
+        if (has_out != has_in) and state is not None:
+            existing_links = state.get("linked_accounts_data") or []
+            gv_set = set(group_values) if group_values else set()
+            for la in existing_links:
+                if gv_set and gv_set & set(la.get("transfer_types", [])):
+                    _already_linked = True
+                    break
+                if not gv_set and not la.get("transfer_types"):
+                    _already_linked = True
+                    break
+        if (has_out != has_in) and state is not None and config_path and not _already_linked:
             missing = (
                 "tendered_amount_out" if not has_out
                 else "received_amount"
@@ -2746,6 +2777,16 @@ def run_csv_mapping_tui(
                             f"{FG_GREEN}{', '.join(vals)}{RESET}"
                         )
 
+                # Detect template so the summary step can offer
+                # to update it after saving.
+                from hledger_preprocessor.csv_mapping.templates import (
+                    detect_template,
+                )
+                detected = detect_template(preview.headers)
+                if detected:
+                    state["detected_template"] = detected
+                    state["template_applied"] = True
+
                 # Jump to mapping step in re-edit mode
                 state["_reedit_mapping"] = True
                 step = _STEPS.index("mapping")
@@ -2790,6 +2831,7 @@ def run_csv_mapping_tui(
                             "template_applied", "split_column",
                             "split_groups_data", "chosen",
                             "decimal_format", "linked_accounts_data",
+                            "detected_template",
                         ):
                             state.pop(k, None)
                     _run_mapping_step(
