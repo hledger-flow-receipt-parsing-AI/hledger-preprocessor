@@ -69,7 +69,7 @@ class AccountTransaction(Transaction):
         object.__setattr__(self, "account_type", account_type)
         csv_column_mapping: CsvColumnMapping = CsvColumnMapping(
             csv_column_mapping=(
-                ("currency", "currency"),
+                ("currency", "base_currency"),
                 ("account_holder", "account_holder"),
                 ("bank", "bank"),
                 ("account_type", "account_type"),
@@ -125,7 +125,7 @@ class AccountTransaction(Transaction):
             # Special case for the date – we always format the same way
             if hledger_col_name == "date":
                 value = self.the_date.strftime("%Y-%m-%d-%H-%M-%S")
-            elif hledger_col_name == "currency":
+            elif hledger_col_name == "base_currency":
                 value = self.account.base_currency.value
             elif hledger_col_name == "amount":
                 value = self.tendered_amount_out - self.change_returned

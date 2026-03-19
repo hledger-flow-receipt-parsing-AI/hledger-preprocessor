@@ -488,7 +488,7 @@ class TestPreprocessAssetsWithWithdrawal:
         )
         _create_file(
             wallet_csv,
-            '"currency","account_holder","bank","account_type","date","amount","tendered_amount_out","change_returned"',
+            '"base_currency","account_holder","bank","account_type","date","amount","tendered_amount_out","change_returned"',
         )
 
         return {
@@ -619,7 +619,7 @@ class TestWithdrawalAssetCsvValues:
         )
         assert hledger_dict["tendered_amount_out"] == 100.0
         assert hledger_dict["change_returned"] == 0.0
-        assert hledger_dict["currency"] == "EUR"
+        assert hledger_dict["base_currency"] == "EUR"
         assert hledger_dict["account_holder"] == "at"
         assert hledger_dict["bank"] == "triodos"
         assert hledger_dict["account_type"] == "checking"

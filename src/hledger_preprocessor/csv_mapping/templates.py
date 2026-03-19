@@ -35,7 +35,7 @@ _BITVAVO_GROUP0 = TemplateGroup(
         ("the_date_only", "date"),           # 1: Date
         ("the_time_only", "time"),           # 2: Time
         ("", ""),                            # 3: Type
-        ("payment_currency", "currency"),    # 4: Currency
+        ("payment_currency", "base_currency"),    # 4: Currency
         ("negate:tendered_amount_out", "amount"), # 5: Amount
         ("quote_currency", "quote_currency"), # 6: Quote Currency
         ("quote_price", "quote_price"),      # 7: Quote Price
@@ -60,7 +60,7 @@ _BITVAVO_GROUP1 = TemplateGroup(
         ("received_amount", "received_amount"), # 5: Amount
         ("quote_currency", "quote_currency"), # 6: Quote Currency
         ("quote_price", "quote_price"),      # 7: Quote Price
-        ("payment_currency", "currency"),    # 8: Received / Paid Currency
+        ("payment_currency", "base_currency"),    # 8: Received / Paid Currency
         ("negate:tendered_amount_out", "amount"), # 9: Received / Paid Amount
         ("fee_currency", "fee_currency"),    # 10: Fee currency
         ("fee_amount", "fee_amount"),        # 11: Fee amount
@@ -81,7 +81,7 @@ _BITVAVO_GROUP2 = TemplateGroup(
         ("received_amount", "received_amount"), # 5: Amount
         ("", ""),                            # 6: Quote Currency
         ("", ""),                            # 7: Quote Price
-        ("payment_currency", "currency"),    # 8: Received / Paid Currency
+        ("payment_currency", "base_currency"),    # 8: Received / Paid Currency
         ("tendered_amount_out", "amount"),   # 9: Received / Paid Amount
         ("", ""),                            # 10: Fee currency
         ("", ""),                            # 11: Fee amount

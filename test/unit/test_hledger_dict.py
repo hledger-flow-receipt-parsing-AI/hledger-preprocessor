@@ -58,7 +58,7 @@ def test_to_hledger_dict_handles_empty_csv_column_mapping(
     empty_mapping = CsvColumnMapping(csv_column_mapping=())
     result = sample_transaction.to_hledger_dict(empty_mapping)
     # Empty mapping still returns default account-related fields
-    assert "currency" in result
+    assert "base_currency" in result
     assert "bank" in result
     assert "account_holder" in result
 

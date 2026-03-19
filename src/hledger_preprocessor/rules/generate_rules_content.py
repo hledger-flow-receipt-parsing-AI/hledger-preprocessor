@@ -58,8 +58,6 @@ class RulesContentCreator:
             f"{self.WITHDRAWAL_FIELDS}\n\n"
         )
 
-        # Write currency
-        content += f"currency %currency\n"
         content += f"date-format %Y-%m-%d-%H-%M-%S\n"
 
         # Write status
@@ -79,36 +77,54 @@ class RulesContentCreator:
         content += self._create_deposit_rules()
 
         # amount stands for net amount out of account. If it is positive, it is an expense.
+        # Exclude crypto trades (quote_price non-empty) and deposits
+        # (received_currency non-empty without quote_price) — those are
+        # handled by the rules above.
         content += f"""if %amount ^[1-9]
+& %quote_price ^$
+& %received_currency ^$
 description %description
  account1 expenses:%ExampleRuleBasedModel
+ currency1 %base_currency
  account2 assets:%account_holder:%bank:%account_type
+ currency2 %base_currency
 # end\n\n"""
 
         for account_config in self.config.accounts:
             if not account_config.has_input_csv():
                 account = account_config.account
                 content += f"""if %amount ^[1-9]
+& %quote_price ^$
+& %received_currency ^$
 & %ExampleRuleBasedModel {account.to_string()}
  account1 assets:%ExampleRuleBasedModel
+ currency1 %base_currency
  account2 assets:%account_holder:%bank:%account_type
+ currency2 %base_currency
 # end\n\n"""
 
         # amount stands for net amount out of account. If it is negative, it is income.
         content += f"""if %amount ^-
+& %quote_price ^$
+& %received_currency ^$
 description %description
  account1 income:%ExampleRuleBasedModel
+ currency1 %base_currency
  account2 assets:%account_holder:%bank:%account_type
-
+ currency2 %base_currency
 # end\n\n"""
 
         for account_config in self.config.accounts:
             if not account_config.has_input_csv():
                 account = account_config.account
                 content += f"""if %amount ^-
+& %quote_price ^$
+& %received_currency ^$
 & %ExampleRuleBasedModel {account.to_string()}
  account1 equity:clearing
+ currency1 %base_currency
  account2 assets:%account_holder:%bank:%account_type
+ currency2 %base_currency
 # end\n\n"""
 
         return content
@@ -130,7 +146,9 @@ description %description
 description ATM Withdrawal
  account1 assets:%account_holder:%bank:%account_type
  amount1 %amount
+ currency1 %base_currency
  account2 assets:%withdrawal_source_account
+ currency2 %base_currency
 # end
 
 """
@@ -141,10 +159,10 @@ description ATM Withdrawal
 description ATM Withdrawal (foreign currency)
  account1 assets:%account_holder:%bank:%account_type
  amount1 %withdrawal_dest_amount
- currency1 %currency
+ currency1 %base_currency
  account2 expenses:atm:operator-fee
  amount2 %withdrawal_atm_fee
- currency2 %currency
+ currency2 %base_currency
  account3 assets:%withdrawal_source_account
  amount3 -%withdrawal_source_amount
  currency3 %withdrawal_source_currency
@@ -166,19 +184,53 @@ description ATM Withdrawal (foreign currency)
           2. fee expense in fee currency
           3. source account — amount out in payment currency (balancing)
         """
+        fiat = self.account_config.account.base_currency.value
         rules = "# Crypto trade rules (multi-posting, with cost notation)\n"
 
-        rules += """if %received_currency .
+        # Build a regex that matches any base_currency value that is NOT
+        # the account's fiat code. E.g. for fiat="EUR" this produces
+        # ^([^E]|E[^U]|EU[^R]|EUR.) which matches BTC, ETH, etc.
+        c = list(fiat)
+        not_fiat_parts = []
+        for i in range(len(c)):
+            prefix = "".join(c[:i])
+            not_fiat_parts.append(f"^{prefix}[^{c[i]}]")
+        # Also match strings longer than fiat code (e.g. "EURO")
+        not_fiat_parts.append(f"^{fiat}.")
+        not_fiat_re = "|".join(not_fiat_parts)
+
+        # Buy rule: base_currency is fiat (e.g. EUR), received_currency is
+        # crypto (e.g. BTC).  Per-unit cost goes on the received crypto posting.
+        rules += f"""if %received_currency .
 & %quote_price .
+& %base_currency ^{fiat}$
 description %description
  account1 assets:%account_holder:%bank:%account_type:%received_currency
- amount1 %received_amount %received_currency @ %quote_price %currency
+ amount1 %received_amount %received_currency @ %quote_price %base_currency
  account2 expenses:fees:%bank
  amount2 %fee_amount
  currency2 %fee_currency
- account3 assets:%account_holder:%bank:%account_type:%currency
- amount3 %amount
- currency3 %currency
+ account3 assets:%account_holder:%bank:%account_type:%base_currency
+ amount3 -%amount
+ currency3 %base_currency
+# end
+
+"""
+
+        # Sell rule: base_currency is crypto (e.g. BTC), received_currency is
+        # fiat.  Per-unit cost goes on the outgoing crypto posting.
+        rules += f"""if %received_currency .
+& %quote_price .
+& %base_currency {not_fiat_re}
+description %description
+ account1 assets:%account_holder:%bank:%account_type:%received_currency
+ amount1 %received_amount
+ currency1 %received_currency
+ account2 expenses:fees:%bank
+ amount2 %fee_amount
+ currency2 %fee_currency
+ account3 assets:%account_holder:%bank:%account_type:%base_currency
+ amount3 -%amount %base_currency @ %quote_price %received_currency
 # end
 
 """
@@ -214,6 +266,8 @@ description %description
  amount1 %received_amount
  currency1 %received_currency
  account2 {counterparty}
+ amount2 -%received_amount
+ currency2 %received_currency
 # end
 
 """
@@ -228,6 +282,8 @@ description %description
  amount1 %received_amount
  currency1 %received_currency
  account2 income:unknown
+ amount2 -%received_amount
+ currency2 %received_currency
 # end
 
 """
