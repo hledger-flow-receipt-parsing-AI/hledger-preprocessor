@@ -110,6 +110,7 @@ class TestWithdrawalMetadata:
         )
         assert not wm.is_foreign
         assert wm.atm_operator_fee == 0.0
+        assert wm.bank_fx_fee == 0.0
         assert wm.withdrawn_amount is None
         assert wm.exchange_rate is None
 
@@ -248,6 +249,7 @@ class TestProcessedTransactionWithdrawalDict:
         assert d["withdrawal_source_account"] == "at:triodos:checking"
         assert d["withdrawal_source_amount"] == "100.0"
         assert d["withdrawal_atm_fee"] == "0.0"
+        assert d["withdrawal_bank_fx_fee"] == "0.0"
         assert d["withdrawal_dest_amount"] == ""
 
     def test_foreign_withdrawal_dict_has_conversion_data(self):
@@ -332,6 +334,7 @@ class TestRulesFileWithdrawal:
         assert "withdrawal_source_account" in content
         assert "withdrawal_source_amount" in content
         assert "withdrawal_atm_fee" in content
+        assert "withdrawal_bank_fx_fee" in content
 
     def test_rules_contain_withdrawal_conditional(self, temp_finance_root):
         content = self._make_rules_content(temp_finance_root)
@@ -344,9 +347,20 @@ class TestRulesFileWithdrawal:
         assert "if %withdrawal_source_account ." in content
         assert "%withdrawal_dest_amount ." in content
 
-    def test_rules_contain_multi_posting_accounts(self, temp_finance_root):
+    def test_domestic_rule_has_fee_postings(self, temp_finance_root):
         content = self._make_rules_content(temp_finance_root)
-        assert "account3 assets:%withdrawal_source_account" in content
+        # Domestic rule has 4 postings: wallet, ATM fee, bank fee, source.
+        assert "account2 expenses:atm:operator-fee" in content
+        assert "account3 expenses:fees:bank" in content
+        assert "account4 assets:%withdrawal_source_account" in content
+
+    def test_foreign_rule_has_bank_fee_posting(self, temp_finance_root):
+        content = self._make_rules_content(temp_finance_root)
+        # Foreign rule has bank fee posting with source currency.
+        assert "amount3 %withdrawal_bank_fx_fee" in content
+        assert "currency3 %withdrawal_source_currency" in content
+        assert "account4 assets:%withdrawal_source_account" in content
+        assert "amount4 -%withdrawal_source_amount" in content
 
 
 # ---------------------------------------------------------------

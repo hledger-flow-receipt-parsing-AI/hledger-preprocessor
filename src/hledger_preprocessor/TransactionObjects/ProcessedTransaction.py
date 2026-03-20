@@ -71,10 +71,7 @@ class ProcessedTransaction:
                     data["withdrawal_exchange_rate"] = str(wm.exchange_rate)
                 else:
                     data["withdrawal_exchange_rate"] = ""
-                if wm.bank_fx_fee is not None:
-                    data["withdrawal_bank_fx_fee"] = str(wm.bank_fx_fee)
-                else:
-                    data["withdrawal_bank_fx_fee"] = ""
+                data["withdrawal_bank_fx_fee"] = str(wm.bank_fx_fee)
 
         # data["ai_classifications"] = self.ai_classifications
         # data["logic_classifications"] = self.logic_classifications
