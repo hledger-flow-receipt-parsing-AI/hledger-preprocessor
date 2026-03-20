@@ -103,6 +103,21 @@ description %description
  currency2 %base_currency
 # end\n\n"""
 
+        # Transfers to accounts that have their own CSV import —
+        # use equity:clearing to avoid double-counting.
+        for account_config in self.config.accounts:
+            if account_config.has_input_csv():
+                account = account_config.account
+                content += f"""if %amount ^[1-9]
+& %quote_price ^$
+& %received_currency ^$
+& %ExampleRuleBasedModel {account.to_string()}
+ account1 equity:clearing
+ currency1 %base_currency
+ account2 assets:%account_holder:%bank:%account_type
+ currency2 %base_currency
+# end\n\n"""
+
         # amount stands for net amount out of account. If it is negative, it is income.
         content += f"""if %amount ^-
 & %quote_price ^$
@@ -116,6 +131,21 @@ description %description
 
         for account_config in self.config.accounts:
             if not account_config.has_input_csv():
+                account = account_config.account
+                content += f"""if %amount ^-
+& %quote_price ^$
+& %received_currency ^$
+& %ExampleRuleBasedModel {account.to_string()}
+ account1 equity:clearing
+ currency1 %base_currency
+ account2 assets:%account_holder:%bank:%account_type
+ currency2 %base_currency
+# end\n\n"""
+
+        # Transfers from accounts that have their own CSV import —
+        # use equity:clearing to avoid double-counting.
+        for account_config in self.config.accounts:
+            if account_config.has_input_csv():
                 account = account_config.account
                 content += f"""if %amount ^-
 & %quote_price ^$
@@ -249,9 +279,21 @@ description %description
 
         linked = self.account_config.linked_accounts or ()
         for la in linked:
-            counterparty = (
-                f"assets:{la.account_holder}:{la.bank}:{la.account_type}"
+            # Check if the linked account has its own CSV import.
+            # If so, use a clearing account to avoid double-counting.
+            linked_has_csv = any(
+                ac.account.account_holder == la.account_holder
+                and ac.account.bank == la.bank
+                and ac.account.account_type == la.account_type
+                and ac.has_input_csv()
+                for ac in self.config.accounts
             )
+            if linked_has_csv:
+                counterparty = "equity:clearing"
+            else:
+                counterparty = (
+                    f"assets:{la.account_holder}:{la.bank}:{la.account_type}"
+                )
             if la.transfer_types:
                 # Only generate for groups that match the linked transfer
                 # types.  The rule can't condition on split-column value
