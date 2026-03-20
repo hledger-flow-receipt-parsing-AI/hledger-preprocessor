@@ -49,6 +49,35 @@ class WithdrawalMetadata:
         )
 
 
+def _convert_withdrawal_metadata(
+    *, wm_dict: dict, the_date: datetime
+) -> "WithdrawalMetadata":
+    """Convert a raw dict (from JSON) into a WithdrawalMetadata object."""
+    sat = wm_dict.get("source_account_transaction")
+    if isinstance(sat, dict):
+        acct_dict = sat.get("account")
+        if isinstance(acct_dict, dict):
+            if isinstance(acct_dict.get("base_currency"), str):
+                acct_dict["base_currency"] = Currency(acct_dict["base_currency"])
+            sat["account"] = Account(**acct_dict)
+        # Handle exported "currency" key (payment_currency → currency on export).
+        currency_val = sat.pop("currency", None)
+        if currency_val is not None:
+            if isinstance(currency_val, str):
+                currency_val = Currency(currency_val)
+            if currency_val != sat["account"].base_currency:
+                sat["payment_currency"] = currency_val
+        if "the_date" not in sat:
+            sat["the_date"] = the_date
+        elif isinstance(sat["the_date"], str):
+            sat["the_date"] = iso8601.parse_date(sat["the_date"]).replace(
+                tzinfo=None
+            )
+        sat.pop("parent_receipt_category", None)
+        wm_dict["source_account_transaction"] = AccountTransaction(**sat)
+    return WithdrawalMetadata(**wm_dict)
+
+
 @typechecked
 @dataclass
 class Receipt:
@@ -103,6 +132,11 @@ class Receipt:
         if not isinstance(self.shop_identifier, ShopId):
             self.shop_identifier: ShopId = convert_shop_id(
                 shop_id=self.shop_identifier
+            )
+        if isinstance(self.withdrawal_metadata, dict):
+            self.withdrawal_metadata = _convert_withdrawal_metadata(
+                wm_dict=self.withdrawal_metadata,
+                the_date=self.the_date,
             )
 
     @typechecked

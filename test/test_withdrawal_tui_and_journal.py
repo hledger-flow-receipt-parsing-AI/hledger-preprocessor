@@ -76,86 +76,21 @@ def _make_account_transaction(
 # Test 1: Category validation
 # ---------------------------------------------------------------
 class TestCategoryValidation:
-    """The validate_category function should reject categories containing
-    'withdrawl' as a substring unless the value is exactly 'withdrawl'."""
+    """Withdrawal is now handled by a binary toggle, so validate_category
+    accepts all categories."""
 
-    def test_exact_withdrawl_is_valid(self):
+    def test_any_category_is_valid(self):
         from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
             validate_category,
         )
 
         assert validate_category("withdrawl") is None
-
-    def test_plain_category_is_valid(self):
-        from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
-            validate_category,
-        )
-
         assert validate_category("groceries:ekoplaza") is None
-
-    def test_star_prefix_withdrawl_rejected(self):
-        from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
-            validate_category,
-        )
-
-        result = validate_category("*withdrawl")
-        assert result is not None
-
-    def test_withdrawl_star_suffix_rejected(self):
-        from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
-            validate_category,
-        )
-
-        result = validate_category("withdrawl*")
-        assert result is not None
-
-    def test_star_withdrawl_star_rejected(self):
-        from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
-            validate_category,
-        )
-
-        result = validate_category("*withdrawl*")
-        assert result is not None
-
-    def test_income_withdrawl_rejected(self):
-        from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
-            validate_category,
-        )
-
-        result = validate_category("income:withdrawl")
-        assert result is not None
-
-    def test_expenses_withdrawl_euro_pound_rejected(self):
-        from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
-            validate_category,
-        )
-
-        result = validate_category("expenses:withdrawl:euro:pound")
-        assert result is not None
-
-    def test_withdrawl_euro_pound_rejected(self):
-        from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
-            validate_category,
-        )
-
-        result = validate_category("withdrawl:euro:pound")
-        assert result is not None
-
-    def test_case_insensitive_rejection(self):
-        from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
-            validate_category,
-        )
-
-        result = validate_category("Withdrawl:Euro")
-        assert result is not None
-
-    def test_category_without_withdrawl_valid(self):
-        from tui_labeller.tuis.urwid.receipts.BaseQuestions import (
-            validate_category,
-        )
-
+        assert validate_category("*withdrawl") is None
+        assert validate_category("withdrawl*") is None
+        assert validate_category("income:withdrawl") is None
+        assert validate_category("expenses:withdrawl:euro:pound") is None
         assert validate_category("house:furniture:ikea") is None
-        assert validate_category("abonnement:monthly:phone") is None
 
 
 # ---------------------------------------------------------------
@@ -224,16 +159,12 @@ class TestWithdrawalQuestions:
             accounts_without_csv=set(),
         )
         questions = wq.withdrawal_questions
-        assert len(questions) == 4
-        assert (
-            questions[0].question
-            == "ATM operator fee (in withdrawn currency, 0 if none):"
-        )
-        assert questions[1].question == "Withdrawal source account:"
-        assert questions[2].question == "Source account currency:"
-        assert questions[3].question == "Conversion input method:"
+        assert len(questions) == 3
+        assert questions[0].question == "Withdrawal source account:"
+        assert questions[1].question == "Source account currency:"
+        assert questions[2].question == "Amount debited from source account:"
 
-    def test_creates_source_debit_amount_question(self):
+    def test_creates_atm_fee_question(self):
         from tui_labeller.tuis.urwid.receipts.WithdrawalQuestions import (
             WithdrawalQuestions,
         )
@@ -242,8 +173,8 @@ class TestWithdrawalQuestions:
             account_infos_str=["at:triodos:checking"],
             accounts_without_csv=set(),
         )
-        q = wq.get_source_debit_amount_question()
-        assert q.question == "Amount debited from source account:"
+        q = wq.get_atm_fee_question()
+        assert q.question == "ATM operator fee (in withdrawn currency, 0 if none):"
 
     def test_creates_exchange_rate_question(self):
         from tui_labeller.tuis.urwid.receipts.WithdrawalQuestions import (
@@ -471,15 +402,13 @@ class TestBackgroundWithdrawalMatch:
     ):
         """Create a mock TUI with fake widgets matching withdrawal flow.
 
-        New question order:
+        Question order:
         0. Receipt date and time
-        1. Bookkeeping expense category
-        2. Amount paid from account (receipt side)
-        3. ATM operator fee
-        4. Withdrawal source account
-        5. Source account currency
-        6. Conversion input method (source debit amount selected)
-        7. Amount debited from source account
+        1. Withdrawal source account
+        2. Source account currency
+        3. Amount debited from source account
+        4. Amount paid from account (receipt/wallet side)
+        5. ATM operator fee
         """
 
         class FakeQuestionData:
@@ -513,18 +442,6 @@ class TestBackgroundWithdrawalMatch:
                 receipt_date,
             ),
             FakeWidget(
-                "\nBookkeeping expense category:",
-                "withdrawl",
-            ),
-            FakeWidget(
-                "Amount paid from account:",
-                str(receipt_amount) if receipt_amount else None,
-            ),
-            FakeWidget(
-                "ATM operator fee (in withdrawn currency, 0 if none):",
-                "0",
-            ),
-            FakeWidget(
                 "Withdrawal source account:",
                 source_account_answer,
             ),
@@ -533,12 +450,16 @@ class TestBackgroundWithdrawalMatch:
                 "EUR",
             ),
             FakeWidget(
-                "Conversion input method:",
-                "source debit amount",
-            ),
-            FakeWidget(
                 "Amount debited from source account:",
                 amount_debited_answer,
+            ),
+            FakeWidget(
+                "Amount paid from account:",
+                str(receipt_amount) if receipt_amount else None,
+            ),
+            FakeWidget(
+                "ATM operator fee (in withdrawn currency, 0 if none):",
+                "0",
             ),
         ]
 
@@ -583,7 +504,7 @@ class TestBackgroundWithdrawalMatch:
         )
 
         # The "Amount debited" widget should now have the matched amount.
-        amount_widget = tui.inputs[7].base_widget
+        amount_widget = tui.inputs[3].base_widget
         assert amount_widget.get_answer() == "220.0"
 
     def test_no_match_when_no_csv(self):
@@ -607,7 +528,7 @@ class TestBackgroundWithdrawalMatch:
             csv_transactions_per_account={},
         )
 
-        amount_widget = tui.inputs[7].base_widget
+        amount_widget = tui.inputs[3].base_widget
         assert amount_widget.get_answer() == ""
 
     def test_no_match_when_date_out_of_range(self):
@@ -646,7 +567,7 @@ class TestBackgroundWithdrawalMatch:
             csv_transactions_per_account=csv_transactions_per_account,
         )
 
-        amount_widget = tui.inputs[7].base_widget
+        amount_widget = tui.inputs[3].base_widget
         assert amount_widget.get_answer() == ""
 
     def test_does_not_overwrite_existing_answer(self):
@@ -685,7 +606,7 @@ class TestBackgroundWithdrawalMatch:
             csv_transactions_per_account=csv_transactions_per_account,
         )
 
-        amount_widget = tui.inputs[7].base_widget
+        amount_widget = tui.inputs[3].base_widget
         assert amount_widget.get_answer() == "150.0"
 
     def test_picks_closest_when_multiple_matches(self):
@@ -728,7 +649,7 @@ class TestBackgroundWithdrawalMatch:
             csv_transactions_per_account=csv_transactions_per_account,
         )
 
-        amount_widget = tui.inputs[7].base_widget
+        amount_widget = tui.inputs[3].base_widget
         assert amount_widget.get_answer() == "180.0"
 
     def test_no_config_does_nothing(self):
@@ -748,7 +669,7 @@ class TestBackgroundWithdrawalMatch:
             csv_transactions_per_account=None,
         )
 
-        amount_widget = tui.inputs[7].base_widget
+        amount_widget = tui.inputs[3].base_widget
         assert amount_widget.get_answer() == ""
 
     def test_account_without_csv_skipped(self):
@@ -788,5 +709,5 @@ class TestBackgroundWithdrawalMatch:
             csv_transactions_per_account=csv_transactions_per_account,
         )
 
-        amount_widget = tui.inputs[7].base_widget
+        amount_widget = tui.inputs[3].base_widget
         assert amount_widget.get_answer() == ""
