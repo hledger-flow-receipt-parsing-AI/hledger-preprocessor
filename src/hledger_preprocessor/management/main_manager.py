@@ -57,6 +57,24 @@ from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 
+@typechecked
+def _should_skip_withdrawal_transaction(
+    *, receipt: Receipt, config: Config
+) -> bool:
+    """Skip wallet-side withdrawal entry when the source bank already
+    imports via CSV (the CSV side handles the full journal entry)."""
+    if receipt.withdrawal_metadata is None:
+        return False
+    source = receipt.withdrawal_metadata.source_account_transaction.account
+    return any(
+        ac.account.account_holder == source.account_holder
+        and ac.account.bank == source.bank
+        and ac.account.account_type == source.account_type
+        and ac.has_input_csv()
+        for ac in config.accounts
+    )
+
+
 # Action 0.
 @typechecked
 def manage_creating_new_setup(
@@ -154,6 +172,12 @@ def manage_preprocessing_assets(
                     receipt_account_transaction.account
                     == account_config.account
                 ):
+                    if _should_skip_withdrawal_transaction(
+                        receipt=labelled_receipt,
+                        config=config,
+                    ):
+                        continue
+
                     receipt_account_transaction.set_parent_receipt_category(
                         parent_receipt_category=labelled_receipt.receipt_category
                     )
