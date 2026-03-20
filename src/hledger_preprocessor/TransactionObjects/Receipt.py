@@ -39,7 +39,7 @@ class WithdrawalMetadata:
     atm_operator_fee: float = 0.0
     withdrawn_amount: Optional[float] = None
     exchange_rate: Optional[float] = None
-    bank_fx_fee: Optional[float] = None
+    bank_fx_fee: float = 0.0
 
     @property
     def is_foreign(self) -> bool:
@@ -75,6 +75,9 @@ def _convert_withdrawal_metadata(
             )
         sat.pop("parent_receipt_category", None)
         wm_dict["source_account_transaction"] = AccountTransaction(**sat)
+    # Handle old JSON files where bank_fx_fee may be null.
+    if wm_dict.get("bank_fx_fee") is None:
+        wm_dict["bank_fx_fee"] = 0.0
     return WithdrawalMetadata(**wm_dict)
 
 

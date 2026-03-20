@@ -11,10 +11,10 @@
     "start_2024_1000eur": 80.24,
     "csv_ekoplaza_4217_jan15": 90.16,
     "img_ekoplaza_card": 99.48,
-    "nolbl_ekoplaza_card_eur": 102.62,
-    "jrnl_groceries_ekoplaza": 110.88
+    "nolbl_ekoplaza_card_eur": 102.57,
+    "jrnl_groceries_ekoplaza": 110.68
   },
-  "total_duration": 122.48,
+  "total_duration": 122.28,
   "segments": [
     {
       "file": "cfg_1b1w.mp4",
@@ -34,7 +34,7 @@
     },
     {
       "file": "2b_label_receipt.mp4",
-      "duration": 11.4
+      "duration": 11.2
     },
     {
       "file": "journal_output.mp4",

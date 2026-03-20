@@ -54,7 +54,7 @@ class RulesContentCreator:
         )
         content += (
             f"fields {base_fields},"
-            f"ExampleRuleBasedModel,ExampleAIModel,"
+            f"description,ExampleRuleBasedModel,ExampleAIModel,"
             f"{self.WITHDRAWAL_FIELDS}\n\n"
         )
 
@@ -163,10 +163,12 @@ description %description
     def _create_withdrawal_rules(self) -> str:
         """Generate hledger rules for withdrawal transactions.
 
-        Produces multi-posting journal entries:
+        Produces 4-posting journal entries:
           account1: destination (cash/wallet) — amount in dest currency
-          account2: ATM operator fee expense (if non-zero)
-          account3: source bank account — negative source amount @@ dest total
+          account2: ATM operator fee expense (zero-amount postings omitted)
+          account3: bank fee expense (zero-amount postings omitted)
+          account4: source bank account — balancing amount (domestic) or
+                    explicit negative source amount (foreign)
         """
         rules = "# Withdrawal rules (multi-posting)\n"
 
@@ -177,8 +179,14 @@ description ATM Withdrawal
  account1 assets:%account_holder:%bank:%account_type
  amount1 %amount
  currency1 %base_currency
- account2 assets:%withdrawal_source_account
+ account2 expenses:atm:operator-fee
+ amount2 %withdrawal_atm_fee
  currency2 %base_currency
+ account3 expenses:fees:bank
+ amount3 %withdrawal_bank_fx_fee
+ currency3 %base_currency
+ account4 assets:%withdrawal_source_account
+ currency4 %base_currency
 # end
 
 """
@@ -193,9 +201,12 @@ description ATM Withdrawal (foreign currency)
  account2 expenses:atm:operator-fee
  amount2 %withdrawal_atm_fee
  currency2 %base_currency
- account3 assets:%withdrawal_source_account
- amount3 -%withdrawal_source_amount
+ account3 expenses:fees:bank
+ amount3 %withdrawal_bank_fx_fee
  currency3 %withdrawal_source_currency
+ account4 assets:%withdrawal_source_account
+ amount4 -%withdrawal_source_amount
+ currency4 %withdrawal_source_currency
 # end
 
 """
