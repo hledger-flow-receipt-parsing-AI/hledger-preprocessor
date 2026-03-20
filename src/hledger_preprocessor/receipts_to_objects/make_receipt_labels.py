@@ -210,6 +210,19 @@ def export_human_label(
     # backward-compatible JSON format.  On import the "currency" key is
     # consumed by initialize_account_transaction which converts it back to
     # payment_currency when it differs from base_currency.
+    def _convert_payment_currency(transaction: dict) -> None:
+        """Convert payment_currency → currency in a transaction dict."""
+        pay_cur = transaction.pop("payment_currency", None)
+        if pay_cur is not None:
+            transaction["currency"] = pay_cur
+        else:
+            # Domestic: use the account's base_currency
+            acct = transaction.get("account")
+            if isinstance(acct, dict):
+                transaction["currency"] = acct.get(
+                    "base_currency", ""
+                )
+
     for item_key in ["net_bought_items", "net_returned_items"]:
         item = receipt_dict.get(item_key)
         if not isinstance(item, dict):
@@ -217,16 +230,14 @@ def export_human_label(
         for transaction in item.get("account_transactions", []):
             if not isinstance(transaction, dict):
                 continue
-            pay_cur = transaction.pop("payment_currency", None)
-            if pay_cur is not None:
-                transaction["currency"] = pay_cur
-            else:
-                # Domestic: use the account's base_currency
-                acct = transaction.get("account")
-                if isinstance(acct, dict):
-                    transaction["currency"] = acct.get(
-                        "base_currency", ""
-                    )
+            _convert_payment_currency(transaction)
+
+    # Also convert payment_currency in withdrawal_metadata.source_account_transaction
+    wm = receipt_dict.get("withdrawal_metadata")
+    if isinstance(wm, dict):
+        sat = wm.get("source_account_transaction")
+        if isinstance(sat, dict):
+            _convert_payment_currency(sat)
 
     # Validate currency fields in receipt and transactions
     for item_key in ["net_bought_items", "net_returned_items"]:
