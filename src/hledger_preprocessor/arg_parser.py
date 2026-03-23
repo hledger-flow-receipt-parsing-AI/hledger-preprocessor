@@ -127,6 +127,20 @@ def create_arg_parser() -> argparse.ArgumentParser:
         help="Make hledger-flow preprocess the exported asset csvs.",
     )
 
+    # Action 5: Batch match receipts to CSV transactions (non-interactive).
+    parser.add_argument(
+        "-b",
+        "--match-receipts",
+        action="store_true",
+        required=False,
+        help=(
+            "Batch-match existing receipt labels to bank CSV transactions."
+            " Auto-links exact matches and warns on ambiguous/missing ones."
+            " Should run before --preprocess-assets so that withdrawal"
+            " metadata is available when bank CSVs are processed."
+        ),
+    )
+
     # CSV column mapping.
     parser.add_argument(
         "-m",

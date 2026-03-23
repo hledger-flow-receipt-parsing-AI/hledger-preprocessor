@@ -725,3 +725,215 @@ class TestBackgroundWithdrawalMatch:
 
         amount_widget = tui.inputs[3].base_widget
         assert amount_widget.get_answer() == ""
+
+
+# ---------------------------------------------------------------
+# Test 7: New withdrawal_dest_account and withdrawal_change_returned fields
+# ---------------------------------------------------------------
+class TestWithdrawalDestAccountFields:
+    """Test that to_hledger_dict includes dest account fields for mock
+    receipts (empty since mocks don't have full Receipt structure)."""
+
+    def test_mock_receipt_has_empty_dest_fields(self):
+        """Mock receipts produce empty dest fields (not real Receipt)."""
+        source = _make_account_transaction(
+            account=_make_account(),
+            amount=320.0,
+        )
+        wm = WithdrawalMetadata(
+            source_account_transaction=source,
+            atm_operator_fee=50.0,
+            bank_fx_fee=20.0,
+        )
+
+        class MockReceipt:
+            raw_img_filepath = "/tmp/atm.jpg"
+            withdrawal_metadata = wm
+
+        dest_txn = _make_account_transaction(
+            account=_make_account(bank="wallet", acct_type="physical"),
+            amount=250.0,
+        )
+        pt = ProcessedTransaction(
+            transaction=dest_txn,
+            ai_classifications={"ExampleAIModel": "withdrawl"},
+            logic_classifications={"ExampleRuleBasedModel": "withdrawl"},
+            parent_receipt=MockReceipt(),
+        )
+        d = pt.to_hledger_dict()
+        # Mock receipts don't have real Receipt structure, so dest
+        # fields are empty strings.
+        assert d["withdrawal_dest_account"] == ""
+        assert d["withdrawal_change_returned"] == ""
+        assert d["withdrawal_dest_currency"] == ""
+
+
+# ---------------------------------------------------------------
+# Test 8: Rules file includes bank-side and wallet-side withdrawal rules
+# ---------------------------------------------------------------
+class TestRulesFileBankSideWithdrawal:
+    """Test that generated rules include bank-side withdrawal rules."""
+
+    def _make_rules_content(self, temp_finance_root) -> str:
+        from hledger_preprocessor.config.load_config import load_config
+
+        config = load_config(
+            config_path=str(temp_finance_root["config_path"]),
+            pre_processed_output_dir=None,
+        )
+        wallet_config = None
+        for ac in config.accounts:
+            if not ac.has_input_csv():
+                wallet_config = ac
+                break
+        if wallet_config is None:
+            pytest.skip("No wallet account found in config.")
+        creator = RulesContentCreator(
+            config=config, account_config=wallet_config, status="*"
+        )
+        return creator.create_rulecontent()
+
+    def test_bank_side_domestic_rule_uses_dest_account(
+        self, temp_finance_root
+    ):
+        content = self._make_rules_content(temp_finance_root)
+        assert "account1 assets:%withdrawal_dest_account" in content
+
+    def test_bank_side_domestic_rule_uses_change_returned(
+        self, temp_finance_root
+    ):
+        content = self._make_rules_content(temp_finance_root)
+        assert "amount1 %withdrawal_change_returned" in content
+
+    def test_bank_side_rule_conditions_on_dest_account(
+        self, temp_finance_root
+    ):
+        content = self._make_rules_content(temp_finance_root)
+        assert "& %withdrawal_dest_account ." in content
+
+    def test_wallet_side_rule_conditions_on_empty_dest_account(
+        self, temp_finance_root
+    ):
+        content = self._make_rules_content(temp_finance_root)
+        assert "& %withdrawal_dest_account ^$" in content
+
+    def test_withdrawal_fields_include_new_fields(
+        self, temp_finance_root
+    ):
+        content = self._make_rules_content(temp_finance_root)
+        assert "withdrawal_dest_account" in content
+        assert "withdrawal_change_returned" in content
+        assert "withdrawal_dest_currency" in content
+
+
+# ---------------------------------------------------------------
+# Test 9: _should_skip_withdrawal_transaction checks linkage
+# ---------------------------------------------------------------
+class TestShouldSkipWithdrawalTransaction:
+    """Test that _should_skip_withdrawal_transaction only skips when
+    the receipt has been linked to a CSV transaction."""
+
+    def test_skip_when_linked(self):
+        from hledger_preprocessor.management.main_manager import (
+            _should_skip_withdrawal_transaction,
+        )
+
+        triodos_account = _make_account()
+        wallet_account = _make_account(bank="wallet", acct_type="physical")
+
+        # Create a linked AccountTransaction (original_transaction set).
+        csv_txn = GenericCsvTransaction(
+            account=triodos_account,
+            the_date=datetime(2025, 3, 20, 10, 0, 0),
+            tendered_amount_out=320.0,
+            change_returned=0.0,
+        )
+        wallet_txn = AccountTransaction(
+            account=wallet_account,
+            the_date=datetime(2025, 3, 20, 14, 0, 0),
+            tendered_amount_out=0.0,
+            change_returned=250.0,
+            original_transaction=csv_txn,
+        )
+
+        config = MagicMock()
+        config.accounts = []
+
+        receipt = MagicMock()
+        receipt.withdrawal_metadata = WithdrawalMetadata(
+            source_account_transaction=_make_account_transaction(
+                account=triodos_account, amount=320.0
+            ),
+            atm_operator_fee=50.0,
+            bank_fx_fee=20.0,
+        )
+
+        # Patch collect_non_csv_transactions to return our linked txn.
+        import hledger_preprocessor.management.main_manager as mm
+        original_func = mm.collect_non_csv_transactions
+
+        def mock_collect(receipt):
+            return [wallet_txn]
+
+        mm.collect_non_csv_transactions = mock_collect
+        try:
+            result = _should_skip_withdrawal_transaction(
+                receipt=receipt, config=config
+            )
+            assert result is True
+        finally:
+            mm.collect_non_csv_transactions = original_func
+
+    def test_no_skip_when_not_linked(self):
+        from hledger_preprocessor.management.main_manager import (
+            _should_skip_withdrawal_transaction,
+        )
+
+        triodos_account = _make_account()
+        wallet_account = _make_account(bank="wallet", acct_type="physical")
+
+        # Unlinked AccountTransaction (original_transaction is None).
+        wallet_txn = _make_account_transaction(
+            account=wallet_account, amount=0.0, change=250.0,
+        )
+
+        config = MagicMock()
+        config.accounts = [MagicMock()]
+        config.accounts[0].account = triodos_account
+        config.accounts[0].has_input_csv.return_value = True
+
+        receipt = MagicMock()
+        receipt.withdrawal_metadata = WithdrawalMetadata(
+            source_account_transaction=_make_account_transaction(
+                account=triodos_account, amount=320.0
+            ),
+        )
+
+        import hledger_preprocessor.management.main_manager as mm
+        original_func = mm.collect_non_csv_transactions
+
+        def mock_collect(receipt):
+            return [wallet_txn]
+
+        mm.collect_non_csv_transactions = mock_collect
+        try:
+            result = _should_skip_withdrawal_transaction(
+                receipt=receipt, config=config
+            )
+            assert result is False
+        finally:
+            mm.collect_non_csv_transactions = original_func
+
+    def test_no_skip_when_no_withdrawal_metadata(self):
+        from hledger_preprocessor.management.main_manager import (
+            _should_skip_withdrawal_transaction,
+        )
+
+        receipt = MagicMock()
+        receipt.withdrawal_metadata = None
+        config = MagicMock()
+
+        result = _should_skip_withdrawal_transaction(
+            receipt=receipt, config=config
+        )
+        assert result is False

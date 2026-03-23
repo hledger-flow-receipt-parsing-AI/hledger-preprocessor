@@ -144,9 +144,9 @@ class AccountTransaction(Transaction):
 
             result["tendered_amount_out"] = self.tendered_amount_out
             result["change_returned"] = self.change_returned
-            # Include parent_receipt_category as description for re-classification
-            if self.parent_receipt_category:
-                result["description"] = self.parent_receipt_category
+            # Always include description so the column order in the
+            # preprocessed CSV matches the rules fields declaration.
+            result["description"] = self.parent_receipt_category or ""
             return result
         else:
             raise ValueError("Did not create a filled hledger dict.")
@@ -164,8 +164,10 @@ class AccountTransaction(Transaction):
         m.update(f"{self.change_returned:.2f}".encode())
 
         # 3. Optional strings: handle None safely and consistently
-        description = self.description or ""
-        other_party_name = self.other_party_name or ""
+        # AccountTransaction does not define description/other_party_name
+        # as dataclass fields (GenericCsvTransaction does), so use getattr.
+        description = getattr(self, "description", None) or ""
+        other_party_name = getattr(self, "other_party_name", None) or ""
 
         m.update(description.encode("utf-8"))
         m.update(other_party_name.encode("utf-8"))

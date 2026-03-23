@@ -30,7 +30,8 @@ class RulesContentCreator:
         "withdrawal_source_account,withdrawal_source_amount,"
         "withdrawal_source_currency,withdrawal_atm_fee,"
         "withdrawal_dest_amount,withdrawal_exchange_rate,"
-        "withdrawal_bank_fx_fee"
+        "withdrawal_bank_fx_fee,withdrawal_dest_account,"
+        "withdrawal_change_returned,withdrawal_dest_currency"
     )
 
     @typechecked
@@ -54,7 +55,7 @@ class RulesContentCreator:
         )
         content += (
             f"fields {base_fields},"
-            f"description,ExampleRuleBasedModel,ExampleAIModel,"
+            f"ExampleRuleBasedModel,ExampleAIModel,"
             f"{self.WITHDRAWAL_FIELDS}\n\n"
         )
 
@@ -163,18 +164,71 @@ description %description
     def _create_withdrawal_rules(self) -> str:
         """Generate hledger rules for withdrawal transactions.
 
-        Produces 4-posting journal entries:
-          account1: destination (cash/wallet) — amount in dest currency
-          account2: ATM operator fee expense (zero-amount postings omitted)
-          account3: bank fee expense (zero-amount postings omitted)
-          account4: source bank account — balancing amount (domestic) or
-                    explicit negative source amount (foreign)
+        Two variants:
+        - **Bank-side** (withdrawal_dest_account is non-empty): the CSV
+          row belongs to the source bank.  account1 = wallet (dest),
+          account4 = self (source bank, balancing).
+        - **Wallet-side** (withdrawal_dest_account is empty): the CSV
+          row belongs to the wallet.  account1 = self (wallet),
+          account4 = source bank.  (Kept for backwards compat; with the
+          new flow the wallet side skips withdrawals entirely.)
+
+        Each variant has a domestic and a foreign sub-rule.
         """
         rules = "# Withdrawal rules (multi-posting)\n"
 
-        # Domestic withdrawal (no conversion details).
+        # ── Bank-side rules (withdrawal_dest_account is non-empty) ──
+
+        # Bank-side domestic withdrawal.
+        # %withdrawal_change_returned = cash the wallet received
+        # account4 (source bank) has no explicit amount — hledger
+        # infers it as the balancing posting.
         rules += """if %withdrawal_source_account .
 & %withdrawal_dest_amount ^$
+& %withdrawal_dest_account .
+description ATM Withdrawal
+ account1 assets:%withdrawal_dest_account
+ amount1 %withdrawal_change_returned
+ currency1 %withdrawal_dest_currency
+ account2 expenses:atm:operator-fee
+ amount2 %withdrawal_atm_fee
+ currency2 %withdrawal_dest_currency
+ account3 expenses:fees:bank
+ amount3 %withdrawal_bank_fx_fee
+ currency3 %base_currency
+ account4 assets:%account_holder:%bank:%account_type
+ currency4 %base_currency
+# end
+
+"""
+
+        # Bank-side foreign withdrawal.
+        rules += """if %withdrawal_source_account .
+& %withdrawal_dest_amount .
+& %withdrawal_dest_account .
+description ATM Withdrawal (foreign currency)
+ account1 assets:%withdrawal_dest_account
+ amount1 %withdrawal_dest_amount
+ currency1 %withdrawal_dest_currency
+ account2 expenses:atm:operator-fee
+ amount2 %withdrawal_atm_fee
+ currency2 %withdrawal_dest_currency
+ account3 expenses:fees:bank
+ amount3 %withdrawal_bank_fx_fee
+ currency3 %base_currency
+ account4 assets:%account_holder:%bank:%account_type
+ amount4 -%withdrawal_source_amount
+ currency4 %base_currency
+# end
+
+"""
+
+        # ── Wallet-side rules (withdrawal_dest_account is empty) ──
+
+        # Wallet-side domestic withdrawal.
+        rules += """if %withdrawal_source_account .
+& %withdrawal_dest_amount ^$
+& %withdrawal_dest_account ^$
 description ATM Withdrawal
  account1 assets:%account_holder:%bank:%account_type
  amount1 %amount
@@ -191,9 +245,10 @@ description ATM Withdrawal
 
 """
 
-        # Foreign withdrawal with conversion details.
+        # Wallet-side foreign withdrawal.
         rules += """if %withdrawal_source_account .
 & %withdrawal_dest_amount .
+& %withdrawal_dest_account ^$
 description ATM Withdrawal (foreign currency)
  account1 assets:%account_holder:%bank:%account_type
  amount1 %withdrawal_dest_amount
