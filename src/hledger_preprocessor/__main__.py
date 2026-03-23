@@ -27,6 +27,7 @@ from hledger_preprocessor.generics.enums import ClassifierType, LogicType
 from hledger_preprocessor.get_models import get_models
 from hledger_preprocessor.management.helper import edit_receipt
 from hledger_preprocessor.management.main_manager import (
+    manage_batch_match_receipts,
     manage_creating_new_setup,
     manage_creating_receipt_img_labels_with_tui,
     manage_generating_rules,
@@ -73,10 +74,20 @@ def main() -> None:
         args.preprocess_csvs
         or args.preprocess_assets
         or args.link_receipts_to_transactions
+        or args.match_receipts
     ):
         models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
             quick_categorisation=args.quick_categorisation
         )
+
+        # Batch-match receipts to CSV transactions BEFORE preprocessing,
+        # so that withdrawal metadata is available when bank CSVs are
+        # processed.
+        if args.match_receipts:
+            labelled_receipts = manage_batch_match_receipts(
+                config=config,
+                labelled_receipts=labelled_receipts,
+            )
 
         if args.preprocess_csvs:
             manage_preprocessing_csvs(
