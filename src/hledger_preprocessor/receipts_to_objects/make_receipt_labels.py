@@ -150,7 +150,7 @@ def ask_questions(
         raw_receipt_img_filepath=raw_receipt_img_filepath,
         hledger_account_infos=hledger_account_infos,
         accounts_without_csv=accounts_without_csv,
-        labelled_receipts=[],
+        labelled_receipts=labelled_receipts,
         prefilled_receipt=prefilled_receipt,
         csv_transactions_per_account=csv_transactions_per_account,
     )
