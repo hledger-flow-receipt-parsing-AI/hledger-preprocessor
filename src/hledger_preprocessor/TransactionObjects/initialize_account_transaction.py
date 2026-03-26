@@ -110,6 +110,7 @@ def initialize_account_transaction(
             transaction["transaction_code"] = TransactionCode(
                 transaction["transaction_code"]
             )
+        transaction.pop("parent_receipt_category", None)
         return GenericCsvTransaction(**transaction)
     else:
 
