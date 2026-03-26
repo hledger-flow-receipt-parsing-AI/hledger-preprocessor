@@ -313,6 +313,25 @@ functionality that does not yet exist in the codebase.
 
 ---
 
+### US-2b.9 — Hierarchical category-aware address suggestions
+
+**As a** user labelling a receipt with category `groceries:ah`,
+**I want to** see previous shop addresses sorted by category relevance — first exact and sub-category matches (e.g. `groceries:ah`, `groceries:ah:bananas`), then parent-category matches (e.g. `groceries:ekoplaza`), then all remaining addresses by frequency,
+**so that** I can quickly select the correct shop address without scrolling through irrelevant entries.
+
+**Acceptance criteria:**
+
+- The address selector always shows `0 manual address` at the top.
+- Addresses whose receipt category starts with the entered category (exact match or sub-category) appear first, sorted by frequency (descending).
+- Addresses whose receipt category shares the same parent category prefix (e.g. `groceries:` when the entered category is `groceries:ah`) appear next, sorted by frequency (descending).
+- All remaining addresses appear last, sorted by frequency (descending).
+- At most 12 addresses are shown (including `manual address`), so up to 11 historical addresses.
+- There are no blank lines between address entries in the list.
+- The user can scroll through the address list using arrow-up and arrow-down keys.
+- If no category matches are found at all, all addresses are listed by frequency.
+
+---
+
 ## Step 3: Receipt-to-CSV Transaction Matching
 
 ### US-3.1 — Auto-match a simple same-currency receipt
