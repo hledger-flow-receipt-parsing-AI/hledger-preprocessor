@@ -206,6 +206,19 @@ def export_human_label(
     # Apply recursive conversion
     receipt_dict = convert_types(receipt_dict)
 
+    # Strip runtime-only metadata that does not survive JSON round-trip
+    # (tuples become lists after json.load, causing comparison failures).
+    def _strip_runtime_keys(obj):
+        if isinstance(obj, dict):
+            obj.pop("_csv_column_mapping", None)
+            for v in obj.values():
+                _strip_runtime_keys(v)
+        elif isinstance(obj, list):
+            for item in obj:
+                _strip_runtime_keys(item)
+
+    _strip_runtime_keys(receipt_dict)
+
     # Convert payment_currency → currency in each transaction dict for
     # backward-compatible JSON format.  On import the "currency" key is
     # consumed by initialize_account_transaction which converts it back to

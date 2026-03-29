@@ -298,7 +298,10 @@ def convert_to_exchanged_item(
                     account_dict.pop("asset_category")
 
                 account_transaction_dict["account"] = Account(**account_dict)
-                account_transaction_dict["the_date"] = the_date
+                # Use the transaction's own the_date if present in JSON;
+                # fall back to the receipt-level date for older files.
+                if "the_date" not in account_transaction_dict:
+                    account_transaction_dict["the_date"] = the_date
 
             # Convert original_transaction dict to GenericCsvTransaction object
             original_txn = account_transaction_dict.get("original_transaction")
