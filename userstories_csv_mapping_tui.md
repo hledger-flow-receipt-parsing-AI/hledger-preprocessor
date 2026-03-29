@@ -107,9 +107,11 @@ Each input mode sets a context-appropriate navigation hint in the title bar.
 The hint is displayed right-aligned in the top title bar of the CSV table
 pane. Examples:
 
-- **Text input**: `"Enter=confirm  Tab=complete  Esc=back  |  Ctrl+Up/Down=scroll rows  Alt+Left/Right=scroll cols  |  Ctrl+C=quit"`
+- **Text input (steps 0–3)**: `"Enter=confirm  Tab=complete  Alt+S=sort  Esc=back  |  Ctrl+Up/Down=scroll rows  Alt+Left/Right=scroll cols  |  Ctrl+C=quit"`
+- **Text input (step 4+)**: `"Enter=confirm  Tab=complete  Esc=back  |  Ctrl+Up/Down=scroll rows  Alt+Left/Right=scroll cols  |  Ctrl+C=quit"`
 - **Choice selection**: `"Up/Down=select  Enter=confirm  Esc=back  |  ..."`
-- **Confirm prompt**: `"Y/Enter=yes  N=no  Esc=back  |  ..."`
+- **Confirm prompt (steps 0–3)**: `"Y/Enter=yes  N=no  Alt+S=sort  Esc=back  |  ..."`
+- **Confirm prompt (step 4+)**: `"Y/Enter=yes  N=no  Esc=back  |  ..."`
 - **Column select**: `"Left/Right=select  Enter=confirm  Esc=back  |  ..."`
 - **Negate table**: `"Left/Right=navigate  Enter/Space=toggle  Esc=back  |  ..."`
 
@@ -188,6 +190,7 @@ is hidden during the TUI session and restored on exit.
 | Key                          | Action                                      |
 |------------------------------|---------------------------------------------|
 | Alt+Arrow keys / Ctrl+Arrow  | Scroll table (all input modes)              |
+| Alt+S                        | Sort table by a column (steps 0–3, see US-5.7) |
 | Escape                       | Go back to previous step/column             |
 | Ctrl+C                       | Abort (KeyboardInterrupt)                   |
 
@@ -226,6 +229,38 @@ is hidden during the TUI session and restored on exit.
 | Enter/Space   | Toggle negation on current column                    |
 | Right/Down    | When on the **last** numeric column: confirm & finish|
 | Escape        | Go back to re-ask last column mapping                |
+
+### US-5.7: Alt+S — Sort Table by Column
+
+During the first four questions (steps 0–3: account holder, bank, account type,
+base currency), the user can press **Alt+S** to sort the CSV table by a column
+of their choice. This helps the user understand an unfamiliar CSV before
+answering the metadata questions.
+
+- **Availability**: Alt+S is active during steps 0–3 (inclusive). It works in
+  both `ask_string` and `ask_confirm` input modes. The `Alt+S=sort` hint is
+  shown in the navigation hint bar only while the sort shortcut is available.
+- **Flow**: Pressing Alt+S suspends the current input and enters a column
+  selection sub-flow (same interaction as `ask_column_select`): the user picks
+  a column with Left/Right arrows and confirms with Enter. The table rows are
+  then sorted by that column's values. Pressing Escape during column selection
+  cancels the sort and returns to the original question.
+- **Input preservation**: The user's partially typed input (if any) is
+  preserved across the sort interaction. After sorting, the same question
+  prompt and input buffer are restored.
+- **Sort behaviour**: Columns with numeric-looking values are sorted
+  numerically; other columns are sorted alphabetically (case-insensitive).
+  The sort is ascending. Non-parseable values sort after numeric values.
+- **Re-sorting**: The user can press Alt+S multiple times to sort by different
+  columns. Each new sort replaces the previous sort order.
+- **Persistence**: The sorted row order persists for the remainder of the
+  session (through all subsequent steps including column mapping and preview).
+  Note: if the user later chooses to split by a type column (step 4),
+  `reorder_rows_for_split` will override the manual sort to ensure at least
+  one row of each split-group value appears at the top.
+- **Scrolling after sort**: The existing Alt/Ctrl+Up/Down scroll keys remain
+  fully functional after sorting. If the sorted table has more rows than fit
+  on screen, the user can scroll through all rows as usual.
 
 ---
 
