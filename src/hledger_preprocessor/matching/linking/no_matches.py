@@ -162,9 +162,9 @@ def try_and_swap_day_month(
         if len(transaction_matches) == 1:
 
             auto_link_receipt(
-                transaction=transaction_matches[0],
-                account=receipt_account,
                 action_dataset=action_dataset,
+                found_csv_transaction=transaction_matches[0],
+                original_receipt_account_transaction=action_dataset.search_receipt_account_transaction,
             )
             return True
         else:
