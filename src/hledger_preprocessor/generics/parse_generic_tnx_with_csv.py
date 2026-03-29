@@ -137,16 +137,22 @@ def parse_generic_bank_transaction(
     # Normalize bank_date_str to %d-%m-%Y (the format expected by
     # get_date_from_bank_date_or_shop_date_description / parse_date).
     # CSV files may use different date formats (ISO, European, etc.).
+    date_fmt = getattr(account_config, "date_format", None)
+    dayfirst = True if date_fmt == "dmy" else (False if date_fmt == "mdy" else None)
     if bank_date_str:
         try:
-            parsed_dt = date_parser.parse(bank_date_str)
+            kwargs_dp = {}
+            if dayfirst is not None:
+                kwargs_dp["dayfirst"] = dayfirst
+            parsed_dt = date_parser.parse(bank_date_str, **kwargs_dp)
             bank_date_str = parsed_dt.strftime("%d-%m-%Y")
         except (ValueError, TypeError):
             pass  # Leave as-is and let parse_date raise the error
 
     # Determine best date
     the_date: datetime = get_date_from_bank_date_or_shop_date_description(
-        bank_date_str=bank_date_str, description=description or ""
+        bank_date_str=bank_date_str, description=description or "",
+        dayfirst=dayfirst,
     )
 
     field_values["the_date"] = the_date
@@ -166,6 +172,21 @@ def parse_generic_bank_transaction(
 
     if kwargs.get("change_returned") is None:
         kwargs["change_returned"] = 0
+
+    # For deposit/receive rows that only map received_amount (not
+    # tendered_amount_out), promote received_amount into the standard
+    # field so the rest of the system (reconciler, categoriser, etc.)
+    # can see it.  Trades map both sides so this won't trigger for them.
+    if not kwargs.get("tendered_amount_out"):
+        received = extra.get("received_amount")
+        if received is not None and received != 0:
+            kwargs["tendered_amount_out"] = -abs(received)
+        else:
+            kwargs["tendered_amount_out"] = 0.0
+        if not kwargs.get("payment_currency"):
+            recv_cur = extra.get("received_currency")
+            if recv_cur:
+                kwargs["payment_currency"] = recv_cur
     if kwargs.get("tendered_amount_out") is None:
         kwargs["tendered_amount_out"] = 0.0
     return GenericCsvTransaction(**kwargs)

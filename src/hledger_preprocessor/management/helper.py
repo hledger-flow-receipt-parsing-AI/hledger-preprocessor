@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from typeguard import typechecked
@@ -122,24 +122,97 @@ def preprocess_asset_csvs(
         )
 
 
+def match_csv_to_csv(
+    *,
+    config: Config,
+    labelled_receipts: List[Receipt],
+) -> Dict:
+    """Reconcile linked-account CSV transactions.
+
+    Parses all CSVs, runs the reconciliation matcher (auto-matching
+    same-currency transfers, prompting for cross-currency ones), and
+    returns a suppress_ids dict keyed by AccountConfig → set of
+    transaction ``id()`` values to suppress during preprocessing.
+    """
+    from hledger_preprocessor.config.AccountConfig import AccountConfig as AC
+    from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+        GenericCsvTransaction,
+    )
+    from hledger_preprocessor.reconciliation.reconcile_linked_accounts import (
+        reconcile_linked_accounts,
+    )
+
+    suppress_ids: Dict[AC, set] = {}
+
+    has_linked = any(ac.linked_accounts for ac in config.accounts)
+    if not has_linked:
+        return suppress_ids
+
+    # Parse all CSVs
+    parsed: Dict[AC, Dict[int, List[Transaction]]] = {}
+    for account_config in config.accounts:
+        abs_csv_filepath = account_config.get_abs_csv_filepath(
+            dir_paths_config=config.dir_paths
+        )
+        if os.path.isfile(path=abs_csv_filepath):
+            parsed[account_config] = csv_to_transactions(
+                config=config,
+                labelled_receipts=labelled_receipts,
+                input_csv_filepath=abs_csv_filepath,
+                csv_encoding=config.csv_encoding,
+                account_config=account_config,
+            )
+
+    # Flatten year-based dicts for reconciliation
+    flat_txns: Dict[AC, List] = {}
+    for ac, txns_by_year in parsed.items():
+        flat = []
+        for year_txns in txns_by_year.values():
+            flat.extend(year_txns)
+        flat_txns[ac] = flat
+
+    generic_txns = {
+        ac: [t for t in txns if isinstance(t, GenericCsvTransaction)]
+        for ac, txns in flat_txns.items()
+    }
+    matches_path = os.path.join(
+        config.dir_paths.root_finance_path,
+        "csv_reconciliation_matches.json",
+    )
+    suppressed = reconcile_linked_accounts(
+        transactions_per_account=generic_txns,
+        matches_path=matches_path,
+    )
+
+    for ac, indices in suppressed.items():
+        suppress_ids[ac] = {
+            id(generic_txns[ac][i]) for i in indices
+        }
+
+    return suppress_ids
+
+
 def preprocess_generic_csvs(
     *,
     config: Config,
     labelled_receipts: List[Receipt],
     models: Dict[ClassifierType, Dict[LogicType, Any]],
+    suppress_ids: Optional[Dict] = None,
 ) -> None:
     from hledger_preprocessor.config.AccountConfig import AccountConfig as AC
+    from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+        GenericCsvTransaction,
+    )
     from hledger_preprocessor.reconciliation.reconcile_linked_accounts import (
         reconcile_linked_accounts,
     )
 
-    # Check if any account has linked_accounts configured
     has_linked = any(
         ac.linked_accounts for ac in config.accounts
     )
 
     if has_linked:
-        # Two-pass approach: parse all, reconcile, then process
+        # Parse all CSVs once
         parsed: Dict[AC, Dict[int, List[Transaction]]] = {}
         for account_config in config.accounts:
             abs_csv_filepath = account_config.get_abs_csv_filepath(
@@ -154,40 +227,43 @@ def preprocess_generic_csvs(
                     account_config=account_config,
                 )
 
-        # Flatten year-based dicts for reconciliation
-        flat_txns: Dict[AC, List] = {}
-        for ac, txns_by_year in parsed.items():
-            flat = []
-            for year_txns in txns_by_year.values():
-                flat.extend(year_txns)
-            flat_txns[ac] = flat
+        if suppress_ids is None:
+            # Run reconciliation on the SAME parsed transactions
+            flat_generic: Dict[AC, List] = {}
+            for ac, txns_by_year in parsed.items():
+                flat = []
+                for year_txns in txns_by_year.values():
+                    flat.extend(year_txns)
+                flat_generic[ac] = [
+                    t for t in flat if isinstance(t, GenericCsvTransaction)
+                ]
 
-        # Only reconcile GenericCsvTransaction objects
-        from hledger_preprocessor.generics.GenericTransactionWithCsv import (
-            GenericCsvTransaction,
-        )
-        generic_txns = {
-            ac: [t for t in txns if isinstance(t, GenericCsvTransaction)]
-            for ac, txns in flat_txns.items()
-        }
-        suppressed = reconcile_linked_accounts(
-            transactions_per_account=generic_txns,
-        )
+            matches_path = os.path.join(
+                config.dir_paths.root_finance_path,
+                "csv_reconciliation_matches.json",
+            )
+            suppressed_indices = reconcile_linked_accounts(
+                transactions_per_account=flat_generic,
+                matches_path=matches_path,
+            )
 
-        # Build suppression sets indexed by transaction identity
-        suppress_ids: Dict[AC, set] = {}
-        for ac, indices in suppressed.items():
-            suppress_ids[ac] = {
-                id(generic_txns[ac][i]) for i in indices
-            }
+            # Convert index-based suppression to id()-based on the
+            # SAME transaction objects that will be processed below.
+            suppress_ids = {}
+            for ac, indices in suppressed_indices.items():
+                suppress_ids[ac] = {
+                    id(flat_generic[ac][i]) for i in indices
+                }
 
         # Filter suppressed transactions from year-based dicts
-        for ac, txns_by_year in parsed.items():
-            if suppress_ids.get(ac):
-                for year, txns in txns_by_year.items():
-                    txns_by_year[year] = [
-                        t for t in txns if id(t) not in suppress_ids[ac]
-                    ]
+        if suppress_ids:
+            for ac, txns_by_year in parsed.items():
+                if suppress_ids.get(ac):
+                    for year, txns in txns_by_year.items():
+                        txns_by_year[year] = [
+                            t for t in txns
+                            if id(t) not in suppress_ids[ac]
+                        ]
 
         # Process
         for account_config, transactions_per_year_per_account in parsed.items():

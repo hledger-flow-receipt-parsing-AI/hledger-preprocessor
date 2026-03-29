@@ -31,6 +31,7 @@ from hledger_preprocessor.management.main_manager import (
     manage_creating_new_setup,
     manage_creating_receipt_img_labels_with_tui,
     manage_generating_rules,
+    manage_match_csv_to_csv,
     manage_matching_manual_receipt_objs_to_account_transactions,
     manage_preprocessing_assets,
     manage_preprocessing_csvs,
@@ -70,11 +71,17 @@ def main() -> None:
 
     labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
 
+    # --match-transactions expands into both matching sub-flags.
+    if args.match_transactions:
+        args.match_receipts = True
+        args.match_csv_to_csv = True
+
     if (
         args.preprocess_csvs
         or args.preprocess_assets
         or args.link_receipts_to_transactions
         or args.match_receipts
+        or args.match_csv_to_csv
     ):
         models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
             quick_categorisation=args.quick_categorisation
@@ -89,11 +96,22 @@ def main() -> None:
                 labelled_receipts=labelled_receipts,
             )
 
+        # Reconcile linked-account CSV transactions (interactive for
+        # cross-currency matches).  The suppress_ids are passed to
+        # preprocess_generic_csvs so it doesn't re-run reconciliation.
+        suppress_ids: Dict = {}
+        if args.match_csv_to_csv:
+            suppress_ids = manage_match_csv_to_csv(
+                config=config,
+                labelled_receipts=labelled_receipts,
+            )
+
         if args.preprocess_csvs:
             manage_preprocessing_csvs(
                 config=config,
                 models=models,
                 labelled_receipts=labelled_receipts,
+                suppress_ids=suppress_ids if suppress_ids else None,
             )
 
         if args.preprocess_assets:

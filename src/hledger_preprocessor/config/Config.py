@@ -311,6 +311,7 @@ def create_account_config_from_yaml(
         split_groups = tuple(groups)
 
     decimal_format = account_config_dict.get("decimal_format")
+    date_format = account_config_dict.get("date_format")
 
     # --- Linked accounts (optional) ---
     linked_accounts_raw = account_config_dict.get("linked_accounts")
@@ -336,5 +337,6 @@ def create_account_config_from_yaml(
         split_column=split_column,
         split_groups=split_groups,
         decimal_format=decimal_format,
+        date_format=date_format,
         linked_accounts=linked_accounts,
     )

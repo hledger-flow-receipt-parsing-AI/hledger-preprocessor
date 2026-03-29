@@ -48,6 +48,9 @@ class AccountConfig:
     # Decimal format: "eu" (1.234,56) or "dot" (1,234.56) or None (legacy=eu)
     decimal_format: Optional[str] = None
 
+    # Date format: "dmy" (DD-MM-YYYY) or "mdy" (MM-DD-YYYY) or None (auto)
+    date_format: Optional[str] = None
+
     # Linked accounts: other tracked accounts that transact with this one
     linked_accounts: Optional[Tuple[LinkedAccount, ...]] = None
 

@@ -8,12 +8,13 @@ from typeguard import typechecked
 
 @typechecked
 def get_date_from_bank_date_or_shop_date_description(
-    *, bank_date_str: str, description: str
+    *, bank_date_str: str, description: str,
+    dayfirst: Optional[bool] = None,
 ) -> datetime:
     bank_date: datetime = parse_date(bank_date_str)
 
     description_dates: List[Dict[str, str | datetime]] = extract_dates_times(
-        description=description
+        description=description, dayfirst=dayfirst,
     )
     if len(description_dates) == 1:  # If only 1 date is found in description.
 
@@ -124,7 +125,9 @@ def get_minute_from_date(*, date_str: str) -> Optional[int]:
 
 
 @typechecked
-def extract_dates_times(*, description: str) -> List[Dict[str, str | datetime]]:
+def extract_dates_times(
+    *, description: str, dayfirst: Optional[bool] = None,
+) -> List[Dict[str, str | datetime]]:
     """
     Extracts all dates and times from a description, supporting multiple formats.
     Returns a list of dictionaries containing parsed datetime objects and their original strings.
@@ -174,7 +177,10 @@ def extract_dates_times(*, description: str) -> List[Dict[str, str | datetime]]:
             minute = get_minute_from_date(date_str=date_str)
 
             # Parse the full datetime string
-            parsed_dt: datetime = date_parser.parse(date_str, fuzzy=False)
+            dp_kwargs = {"fuzzy": False}
+            if dayfirst is not None:
+                dp_kwargs["dayfirst"] = dayfirst
+            parsed_dt: datetime = date_parser.parse(date_str, **dp_kwargs)
 
             # Create a unique key for deduplication
             dt_key = parsed_dt.isoformat() + date_str
