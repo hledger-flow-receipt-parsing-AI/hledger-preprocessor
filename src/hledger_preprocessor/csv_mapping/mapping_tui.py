@@ -427,6 +427,8 @@ def _read_key_raw(fd: int) -> str:
             return {
                 "A": "up", "B": "down", "C": "right", "D": "left",
             }.get(ch3, "unknown")
+        if ch2.isalpha():
+            return f"alt-{ch2.lower()}"
         return "esc"
     if ch in ("\r", "\n"):
         return "enter"
@@ -570,6 +572,23 @@ class _SplitPaneTUI:
             else:
                 rest.append(row)
         self.display_rows = top + rest
+        self.row_offset = 0
+
+    def sort_by_column(self) -> None:
+        """Sort display_rows by a user-selected column (Alt+S flow)."""
+        try:
+            col = self.ask_column_select("Sort by column")
+        except GoBack:
+            return
+
+        def _sort_key(row: List[str]) -> Tuple[int, float, str]:
+            val = row[col].strip() if col < len(row) else ""
+            try:
+                return (0, float(val.replace(",", "")), "")
+            except (ValueError, OverflowError):
+                return (1, 0.0, val.lower())
+
+        self.display_rows.sort(key=_sort_key)
         self.row_offset = 0
 
     def _enter_raw(self) -> None:
@@ -804,11 +823,14 @@ class _SplitPaneTUI:
         prompt: str,
         default: str = "",
         completions: Optional[List[str]] = None,
+        show_sort_hint: bool = False,
     ) -> str:
         """Ask for text input. Alt+arrows scroll the table.
 
         *completions*: if given, Tab completes the current token
         (the part after the last comma) against these values.
+        *show_sort_hint*: if True, show Alt+S=sort in the nav hint and
+        handle Alt+S to sort by column (steps 0-3).
         """
         hint = f" [{default}]" if default else ""
         self.input_prompt = f"{prompt}{hint}: "
@@ -818,13 +840,24 @@ class _SplitPaneTUI:
         self.bottom_lines = []
         self.error_msg = ""
         tab_hint = "  Tab=complete" if completions else ""
-        self.nav_hint = f"Enter=confirm{tab_hint}  Esc=back{_SCROLL_HINT}"
+        sort_hint = "  Alt+S=sort" if show_sort_hint else ""
+        self.nav_hint = f"Enter=confirm{tab_hint}{sort_hint}  Esc=back{_SCROLL_HINT}"
         self.draw()
 
         while True:
             key = _read_key_raw(self.fd)
             if self._is_scroll_key(key):
                 self.scroll_table(self._scroll_direction(key))
+                self.draw()
+            elif key == "alt-s" and show_sort_hint:
+                saved_buf = self.input_buf
+                saved_prompt = self.input_prompt
+                saved_active = self.input_active
+                self.sort_by_column()
+                self.input_buf = saved_buf
+                self.input_prompt = saved_prompt
+                self.input_active = saved_active
+                self.nav_hint = f"Enter=confirm{tab_hint}{sort_hint}  Esc=back{_SCROLL_HINT}"
                 self.draw()
             elif key == "enter":
                 result = self.input_buf.strip() if self.input_buf.strip() else default
@@ -876,7 +909,10 @@ class _SplitPaneTUI:
         """Ask for currency code."""
         valid_codes = [c.value for c in Currency]
         while True:
-            raw = self.ask_string("Default currency (e.g. EUR, USD, BTC)")
+            raw = self.ask_string(
+                "Default currency (e.g. EUR, USD, BTC)",
+                show_sort_hint=True,
+            )
             raw = raw.upper()
             for c in Currency:
                 if c.value == raw:
@@ -1215,7 +1251,9 @@ class _SplitPaneTUI:
             elif key == "ctrl-c":
                 raise KeyboardInterrupt
 
-    def ask_confirm(self, prompt: str) -> bool:
+    def ask_confirm(
+        self, prompt: str, show_sort_hint: bool = False,
+    ) -> bool:
         """Ask yes/no confirmation."""
         self.input_prompt = f"{prompt} [Y/n]: "
         self.input_buf = ""
@@ -1223,13 +1261,25 @@ class _SplitPaneTUI:
         self.choice_active = False
         self.bottom_lines = []
         self.error_msg = ""
-        self.nav_hint = "Y/Enter=yes  N=no  Esc=back" + _SCROLL_HINT
+        sort_hint = "  Alt+S=sort" if show_sort_hint else ""
+        nav = f"Y/Enter=yes  N=no{sort_hint}  Esc=back" + _SCROLL_HINT
+        self.nav_hint = nav
         self.draw()
 
         while True:
             key = _read_key_raw(self.fd)
             if self._is_scroll_key(key):
                 self.scroll_table(self._scroll_direction(key))
+                self.draw()
+            elif key == "alt-s" and show_sort_hint:
+                saved_buf = self.input_buf
+                saved_prompt = self.input_prompt
+                saved_active = self.input_active
+                self.sort_by_column()
+                self.input_buf = saved_buf
+                self.input_prompt = saved_prompt
+                self.input_active = saved_active
+                self.nav_hint = nav
                 self.draw()
             elif key == "enter":
                 val = self.input_buf.strip().lower()
@@ -2807,17 +2857,20 @@ def run_csv_mapping_tui(
                     tui.bottom_lines = []
                     tui.draw()
                     state["account_holder"] = tui.ask_string(
-                        "Account holder (e.g. 'at')"
+                        "Account holder (e.g. 'at')",
+                        show_sort_hint=True,
                     )
 
                 elif current == "bank":
                     state["bank"] = tui.ask_string(
-                        "Bank / exchange (e.g. 'bitvavo')"
+                        "Bank / exchange (e.g. 'bitvavo')",
+                        show_sort_hint=True,
                     )
 
                 elif current == "account_type":
                     state["account_type"] = tui.ask_string(
-                        "Account type (e.g. 'checking', 'trading')"
+                        "Account type (e.g. 'checking', 'trading')",
+                        show_sort_hint=True,
                     )
 
                 elif current == "base_currency":
