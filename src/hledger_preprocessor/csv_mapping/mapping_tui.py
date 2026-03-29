@@ -2358,6 +2358,7 @@ def _load_config_for_csv(
             return None  # Unknown currency — can't load
 
         result["decimal_format"] = ac.get("decimal_format")
+        result["date_format"] = ac.get("date_format")
 
         split_col = ac.get("split_column")
         result["split_column"] = split_col
@@ -2642,6 +2643,41 @@ def _run_decimal_step(
     state["decimal_format"] = decimal_format
 
 
+def _run_date_format_step(
+    tui: _SplitPaneTUI,
+    state: Dict[str, Any],
+    preview: CsvPreview,
+) -> None:
+    """Detect or ask for date format. Stores in ``state["date_format"]``."""
+    chosen = state.get("chosen", [])
+    split_groups_data = state.get("split_groups_data")
+
+    if "date_format" in state and state["date_format"] is not None:
+        tui.answer_log.append(
+            f"Date format: {FG_GREEN}"
+            f"{state['date_format']}{RESET}"
+        )
+        state["_date_format_was_asked"] = False
+        return
+
+    date_format = _detect_date_format(
+        preview, chosen, split_groups_data
+    )
+    if date_format:
+        tui.answer_log.append(
+            f"Date format: {FG_GREEN}{date_format}{RESET}"
+        )
+        state["_date_format_was_asked"] = False
+    else:
+        fmt = tui.ask_string(
+            "Date format: 'dmy' (DD-MM-YYYY) or 'mdy' (MM-DD-YYYY)",
+            default="dmy",
+        )
+        date_format = fmt
+        state["_date_format_was_asked"] = True
+    state["date_format"] = date_format
+
+
 def _run_preview_step(
     tui: _SplitPaneTUI,
     state: Dict[str, Any],
@@ -2724,8 +2760,9 @@ _STEPS = [
     "mapping",           # 4 — template + split + column mapping
     "linked_accounts",   # 5 — inter-account transfer links
     "decimal_format",    # 6
-    "preview",           # 7
-    "summary",           # 8
+    "date_format",       # 7
+    "preview",           # 8
+    "summary",           # 9
 ]
 
 
@@ -2784,6 +2821,7 @@ def run_csv_mapping_tui(
                 state["split_groups_data"] = existing_cfg["split_groups_data"]
                 state["chosen"] = existing_cfg["chosen"]
                 state["decimal_format"] = existing_cfg["decimal_format"]
+                state["date_format"] = existing_cfg.get("date_format")
                 if existing_cfg.get("linked_accounts_data"):
                     state["linked_accounts_data"] = (
                         existing_cfg["linked_accounts_data"]
@@ -2883,7 +2921,8 @@ def run_csv_mapping_tui(
                         for k in (
                             "template_applied", "split_column",
                             "split_groups_data", "chosen",
-                            "decimal_format", "linked_accounts_data",
+                            "decimal_format", "date_format",
+                            "linked_accounts_data",
                             "detected_template",
                         ):
                             state.pop(k, None)
@@ -2898,6 +2937,9 @@ def run_csv_mapping_tui(
                 elif current == "decimal_format":
                     _run_decimal_step(tui, state, preview)
 
+                elif current == "date_format":
+                    _run_date_format_step(tui, state, preview)
+
                 elif current == "preview":
                     _run_preview_step(tui, state, preview)
 
@@ -2910,6 +2952,10 @@ def run_csv_mapping_tui(
                 if current == "decimal_format":
                     interactive_steps[step] = state.get(
                         "_decimal_was_asked", False
+                    )
+                if current == "date_format":
+                    interactive_steps[step] = state.get(
+                        "_date_format_was_asked", False
                     )
 
                 step += 1
@@ -2957,6 +3003,7 @@ def run_csv_mapping_tui(
     split_groups_data = state.get("split_groups_data")
     chosen = state.get("chosen", [])
     decimal_format = state.get("decimal_format")
+    date_format = state.get("date_format")
 
     account = Account(
         base_currency=base_currency,
@@ -3005,6 +3052,7 @@ def run_csv_mapping_tui(
             split_column=split_column,
             split_groups=tuple(built_split_groups),
             decimal_format=decimal_format,
+            date_format=date_format,
             linked_accounts=built_linked_accounts,
         )
     else:
@@ -3022,6 +3070,7 @@ def run_csv_mapping_tui(
                 csv_column_mapping=tnx_date_tuples,
             ),
             decimal_format=decimal_format,
+            date_format=date_format,
             linked_accounts=built_linked_accounts,
         )
 
@@ -3038,6 +3087,7 @@ def run_csv_mapping_tui(
         split_column=split_column,
         split_groups_data=split_groups_data,
         decimal_format=decimal_format,
+        date_format=date_format,
         linked_accounts_data=linked_accounts_data,
     )
 
@@ -3274,6 +3324,76 @@ def _detect_decimal_format(
     return None
 
 
+def _detect_date_format(
+    preview: CsvPreview,
+    chosen: List[Tuple[Optional[str], str]],
+    split_groups_data: Optional[
+        List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
+    ],
+) -> Optional[str]:
+    """Examine date sample values to determine dmy vs mdy format.
+
+    Scans all date column values.  If any first component > 12 it must
+    be day-first (``"dmy"``).  If any second component > 12 it must be
+    month-first … wait, that's the other way: if component-1 > 12 the
+    format is ``"dmy"``; if component-2 > 12 the format is ``"mdy"``.
+    Year-first (ISO) values are skipped since dateutil handles them.
+    Returns ``None`` when ambiguous (all components ≤ 12).
+    """
+    import re as _re
+
+    date_fields = {"the_date", "the_datetime"}
+
+    # Gather date column indices
+    col_indices: List[int] = []
+    if split_groups_data:
+        for _, grp_chosen in split_groups_data:
+            for ci, (field, _) in enumerate(grp_chosen):
+                if field and field.lstrip("negate:") in date_fields:
+                    col_indices.append(ci)
+    elif chosen:
+        for ci, (field, _) in enumerate(chosen):
+            if field and field.lstrip("negate:") in date_fields:
+                col_indices.append(ci)
+
+    seen_first_gt12 = False
+    seen_second_gt12 = False
+
+    for col_idx in col_indices:
+        for row in preview.sample_rows:
+            if col_idx >= len(row):
+                continue
+            val = row[col_idx].strip()
+            if not val:
+                continue
+            # Split on common separators
+            parts = _re.split(r"[-/.\s]", val)
+            nums = []
+            for p in parts:
+                if p.isdigit():
+                    nums.append(int(p))
+                if len(nums) == 3:
+                    break
+            if len(nums) < 3:
+                continue
+            # Year-first (e.g. 2024-11-12): dateutil handles correctly
+            if nums[0] > 31:
+                continue
+            # nums = [a, b, year] — ambiguous a/b
+            a, b = nums[0], nums[1]
+            if a > 12:
+                seen_first_gt12 = True
+            if b > 12:
+                seen_second_gt12 = True
+
+    if seen_first_gt12 and not seen_second_gt12:
+        return "dmy"
+    if seen_second_gt12 and not seen_first_gt12:
+        return "mdy"
+    # Both or neither — ambiguous
+    return None
+
+
 def _build_preview_lines(
     *,
     preview: CsvPreview,
@@ -3395,6 +3515,7 @@ def _save_to_config(
         List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
     ],
     decimal_format: Optional[str],
+    date_format: Optional[str] = None,
     linked_accounts_data: Optional[List[Dict[str, Any]]] = None,
 ) -> bool:
     with open(config_path) as f:
@@ -3410,6 +3531,8 @@ def _save_to_config(
 
     if decimal_format:
         new_entry["decimal_format"] = decimal_format
+    if date_format:
+        new_entry["date_format"] = date_format
 
     if split_groups_data and split_column is not None:
         new_entry["split_column"] = split_column

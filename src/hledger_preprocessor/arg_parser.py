@@ -141,6 +141,28 @@ def create_arg_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    # Action 6: Match linked-account CSV transactions to each other.
+    parser.add_argument(
+        "--match-csv-to-csv",
+        action="store_true",
+        required=False,
+        help=(
+            "Reconcile linked-account CSV transactions. Auto-matches"
+            " same-currency transfers; prompts for cross-currency ones."
+        ),
+    )
+
+    # Umbrella: run both receipt matching and CSV-to-CSV matching.
+    parser.add_argument(
+        "--match-transactions",
+        action="store_true",
+        required=False,
+        help=(
+            "Run all transaction matching: receipt-to-CSV (--match-receipts)"
+            " and CSV-to-CSV (--match-csv-to-csv)."
+        ),
+    )
+
     # CSV column mapping.
     parser.add_argument(
         "-m",

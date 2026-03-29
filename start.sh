@@ -158,18 +158,16 @@ validate_config
 #             echo "Error: hledger_preprocessor --preprocess-csvs failed."
 #             exit 1
 # }
-# Match receipt labels to bank CSV transactions (non-interactive).
-# This links receipts to CSV rows so that withdrawal metadata is available
-# when bank CSVs are preprocessed.
-echo "Matching receipt labels to bank CSV transactions..."
+# Match receipt labels to bank CSV transactions AND reconcile linked-
+# account CSVs (cross-currency matches may prompt for user input).
+# Not captured with $() so that stdin remains interactive.
+echo "Matching transactions (receipts + CSV-to-CSV)..."
 echo ""
-MATCH_OUTPUT=$(hledger_preprocessor \
+hledger_preprocessor \
             --config "$GENERAL_CONFIG_FILEPATH" \
-            --match-receipts 2>&1) || {
-    echo "Warning: receipt matching encountered errors (non-fatal)."
-    echo "$MATCH_OUTPUT"
+            --match-transactions || {
+    echo "Warning: transaction matching encountered errors (non-fatal)."
 }
-echo "$MATCH_OUTPUT"
 echo ""
 
 echo "NEXT PREPROCESS ASSETS COMMAND."

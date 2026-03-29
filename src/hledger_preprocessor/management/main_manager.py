@@ -28,6 +28,7 @@ from hledger_preprocessor.generics.GenericTransactionWithCsv import (
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.helper import assert_dir_exists, get_images_in_folder
 from hledger_preprocessor.management.helper import (
+    match_csv_to_csv,
     preprocess_asset_csvs,
     preprocess_generic_csvs,
 )
@@ -128,6 +129,7 @@ def manage_preprocessing_csvs(
     config: Config,
     models: Dict[ClassifierType, Dict[LogicType, Any]],
     labelled_receipts: List[Receipt],
+    suppress_ids: object = None,
 ) -> None:
     if (
         config.dir_paths.get_path("pre_processed_output_dir", absolute=True)
@@ -143,7 +145,8 @@ def manage_preprocessing_csvs(
     )
 
     preprocess_generic_csvs(
-        config=config, labelled_receipts=labelled_receipts, models=models
+        config=config, labelled_receipts=labelled_receipts, models=models,
+        suppress_ids=suppress_ids,
     )
 
 
@@ -511,3 +514,21 @@ def manage_batch_match_receipts(
         f" linked, {warn_count} warnings."
     )
     return labelled_receipts
+
+
+@typechecked
+def manage_match_csv_to_csv(
+    *,
+    config: Config,
+    labelled_receipts: List[Receipt],
+) -> Dict:
+    """Reconcile linked-account CSV transactions (interactive).
+
+    Auto-matches same-currency transfers and prompts the user for
+    cross-currency ones.  Returns suppress_ids dict for use by
+    preprocess_generic_csvs.
+    """
+    return match_csv_to_csv(
+        config=config,
+        labelled_receipts=labelled_receipts,
+    )
