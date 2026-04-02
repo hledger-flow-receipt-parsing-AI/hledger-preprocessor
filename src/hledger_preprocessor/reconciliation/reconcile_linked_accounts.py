@@ -306,6 +306,13 @@ def reconcile_linked_accounts(
 
             linked_ac, linked_txns = linked_data
 
+            # When the linked account also has a CSV, both sides post
+            # through equity:clearing and both entries are needed.
+            # Only suppress when the linked account has NO CSV (one
+            # side would duplicate the other's direct posting).
+            if linked_ac.has_input_csv():
+                continue
+
             # Find transactions whose split-group type matches transfer_types
             for idx, txn in enumerate(txns):
                 if idx in suppressed[ac]:
