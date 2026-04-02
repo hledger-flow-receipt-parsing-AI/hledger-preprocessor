@@ -310,6 +310,9 @@ def create_account_config_from_yaml(
             ))
         split_groups = tuple(groups)
 
+    # --- Merge multi-row transactions (optional) ---
+    merge_column = account_config_dict.get("merge_column")
+
     decimal_format = account_config_dict.get("decimal_format")
     date_format = account_config_dict.get("date_format")
 
@@ -336,6 +339,7 @@ def create_account_config_from_yaml(
         account=account_obj,
         split_column=split_column,
         split_groups=split_groups,
+        merge_column=merge_column,
         decimal_format=decimal_format,
         date_format=date_format,
         linked_accounts=linked_accounts,

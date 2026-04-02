@@ -281,6 +281,7 @@ description ATM Withdrawal (foreign currency)
           3. source account — amount out in payment currency (balancing)
         """
         fiat = self.account_config.account.base_currency.value
+        has_merge = self.account_config.merge_column is not None
         rules = "# Crypto trade rules (multi-posting, with cost notation)\n"
 
         # Build a regex that matches any base_currency value that is NOT
@@ -296,13 +297,19 @@ description ATM Withdrawal (foreign currency)
         not_fiat_re = "|".join(not_fiat_parts)
 
         # Buy rule: base_currency is fiat (e.g. EUR), received_currency is
-        # crypto (e.g. BTC).  Per-unit cost goes on the received crypto posting.
+        # crypto (e.g. BTC).
+        if has_merge:
+            # Use @@ (total cost) to avoid floating-point rounding errors.
+            buy_cost = "%received_amount %received_currency @@ %quote_cost %base_currency"
+        else:
+            # Use @ (per-unit cost) when quote_price comes from the CSV.
+            buy_cost = "%received_amount %received_currency @ %quote_price %base_currency"
         rules += f"""if %received_currency .
 & %quote_price .
 & %base_currency ^{fiat}$
 description %description
  account1 assets:%account_holder:%bank:%account_type:%received_currency
- amount1 %received_amount %received_currency @ %quote_price %base_currency
+ amount1 {buy_cost}
  account2 expenses:fees:%bank
  amount2 %fee_amount
  currency2 %fee_currency
@@ -314,7 +321,11 @@ description %description
 """
 
         # Sell rule: base_currency is crypto (e.g. BTC), received_currency is
-        # fiat.  Per-unit cost goes on the outgoing crypto posting.
+        # fiat.
+        if has_merge:
+            sell_cost = "-%amount %base_currency @@ %quote_cost %received_currency"
+        else:
+            sell_cost = "-%amount %base_currency @ %quote_price %received_currency"
         rules += f"""if %received_currency .
 & %quote_price .
 & %base_currency {not_fiat_re}
@@ -326,7 +337,7 @@ description %description
  amount2 %fee_amount
  currency2 %fee_currency
  account3 assets:%account_holder:%bank:%account_type:%base_currency
- amount3 -%amount %base_currency @ %quote_price %received_currency
+ amount3 {sell_cost}
 # end
 
 """
