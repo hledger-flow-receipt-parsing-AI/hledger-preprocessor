@@ -45,6 +45,11 @@ class AccountConfig:
     split_column: Optional[int] = None
     split_groups: Optional[Tuple[SplitGroup, ...]] = None
 
+    # Merge multi-row transactions: group rows sharing the same value
+    # in this 0-based raw CSV column into a single transaction.
+    # E.g. Kraken's refid column links spend+receive rows.
+    merge_column: Optional[int] = None
+
     # Decimal format: "eu" (1.234,56) or "dot" (1,234.56) or None (legacy=eu)
     decimal_format: Optional[str] = None
 
@@ -113,6 +118,12 @@ class AccountConfig:
                     ).keys():
                         if k not in all_keys:
                             all_keys.append(k)
+                # When merge_column is set, merged transactions produce
+                # computed columns that need to appear in the output.
+                if self.merge_column is not None:
+                    for col in ("quote_price", "quote_cost", "quote_currency", "fee_currency"):
+                        if col not in all_keys:
+                            all_keys.append(col)
                 return all_keys
             mapping = self.csv_column_mapping
             return list(
@@ -181,15 +192,29 @@ class AccountConfig:
                     csv_column_mapping=group.csv_column_mapping,
                 )
                 transaction.extra["_row_type"] = row_type
+                if self.merge_column is not None and self.merge_column < len(row):
+                    transaction.extra["_merge_key"] = row[self.merge_column].strip()
                 transactions.append(transaction)
         else:
             for index in range(start_index, len(rows)):
+                row = rows[index]
                 transaction = parse_generic_bank_transaction(
-                    row=rows[index],
+                    row=row,
                     nr_in_batch=index,
                     account_config=self,
                     csv_column_mapping=self.csv_column_mapping,
                 )
+                if self.merge_column is not None and self.merge_column < len(row):
+                    transaction.extra["_merge_key"] = row[self.merge_column].strip()
                 transactions.append(transaction)
+
+        # Merge multi-row transactions (e.g. Kraken spend+receive pairs)
+        if self.merge_column is not None:
+            from hledger_preprocessor.config.merge_rows import (
+                merge_linked_transactions,
+            )
+            transactions = merge_linked_transactions(
+                transactions=transactions,
+            )
 
         return transactions

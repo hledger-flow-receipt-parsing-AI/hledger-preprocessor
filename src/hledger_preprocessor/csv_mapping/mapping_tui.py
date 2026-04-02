@@ -1919,6 +1919,7 @@ def _run_mapping_step(
     detected_template = detect_template(preview.headers)
     template_applied = False
     split_column: Optional[int] = None
+    merge_column: Optional[int] = None
     split_groups_data: Optional[
         List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
     ] = None
@@ -1933,6 +1934,7 @@ def _run_mapping_step(
         if use_tmpl:
             template_applied = True
             split_column = detected_template.split_column
+            merge_column = detected_template.merge_column
             decimal_format = detected_template.decimal_format
             if detected_template.groups:
                 split_groups_data = []
@@ -2252,9 +2254,21 @@ def _run_mapping_step(
                 state=state, config_path=config_path,
             )
 
+    # Ask about multi-row merging (e.g. spend+receive pairs linked by ID)
+    if split_groups_data and split_column is not None and merge_column is None:
+        wants_merge = tui.ask_confirm(
+            "Do multiple rows represent one transaction? "
+            "(e.g. spend+receive pairs linked by a shared ID)"
+        )
+        if wants_merge:
+            merge_column = tui.ask_column_select(
+                "Select the column that links rows of the same transaction"
+            )
+
     state["template_applied"] = template_applied
     state["detected_template"] = detected_template if template_applied else None
     state["split_column"] = split_column
+    state["merge_column"] = merge_column
     state["split_groups_data"] = split_groups_data
     state["chosen"] = chosen
     if decimal_format is not None:
@@ -2362,6 +2376,7 @@ def _load_config_for_csv(
 
         split_col = ac.get("split_column")
         result["split_column"] = split_col
+        result["merge_column"] = ac.get("merge_column")
 
         split_groups_raw = ac.get("split_groups")
         if split_col is not None and split_groups_raw:
@@ -3000,6 +3015,7 @@ def run_csv_mapping_tui(
     account_type = state["account_type"]
     base_currency = state["base_currency"]
     split_column = state.get("split_column")
+    merge_column = state.get("merge_column")
     split_groups_data = state.get("split_groups_data")
     chosen = state.get("chosen", [])
     decimal_format = state.get("decimal_format")
@@ -3051,6 +3067,7 @@ def run_csv_mapping_tui(
             tnx_date_columns=None,
             split_column=split_column,
             split_groups=tuple(built_split_groups),
+            merge_column=merge_column,
             decimal_format=decimal_format,
             date_format=date_format,
             linked_accounts=built_linked_accounts,
@@ -3069,6 +3086,7 @@ def run_csv_mapping_tui(
             tnx_date_columns=CsvColumnMapping(
                 csv_column_mapping=tnx_date_tuples,
             ),
+            merge_column=merge_column,
             decimal_format=decimal_format,
             date_format=date_format,
             linked_accounts=built_linked_accounts,
@@ -3085,6 +3103,7 @@ def run_csv_mapping_tui(
         base_currency=base_currency.value,
         chosen=chosen,
         split_column=split_column,
+        merge_column=merge_column,
         split_groups_data=split_groups_data,
         decimal_format=decimal_format,
         date_format=date_format,
@@ -3511,6 +3530,7 @@ def _save_to_config(
     base_currency: str,
     chosen: List[Tuple[Optional[str], str]],
     split_column: Optional[int],
+    merge_column: Optional[int],
     split_groups_data: Optional[
         List[Tuple[Tuple[str, ...], List[Tuple[Optional[str], str]]]]
     ],
@@ -3533,6 +3553,9 @@ def _save_to_config(
         new_entry["decimal_format"] = decimal_format
     if date_format:
         new_entry["date_format"] = date_format
+
+    if merge_column is not None:
+        new_entry["merge_column"] = merge_column
 
     if split_groups_data and split_column is not None:
         new_entry["split_column"] = split_column

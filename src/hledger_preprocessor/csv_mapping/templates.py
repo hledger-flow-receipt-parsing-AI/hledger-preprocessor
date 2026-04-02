@@ -23,6 +23,7 @@ class CsvTemplate:
     split_column: Optional[int]  # 0-based, or None if no split
     groups: List[TemplateGroup]
     detection_headers: FrozenSet[str]
+    merge_column: Optional[int] = None  # 0-based, links multi-row transactions
 
 
 # ── Bitvavo ────────────────────────────────────────────────────────
@@ -126,9 +127,98 @@ BITVAVO_TEMPLATE = CsvTemplate(
     }),
 )
 
+# ── Kraken ─────────────────────────────────────────────────────────
+# Columns: txid, refid, time, type, subtype, aclass, subclass, asset, wallet, amount, fee, balance
+
+_KRAKEN_SPEND = TemplateGroup(
+    values=('spend',),
+    column_mappings=[
+        ("", ""),                                # 0: txid
+        ("description", "description"),          # 1: refid
+        ("the_datetime", "date"),                # 2: time
+        ("", ""),                                # 3: type
+        ("", ""),                                # 4: subtype
+        ("", ""),                                # 5: aclass
+        ("", ""),                                # 6: subclass
+        ("payment_currency", "base_currency"),   # 7: asset
+        ("", ""),                                # 8: wallet
+        ("negate:tendered_amount_out", "amount"),  # 9: amount
+        ("fee_amount", "fee_amount"),            # 10: fee
+        ("", ""),                                # 11: balance
+    ],
+)
+
+_KRAKEN_RECEIVE = TemplateGroup(
+    values=('receive',),
+    column_mappings=[
+        ("", ""),                                # 0: txid
+        ("description", "description"),          # 1: refid
+        ("the_datetime", "date"),                # 2: time
+        ("", ""),                                # 3: type
+        ("", ""),                                # 4: subtype
+        ("", ""),                                # 5: aclass
+        ("", ""),                                # 6: subclass
+        ("received_currency", "received_currency"),  # 7: asset
+        ("", ""),                                # 8: wallet
+        ("received_amount", "received_amount"),  # 9: amount
+        ("", ""),                                # 10: fee
+        ("", ""),                                # 11: balance
+    ],
+)
+
+_KRAKEN_DEPOSIT = TemplateGroup(
+    values=('deposit',),
+    column_mappings=[
+        ("", ""),                                # 0: txid
+        ("description", "description"),          # 1: refid
+        ("the_datetime", "date"),                # 2: time
+        ("", ""),                                # 3: type
+        ("", ""),                                # 4: subtype
+        ("", ""),                                # 5: aclass
+        ("", ""),                                # 6: subclass
+        ("received_currency", "received_currency"),  # 7: asset
+        ("", ""),                                # 8: wallet
+        ("received_amount", "received_amount"),  # 9: amount
+        ("fee_amount", "fee_amount"),            # 10: fee
+        ("", ""),                                # 11: balance
+    ],
+)
+
+_KRAKEN_WITHDRAWAL = TemplateGroup(
+    values=('withdrawal',),
+    column_mappings=[
+        ("", ""),                                # 0: txid
+        ("description", "description"),          # 1: refid
+        ("the_datetime", "date"),                # 2: time
+        ("", ""),                                # 3: type
+        ("", ""),                                # 4: subtype
+        ("", ""),                                # 5: aclass
+        ("", ""),                                # 6: subclass
+        ("payment_currency", "base_currency"),   # 7: asset
+        ("", ""),                                # 8: wallet
+        ("negate:tendered_amount_out", "amount"),  # 9: amount
+        ("fee_amount", "fee_amount"),            # 10: fee
+        ("", ""),                                # 11: balance
+    ],
+)
+
+KRAKEN_TEMPLATE = CsvTemplate(
+    name="Kraken",
+    decimal_format="dot",
+    split_column=3,
+    groups=[_KRAKEN_SPEND, _KRAKEN_RECEIVE, _KRAKEN_DEPOSIT, _KRAKEN_WITHDRAWAL],
+    detection_headers=frozenset({
+        "txid",
+        "refid",
+        "aclass",
+        "subtype",
+    }),
+    merge_column=1,
+)
+
 # ── Registry ─────────────────────────────────────────────────────────
 
-ALL_TEMPLATES: List[CsvTemplate] = [BITVAVO_TEMPLATE]
+ALL_TEMPLATES: List[CsvTemplate] = [BITVAVO_TEMPLATE, KRAKEN_TEMPLATE]
 
 
 def detect_template(headers: List[str]) -> Optional[CsvTemplate]:
