@@ -7,6 +7,7 @@ from typeguard import typechecked
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
 from hledger_preprocessor.config.load_config import Config
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.dir_reading_and_writing import (
     assert_dir_exists,
     assert_dir_full_hierarchy_exists,
@@ -280,24 +281,32 @@ description ATM Withdrawal (foreign currency)
           2. fee expense in fee currency
           3. source account — amount out in payment currency (balancing)
         """
-        fiat = self.account_config.account.base_currency.value
         has_merge = self.account_config.merge_column is not None
         rules = "# Crypto trade rules (multi-posting, with cost notation)\n"
 
-        # Build a regex that matches any base_currency value that is NOT
-        # the account's fiat code. E.g. for fiat="EUR" this produces
-        # ^([^E]|E[^U]|EU[^R]|EUR.) which matches BTC, ETH, etc.
-        c = list(fiat)
-        not_fiat_parts = []
-        for i in range(len(c)):
-            prefix = "".join(c[:i])
-            not_fiat_parts.append(f"^{prefix}[^{c[i]}]")
-        # Also match strings longer than fiat code (e.g. "EURO")
-        not_fiat_parts.append(f"^{fiat}.")
-        not_fiat_re = "|".join(not_fiat_parts)
+        # Build regexes to distinguish fiat vs non-fiat base_currency.
+        # Uses all known fiat codes from Currency.get_fiat() so that
+        # cross-currency buys (e.g. USD→BTC on EUR account) are handled
+        # correctly — the buy rule matches any fiat, not just the
+        # account's own fiat.
+        fiat_codes = [c.value for c in Currency.get_fiat()]
+        fiat_re = "^(" + "|".join(fiat_codes) + ")$"
 
-        # Buy rule: base_currency is fiat (e.g. EUR), received_currency is
-        # crypto (e.g. BTC).
+        # Not-fiat: for each fiat code, build a regex that rejects it.
+        # These are AND-ed in the sell rule via separate & conditions
+        # so base_currency must not match ANY fiat code.
+        not_fiat_regexes: list[str] = []
+        for fiat_code in fiat_codes:
+            c = list(fiat_code)
+            parts = []
+            for i in range(len(c)):
+                prefix = "".join(c[:i])
+                parts.append(f"{prefix}[^{c[i]}]")
+            parts.append(f"{fiat_code}.")
+            not_fiat_regexes.append("^(" + "|".join(parts) + ")")
+
+        # Buy rule: base_currency is any fiat (e.g. EUR, USD, GBP),
+        # received_currency is crypto (e.g. BTC).
         if has_merge:
             # Use @@ (total cost) to avoid floating-point rounding errors.
             buy_cost = "%received_amount %received_currency @@ %quote_cost %base_currency"
@@ -306,7 +315,7 @@ description ATM Withdrawal (foreign currency)
             buy_cost = "%received_amount %received_currency @ %quote_price %base_currency"
         rules += f"""if %received_currency .
 & %quote_price .
-& %base_currency ^{fiat}$
+& %base_currency {fiat_re}
 description %description
  account1 assets:%account_holder:%bank:%account_type:%received_currency
  amount1 {buy_cost}
@@ -321,14 +330,17 @@ description %description
 """
 
         # Sell rule: base_currency is crypto (e.g. BTC), received_currency is
-        # fiat.
+        # fiat. Multiple & conditions ensure base_currency is not any fiat.
         if has_merge:
             sell_cost = "-%amount %base_currency @@ %quote_cost %received_currency"
         else:
             sell_cost = "-%amount %base_currency @ %quote_price %received_currency"
+        not_fiat_conditions = "\n".join(
+            f"& %base_currency {regex}" for regex in not_fiat_regexes
+        )
         rules += f"""if %received_currency .
 & %quote_price .
-& %base_currency {not_fiat_re}
+{not_fiat_conditions}
 description %description
  account1 assets:%account_holder:%bank:%account_type:%received_currency
  amount1 %received_amount
