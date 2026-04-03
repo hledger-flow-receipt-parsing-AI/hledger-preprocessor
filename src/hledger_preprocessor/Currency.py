@@ -59,6 +59,8 @@ def load_latest_rates(base_currency="EUR"):
         return {}
 
     df = pd.read_csv(csv_path)
+    # Drop duplicate header rows that can appear from repeated CSV appends.
+    df = df[df["datetime"] != "datetime"]
     df["datetime"] = pd.to_datetime(df["datetime"])
     # Get latest per currency
     latest = df.sort_values("datetime", ascending=False).drop_duplicates(
