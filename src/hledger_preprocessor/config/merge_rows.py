@@ -155,23 +155,21 @@ def _merge_two_rows(
             else str(receive.payment_currency)
         )
 
-    # Determine orientation for hledger rules.
-    # The rules distinguish buy vs sell by base_currency:
-    #   Buy rule:  base_currency == account fiat (e.g. EUR)
-    #     Balance: amount = received_amount * quote_price + fee_amount
-    #   Sell rule: base_currency != account fiat (e.g. BTC)
-    #     Balance: amount * quote_price = received_amount + fee_amount
-    #
-    # For cross-currency buys (e.g. USD→BTC on EUR account), the spend
-    # currency (USD) doesn't match account fiat, so re-orient as a sell.
-    account_fiat = spend.account.base_currency.value
-    is_buy = spend_amount > received_amount
+    # If spend side has no fee, check receive side.
+    if not fee_amount:
+        receive_fee = receive.extra.get("fee_amount", 0.0) or 0.0
+        if receive_fee:
+            fee_amount = receive_fee
+            fee_currency = (
+                receive.extra.get("fee_currency")
+                or received_currency
+                or spend_currency
+            )
 
-    if is_buy and spend_currency != account_fiat:
-        # Swap orientation: present as sell of crypto for fiat
-        spend_currency, received_currency = received_currency, spend_currency
-        spend_amount, received_amount = received_amount, spend_amount
-        is_buy = False
+    # Determine buy vs sell by comparing amounts.
+    # Buy: spend_amount (fiat) > received_amount (crypto units) — e.g. 1800 EUR → 0.02 BTC
+    # Sell: spend_amount (crypto units) < received_amount (fiat) — e.g. 0.02 BTC → 2017 USD
+    is_buy = spend_amount > received_amount
 
     # Compute quote_price (per-unit, informational) and quote_cost (total,
     # used in @@ notation to avoid rounding errors).
@@ -183,7 +181,7 @@ def _merge_two_rows(
         else:
             # Sell: crypto_cost = received_amount + fee_amount
             if fee_currency == received_currency:
-                quote_cost = received_amount + fee_amount
+                quote_cost = round(received_amount + fee_amount, 10)
             else:
                 quote_cost = received_amount
             quote_price = quote_cost / spend_amount
@@ -218,7 +216,11 @@ def _merge_two_rows(
 
     # For buys:  amount = spend + fee  (balance: cost + fee = amount)
     # For sells: amount = spend only  (balance: amount * qp = recv + fee)
-    total_out = spend_amount + fee_amount if is_buy else spend_amount
+    # Round to 10 decimal places to avoid float addition drift (e.g.
+    # 251.12 + 3.77 = 254.89000000000001).
+    total_out = round(
+        spend_amount + fee_amount if is_buy else spend_amount, 10
+    )
 
     return GenericCsvTransaction(
         account=spend.account,
