@@ -12,6 +12,7 @@ from typing import List, Tuple
 from typeguard import typechecked
 
 from hledger_preprocessor.config.CsvColumnMapping import CsvColumnMapping
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
@@ -166,10 +167,19 @@ def _merge_two_rows(
                 or spend_currency
             )
 
-    # Determine buy vs sell by comparing amounts.
-    # Buy: spend_amount (fiat) > received_amount (crypto units) — e.g. 1800 EUR → 0.02 BTC
-    # Sell: spend_amount (crypto units) < received_amount (fiat) — e.g. 0.02 BTC → 2017 USD
-    is_buy = spend_amount > received_amount
+    # Determine buy vs sell based on whether the spend currency is fiat.
+    # This mirrors the rule selection in generate_rules_content.py which
+    # fires the buy rule when base_currency matches a fiat code, and the
+    # sell rule otherwise. Using currency classification ensures the
+    # computed quote_cost/total_out match the rule that fires, even for
+    # crypto-to-crypto trades (e.g. ETH→BTC) or stablecoin pairs.
+    _fiat_codes = {c.value for c in Currency.get_fiat()}
+    if spend_currency in _fiat_codes:
+        is_buy = True
+    elif spend_currency:
+        is_buy = False
+    else:
+        is_buy = spend_amount > received_amount
 
     # Compute quote_price (per-unit, informational) and quote_cost (total,
     # used in @@ notation to avoid rounding errors).
