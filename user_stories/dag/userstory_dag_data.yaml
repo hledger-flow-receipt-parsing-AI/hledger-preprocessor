@@ -57,6 +57,16 @@ layers:
         desc: "BTC digital wallet / exchange"
         used_by: [test]
 
+      - id: acct_kraken_csv
+        label: "Kraken exchange\n(multi-row CSV)"
+        desc: "Kraken trading account — split spend/receive rows linked by refid"
+        used_by: [test]
+
+      - id: acct_bitvavo_csv
+        label: "Bitvavo exchange\n(atomic CSV)"
+        desc: "Bitvavo trading account — single-row atomic trades"
+        used_by: [test]
+
       - id: acct_gold_wallet
         label: "GOLD physical\nwallet"
         desc: "GOLD physical asset wallet"
@@ -991,6 +1001,69 @@ stories:
     paths:
       - [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default]
     segment_nodes: [acct_triodos_csv, acct_eur_wallet, acct_gbp_wallet, acct_btc_wallet, acct_gold_wallet, acct_silver_wallet, dirp_default, fnames_default, catcfg_default, malgo_default]
+
+  - id: US-1a.7
+    title: "Configure multi-row CSV merging for exchanges with split transactions"
+    section: "Step 1a: Account Configuration"
+    status: null
+    as_a: >-
+      user whose crypto exchange (e.g. Kraken) exports each trade as two separate
+      CSV rows (a spend row and a receive row) linked by a shared reference ID
+    i_want: >-
+      configure a `merge_column` in `config.yaml` (or via the TUI) that tells the
+      preprocessor which column links rows of the same transaction, so that paired
+      rows are merged into single atomic hledger transactions with correct cost
+      notation
+    so_that: >-
+      Kraken-style split CSV exports produce the same unified journal entries as
+      exchanges that use single-row atomic formats (e.g. Bitvavo), with proper
+      `@@` total-cost notation, correct buy/sell direction for any currency pair
+      (fiat-to-crypto, crypto-to-fiat, crypto-to-crypto, fiat-to-fiat), and
+      explicit fee postings.
+    acceptance_criteria:
+      - >-
+        `config.yaml` supports an optional `merge_column` field per account,
+        specifying the 0-indexed CSV column that links multi-row transactions.
+      - >-
+        The TUI CSV mapping flow asks whether multiple rows represent one
+        transaction and which column links them, when a split_column is
+        configured.
+      - >-
+        A Kraken template is auto-detected with `merge_column: 1` (the refid
+        column) and four split groups (spend, receive, deposit, withdrawal).
+      - >-
+        Spend+receive row pairs with the same merge key are merged into a single
+        `GenericCsvTransaction` with computed `quote_price`, `quote_cost`,
+        `received_amount`, `received_currency`, and `fee_currency` fields.
+      - >-
+        Buy vs sell determination uses `Currency.get_fiat()` (not amount
+        comparison), so crypto-to-crypto trades (e.g. ETH to BTC), cross-currency
+        buys (e.g. USD to BTC on EUR account), and fiat-to-fiat conversions all
+        produce correct journal entries.
+      - >-
+        The hledger rules use `@@` (total cost) notation when `merge_column` is
+        set, avoiding floating-point rounding errors from per-unit `@` notation.
+      - >-
+        The buy rule matches any fiat `base_currency` (not just the account's
+        own fiat), and the sell rule uses multiple AND-ed negative-match
+        conditions to exclude all known fiat codes.
+      - >-
+        Fees are extracted from whichever side (spend or receive) has a non-zero
+        fee, and posted explicitly to `expenses:fees:{bank}`.
+      - >-
+        Single-row groups (deposits, withdrawals) pass through unchanged.
+      - >-
+        Existing single-row exchange imports (e.g. Bitvavo with `@` per-unit
+        notation) are not affected — `@@` is only used when `merge_column` is
+        configured.
+    label: "Multi-row merge"
+    colour: "#E91E63"
+    pattern: solid
+    data_use: test
+    gif_video: cfg_merge
+    paths:
+      - [acct_kraken_csv, acct_bitvavo_csv, acct_triodos_csv, dirp_default, fnames_default, catcfg_default, malgo_default]
+    segment_nodes: [acct_kraken_csv, acct_bitvavo_csv, acct_triodos_csv, dirp_default, fnames_default, catcfg_default, malgo_default]
 
 
   # =========================================================================

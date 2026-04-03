@@ -102,6 +102,27 @@ functionality that does not yet exist in the codebase.
 
 ---
 
+### US-1a.7 — Configure multi-row CSV merging for exchanges with split transactions
+
+**As a** user whose crypto exchange (e.g. Kraken) exports each trade as two separate CSV rows (a spend row and a receive row) linked by a shared reference ID,
+**I want to** configure a `merge_column` in `config.yaml` (or via the TUI) that tells the preprocessor which column links rows of the same transaction, so that paired rows are merged into single atomic hledger transactions with correct cost notation,
+**so that** Kraken-style split CSV exports produce the same unified journal entries as exchanges that use single-row atomic formats (e.g. Bitvavo), with proper `@@` total-cost notation, correct buy/sell direction for any currency pair (fiat-to-crypto, crypto-to-fiat, crypto-to-crypto, fiat-to-fiat), and explicit fee postings.
+
+**Acceptance criteria:**
+
+- `config.yaml` supports an optional `merge_column` field per account, specifying the 0-indexed CSV column that links multi-row transactions.
+- The TUI CSV mapping flow asks whether multiple rows represent one transaction and which column links them, when a split_column is configured.
+- A Kraken template is auto-detected with `merge_column: 1` (the refid column) and four split groups (spend, receive, deposit, withdrawal).
+- Spend+receive row pairs with the same merge key are merged into a single `GenericCsvTransaction` with computed `quote_price`, `quote_cost`, `received_amount`, `received_currency`, and `fee_currency` fields.
+- Buy vs sell determination uses `Currency.get_fiat()` (not amount comparison), so crypto-to-crypto trades (e.g. ETH to BTC), cross-currency buys (e.g. USD to BTC on EUR account), and fiat-to-fiat conversions all produce correct journal entries.
+- The hledger rules use `@@` (total cost) notation when `merge_column` is set, avoiding floating-point rounding errors from per-unit `@` notation.
+- The buy rule matches any fiat `base_currency` (not just the account's own fiat), and the sell rule uses multiple AND-ed negative-match conditions to exclude all known fiat codes.
+- Fees are extracted from whichever side (spend or receive) has a non-zero fee, and posted explicitly to `expenses:fees:{bank}`.
+- Single-row groups (deposits, withdrawals) pass through unchanged.
+- Existing single-row exchange imports (e.g. Bitvavo with `@` per-unit notation) are not affected — `@@` is only used when `merge_column` is configured.
+
+---
+
 ## Step 1b: Category Configuration
 
 ### US-1b.1 — Define hierarchical spending categories
@@ -310,25 +331,6 @@ functionality that does not yet exist in the codebase.
 - The Donut model (or a finetuned variant) extracts date, shop, items, amounts, and tax from the image.
 - The AI output is converted into a `Receipt` object.
 - A confidence threshold determines whether the result is auto-saved or flagged for human review.
-
----
-
-### US-2b.9 — Hierarchical category-aware address suggestions
-
-**As a** user labelling a receipt with category `groceries:ah`,
-**I want to** see previous shop addresses sorted by category relevance — first exact and sub-category matches (e.g. `groceries:ah`, `groceries:ah:bananas`), then parent-category matches (e.g. `groceries:ekoplaza`), then all remaining addresses by frequency,
-**so that** I can quickly select the correct shop address without scrolling through irrelevant entries.
-
-**Acceptance criteria:**
-
-- The address selector always shows `0 manual address` at the top.
-- Addresses whose receipt category starts with the entered category (exact match or sub-category) appear first, sorted by frequency (descending).
-- Addresses whose receipt category shares the same parent category prefix (e.g. `groceries:` when the entered category is `groceries:ah`) appear next, sorted by frequency (descending).
-- All remaining addresses appear last, sorted by frequency (descending).
-- At most 12 addresses are shown (including `manual address`), so up to 11 historical addresses.
-- There are no blank lines between address entries in the list.
-- The user can scroll through the address list using arrow-up and arrow-down keys.
-- If no category matches are found at all, all addresses are listed by frequency.
 
 ---
 
