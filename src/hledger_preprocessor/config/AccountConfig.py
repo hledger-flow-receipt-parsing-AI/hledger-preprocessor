@@ -59,6 +59,10 @@ class AccountConfig:
     # Linked accounts: other tracked accounts that transact with this one
     linked_accounts: Optional[Tuple[LinkedAccount, ...]] = None
 
+    # Whether this account is a crypto exchange/wallet (used by hledger-plot
+    # to generate separate crypto vs living-expense plot groups).
+    is_crypto: bool = False
+
     # Field exists, no default, not part of __init__
 
     def __post_init__(self):
