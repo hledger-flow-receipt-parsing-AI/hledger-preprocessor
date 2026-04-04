@@ -97,19 +97,32 @@ class GenericCsvTransaction(Transaction):
             # Skip explicitly empty placeholders
             if attr_name in ("None", "", None) or hledger_col_name == "":
                 result[hledger_col_name] = None
+                continue
 
             # Special case for the date – we always format the same way
             if hledger_col_name == "date":
                 value = self.the_date.strftime("%Y-%m-%d-%H-%M-%S")
-            elif hledger_col_name == "currency":
-                value = self.account.base_currency.value
+            elif hledger_col_name == "base_currency":
+                # Use the mapped attribute (e.g. payment_currency) if it
+                # exists on the transaction; fall back to the account default.
+                value = getattr(self, attr_name, None)
+                if value is None:
+                    value = self.extra.get(attr_name)
+                if value is None:
+                    value = self.account.base_currency.value
+                elif hasattr(value, "value"):
+                    value = value.value
             elif hledger_col_name == "amount":
                 value = float(self.tendered_amount_out - self.change_returned)
             elif attr_name != None and attr_name != "":
-                # Dynamically fetch the attribute from self
-                value = getattr(self, attr_name)
+                # Dynamically fetch the attribute from self, falling
+                # back to the extra dict for fields not on the dataclass
+                # (e.g. exchange fields like quote_currency, fee_amount).
+                value = getattr(self, attr_name, None)
+                if value is None:
+                    value = self.extra.get(attr_name)
             else:
-                pass
+                value = None
             if value is None:  # also catches empty string, [], etc.
                 result[hledger_col_name] = None
 
@@ -121,7 +134,7 @@ class GenericCsvTransaction(Transaction):
         # result["change_returned"] = self.change_returned
         # If the mapping produced something, return it
         if result:
-            result["currency"] = self.account.base_currency.value
+            result.setdefault("base_currency", self.account.base_currency.value)
             result["account_holder"] = self.account.account_holder
             result["bank"] = self.account.bank
             result["account_type"] = self.account.account_type
@@ -133,6 +146,20 @@ class GenericCsvTransaction(Transaction):
             return result
         else:
             raise ValueError("Did not create a filled hledger dict.")
+
+    @typechecked
+    def get_transaction_code(self) -> TransactionCode:
+        net = self.tendered_amount_out - self.change_returned
+        if net > 0:
+            return TransactionCode.DEBIT
+        elif net < 0:
+            return TransactionCode.CREDIT
+        # Net is 0 — check received_amount (deposit-only mappings have
+        # tendered_amount_out defaulted to 0).
+        received = self.extra.get("received_amount")
+        if received is not None and received != 0:
+            return TransactionCode.CREDIT if received > 0 else TransactionCode.DEBIT
+        raise ValueError("Net transacted amount cannot be 0.")
 
     def get_hash(self) -> int:
         import hashlib

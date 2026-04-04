@@ -158,16 +158,40 @@ validate_config
 #             echo "Error: hledger_preprocessor --preprocess-csvs failed."
 #             exit 1
 # }
+# Match receipt labels to bank CSV transactions AND reconcile linked-
+# account CSVs (cross-currency matches may prompt for user input).
+# Not captured with $() so that stdin remains interactive.
+echo "Matching transactions (receipts + CSV-to-CSV)..."
+echo ""
+hledger_preprocessor \
+            --config "$GENERAL_CONFIG_FILEPATH" \
+            --match-transactions || {
+    echo "Warning: transaction matching encountered errors (non-fatal)."
+}
+echo ""
+
 echo "NEXT PREPROCESS ASSETS COMMAND."
 echo ""
 echo ""
 
 # Preprocess accounts without csvs.
-hledger_preprocessor \
+PREPROCESS_OUTPUT=$(hledger_preprocessor \
             --config "$GENERAL_CONFIG_FILEPATH" \
-            --preprocess-assets || {
-            echo "Error: hledger_preprocessor --preprocess-assets failed."
-            exit 1
+            --preprocess-assets 2>&1) || {
+    # Check if this is an uncategorised transaction error
+    if echo "$PREPROCESS_OUTPUT" | grep -q "UNCATEGORISED TRANSACTION"; then
+        echo ""
+        echo "============================================================"
+        echo "  hledger-preprocessor found an uncategorised transaction."
+        echo "============================================================"
+        echo "$PREPROCESS_OUTPUT" | sed -n '/^=====/,/^=====/p'
+        echo ""
+        exit 1
+    else
+        echo "Error: hledger_preprocessor --preprocess-assets failed."
+        echo "$PREPROCESS_OUTPUT"
+        exit 1
+    fi
 }
 
 echo "Running hledger-flow import."
@@ -178,9 +202,23 @@ echo ""
 # Run hledger-flow to import/process CSVs
 
 cd "$WORKING_DIR"
-hledger-flow import || {
-    echo "Error: hledger-flow import failed."
-    exit 1
+HLEDGER_FLOW_OUTPUT=$(hledger-flow import 2>&1) || {
+    # Check if the hledger-flow error is caused by a preprocessing error
+    # hledger-flow runs preprocess scripts that may trigger UncategorisedTransactionError
+    if echo "$HLEDGER_FLOW_OUTPUT" | grep -q "UNCATEGORISED TRANSACTION"; then
+        echo ""
+        echo "============================================================"
+        echo "  hledger-flow import triggered an uncategorised transaction"
+        echo "  error in the hledger-preprocessor preprocessing step."
+        echo "============================================================"
+        echo "$HLEDGER_FLOW_OUTPUT" | sed -n '/UNCATEGORISED TRANSACTION/,/run .\/start.sh again/p'
+        echo ""
+        exit 1
+    else
+        echo "Error: hledger-flow import failed."
+        echo "$HLEDGER_FLOW_OUTPUT"
+        exit 1
+    fi
 }
 
 # Add starting position to all-years.journal if not already included

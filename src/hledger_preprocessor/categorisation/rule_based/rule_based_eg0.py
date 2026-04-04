@@ -1,4 +1,3 @@
-from pprint import pprint
 from typing import Union
 
 from typeguard import typechecked
@@ -11,6 +10,9 @@ from hledger_preprocessor.categorisation.helper import dict_contains_string
 from hledger_preprocessor.categorisation.rule_based.private_logic import (
     private_credit_classification,
     private_debit_classification,
+)
+from hledger_preprocessor.categorisation.UncategorisedTransactionError import (
+    UncategorisedTransactionError,
 )
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
@@ -40,9 +42,7 @@ class ExampleRuleBasedModel:
             )
         )
         if isinstance(classification, Account):
-            return (  # TODO: add rule to append:"withdrawl" to asset transaction
-                f"{classification.to_string()}:withdrawl"
-            )
+            return classification.to_string()
         if isinstance(classification, Category):
             return classification._str
         if isinstance(classification, str):
@@ -62,22 +62,21 @@ class ExampleRuleBasedModel:
         if transaction is None:
             raise ValueError("Transaction cannot be None.")
         if isinstance(transaction, GenericCsvTransaction):
-            if (
-                TransactionCode.normalize_transaction_code(
+            # Use explicit transaction_code if available, otherwise
+            # derive from amount sign (covers CSVs without a
+            # transaction_code column).
+            if transaction.transaction_code is not None:
+                code = TransactionCode.normalize_transaction_code(
                     transaction_code=transaction.transaction_code
                 )
-                == TransactionCode.DEBIT
-            ):
+            else:
+                code = transaction.get_transaction_code()
+            if code == TransactionCode.DEBIT:
                 return self._classify_debit(
                     transaction=transaction,
                     category_namespace=category_namespace,
                 )
-            elif (
-                TransactionCode.normalize_transaction_code(
-                    transaction_code=transaction.transaction_code
-                )
-                == TransactionCode.CREDIT
-            ):
+            elif code == TransactionCode.CREDIT:
                 return self._classify_credit(
                     transaction=transaction,
                     category_namespace=category_namespace,
@@ -124,14 +123,10 @@ class ExampleRuleBasedModel:
                 category_namespace=category_namespace,
             )
         else:
-
-            pprint(transaction, width=200)
-            input(
-                "\nPlease add a rule for expense.\nPress enter to see the next"
-                " uncategorised transaction.\nAfter adding rules to categorise"
-                " all transactions, run again."
+            raise UncategorisedTransactionError(
+                transaction=transaction,
+                transaction_type="expense",
             )
-            # raise NotImplementedError("hi")
 
     @typechecked
     def _classify_credit(
@@ -156,10 +151,7 @@ class ExampleRuleBasedModel:
                 category_namespace=category_namespace,
             )
         else:
-
-            pprint(transaction, width=200)
-            input(
-                "\nPlease add a rule for income.\nPress enter to see the next"
-                " uncategorised transaction.\nAfter adding rules to categorise"
-                " all transactions, run again."
+            raise UncategorisedTransactionError(
+                transaction=transaction,
+                transaction_type="income",
             )

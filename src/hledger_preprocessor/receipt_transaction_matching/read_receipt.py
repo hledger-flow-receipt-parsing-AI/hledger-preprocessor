@@ -23,7 +23,10 @@ from hledger_preprocessor.TransactionObjects.Address import Address
 from hledger_preprocessor.TransactionObjects.AssetType import AssetType
 from hledger_preprocessor.TransactionObjects.ExchangedItem import ExchangedItem
 from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
-from hledger_preprocessor.TransactionObjects.Receipt import Receipt
+from hledger_preprocessor.TransactionObjects.Receipt import (
+    Receipt,
+    WithdrawalMetadata,
+)
 from hledger_preprocessor.TransactionObjects.ShopId import ShopId
 
 
@@ -100,6 +103,32 @@ def read_receipt_from_json(
     if "config" in converted_data.keys():
         converted_data.pop("config")
         # Config is stored in receipt JSON but we use the provided config instead
+
+    # Convert withdrawal_metadata dict to WithdrawalMetadata object
+    wm = converted_data.get("withdrawal_metadata")
+    if isinstance(wm, dict):
+        sat = wm.get("source_account_transaction")
+        if isinstance(sat, dict):
+            # Handle currency → payment_currency conversion (same as ExchangedItem import)
+            acct_dict = sat.get("account")
+            if isinstance(acct_dict, dict):
+                if isinstance(acct_dict.get("base_currency"), str):
+                    acct_dict["base_currency"] = Currency(
+                        acct_dict["base_currency"]
+                    )
+                sat["account"] = Account(**acct_dict)
+            currency_val = sat.pop("currency", None)
+            if currency_val is not None:
+                if isinstance(currency_val, str):
+                    currency_val = Currency(currency_val)
+                if currency_val != sat["account"].base_currency:
+                    sat["payment_currency"] = currency_val
+            sat["the_date"] = converted_data["the_date"]
+            # Remove fields not accepted by AccountTransaction
+            sat.pop("parent_receipt_category", None)
+            wm["source_account_transaction"] = AccountTransaction(**sat)
+        converted_data["withdrawal_metadata"] = WithdrawalMetadata(**wm)
+
     return Receipt(
         config=config,
         # shop_identifier=converted_data["shop_identifier"],
@@ -269,7 +298,10 @@ def convert_to_exchanged_item(
                     account_dict.pop("asset_category")
 
                 account_transaction_dict["account"] = Account(**account_dict)
-                account_transaction_dict["the_date"] = the_date
+                # Use the transaction's own the_date if present in JSON;
+                # fall back to the receipt-level date for older files.
+                if "the_date" not in account_transaction_dict:
+                    account_transaction_dict["the_date"] = the_date
 
             # Convert original_transaction dict to GenericCsvTransaction object
             original_txn = account_transaction_dict.get("original_transaction")

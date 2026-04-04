@@ -1,3 +1,4 @@
+import logging
 from pprint import pprint
 from typing import List, Union
 from xml.dom import NotFoundErr
@@ -12,6 +13,8 @@ from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
+
+logger = logging.getLogger(__name__)
 
 
 @typechecked
@@ -37,35 +40,37 @@ def get_receipt_that_contain_asset_txn(
     receipts: List[Receipt],
     some_txn: AccountTransaction,
 ) -> Receipt:
-    assert_asset_txn_matches_one_receipt(receipts=receipts, some_txn=some_txn)
-
     matching_receipts: List[Receipt] = get_receipts_that_contain_asset_txn(
         receipts=receipts, some_txn=some_txn
     )
-    return matching_receipts[0]
 
-
-@typechecked
-def assert_asset_txn_matches_one_receipt(
-    *,
-    receipts: List[Receipt],
-    some_txn: AccountTransaction,
-) -> None:
-
-    matching_receipts: List[Receipt] = get_receipts_that_contain_asset_txn(
-        receipts=receipts, some_txn=some_txn
-    )
-    # if len(matching_receipts) == 0:
-    #     raise ValueError("Did not find any matching receipts.")
-    if len(matching_receipts) != 1:
-        for i, matching_receipt in enumerate(matching_receipts):
-            print(f"\n\n, i={i}")
-            matching_receipt.pretty_print_receipt_without_config()
+    if len(matching_receipts) == 0:
         pprint(some_txn)
         raise NotFoundErr(
-            "Did not find exactly 1 matching receipt for above txn:"
-            f" found:{len(matching_receipts)} with:{matching_receipts}."
+            "Did not find any matching receipt for above txn."
         )
+
+    if len(matching_receipts) > 1:
+        # Multiple receipt photos of the same purchase were labelled
+        # separately (violates US-X.6).  Warn and use the first one.
+        img_paths = [r.raw_img_filepath for r in matching_receipts]
+        logger.warning(
+            "Found %d duplicate receipts for the same transaction "
+            "(date=%s, amount=%s).  Using the first and ignoring the "
+            "rest.  Duplicate images: %s",
+            len(matching_receipts),
+            some_txn.the_date,
+            some_txn.tendered_amount_out,
+            img_paths,
+        )
+        print(
+            f"WARNING: {len(matching_receipts)} duplicate receipt labels "
+            f"found for transaction on {some_txn.the_date} "
+            f"amount={some_txn.tendered_amount_out}.  "
+            f"Using: {img_paths[0]}"
+        )
+
+    return matching_receipts[0]
 
 
 @typechecked

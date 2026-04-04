@@ -213,7 +213,7 @@ def create_test_environment() -> Dict[str, Any]:
                         "base_currency": "EUR",
                     },
                     "change_returned": 0,
-                    "currency": "POUND",
+                    "currency": "GBP",
                     "tendered_amount_out": 100.0,
                 }
             ],
@@ -265,7 +265,7 @@ def show_inputs(*, env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
     """Show the input files: receipt JSON (GBP) and CSV file (EUR)."""
     import subprocess
 
-    # Show receipt label — currency is POUND
+    # Show receipt label — currency is GBP
     emitter.emit_until("lbl_atm_100gbp")
     print_subheader("Input: Receipt Label — GBP ATM Withdrawal (from Step 2b)")
     label_path = env["label_path"]

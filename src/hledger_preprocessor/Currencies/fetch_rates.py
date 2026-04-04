@@ -105,10 +105,12 @@ def fetch_exchange_rates(*, base_currency: str = "EUR"):
     )
     csv_path = f"{config.get_working_subdir_path(assert_exists=True)}/exchange_rates.csv"
 
+    import os
+    write_header = not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0
     df_rates.to_csv(
         csv_path,
         mode="a",
-        header=not pd.io.common.file_exists(csv_path),
+        header=write_header,
         index=False,
     )
 

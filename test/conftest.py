@@ -186,7 +186,7 @@ def temp_finance_root(tmp_path_factory):
         wallet_asset_csv,
         content=textwrap.dedent(
             """\
-            "currency","account_holder","bank","account_type","date","amount","tendered_amount_out","change_returned"
+            "base_currency","account_holder","bank","account_type","date","amount","tendered_amount_out","change_returned"
         """
         ),
     )

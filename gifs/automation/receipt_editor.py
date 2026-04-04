@@ -69,7 +69,7 @@ class ReceiptDemoValues:
     # Field 3 – Account (0-based index in the vertical list)
     account_index: str = "0"
 
-    # Field 4 – Currency (0-based index: 0=BTC … 9=EUR, 10=USD, 11=POUND …)
+    # Field 4 – Currency (0-based index: 0=BTC … 9=EUR, 10=USD, 11=GBP …)
     currency_index: str = "9"
 
     # Field 5 – Amount paid
@@ -134,7 +134,7 @@ FOREIGN_CURRENCY_RECEIPT = ReceiptDemoValues(
     date_digits="202503201400",
     category="cash:atm_withdrawal",
     account_index="0",  # Triodos checking
-    currency_index="11",  # POUND
+    currency_index="11",  # GBP
     amount="100",
     change="0",
     add_another_account=False,

@@ -32,6 +32,57 @@ from hledger_preprocessor.TransactionObjects.TransactedItemType import (
 
 @typechecked
 @dataclass
+class WithdrawalMetadata:
+    """Metadata for ATM withdrawal receipts."""
+
+    source_account_transaction: AccountTransaction
+    atm_operator_fee: float = 0.0
+    withdrawn_amount: Optional[float] = None
+    exchange_rate: Optional[float] = None
+    bank_fx_fee: float = 0.0
+
+    @property
+    def is_foreign(self) -> bool:
+        return (
+            self.withdrawn_amount is not None
+            or self.exchange_rate is not None
+        )
+
+
+def _convert_withdrawal_metadata(
+    *, wm_dict: dict, the_date: datetime
+) -> "WithdrawalMetadata":
+    """Convert a raw dict (from JSON) into a WithdrawalMetadata object."""
+    sat = wm_dict.get("source_account_transaction")
+    if isinstance(sat, dict):
+        acct_dict = sat.get("account")
+        if isinstance(acct_dict, dict):
+            if isinstance(acct_dict.get("base_currency"), str):
+                acct_dict["base_currency"] = Currency(acct_dict["base_currency"])
+            sat["account"] = Account(**acct_dict)
+        # Handle exported "currency" key (payment_currency → currency on export).
+        currency_val = sat.pop("currency", None)
+        if currency_val is not None:
+            if isinstance(currency_val, str):
+                currency_val = Currency(currency_val)
+            if currency_val != sat["account"].base_currency:
+                sat["payment_currency"] = currency_val
+        if "the_date" not in sat:
+            sat["the_date"] = the_date
+        elif isinstance(sat["the_date"], str):
+            sat["the_date"] = iso8601.parse_date(sat["the_date"]).replace(
+                tzinfo=None
+            )
+        sat.pop("parent_receipt_category", None)
+        wm_dict["source_account_transaction"] = AccountTransaction(**sat)
+    # Handle old JSON files where bank_fx_fee may be null.
+    if wm_dict.get("bank_fx_fee") is None:
+        wm_dict["bank_fx_fee"] = 0.0
+    return WithdrawalMetadata(**wm_dict)
+
+
+@typechecked
+@dataclass
 class Receipt:
     config: Config
     raw_img_filepath: str
@@ -45,6 +96,7 @@ class Receipt:
     ai_receipt_categorisation: Optional[Dict[str, str]] = None
     transaction_hash: Optional[str] = None
     receipt_category: Optional[str] = None
+    withdrawal_metadata: Optional[WithdrawalMetadata] = None
 
     def __post_init__(self):
 
@@ -83,6 +135,11 @@ class Receipt:
         if not isinstance(self.shop_identifier, ShopId):
             self.shop_identifier: ShopId = convert_shop_id(
                 shop_id=self.shop_identifier
+            )
+        if isinstance(self.withdrawal_metadata, dict):
+            self.withdrawal_metadata = _convert_withdrawal_metadata(
+                wm_dict=self.withdrawal_metadata,
+                the_date=self.the_date,
             )
 
     @typechecked

@@ -1,10 +1,8 @@
 name: Deploy User Story Docs
+
 on:
   push:
     branches: [main]
-    paths:
-      - 'gifs/**'
-      - 'user_stories/**'
   workflow_dispatch: {}
 
 permissions:
@@ -17,7 +15,48 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install CI stub for private_logic
+        run: |
+          target=src/hledger_preprocessor/categorisation/rule_based/private_logic.py
+          if [ ! -f "$target" ]; then
+            cp "${target}.ci_stub" "$target"
+          fi
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y hledger
+
+      - name: Install hledger-flow
+        run: |
+          curl -sL https://github.com/apauley/hledger-flow/releases/download/v0.16.2/hledger-flow-linux-x64.tar.gz \
+            | sudo tar xz -C /usr/local/bin
+          sudo chmod +x /usr/local/bin/hledger-flow
+
+      - name: Install project and test dependencies
+        run: |
+          pip install -e .
+          pip install "git+https://github.com/hledger-flow-receipt-parsing-AI/hledger-plot.git"
+          pip install pytest pyyaml Pillow numpy chardet iso8601 \
+                      python-dateutil urwid screeninfo plotly pandas \
+                      pexpect pyte dash requests matplotlib
+
+      - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/ci/gpt4all_stub
+        run: python -m pytest
+
+  gifs:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,10 +67,60 @@ jobs:
         with:
           python-version: '3.12'
 
-      - run: pip install pyyaml
+      - name: Install CI stub for private_logic
+        run: |
+          target=src/hledger_preprocessor/categorisation/rule_based/private_logic.py
+          if [ ! -f "$target" ]; then
+            cp "${target}.ci_stub" "$target"
+          fi
 
-      - name: Install PlantUML
-        run: sudo apt-get install -y plantuml || true
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y asciinema gifsicle ffmpeg plantuml
+
+      - name: Install Python dependencies
+        run: |
+          pip install -e .
+          pip install pyyaml Pillow numpy chardet iso8601 \
+                      python-dateutil urwid screeninfo plotly pandas \
+                      pexpect pyte agg
+
+      - name: Generate GIFs
+        env:
+          SKIP_PREFLIGHT: '1'
+        run: |
+          ./build_userstories.sh --gifs-standalone --gifs-config --no-render
+
+      - name: Upload GIF output
+        uses: actions/upload-artifact@v4
+        with:
+          name: gifs
+          path: gifs/*/output/
+          retention-days: 1
+
+  site:
+    needs: gifs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+          sudo apt-get install -y plantuml || true
+
+      - name: Download GIF artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gifs
+          path: gifs/
 
       - name: Generate site
         run: python user_stories/dag/generate_site.py --output site/
@@ -41,7 +130,7 @@ jobs:
           path: site/
 
   deploy:
-    needs: build
+    needs: site
     runs-on: ubuntu-latest
     environment:
       name: github-pages

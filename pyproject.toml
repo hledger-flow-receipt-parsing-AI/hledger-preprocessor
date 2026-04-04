@@ -59,7 +59,9 @@ disable=[
 # Sets the minimum allowed pytest version
 minversion = 5.0
 # Sets the path where test files are located (Speeds up Test Discovery)
-testpaths = ["test"]
+# GIF-generating tests live in test/gif/ and are excluded by default.
+# Run them explicitly with: pytest test/gif/
+testpaths = ["test/unit", "test/integration", "test/e2e"]
 # Custom markers
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",

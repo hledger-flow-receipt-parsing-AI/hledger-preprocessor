@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict
 from typing import List as TList
 
+import dateutil.parser as date_parser
 from typeguard import typechecked
 
 from hledger_preprocessor.config.AccountConfig import (
@@ -43,31 +44,53 @@ def parse_generic_bank_transaction(
 
     description_parts = []
     bank_date_str = None
+    bank_time_str = None
 
     # Map CSV columns according to config
-    for (py_field, _hledger_field), value in zip(
+    _NEGATE_PREFIX = "negate:"
+    _NUMERIC_FIELDS = {
+        "tendered_amount_out", "amount_in_account", "balance_after",
+        "amount_after_tnx", "quote_price", "exchange_rate",
+        "received_amount", "fee_amount",
+    }
+
+    for (py_field_raw, _hledger_field), value in zip(
         csv_column_mapping.csv_column_mapping, row
     ):
         value = value.strip() if value else ""
+
+        # Handle negate: prefix
+        negate = False
+        if py_field_raw.startswith(_NEGATE_PREFIX):
+            py_field = py_field_raw[len(_NEGATE_PREFIX):]
+            negate = True
+        else:
+            py_field = py_field_raw
 
         if py_field == "None" or not py_field:
             continue
         elif py_field == "the_date":
             bank_date_str = value
+        elif py_field == "the_time":
+            bank_time_str = value
         elif py_field == "description":
             description_parts.append(value)
-        elif py_field in [
-            "tendered_amount_out",
-            "amount_in_account",
-            "balance_after",
-            "amount_after_tnx",
-        ]:
-            # Handle European number format: 1.234,56 → 1234.56
-            cleaned = value.replace(".", "").replace(",", ".")
+        elif py_field in _NUMERIC_FIELDS:
+            decimal_fmt = getattr(account_config, "decimal_format", None)
+            if decimal_fmt == "dot":
+                cleaned = value.replace(",", "")
+            elif decimal_fmt == "eu":
+                cleaned = value.replace(".", "").replace(",", ".")
+            else:
+                # Legacy default: European number format
+                cleaned = value.replace(".", "").replace(",", ".")
             try:
-                field_values[py_field] = float(cleaned) if cleaned else None
+                parsed_val = float(cleaned) if cleaned else None
             except ValueError:
-                field_values[py_field] = None
+                parsed_val = None
+            if parsed_val is not None and negate:
+                parsed_val = -parsed_val
+            field_values[py_field] = parsed_val
 
         elif py_field == "transaction_code":  # Custom for Tridos:
             field_values[py_field] = TransactionCode.normalize_transaction_code(
@@ -107,9 +130,29 @@ def parse_generic_bank_transaction(
         else None
     )
 
+    # Combine separate date + time columns if both are mapped
+    if bank_time_str and bank_date_str:
+        bank_date_str = f"{bank_date_str} {bank_time_str}"
+
+    # Normalize bank_date_str to %d-%m-%Y (the format expected by
+    # get_date_from_bank_date_or_shop_date_description / parse_date).
+    # CSV files may use different date formats (ISO, European, etc.).
+    date_fmt = getattr(account_config, "date_format", None)
+    dayfirst = True if date_fmt == "dmy" else (False if date_fmt == "mdy" else None)
+    if bank_date_str:
+        try:
+            kwargs_dp = {}
+            if dayfirst is not None:
+                kwargs_dp["dayfirst"] = dayfirst
+            parsed_dt = date_parser.parse(bank_date_str, **kwargs_dp)
+            bank_date_str = parsed_dt.strftime("%d-%m-%Y")
+        except (ValueError, TypeError):
+            pass  # Leave as-is and let parse_date raise the error
+
     # Determine best date
     the_date: datetime = get_date_from_bank_date_or_shop_date_description(
-        bank_date_str=bank_date_str, description=description
+        bank_date_str=bank_date_str, description=description or "",
+        dayfirst=dayfirst,
     )
 
     field_values["the_date"] = the_date
@@ -122,8 +165,28 @@ def parse_generic_bank_transaction(
     }
     kwargs = {k: v for k, v in field_values.items() if k in known_fields}
     extra = {k: v for k, v in field_values.items() if k not in known_fields}
+    # Stash the mapping used to parse this row so that split-mode
+    # transactions can be exported with the correct column ordering.
+    extra["_csv_column_mapping"] = csv_column_mapping
     kwargs["extra"] = extra
 
-    if "change_returned" not in kwargs.keys():
+    if kwargs.get("change_returned") is None:
         kwargs["change_returned"] = 0
+
+    # For deposit/receive rows that only map received_amount (not
+    # tendered_amount_out), promote received_amount into the standard
+    # field so the rest of the system (reconciler, categoriser, etc.)
+    # can see it.  Trades map both sides so this won't trigger for them.
+    if not kwargs.get("tendered_amount_out"):
+        received = extra.get("received_amount")
+        if received is not None and received != 0:
+            kwargs["tendered_amount_out"] = -abs(received)
+        else:
+            kwargs["tendered_amount_out"] = 0.0
+        if not kwargs.get("payment_currency"):
+            recv_cur = extra.get("received_currency")
+            if recv_cur:
+                kwargs["payment_currency"] = recv_cur
+    if kwargs.get("tendered_amount_out") is None:
+        kwargs["tendered_amount_out"] = 0.0
     return GenericCsvTransaction(**kwargs)

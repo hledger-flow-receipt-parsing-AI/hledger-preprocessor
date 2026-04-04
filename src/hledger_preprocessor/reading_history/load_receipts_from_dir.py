@@ -39,6 +39,9 @@ def load_existing_receipt_labels_via_images(
             config=config, raw_receipt_img_filepath=raw_receipt_img_filepath
         )
 
+        if not os.path.isfile(cropped_receipt_img_filepath):
+            continue
+
         receipt_folder_name: str = get_receipt_folder_name(
             cropped_receipt_img_filepath=cropped_receipt_img_filepath
         )

@@ -19,9 +19,6 @@ from hledger_preprocessor.file_reading_and_writing import (
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
-from hledger_preprocessor.generics.parse_generic_tnx_with_csv import (
-    parse_generic_bank_transaction,
-)
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
     ProcessedTransaction,
@@ -149,23 +146,14 @@ def process_transactions(
     #
     all_indices_start_at: int
     if account_config.has_input_csv():
-        transactions: List[GenericCsvTransaction] = []
-
         if has_header0(csv_file_path=input_csv_filepath):
-
-            all_indices_start_at: int = 1
+            all_indices_start_at = 1
         else:
-            all_indices_start_at: int = 0
-        for index in range(all_indices_start_at, len(rows)):
-            # print(f"{index},row={rows[index]}")
-            # if account_config.has_input_csv():
-            transaction: GenericCsvTransaction = parse_generic_bank_transaction(
-                row=rows[index],
-                nr_in_batch=index,
-                account_config=account_config,
-                csv_column_mapping=account_config.csv_column_mapping,
-            )
-            transactions.append(transaction)
+            all_indices_start_at = 0
+        transactions: List[GenericCsvTransaction] = account_config.parse_csv_rows(
+            rows=rows,
+            start_index=all_indices_start_at,
+        )
         return transactions
     else:
         csv_output_filepath: str = account_config.get_abs_csv_filepath(

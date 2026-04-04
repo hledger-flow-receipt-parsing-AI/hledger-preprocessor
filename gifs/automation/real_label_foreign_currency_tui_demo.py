@@ -66,7 +66,7 @@ def setup_foreign_currency_env():
         / "at" / "wallet" / "physical"
     )
     wallet_phys_csv_dir.mkdir(parents=True, exist_ok=True)
-    for cur in ("EUR", "POUND", "GOLD", "SILVER"):
+    for cur in ("EUR", "GBP", "GOLD", "SILVER"):
         (wallet_phys_csv_dir / f"Currency.{cur}.csv").write_text(csv_header)
 
     wallet_dig_csv_dir = (
@@ -106,7 +106,7 @@ def setup_foreign_currency_env():
                 "tnx_date_columns": None,
             },
             {
-                "base_currency": "POUND",
+                "base_currency": "GBP",
                 "account_holder": "at",
                 "bank": "wallet",
                 "account_type": "physical",
