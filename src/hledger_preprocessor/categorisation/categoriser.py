@@ -52,6 +52,7 @@ def classify_transactions(
     rule_based_models_tnx_classification,
     category_namespace: CategoryNamespace,
     parent_receipt: Optional["Receipt"] = None,
+    category_overrides: Optional[Dict[str, str]] = None,
 ) -> List[ProcessedTransaction]:
     processed_txns: List[ProcessedTransaction] = []
     for txn in transactions:
@@ -86,6 +87,7 @@ def classify_transactions(
             rule_based_models_tnx_classification=rule_based_models_tnx_classification,
             category_namespace=category_namespace,
             parent_receipt=txn_parent_receipt,
+            category_overrides=category_overrides,
         )
         processed_txns.append(processed_txn)
     return processed_txns
@@ -99,6 +101,7 @@ def classify_transaction(
     rule_based_models_tnx_classification,
     category_namespace: CategoryNamespace,
     parent_receipt: Optional["Receipt"] = None,
+    category_overrides: Optional[Dict[str, str]] = None,
 ) -> ProcessedTransaction:
     ai_classifications: Dict[str, str] = {}
     for ai_model in ai_models_tnx_classification:
@@ -137,6 +140,16 @@ def classify_transaction(
     #     "logic_classification",
     #     logic_classifications,
     # )
+
+    # Override category for cross-currency CSV-to-CSV matches.
+    # The linked account string (e.g. "at:triodos:checking") replaces
+    # the normal classification so that the equity:clearing rule fires.
+    if category_overrides and isinstance(txn, GenericCsvTransaction):
+        txn_hash = str(txn.get_hash())
+        if txn_hash in category_overrides:
+            linked_account_str = category_overrides[txn_hash]
+            for model_name in logic_classifications:
+                logic_classifications[model_name] = linked_account_str
 
     # TODO: change attr from ai_classification to ai_classifications.
     processed_tnx: ProcessedTransaction = ProcessedTransaction(

@@ -1,7 +1,7 @@
 import logging
 import os
 import shutil
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from typeguard import typechecked
 
@@ -130,6 +130,7 @@ def manage_preprocessing_csvs(
     models: Dict[ClassifierType, Dict[LogicType, Any]],
     labelled_receipts: List[Receipt],
     suppress_ids: object = None,
+    category_overrides: object = None,
 ) -> None:
     if (
         config.dir_paths.get_path("pre_processed_output_dir", absolute=True)
@@ -147,6 +148,7 @@ def manage_preprocessing_csvs(
     preprocess_generic_csvs(
         config=config, labelled_receipts=labelled_receipts, models=models,
         suppress_ids=suppress_ids,
+        category_overrides=category_overrides,
     )
 
 
@@ -521,12 +523,11 @@ def manage_match_csv_to_csv(
     *,
     config: Config,
     labelled_receipts: List[Receipt],
-) -> Dict:
+) -> Tuple[Dict, Dict[str, str]]:
     """Reconcile linked-account CSV transactions (interactive).
 
     Auto-matches same-currency transfers and prompts the user for
-    cross-currency ones.  Returns suppress_ids dict for use by
-    preprocess_generic_csvs.
+    cross-currency ones.  Returns (suppress_ids, category_overrides).
     """
     return match_csv_to_csv(
         config=config,
