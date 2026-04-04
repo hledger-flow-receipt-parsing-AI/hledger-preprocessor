@@ -332,6 +332,8 @@ def create_account_config_from_yaml(
             ))
         linked_accounts = tuple(accounts)
 
+    is_crypto = bool(account_config_dict.get("is_crypto", False))
+
     return AccountConfig(
         input_csv_filename=account_config_dict["input_csv_filename"],
         csv_column_mapping=CsvColumnMapping(csv_column_mapping=csv_mapping),
@@ -343,4 +345,5 @@ def create_account_config_from_yaml(
         decimal_format=decimal_format,
         date_format=date_format,
         linked_accounts=linked_accounts,
+        is_crypto=is_crypto,
     )
