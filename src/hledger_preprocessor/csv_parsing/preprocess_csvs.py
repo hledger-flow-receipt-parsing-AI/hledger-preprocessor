@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from typeguard import typechecked
 
@@ -38,6 +38,7 @@ def pre_process_csvs(
     ],
     ai_models_tnx_classification: List,
     rule_based_models_tnx_classification: List,
+    category_overrides: Optional[Dict[str, str]] = None,
 ) -> None:
     """
     Create one pre-processed CSV file per year for the given account.
@@ -96,6 +97,7 @@ def pre_process_csvs(
                 ai_models_tnx_classification=ai_models_tnx_classification,
                 rule_based_models_tnx_classification=rule_based_models_tnx_classification,
                 category_namespace=config.category_namespace,
+                category_overrides=category_overrides,
             )
         )
         print(

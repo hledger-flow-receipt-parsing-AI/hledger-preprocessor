@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 from typeguard import typechecked
@@ -126,13 +126,17 @@ def match_csv_to_csv(
     *,
     config: Config,
     labelled_receipts: List[Receipt],
-) -> Dict:
+) -> Tuple[Dict, Dict[str, str]]:
     """Reconcile linked-account CSV transactions.
 
     Parses all CSVs, runs the reconciliation matcher (auto-matching
     same-currency transfers, prompting for cross-currency ones), and
-    returns a suppress_ids dict keyed by AccountConfig → set of
-    transaction ``id()`` values to suppress during preprocessing.
+    returns:
+      - suppress_ids: AccountConfig → set of transaction id() values
+        to suppress during preprocessing.
+      - category_overrides: txn_hash → linked account string for
+        cross-currency CSV-to-CSV matches (both sides kept, but
+        re-categorised to use equity:clearing).
     """
     from hledger_preprocessor.config.AccountConfig import AccountConfig as AC
     from hledger_preprocessor.generics.GenericTransactionWithCsv import (
@@ -143,10 +147,11 @@ def match_csv_to_csv(
     )
 
     suppress_ids: Dict[AC, set] = {}
+    category_overrides: Dict[str, str] = {}
 
     has_linked = any(ac.linked_accounts for ac in config.accounts)
     if not has_linked:
-        return suppress_ids
+        return suppress_ids, category_overrides
 
     # Parse all CSVs
     parsed: Dict[AC, Dict[int, List[Transaction]]] = {}
@@ -179,7 +184,7 @@ def match_csv_to_csv(
         config.dir_paths.root_finance_path,
         "csv_reconciliation_matches.json",
     )
-    suppressed = reconcile_linked_accounts(
+    suppressed, category_overrides = reconcile_linked_accounts(
         transactions_per_account=generic_txns,
         matches_path=matches_path,
     )
@@ -189,7 +194,7 @@ def match_csv_to_csv(
             id(generic_txns[ac][i]) for i in indices
         }
 
-    return suppress_ids
+    return suppress_ids, category_overrides
 
 
 def preprocess_generic_csvs(
@@ -198,6 +203,7 @@ def preprocess_generic_csvs(
     labelled_receipts: List[Receipt],
     models: Dict[ClassifierType, Dict[LogicType, Any]],
     suppress_ids: Optional[Dict] = None,
+    category_overrides: Optional[Dict[str, str]] = None,
 ) -> None:
     from hledger_preprocessor.config.AccountConfig import AccountConfig as AC
     from hledger_preprocessor.generics.GenericTransactionWithCsv import (
@@ -242,7 +248,7 @@ def preprocess_generic_csvs(
                 config.dir_paths.root_finance_path,
                 "csv_reconciliation_matches.json",
             )
-            suppressed_indices = reconcile_linked_accounts(
+            suppressed_indices, category_overrides = reconcile_linked_accounts(
                 transactions_per_account=flat_generic,
                 matches_path=matches_path,
             )
@@ -278,6 +284,7 @@ def preprocess_generic_csvs(
                 rule_based_models_tnx_classification=models[
                     ClassifierType.TRANSACTION_CATEGORY
                 ][LogicType.RULE_BASED],
+                category_overrides=category_overrides,
             )
             assert_dir_full_hierarchy_exists(
                 config=config,

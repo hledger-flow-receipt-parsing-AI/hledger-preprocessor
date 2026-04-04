@@ -97,11 +97,13 @@ def main() -> None:
             )
 
         # Reconcile linked-account CSV transactions (interactive for
-        # cross-currency matches).  The suppress_ids are passed to
-        # preprocess_generic_csvs so it doesn't re-run reconciliation.
+        # cross-currency matches).  The suppress_ids and category_overrides
+        # are passed to preprocess_generic_csvs so it doesn't re-run
+        # reconciliation.
         suppress_ids: Dict = {}
+        category_overrides: Dict[str, str] = {}
         if args.match_csv_to_csv:
-            suppress_ids = manage_match_csv_to_csv(
+            suppress_ids, category_overrides = manage_match_csv_to_csv(
                 config=config,
                 labelled_receipts=labelled_receipts,
             )
@@ -112,6 +114,7 @@ def main() -> None:
                 models=models,
                 labelled_receipts=labelled_receipts,
                 suppress_ids=suppress_ids if suppress_ids else None,
+                category_overrides=category_overrides if category_overrides else None,
             )
 
         if args.preprocess_assets:

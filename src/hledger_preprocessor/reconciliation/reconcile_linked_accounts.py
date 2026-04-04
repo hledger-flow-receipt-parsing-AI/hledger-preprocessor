@@ -4,6 +4,11 @@ After all CSVs are parsed but before classification/export, this module
 checks that transfers between linked accounts have matching counterpart
 transactions.  Matched transactions on the *current* account side are
 suppressed (the other account's CSV already captures them).
+
+For cross-currency transfers between accounts that both have CSVs
+(e.g. Kraken USD withdrawal matched to Triodos EUR deposit), neither
+side is suppressed.  Instead, a *category override* is recorded so
+that both sides produce equity:clearing journal entries.
 """
 
 import json
@@ -32,10 +37,24 @@ def _txn_key(txn: GenericCsvTransaction) -> str:
 
 
 def _load_matches(matches_path: str) -> Dict:
-    """Load previously saved matches from JSON file."""
+    """Load previously saved matches from JSON file.
+
+    Handles both the old format (hash -> [linked_hashes]) and the new
+    format (hash -> {"linked_hashes": [...], "linked_account": "...",
+    "match_type": "suppress"|"category_override"}).
+    """
     if os.path.isfile(matches_path):
         with open(matches_path, "r") as f:
-            return json.load(f)
+            raw = json.load(f)
+        # Migrate old list-based entries to new dict format.
+        for key, value in raw.items():
+            if isinstance(value, list):
+                raw[key] = {
+                    "linked_hashes": value,
+                    "linked_account": "",
+                    "match_type": "suppress",
+                }
+        return raw
     return {}
 
 
@@ -246,15 +265,22 @@ def reconcile_linked_accounts(
     *,
     transactions_per_account: Dict[AccountConfig, List[GenericCsvTransaction]],
     matches_path: Optional[str] = None,
-) -> Dict[AccountConfig, Set[int]]:
-    """Identify transactions to suppress due to linked-account overlap.
+) -> Tuple[Dict[AccountConfig, Set[int]], Dict[str, str]]:
+    """Identify transactions to suppress or re-categorise.
 
-    Returns a dict mapping each AccountConfig to a set of transaction
-    indices (within its list) that should be suppressed.
+    Returns a tuple of:
+      - suppressed: dict mapping each AccountConfig to a set of
+        transaction indices that should be removed from output.
+      - category_overrides: dict mapping transaction hash strings to
+        the linked account string that should replace the normal
+        categorisation (so that equity:clearing rules fire).
 
-    For cross-currency fiat transfers (e.g. exchange sends USD, bank
-    receives EUR), the user is prompted to manually match from
-    candidate transactions within the date window.
+    For same-currency transfers where the linked account has no CSV,
+    the current account's transaction is suppressed.
+
+    For cross-currency transfers between accounts that both have CSVs,
+    neither side is suppressed.  Instead both sides get a category
+    override so they produce equity:clearing journal entries.
 
     If matches_path is provided, previously saved matches are loaded
     and new matches are persisted to that file.
@@ -262,6 +288,7 @@ def reconcile_linked_accounts(
     suppressed: Dict[AccountConfig, Set[int]] = {
         ac: set() for ac in transactions_per_account
     }
+    category_overrides: Dict[str, str] = {}
 
     # Load saved matches
     saved_matches: Dict = {}
@@ -281,6 +308,15 @@ def reconcile_linked_accounts(
         hash_to_idx[acct_id] = {}
         for idx, txn in enumerate(txns):
             hash_to_idx[acct_id][_txn_key(txn)] = idx
+
+    # Rebuild category_overrides from saved matches (for Phase 4
+    # re-runs that load persisted JSON without re-prompting).
+    for txn_hash, match_info in saved_matches.items():
+        if (
+            isinstance(match_info, dict)
+            and match_info.get("match_type") == "category_override"
+        ):
+            category_overrides[txn_hash] = match_info["linked_account"]
 
     new_matches_added = False
 
@@ -305,13 +341,16 @@ def reconcile_linked_accounts(
                 )
 
             linked_ac, linked_txns = linked_data
+            both_have_csv = linked_ac.has_input_csv()
 
-            # When the linked account also has a CSV, both sides post
-            # through equity:clearing and both entries are needed.
-            # Only suppress when the linked account has NO CSV (one
-            # side would duplicate the other's direct posting).
-            if linked_ac.has_input_csv():
-                continue
+            # When both accounts have CSVs, matching produces category
+            # overrides (both sides kept, re-categorised to use
+            # equity:clearing) instead of suppressions.
+
+            acct = ac.account
+            acct_id = (
+                f"{acct.account_holder}:{acct.bank}:{acct.account_type}"
+            )
 
             # Find transactions whose split-group type matches transfer_types
             for idx, txn in enumerate(txns):
@@ -330,15 +369,25 @@ def reconcile_linked_accounts(
                 # Check saved matches first
                 txn_hash = _txn_key(txn)
                 if matches_path and txn_hash in saved_matches:
-                    saved_linked_hashes = saved_matches[txn_hash]
+                    match_info = saved_matches[txn_hash]
+                    linked_hashes = (
+                        match_info.get("linked_hashes", [])
+                        if isinstance(match_info, dict)
+                        else match_info
+                    )
                     # Verify all saved linked hashes still exist
                     all_found = True
-                    for lh in saved_linked_hashes:
+                    for lh in linked_hashes:
                         if lh not in hash_to_idx.get(linked_id, {}):
                             all_found = False
                             break
                     if all_found:
-                        suppressed[ac].add(idx)
+                        if both_have_csv:
+                            # Cross-currency CSV-to-CSV: don't suppress,
+                            # category_overrides already loaded above.
+                            pass
+                        else:
+                            suppressed[ac].add(idx)
                         continue
 
                 # Search linked account for a matching transaction
@@ -358,21 +407,42 @@ def reconcile_linked_accounts(
                         <= _DATE_TOLERANCE.total_seconds()
                     ):
                         match_found = True
-                        suppressed[ac].add(idx)
-                        # Save auto-match
-                        if matches_path:
-                            saved_matches[txn_hash] = [_txn_key(l_txn)]
-                            new_matches_added = True
+                        if both_have_csv:
+                            _save_category_override(
+                                saved_matches=saved_matches,
+                                category_overrides=category_overrides,
+                                txn_hash=txn_hash,
+                                linked_txn_hashes=[_txn_key(l_txn)],
+                                this_acct_id=acct_id,
+                                linked_acct_id=linked_id,
+                                linked_txns=linked_txns,
+                                matched_indices=[l_idx],
+                            )
+                        else:
+                            suppressed[ac].add(idx)
+                            if matches_path:
+                                saved_matches[txn_hash] = {
+                                    "linked_hashes": [_txn_key(l_txn)],
+                                    "linked_account": linked_id,
+                                    "match_type": "suppress",
+                                }
+                        new_matches_added = True
                         break
 
                 if not match_found:
-                    if currency.upper() in _FIAT_CURRENCIES:
-                        acct = ac.account
-                        acct_id = (
-                            f"{acct.account_holder}:{acct.bank}"
-                            f":{acct.account_type}"
-                        )
+                    # When both accounts have CSVs and auto-match
+                    # failed for a same-currency transaction, skip
+                    # silently — the categoriser already handles it.
+                    linked_base = linked_ac.account.base_currency
+                    linked_base_str = (
+                        linked_base.value
+                        if hasattr(linked_base, "value")
+                        else str(linked_base)
+                    )
+                    if both_have_csv and currency.upper() == linked_base_str.upper():
+                        continue
 
+                    if currency.upper() in _FIAT_CURRENCIES or both_have_csv:
                         matched_l_indices = _prompt_manual_match(
                             txn=txn,
                             row_type=row_type,
@@ -382,21 +452,70 @@ def reconcile_linked_accounts(
                             suppressed_linked=suppressed[linked_ac],
                         )
                         if matched_l_indices:
-                            suppressed[ac].add(idx)
-                            # Save manual match
-                            if matches_path:
-                                saved_matches[txn_hash] = [
-                                    _txn_key(linked_txns[li])
-                                    for li in matched_l_indices
-                                ]
-                                new_matches_added = True
+                            if both_have_csv:
+                                _save_category_override(
+                                    saved_matches=saved_matches,
+                                    category_overrides=category_overrides,
+                                    txn_hash=txn_hash,
+                                    linked_txn_hashes=[
+                                        _txn_key(linked_txns[li])
+                                        for li in matched_l_indices
+                                    ],
+                                    this_acct_id=acct_id,
+                                    linked_acct_id=linked_id,
+                                    linked_txns=linked_txns,
+                                    matched_indices=matched_l_indices,
+                                )
+                            else:
+                                suppressed[ac].add(idx)
+                                if matches_path:
+                                    saved_matches[txn_hash] = {
+                                        "linked_hashes": [
+                                            _txn_key(linked_txns[li])
+                                            for li in matched_l_indices
+                                        ],
+                                        "linked_account": linked_id,
+                                        "match_type": "suppress",
+                                    }
+                            new_matches_added = True
                     # Crypto with no match: keep it (external wallet transfer)
 
     # Persist any new matches
     if matches_path and new_matches_added:
         _save_matches(matches_path, saved_matches)
 
-    return suppressed
+    return suppressed, category_overrides
+
+
+def _save_category_override(
+    *,
+    saved_matches: Dict,
+    category_overrides: Dict[str, str],
+    txn_hash: str,
+    linked_txn_hashes: List[str],
+    this_acct_id: str,
+    linked_acct_id: str,
+    linked_txns: List[GenericCsvTransaction],
+    matched_indices: List[int],
+) -> None:
+    """Record a cross-currency category override for both sides."""
+    # This side → linked account
+    saved_matches[txn_hash] = {
+        "linked_hashes": linked_txn_hashes,
+        "linked_account": linked_acct_id,
+        "match_type": "category_override",
+    }
+    category_overrides[txn_hash] = linked_acct_id
+
+    # Reverse: linked side → this account
+    for li in matched_indices:
+        l_hash = _txn_key(linked_txns[li])
+        saved_matches[l_hash] = {
+            "linked_hashes": [txn_hash],
+            "linked_account": this_acct_id,
+            "match_type": "category_override",
+        }
+        category_overrides[l_hash] = this_acct_id
 
 
 def _get_currency(txn: GenericCsvTransaction) -> str:
