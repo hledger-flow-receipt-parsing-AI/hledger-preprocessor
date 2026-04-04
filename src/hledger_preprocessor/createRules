@@ -40,21 +40,10 @@ echo "JOURNAL_OUTPUT_DIR=$JOURNAL_OUTPUT_DIR" >> "$CREATE_RULES_LOGFILENAME"
 echo "whichhledger=$(which hledger_preprocessor)" >> "$CREATE_RULES_LOGFILENAME"
 
 
-PREPROCESSED_PATH_TO_DELETE="$PWD/import/$ACCOUNT_HOLDER/$BANK_NAME/$ACCOUNT_TYPE/2-preprocessed"
-echo "PREPROCESSED_PATH_TO_DELETE=$PREPROCESSED_PATH_TO_DELETE" >> "$CREATE_RULES_LOGFILENAME"
-rm -rf "$PREPROCESSED_PATH_TO_DELETE"
-# TODO: assert the dir does not exist.
-JOURNAL_PATH_TO_DELETE="$PWD/import/$ACCOUNT_HOLDER/$BANK_NAME/$ACCOUNT_TYPE/3-journal"
-echo "JOURNAL_PATH_TO_DELETE=$JOURNAL_PATH_TO_DELETE" >> "$CREATE_RULES_LOGFILENAME"
-rm -rf "$JOURNAL_PATH_TO_DELETE"
-# TODO: assert the dir does not exist.
-
-# TODO: include hledger_preprocessor call to create rules.
-# First set up the start structure.
-
-# Then preprocess the csvs.
-
-# Then create the rules.
+# Note: 2-preprocessed/ and 3-journal/ are NOT deleted here.
+# start.sh already rm -rf's the entire WORKING_DIR for a clean start.
+# Deleting 2-preprocessed/ here would destroy CSVs that hledger-flow
+# needs to convert into journals.
 # CREATE_RULES_COMMAND="hledger_preprocessor --start-path $PWD --generate-rules --account-holder $ACCOUNT_HOLDER --bank $BANK_NAME --account-type $ACCOUNT_TYPE"
 CREATE_RULES_COMMAND="hledger_preprocessor --config $ABS_HLEDGER_PREPROCESSOR_CONFIG_PATH --generate-rules"
 

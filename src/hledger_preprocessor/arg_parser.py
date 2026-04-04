@@ -127,6 +127,54 @@ def create_arg_parser() -> argparse.ArgumentParser:
         help="Make hledger-flow preprocess the exported asset csvs.",
     )
 
+    # Action 5: Batch match receipts to CSV transactions (non-interactive).
+    parser.add_argument(
+        "-b",
+        "--match-receipts",
+        action="store_true",
+        required=False,
+        help=(
+            "Batch-match existing receipt labels to bank CSV transactions."
+            " Auto-links exact matches and warns on ambiguous/missing ones."
+            " Should run before --preprocess-assets so that withdrawal"
+            " metadata is available when bank CSVs are processed."
+        ),
+    )
+
+    # Action 6: Match linked-account CSV transactions to each other.
+    parser.add_argument(
+        "--match-csv-to-csv",
+        action="store_true",
+        required=False,
+        help=(
+            "Reconcile linked-account CSV transactions. Auto-matches"
+            " same-currency transfers; prompts for cross-currency ones."
+        ),
+    )
+
+    # Umbrella: run both receipt matching and CSV-to-CSV matching.
+    parser.add_argument(
+        "--match-transactions",
+        action="store_true",
+        required=False,
+        help=(
+            "Run all transaction matching: receipt-to-CSV (--match-receipts)"
+            " and CSV-to-CSV (--match-csv-to-csv)."
+        ),
+    )
+
+    # CSV column mapping.
+    parser.add_argument(
+        "-m",
+        "--map-csv",
+        type=str,
+        required=False,
+        help=(
+            "Path to a CSV file whose columns you want to interactively map"
+            " to transaction fields. The mapping is saved into your config."
+        ),
+    )
+
     # Debugging functionality.
     parser.add_argument(
         "-q",

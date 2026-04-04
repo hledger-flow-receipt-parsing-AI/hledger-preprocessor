@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 
 from typeguard import typechecked
 
+from hledger_preprocessor.config.AccountConfig import AccountConfig
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import (
     raw_receipt_img_filepath_to_cropped,
@@ -22,6 +23,7 @@ from hledger_preprocessor.generics.enums import (
     EnumEncoder,
     LogicType,
 )
+from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.management.get_all_hledger_flow_accounts import (
     get_all_accounts,
 )
@@ -79,15 +81,18 @@ def manually_make_receipt_labels(
 
         if not os.path.isfile(label_filepath):
 
+            hledger_account_infos, csv_transactions_per_account = (
+                get_all_accounts(
+                    config=config,
+                    labelled_receipts=labelled_receipts,
+                )
+            )
             receipt_label: Receipt = make_receipt_label(
                 config=config,
                 raw_receipt_img_filepath=raw_receipt_img_filepath,
                 cropped_receipt_img_filepath=cropped_receipt_img_filepath,
-                # TODO: determine whether this should be Transactions.Triodos or Transactions.Assets
-                hledger_account_infos=get_all_accounts(
-                    config=config,
-                    labelled_receipts=labelled_receipts,
-                ),
+                hledger_account_infos=hledger_account_infos,
+                csv_transactions_per_account=csv_transactions_per_account,
                 receipt_nr=receipt_nr,
                 total_nr_of_receipts=len(raw_receipt_img_filepaths),
                 labelled_receipts=labelled_receipts,
@@ -120,6 +125,9 @@ def ask_questions(
     hledger_account_infos: set[HledgerFlowAccountInfo],
     labelled_receipts: List[Receipt],
     prefilled_receipt: Optional[Receipt],
+    csv_transactions_per_account: Optional[
+        Dict[AccountConfig, Dict[int, List[Transaction]]]
+    ] = None,
 ) -> Receipt:
     """Asks the relevant questions to the user about the receipt to generate
     the labels."""
@@ -142,8 +150,9 @@ def ask_questions(
         raw_receipt_img_filepath=raw_receipt_img_filepath,
         hledger_account_infos=hledger_account_infos,
         accounts_without_csv=accounts_without_csv,
-        labelled_receipts=[],
+        labelled_receipts=labelled_receipts,
         prefilled_receipt=prefilled_receipt,
+        csv_transactions_per_account=csv_transactions_per_account,
     )
 
 
@@ -197,10 +206,36 @@ def export_human_label(
     # Apply recursive conversion
     receipt_dict = convert_types(receipt_dict)
 
+    # Strip runtime-only metadata that does not survive JSON round-trip
+    # (tuples become lists after json.load, causing comparison failures).
+    def _strip_runtime_keys(obj):
+        if isinstance(obj, dict):
+            obj.pop("_csv_column_mapping", None)
+            for v in obj.values():
+                _strip_runtime_keys(v)
+        elif isinstance(obj, list):
+            for item in obj:
+                _strip_runtime_keys(item)
+
+    _strip_runtime_keys(receipt_dict)
+
     # Convert payment_currency → currency in each transaction dict for
     # backward-compatible JSON format.  On import the "currency" key is
     # consumed by initialize_account_transaction which converts it back to
     # payment_currency when it differs from base_currency.
+    def _convert_payment_currency(transaction: dict) -> None:
+        """Convert payment_currency → currency in a transaction dict."""
+        pay_cur = transaction.pop("payment_currency", None)
+        if pay_cur is not None:
+            transaction["currency"] = pay_cur
+        else:
+            # Domestic: use the account's base_currency
+            acct = transaction.get("account")
+            if isinstance(acct, dict):
+                transaction["currency"] = acct.get(
+                    "base_currency", ""
+                )
+
     for item_key in ["net_bought_items", "net_returned_items"]:
         item = receipt_dict.get(item_key)
         if not isinstance(item, dict):
@@ -208,16 +243,14 @@ def export_human_label(
         for transaction in item.get("account_transactions", []):
             if not isinstance(transaction, dict):
                 continue
-            pay_cur = transaction.pop("payment_currency", None)
-            if pay_cur is not None:
-                transaction["currency"] = pay_cur
-            else:
-                # Domestic: use the account's base_currency
-                acct = transaction.get("account")
-                if isinstance(acct, dict):
-                    transaction["currency"] = acct.get(
-                        "base_currency", ""
-                    )
+            _convert_payment_currency(transaction)
+
+    # Also convert payment_currency in withdrawal_metadata.source_account_transaction
+    wm = receipt_dict.get("withdrawal_metadata")
+    if isinstance(wm, dict):
+        sat = wm.get("source_account_transaction")
+        if isinstance(sat, dict):
+            _convert_payment_currency(sat)
 
     # Validate currency fields in receipt and transactions
     for item_key in ["net_bought_items", "net_returned_items"]:
@@ -257,6 +290,9 @@ def make_receipt_label(
     total_nr_of_receipts: int,
     labelled_receipts: List[Receipt],
     prefilled_receipt: Optional[Receipt] = None,
+    csv_transactions_per_account: Optional[
+        Dict[AccountConfig, Dict[int, List[Transaction]]]
+    ] = None,
 ) -> Receipt:
     """
     Opens an image, asks the user questions about it, and returns the answers.
@@ -317,6 +353,7 @@ def make_receipt_label(
         labelled_receipts=labelled_receipts,
         raw_receipt_img_filepath=raw_receipt_img_filepath,
         prefilled_receipt=prefilled_receipt,
+        csv_transactions_per_account=csv_transactions_per_account,
     )
 
     plt.close()

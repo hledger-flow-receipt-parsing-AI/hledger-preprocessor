@@ -223,17 +223,3 @@ class TriodosTransaction(Transaction):
 
         # Return the hexadecimal representation of the hash
         return hasher.hexdigest()
-
-    @typechecked
-    def to_generalised_csv_transaction(self) -> GenericCsvTransaction:
-
-        return GenericCsvTransaction(
-            account=self.account,
-            the_date=self.the_date,
-            tendered_amount_out=self.tendered_amount_out,
-            # amount_in_account=
-            balance_after=self.balance0,
-            description=self.description,
-            other_party_name=self.other_party_name,
-            bic=self.BIC,
-        )

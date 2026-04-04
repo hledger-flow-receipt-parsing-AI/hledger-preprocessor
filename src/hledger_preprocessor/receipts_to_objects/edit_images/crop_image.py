@@ -51,7 +51,10 @@ def crop_and_save_image(
         print(f"Error loading image: {e}")
         return False
 
-    cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+    if pil_image.mode == "RGBA":
+        cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGBA2BGR)
+    else:
+        cv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
     img_height, img_width = cv_image.shape[:2]
 
     crop_coords = [0.2, 0.2, 0.8, 0.8]  # [x1, y1, x2, y2]
@@ -141,6 +144,8 @@ def crop_and_save_image(
                         )
                     )
                     cropped_image = pil_image.crop((x1, y1, x2, y2))
+                    if cropped_image.mode == "RGBA":
+                        cropped_image = cropped_image.convert("RGB")
                     cropped_image.save(output_path)
                     print(f"Cropped image saved to {output_path}")
                     break

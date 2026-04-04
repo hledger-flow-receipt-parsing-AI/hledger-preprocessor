@@ -1,10 +1,9 @@
 from copy import deepcopy
 from decimal import Decimal
-from typing import Union
 
 from typeguard import typechecked
 
-from hledger_preprocessor.Currency import Currency, DirectAssetPurchases
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.TransactionObjects.Receipt import AccountTransaction
 
 
@@ -12,7 +11,7 @@ from hledger_preprocessor.TransactionObjects.Receipt import AccountTransaction
 def convert_search_transaction_with_csv_currency(
     *,
     search_receipt_account_transaction: AccountTransaction,
-    from_currency: Union[Currency, DirectAssetPurchases],
+    from_currency: Currency,
     conversion_ratio_1_from_to: float,
 ) -> AccountTransaction:
     """

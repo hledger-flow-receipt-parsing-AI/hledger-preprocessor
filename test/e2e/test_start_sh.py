@@ -10,6 +10,7 @@ hledger-flow) are required. These tests focus on the Python components.
 """
 
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -21,7 +22,28 @@ import pytest
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import load_config
 
+# These e2e tests spawn subprocesses that import the full package (without
+# conftest.py mocks), so heavy ML deps like gpt4all must be installed.
+_has_gpt4all = bool(shutil.which("hledger_preprocessor")) and not subprocess.run(
+    ["python", "-c", "import gpt4all"],
+    capture_output=True,
+).returncode
+_has_hledger_plot = bool(shutil.which("hledger_plot"))
+_has_hledger_flow = bool(shutil.which("hledger-flow"))
 
+_skip_no_gpt4all = pytest.mark.skipif(
+    not _has_gpt4all,
+    reason="gpt4all not installed (subprocess needs real imports)",
+)
+_skip_no_hledger_plot = pytest.mark.skipif(
+    not _has_hledger_plot, reason="hledger_plot not found on PATH"
+)
+_skip_no_hledger_flow = pytest.mark.skipif(
+    not _has_hledger_flow, reason="hledger-flow not found on PATH"
+)
+
+
+@_skip_no_gpt4all
 class TestPreprocessAssetsPhase:
     """Test the hledger_preprocessor --preprocess-assets phase (Issue #143).
 
@@ -203,6 +225,7 @@ class TestPreprocessAssetsPhase:
         print(f"\n✓ Found {len(eur_csv_pattern)} CSV file(s)")
 
 
+@_skip_no_hledger_plot
 class TestDashAppLaunch:
     """Test the Dash app launch and functionality (Issue #142, scenarios 1.5-1.6).
 
@@ -449,6 +472,7 @@ class TestDashAppLaunch:
                 process.kill()
 
 
+@_skip_no_hledger_plot
 class TestPlotGeneration:
     """Test SVG plot generation (Issue #142, scenario 1.4).
 
@@ -660,6 +684,7 @@ class TestPlotGeneration:
         print(f"✓ All {len(svg_files)} SVG files contain valid content")
 
 
+@_skip_no_hledger_flow
 class TestHledgerFlowImport:
     """Test hledger-flow import phase (Issue #144, scenarios 3.1-3.3).
 
@@ -932,6 +957,15 @@ description %description
             pytest.fail(f"hledger balance failed: {e.stderr}")
 
 
+@pytest.mark.skipif(
+    not (
+        _has_gpt4all
+        and _has_hledger_flow
+        and _has_hledger_plot
+        and shutil.which("conda")
+    ),
+    reason="Requires gpt4all, hledger-flow, hledger_plot and conda",
+)
 class TestStartShScript:
     """Test the actual ./start.sh script end-to-end.
 
@@ -1300,6 +1334,15 @@ echo "start.sh completed successfully!"
                 test_script_path.unlink()
 
 
+@pytest.mark.skipif(
+    not (
+        _has_gpt4all
+        and _has_hledger_flow
+        and _has_hledger_plot
+        and shutil.which("conda")
+    ),
+    reason="Requires gpt4all, hledger-flow, hledger_plot and conda",
+)
 class TestStartShGifGeneration:
     """Test GIF generation for start.sh pipeline (Issue #142, scenario 1.1).
 

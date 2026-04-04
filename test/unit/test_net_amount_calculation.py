@@ -40,7 +40,7 @@ def wallet_account() -> Account:
 @pytest.fixture
 def pound_wallet() -> Account:
     return Account(
-        base_currency=Currency.POUND,
+        base_currency=Currency.GBP,
         account_holder="at",
         bank="wallet",
         account_type="physical",
@@ -192,4 +192,4 @@ class TestCurrencyClassification:
         assert Currency.GOLD in Currency.get_physical()
 
     def test_pound_is_fiat(self) -> None:
-        assert Currency.POUND in Currency.get_fiat()
+        assert Currency.GBP in Currency.get_fiat()

@@ -77,15 +77,26 @@ def write_processed_csv(
             )
 
             hledger_tnx_dicts.append(hledger_dict)
-            assert all(
-                d.keys() == hledger_tnx_dicts[0].keys()
-                for d in hledger_tnx_dicts
-            ), "All hledger dicts must have identical keys!"
+
+        # Use the canonical column order from account_config (union of
+        # all split groups) so the CSV matches the rules file layout.
+        # Then append any enrichment columns (classification, etc.)
+        # that appear in actual dicts but not in the base mapping.
+        all_keys: list = list(
+            account_config.get_hledger_csv_column_names()
+        )
+        for d in hledger_tnx_dicts:
+            for k in d:
+                if k not in all_keys:
+                    all_keys.append(k)
+        for d in hledger_tnx_dicts:
+            for k in all_keys:
+                d.setdefault(k, None)
 
         with open(filepath, mode="w", encoding="utf-8", newline="") as outfile:
             writer = csv.DictWriter(
                 outfile,
-                fieldnames=hledger_tnx_dicts[0].keys(),
+                fieldnames=all_keys,
                 quoting=csv.QUOTE_ALL,
             )
             writer.writeheader()

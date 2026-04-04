@@ -5,7 +5,7 @@ from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import (  # Config,
     raw_receipt_img_filepath_to_cropped,
 )
-from hledger_preprocessor.Currency import Currency, DirectAssetPurchases
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.receipt_transaction_matching.get_bank_data_from_transactions import (
     HledgerFlowAccountInfo,
 )
@@ -67,7 +67,7 @@ def prompt_user_for_no_matches(
 
     action_values: Union[AlternateCurrencyWithdrawl, Receipt, float, bool]
     if action == ReceiptMatchingAction.ALTERNATE_CURRENCY_WITHDRAWL:
-        from_currency: Union[Currency, DirectAssetPurchases]
+        from_currency: Currency
         conversion_ratio_1_from_to: float
 
         from_currency, _, conversion_ratio_1_from_to = (
@@ -93,7 +93,7 @@ def prompt_user_for_no_matches(
             hledger_account_infos=get_all_accounts(
                 config=action_dataset.config,
                 labelled_receipts=action_dataset.labelled_receipts,
-            ),
+            )[0],
             receipt_nr=0,
             total_nr_of_receipts=1,
             labelled_receipts=[],

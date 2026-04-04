@@ -46,33 +46,3 @@ def draw_crop_overlay(
     )
     return img_copy
 
-
-def draw_crop_text_overlay(
-    image: np.ndarray, coords: List[float], active_corner: int
-) -> np.ndarray:
-    """Draw coordinate text overlay on an image.
-
-    Args:
-        image: BGR image (numpy array)
-        coords: [x1, y1, x2, y2] normalized coordinates
-        active_corner: 0 for top-left, 1 for bottom-right
-
-    Returns:
-        Image with text overlay drawn
-    """
-    img_copy = image.copy()
-    coord_text = f"x1: {coords[0]:.2f}, y1: {coords[1]:.2f}, "
-    coord_text += f"x2: {coords[2]:.2f}, y2: {coords[3]:.2f}, "
-    coord_text += (
-        f"Active: {'Top-Left' if active_corner == 0 else 'Bottom-Right'}"
-    )
-    cv2.putText(
-        img_copy,
-        coord_text,
-        (10, 30),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.5,
-        (0, 255, 0),
-        1,
-    )
-    return img_copy

@@ -97,8 +97,29 @@ functionality that does not yet exist in the codebase.
 
 **Acceptance criteria:**
 
-- Each account has a `base_currency` field (e.g. `EUR`, `USD`, `POUND`).
+- Each account has a `base_currency` field (e.g. `EUR`, `USD`, `GBP`).
 - The matching algorithm uses the base currency when comparing receipt amounts to CSV amounts.
+
+---
+
+### US-1a.7 — Configure multi-row CSV merging for exchanges with split transactions
+
+**As a** user whose crypto exchange (e.g. Kraken) exports each trade as two separate CSV rows (a spend row and a receive row) linked by a shared reference ID,
+**I want to** configure a `merge_column` in `config.yaml` (or via the TUI) that tells the preprocessor which column links rows of the same transaction, so that paired rows are merged into single atomic hledger transactions with correct cost notation,
+**so that** Kraken-style split CSV exports produce the same unified journal entries as exchanges that use single-row atomic formats (e.g. Bitvavo), with proper `@@` total-cost notation, correct buy/sell direction for any currency pair (fiat-to-crypto, crypto-to-fiat, crypto-to-crypto, fiat-to-fiat), and explicit fee postings.
+
+**Acceptance criteria:**
+
+- `config.yaml` supports an optional `merge_column` field per account, specifying the 0-indexed CSV column that links multi-row transactions.
+- The TUI CSV mapping flow asks whether multiple rows represent one transaction and which column links them, when a split_column is configured.
+- A Kraken template is auto-detected with `merge_column: 1` (the refid column) and four split groups (spend, receive, deposit, withdrawal).
+- Spend+receive row pairs with the same merge key are merged into a single `GenericCsvTransaction` with computed `quote_price`, `quote_cost`, `received_amount`, `received_currency`, and `fee_currency` fields.
+- Buy vs sell determination uses `Currency.get_fiat()` (not amount comparison), so crypto-to-crypto trades (e.g. ETH to BTC), cross-currency buys (e.g. USD to BTC on EUR account), and fiat-to-fiat conversions all produce correct journal entries.
+- The hledger rules use `@@` (total cost) notation when `merge_column` is set, avoiding floating-point rounding errors from per-unit `@` notation.
+- The buy rule matches any fiat `base_currency` (not just the account's own fiat), and the sell rule uses multiple AND-ed negative-match conditions to exclude all known fiat codes.
+- Fees are extracted from whichever side (spend or receive) has a non-zero fee, and posted explicitly to `expenses:fees:{bank}`.
+- Single-row groups (deposits, withdrawals) pass through unchanged.
+- Existing single-row exchange imports (e.g. Bitvavo with `@` per-unit notation) are not affected — `@@` is only used when `merge_column` is configured.
 
 ---
 
@@ -235,7 +256,7 @@ functionality that does not yet exist in the codebase.
 **Acceptance criteria:**
 
 - The TUI allows selecting GBP (or any Currency enum value) as the receipt currency.
-- The receipt JSON has `currency: POUND` in the account transaction.
+- The receipt JSON has `currency: GBP` in the account transaction.
 - The account's `base_currency` (EUR) differs from the receipt currency (GBP), which triggers the alternate currency matching flow.
 
 ---
@@ -445,8 +466,8 @@ functionality that does not yet exist in the codebase.
 
 **Acceptance criteria:**
 
-- The receipt currency is `GRAMS` (or `SILVER`, etc. from `DirectAssetPurchases` enum).
-- The matching algorithm supports `DirectAssetPurchases` as a "from_currency" for the alternate currency conversion.
+- The receipt currency is `GRAMS` (or `SILVER`, etc. from `Currency.get_physical()` enum).
+- The matching algorithm supports physical assets (GOLD, SILVER, CASH) from `Currency` as a "from_currency" for the alternate currency conversion.
 - The journal contains a posting pair: debit `Assets:Gold` / credit `Assets:Bank:Triodos:Checking`.
 
 ---

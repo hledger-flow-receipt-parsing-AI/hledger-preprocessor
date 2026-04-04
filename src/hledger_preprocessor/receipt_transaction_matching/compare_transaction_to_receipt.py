@@ -51,10 +51,6 @@ def get_all_transactions_from_receipt(
         if isinstance(receipt.net_bought_items, ExchangedItem)
         else receipt.net_bought_items if receipt.net_bought_items else []
     )
-    for x in bought_items:
-        for transaction in x.account_transactions:
-            if transaction.tendered_amount_out == -350:
-                input(f" bought transaction={transaction}")
 
     # Handle net_returned_items: convert to list if single item or None
     returned_items = (
@@ -62,11 +58,6 @@ def get_all_transactions_from_receipt(
         if isinstance(receipt.net_returned_items, ExchangedItem)
         else receipt.net_returned_items if receipt.net_returned_items else []
     )
-
-    for x in returned_items:
-        for transaction in x.account_transactions:
-            if transaction.tendered_amount_out == -350:
-                input(f" returned_items transaction={transaction}")
 
     # Combine items and extract account transactions
     all_account_transactions: List[Transaction] = []

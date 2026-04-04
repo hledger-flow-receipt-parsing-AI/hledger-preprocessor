@@ -4,7 +4,7 @@ Covers US-3.2: Foreign currency match — conversion rate calculation.
 """
 
 
-from hledger_preprocessor.Currency import Currency, DirectAssetPurchases
+from hledger_preprocessor.Currency import Currency
 
 
 class TestCurrencyEnumProperties:
@@ -14,9 +14,9 @@ class TestCurrencyEnumProperties:
         """EUR is classified as fiat."""
         assert Currency.EUR in Currency.get_fiat()
 
-    def test_pound_is_fiat(self) -> None:
-        """POUND (GBP) is classified as fiat."""
-        assert Currency.POUND in Currency.get_fiat()
+    def test_gbp_is_fiat(self) -> None:
+        """GBP is classified as fiat."""
+        assert Currency.GBP in Currency.get_fiat()
 
     def test_btc_is_crypto(self) -> None:
         """BTC is classified as crypto."""
@@ -25,6 +25,10 @@ class TestCurrencyEnumProperties:
     def test_gold_is_physical(self) -> None:
         """GOLD is classified as physical."""
         assert Currency.GOLD in Currency.get_physical()
+
+    def test_cash_is_physical(self) -> None:
+        """CASH is classified as physical."""
+        assert Currency.CASH in Currency.get_physical()
 
     def test_grams_not_in_fiat(self) -> None:
         """GRAMS is not fiat."""
@@ -64,17 +68,3 @@ class TestConversionRateMath:
         rate = 0.92  # EUR per USD
         eur_amount = usd_amount * rate
         assert abs(eur_amount - 46.0) < 0.01
-
-
-class TestDirectAssetPurchaseTypes:
-    """US-3.9: Direct asset purchases have correct enum values."""
-
-    def test_all_members_are_lowercase(self) -> None:
-        """All DirectAssetPurchases values are lowercase strings."""
-        for member in DirectAssetPurchases:
-            assert member.value == member.value.lower()
-
-    def test_gold_in_both_enums(self) -> None:
-        """Gold exists in both Currency and DirectAssetPurchases."""
-        assert Currency.GOLD.value == "GOLD"
-        assert DirectAssetPurchases.GOLD.value == "gold"

@@ -1,8 +1,8 @@
-from typing import Tuple, Union
+from typing import Tuple
 
 from typeguard import typechecked
 
-from hledger_preprocessor.Currency import Currency, DirectAssetPurchases
+from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.TransactionObjects.Receipt import AccountTransaction
 
 
@@ -10,8 +10,8 @@ from hledger_preprocessor.TransactionObjects.Receipt import AccountTransaction
 def add_estimated_conversion_ratio(
     *, search_receipt_account_transaction: AccountTransaction
 ) -> Tuple[
-    Union[Currency, DirectAssetPurchases],
-    Union[Currency, DirectAssetPurchases],
+    Currency,
+    Currency,
     float,
 ]:
     """
@@ -32,10 +32,9 @@ def add_estimated_conversion_ratio(
         AssertionError: If the selected currency/asset matches the receipt currency.
     """
 
-    def prompt_for_currency_or_asset() -> Union[Currency, DirectAssetPurchases]:
+    def prompt_for_currency_or_asset() -> Currency:
         """Prompts the user to select a valid currency or asset from a unified list."""
-        # Combine Currency and DirectAssetPurchases into a single list
-        options = list(Currency) + list(DirectAssetPurchases)
+        options = list(Currency)
         options_display = "\n".join(
             f"{i + 1}. {option.value}" for i, option in enumerate(options)
         )
@@ -56,8 +55,8 @@ def add_estimated_conversion_ratio(
 
     def prompt_for_conversion_ratio(
         *,
-        from_currency: Union[Currency, DirectAssetPurchases],
-        to_currency: Union[Currency, DirectAssetPurchases],
+        from_currency: Currency,
+        to_currency: Currency,
     ) -> float:
         """Prompts the user for a valid conversion ratio between two currencies/assets."""
         while True:
