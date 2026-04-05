@@ -175,6 +175,28 @@ def create_arg_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    # Pre-flight checks (US-4.6 and US-4.7).
+    parser.add_argument(
+        "--check-categorisation",
+        action="store_true",
+        required=False,
+        help=(
+            "Dry-run categorisation check: load all bank CSV transactions and"
+            " verify each can be categorised by the rule-based model. Exits"
+            " non-zero if any uncategorised transactions are found."
+        ),
+    )
+    parser.add_argument(
+        "--check-matching",
+        action="store_true",
+        required=False,
+        help=(
+            "Report which receipt transactions are still unlinked to CSV"
+            " transactions. If unlabelled receipt images exist, hints that"
+            " the missing match may be there. Informational only (exits 0)."
+        ),
+    )
+
     # Debugging functionality.
     parser.add_argument(
         "-q",

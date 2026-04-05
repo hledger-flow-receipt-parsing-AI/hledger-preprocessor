@@ -2082,6 +2082,112 @@ stories:
       other stories' paths (e.g. start_2024_1000eur); this story describes
       the requirement but its data is exercised by US-4.1 and others.
 
+  - id: US-4.6
+    title: "Detect uncategorised transactions before interactive matching"
+    section: "Step 4: Pipeline Execution"
+    status: null
+    as_a: >-
+      user running `./start.sh`
+    i_want: >-
+      uncategorised bank CSV transactions to be detected and reported
+      immediately — before the interactive matching step — via a dedicated
+      `--check-categorisation` flag
+    so_that: >-
+      I don't waste time on manual receipt-to-CSV or CSV-to-CSV matching only
+      to discover a categorisation error afterwards.
+    acceptance_criteria:
+      - >-
+        `start.sh` calls `hledger_preprocessor --check-categorisation` right
+        after config validation, before `--match-transactions`.
+      - >-
+        The check loads all bank CSV transactions and runs the rule-based
+        classifier on each one (dry-run — no file output).
+      - >-
+        If any transaction raises `UncategorisedTransactionError`, the check
+        collects ALL such errors and prints them as a single summary, then
+        exits non-zero.
+      - >-
+        Receipt-based `AccountTransaction`s are NOT checked (their category
+        comes from the TUI label and is always present).
+      - >-
+        The check is fast: it only loads CSVs and runs classification — no
+        file I/O or directory creation.
+    no_dag_reason: >-
+      Pre-flight validation step — the data path mirrors US-C.1 but without
+      any output; it is a guard gate that runs before US-4.1.
+
+  - id: US-4.7
+    title: "Report unmatched transactions before interactive matching"
+    section: "Step 4: Pipeline Execution"
+    status: null
+    as_a: >-
+      user running `./start.sh`
+    i_want: >-
+      a clear summary of which receipt transactions are still unlinked to
+      their CSV counterpart — shown immediately before the interactive
+      matching step — via a dedicated `--check-matching` flag, and — if
+      unlabelled receipt images exist — a hint that the missing match may be
+      in one of them
+    so_that: >-
+      I see the full picture of what still needs matching before I enter the
+      interactive flow, and I am reminded to label remaining receipt images
+      if the missing counterpart might be there.
+    acceptance_criteria:
+      - >-
+        `start.sh` calls `hledger_preprocessor --check-matching` right after
+        `--check-categorisation`, before `--match-transactions`.
+      - >-
+        The check loads all labelled receipts and all bank CSV transactions,
+        then reports which receipt AccountTransactions have no linked CSV
+        transaction (listing date, amount, currency, and account for each).
+      - >-
+        If unlabelled receipt images exist (images in `receipt_images_input_dir`
+        without a corresponding label in `receipt_labels_dir`), a note is
+        printed: "N receipt image(s) have no labels yet. The missing match may
+        be in one of them. Run `--tui-label-receipts` to label them."
+      - >-
+        The check is informational only — it does not block the pipeline
+        (exits 0). The user proceeds into `--match-transactions` knowing
+        what to expect.
+      - >-
+        Unmatched CSV-to-CSV transactions (e.g. a Triodos deposit into Kraken
+        that has no matching Kraken row yet) are also listed.
+    no_dag_reason: >-
+      Pre-flight reporting step — the data path mirrors US-3.x matching
+      stories but without creating links; it is an informational check that
+      runs before US-4.1.
+
+  - id: US-4.8
+    title: "Auto-check receipt matching after TUI labelling"
+    section: "Step 4: Pipeline Execution"
+    status: "NOT YET IMPLEMENTED"
+    as_a: >-
+      user who just finished labelling a receipt in the TUI
+    i_want: >-
+      the system to automatically check whether the newly labelled receipt
+      matches any CSV transaction as soon as I answer "no" to "want to add
+      more accounts?"
+    so_that: >-
+      I get immediate feedback on whether the receipt links to a bank
+      transaction, without having to run the full pipeline again.
+    acceptance_criteria:
+      - >-
+        After the TUI label is saved, the batch-matching algorithm runs for
+        that single receipt against all loaded CSV transactions.
+      - >-
+        If exactly one match is found, the link is created automatically and
+        the user is informed.
+      - >-
+        If zero or multiple matches are found, the user is informed but the
+        pipeline continues (no blocking error).
+    design_note: >-
+      Deferred — TUI changes are complex and should be done one at a time.
+      The US-4.7 implementation should be designed so this can be added later
+      without restructuring.
+    no_dag_reason: >-
+      Not yet implemented — TUI enhancement; the data path will extend the
+      receipt labelling step (US-2b) with an inline matching check.
+
 
   # =========================================================================
   # Step 5: Visualisation
