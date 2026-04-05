@@ -1,5 +1,32 @@
-# This is used to configure the black, isort and mypy such that the packages don't conflict.
-# This file is read by the pre-commit program.
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hledger-preprocessor"
+version = "0.1.0"
+description = "CLI pipeline orchestrator for hledger preprocessing"
+requires-python = ">=3.10"
+dependencies = [
+    "hledger-core>=0.1.0",
+    "hledger-config>=0.1.0",
+    "hledger-csv-mapping>=0.1.0",
+    "hledger-receipt-processing>=0.1.0",
+    "hledger-rules>=0.1.0",
+    "typeguard>=2.13.3",
+    "pyyaml>=6.0",
+    "pandas>=1.5",
+]
+
+[project.optional-dependencies]
+ai = ["hledger-ai>=0.1.0"]
+
+[project.scripts]
+hledger_preprocessor = "hledger_preprocessor:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.black]
 line-length = 80
 include = '\.pyi?$'

@@ -1,35 +1,22 @@
 """Entry point for the project."""
 
-import os
 import sys
-import warnings
-
-# Suppress TensorFlow/CUDA/absl warnings before any imports
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-os.environ["ABSL_MIN_LOG_LEVEL"] = "3"
-os.environ["GRPC_VERBOSITY"] = "ERROR"
-os.environ["GLOG_minloglevel"] = "2"
-warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
-warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
-warnings.filterwarnings("ignore", category=RuntimeWarning, module="runpy")
-
 from argparse import Namespace
 from typing import Any, Dict, List
 
 from typeguard import typechecked
 
-from hledger_preprocessor.arg_parser import (
+from hledger_config.arg_parser import (
     assert_args_are_valid,
     create_arg_parser,
 )
+from hledger_config.config.load_config import Config, load_config
+from hledger_core.generics.enums import ClassifierType, LogicType
+from hledger_core.TransactionObjects.Receipt import Receipt
 from hledger_preprocessor.checks.check_categorisation import (
     check_categorisation,
 )
 from hledger_preprocessor.checks.check_matching import check_matching
-from hledger_preprocessor.config.load_config import Config, load_config
-from hledger_preprocessor.generics.enums import ClassifierType, LogicType
-from hledger_preprocessor.get_models import get_models
 from hledger_preprocessor.management.helper import edit_receipt
 from hledger_preprocessor.management.main_manager import (
     manage_batch_match_receipts,
@@ -41,10 +28,12 @@ from hledger_preprocessor.management.main_manager import (
     manage_preprocessing_assets,
     manage_preprocessing_csvs,
 )
-from hledger_preprocessor.reading_history.load_receipts_from_dir import (
+from hledger_receipt_processing.reading_history.load_receipts_from_dir import (
     load_receipts_from_dir,
 )
-from hledger_preprocessor.TransactionObjects.Receipt import Receipt
+
+# get_models uses try/except ImportError internally for optional hledger-ai
+from hledger_preprocessor.get_models import get_models
 
 
 @typechecked
@@ -56,10 +45,23 @@ def main() -> None:
     args: Namespace = parser.parse_args()
     assert_args_are_valid(args=args)
 
+    # --run-pipeline: full pipeline (replaces start.sh).
+    if args.run_pipeline:
+        if not args.config:
+            print("Error: --config is required for --run-pipeline.")
+            sys.exit(1)
+        from hledger_preprocessor.pipeline import run_pipeline
+
+        run_pipeline(
+            config_path=args.config,
+            randomize=args.randomize,
+        )
+        return
+
     # --map-csv runs before anything else: it only needs the config path,
     # not a fully loaded Config (the CSV may not be in config yet).
     if args.map_csv:
-        from hledger_preprocessor.csv_mapping.mapping_tui import (
+        from hledger_csv_mapping.csv_mapping.mapping_tui import (
             run_csv_mapping_tui,
         )
 
