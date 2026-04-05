@@ -1,8 +1,3 @@
-from typing import Protocol
-
-from hledger_preprocessor.generics import Transaction
-
-
-class ReceiptCategoryModel(Protocol):
-    # TODO: change to Receipt object.
-    def classify_receipt(self, transaction: Transaction) -> str: ...
+# Backward-compat re-export: moved to hledger-core
+from hledger_core.generics.ReceiptCategoryModel import *  # noqa: F401,F403
+from hledger_core.generics.ReceiptCategoryModel import ReceiptCategoryModel  # explicit for type checkers

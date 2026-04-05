@@ -1,10 +1,3 @@
-from typing import Protocol
-
-from hledger_preprocessor.categorisation.Categories import CategoryNamespace
-from hledger_preprocessor.generics.Transaction import Transaction
-
-
-class TransactionCategoryModel(Protocol):
-    def classify(
-        self, transaction: Transaction, category_namespace: CategoryNamespace
-    ) -> str: ...
+# Backward-compat re-export: moved to hledger-core
+from hledger_core.generics.TransactionCategoryModel import *  # noqa: F401,F403
+from hledger_core.generics.TransactionCategoryModel import TransactionCategoryModel  # explicit for type checkers
