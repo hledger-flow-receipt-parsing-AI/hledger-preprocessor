@@ -2168,23 +2168,25 @@ stories:
   - id: US-5.4
     title: "Filter visualisations by time period"
     section: "Step 5: Visualisation"
-    status: "NOT YET IMPLEMENTED"
+    status: null
     as_a: >-
       user who wants to see my spending for just the last quarter
     i_want: >-
-      pass a date range (e.g. `--from 2025-01-01 --to 2025-03-31`) to the plot tool
+      select a time period from the dashboard dropdown to filter the Sankey and
+      Treemap plots
     so_that: >-
       the Sankey and Treemap only show transactions within that period.
     acceptance_criteria:
       - >-
-        The plot tool accepts `--from` and `--to` date arguments.
+        The dashboard has a period dropdown with all available months plus
+        "All Time".
       - >-
-        Only transactions within the date range are included in the plots.
+        Only transactions within the selected period are included in the plots.
       - >-
-        The dashboard title shows the filtered date range.
+        Changing the dropdown re-runs the pipeline and updates all plots.
     no_dag_reason: >-
-      Not yet implemented — filtering flag on the visualisation layer; the
-      underlying data path is the same as US-5.1/US-5.2.
+      Filtering flag on the visualisation layer; the underlying data path is
+      the same as US-5.1/US-5.2.
 
   - id: US-5.5
     title: "Generate monthly/quarterly/yearly reports"
@@ -2260,6 +2262,132 @@ stories:
     no_dag_reason: >-
       Not yet implemented — analytical visualisation on the journal layer;
       reads transaction data but introduces no new data-flow path.
+
+  - id: US-5.8
+    title: "Drill down from treemap to time-series chart"
+    section: "Step 5: Visualisation"
+    status: null
+    as_a: >-
+      user who wants to understand the spending pattern within a single
+      category over time
+    i_want: >-
+      click a treemap cell while in drill-down mode and see a time-series
+      chart showing individual transactions, cumulative total, and period
+      aggregations for that category
+    so_that: >-
+      I can spot trends, outliers, and seasonal patterns within a category.
+    acceptance_criteria:
+      - >-
+        A "Drill-down Mode" toggle button activates click-to-drill behaviour.
+      - >-
+        Clicking a treemap cell replaces the overview with a time-series chart
+        for the selected account prefix.
+      - >-
+        The chart shows one bar per transaction coloured by subcategory, a
+        cumulative line on the secondary y-axis, and disconnected horizontal
+        segments for weekly, monthly, and yearly totals.
+      - >-
+        A monthly average line and per-year monthly average segments are shown.
+      - >-
+        A "Back to Overview" button returns to the treemap view.
+      - >-
+        The x-axis is a linear date timeline with at most 30 tick labels.
+      - >-
+        Signed amounts are preserved (asset outflows appear negative).
+    no_dag_reason: >-
+      UI interaction layer — drills into existing journal data via `hledger
+      register`; no new data-flow path.
+
+  - id: US-5.9
+    title: "Sticky toolbar with keyboard shortcuts"
+    section: "Step 5: Visualisation"
+    status: null
+    as_a: >-
+      user who scrolls through large dashboards with many plots
+    i_want: >-
+      the toolbar (title, period selector, drill-down button, back button) to
+      stay fixed at the top of the viewport, and keyboard shortcuts to toggle
+      drill-down mode and go back
+    so_that: >-
+      I can always access controls without scrolling back to the top.
+    acceptance_criteria:
+      - >-
+        The toolbar uses `position: sticky; top: 0` and stays visible while
+        scrolling.
+      - >-
+        Pressing `d` toggles drill-down mode on/off.
+      - >-
+        Pressing `Escape` clicks the "Back to Overview" button when it is
+        visible.
+      - >-
+        Keyboard shortcuts are ignored when typing in input fields, textareas,
+        or the dropdown search box.
+    no_dag_reason: >-
+      Pure UI/UX enhancement on the Dash presentation layer; no data-flow
+      change.
+
+  - id: US-5.10
+    title: "Select period granularity (weekly / monthly / yearly)"
+    section: "Step 5: Visualisation"
+    status: null
+    as_a: >-
+      user who wants to view my finances at different time scales
+    i_want: >-
+      choose between weekly, monthly, and yearly granularity, and have the
+      period dropdown update accordingly
+    so_that: >-
+      I can view a single week, a single month, or an entire year of data.
+    acceptance_criteria:
+      - >-
+        Three granularity buttons (Weekly, Monthly, Yearly) appear in the
+        toolbar.
+      - >-
+        Clicking a granularity button updates the period dropdown options to
+        show weeks, months, or years respectively.
+      - >-
+        "All Time" is always available regardless of granularity.
+      - >-
+        Weekly periods show ISO week boundaries (Monday to Sunday).
+      - >-
+        Yearly periods use a whole-year date range (`YYYY/1/1 to YYYY+1/1/1`).
+    no_dag_reason: >-
+      Filtering/presentation feature on the visualisation layer; the
+      underlying data path is the same as US-5.4.
+
+  - id: US-5.11
+    title: "Hierarchical legend with group toggle in drill-down"
+    section: "Step 5: Visualisation"
+    status: "IN PROGRESS"
+    as_a: >-
+      user who drills down into a category with many subcategories
+    i_want: >-
+      the legend to group subcategories hierarchically (e.g. all `groceries:*`
+      entries under a "groceries" header) and let me toggle an entire group
+      with a double-click while still toggling individual items with a single
+      click
+    so_that: >-
+      I can quickly hide or show groups of related subcategories without
+      clicking each one individually.
+    acceptance_criteria:
+      - >-
+        Subcategory bars are grouped by their first hierarchy segment (e.g.
+        `groceries:lidl` and `groceries:jumbo` share group `groceries`).
+      - >-
+        A group header is only shown when the group contains at least 2
+        children.
+      - >-
+        Single-click toggles one trace; double-click toggles the entire group.
+      - >-
+        Lines (totals, averages, cumulative) appear in a separate legend on
+        the left; subcategories appear on the right.
+      - >-
+        Totals and Averages are each a group on the left legend with their own
+        group toggle.
+      - >-
+        Categories at the same tree level are sorted together so the legend
+        reads as a coherent hierarchy, not interleaved alphabetically.
+    no_dag_reason: >-
+      UI presentation feature on the Plotly chart layer; no data-flow change.
 
 
   # =========================================================================
