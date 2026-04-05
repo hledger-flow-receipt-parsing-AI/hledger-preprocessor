@@ -1,24 +1,42 @@
-"""Parses the CLI args."""
+"""Model registry: assembles available classifiers.
+
+If hledger-ai is installed, AI models are included alongside rule-based.
+Otherwise, only rule-based models are available.
+"""
+
+from __future__ import annotations
 
 from typing import Any, Dict, List
 
 from typeguard import typechecked
 
-from hledger_preprocessor.categorisation.ai_based.ai_eg0 import ExampleAIModel
-from hledger_preprocessor.categorisation.rule_based.rule_based_eg0 import (
-    ExampleRuleBasedModel,
-)
-from hledger_preprocessor.generics.enums import ClassifierType, LogicType
-from hledger_preprocessor.generics.ReceiptCategoryModel import (
+from hledger_core.generics.enums import ClassifierType, LogicType
+from hledger_core.generics.ReceiptCategoryModel import (
     ReceiptCategoryModel,
 )
-from hledger_preprocessor.generics.ReceiptImageToObjModel import (
+from hledger_core.generics.ReceiptImageToObjModel import (
     ReceiptImageToObjModel,
 )
-from hledger_preprocessor.generics.TransactionCategoryModel import (
+from hledger_core.generics.TransactionCategoryModel import (
     TransactionCategoryModel,
 )
-from hledger_preprocessor.receipts_to_objects.ai_based.donut import DonutAI
+
+try:
+    from hledger_ai.categorisation.ai_based.ai_eg0 import ExampleAIModel
+    from hledger_ai.receipts_to_objects.ai_based.donut import DonutAI
+
+    _ai_available = True
+except ImportError:
+    _ai_available = False
+
+
+def _get_rule_based_model():
+    """Deferred import of the rule-based model from the orchestrator."""
+    from hledger_preprocessor.categorisation.rule_based.rule_based_eg0 import (
+        ExampleRuleBasedModel,
+    )
+
+    return ExampleRuleBasedModel()
 
 
 def get_models(
@@ -30,23 +48,23 @@ def get_models(
             ClassifierType.TRANSACTION_CATEGORY: (
                 get_transaction_classification_models()
             ),
-            # Don't load the ai models if you want to quickly build private tnx categorisation rules.
         }
     else:
         classifiers: Dict[ClassifierType, Dict[LogicType, Any]] = {
             ClassifierType.TRANSACTION_CATEGORY: (
                 get_transaction_classification_models()
             ),
-            ClassifierType.RECEIPT_IMAGE_TO_OBJ: (
-                get_receipt_image_to_obj_models()
-            ),
-            ClassifierType.RECEIPT_IMG_CATEGORY: (
-                get_receipt_img_classification_models()
-            ),
-            ClassifierType.RECEIPT_OBJ_CATEGORY: (
-                get_receipt_obj_classification_models()
-            ),
         }
+        if _ai_available:
+            classifiers[ClassifierType.RECEIPT_IMAGE_TO_OBJ] = (
+                get_receipt_image_to_obj_models()
+            )
+            classifiers[ClassifierType.RECEIPT_IMG_CATEGORY] = (
+                get_receipt_img_classification_models()
+            )
+            classifiers[ClassifierType.RECEIPT_OBJ_CATEGORY] = (
+                get_receipt_obj_classification_models()
+            )
     return classifiers
 
 
@@ -54,15 +72,16 @@ def get_models(
 def get_transaction_classification_models() -> (
     Dict[LogicType, List[TransactionCategoryModel]]
 ):
-    ai_model_tnx_classification: TransactionCategoryModel = ExampleAIModel()
     rule_based_model_tnx_classification: TransactionCategoryModel = (
-        ExampleRuleBasedModel()
+        _get_rule_based_model()
     )
-    return {
-        LogicType.AI: [ai_model_tnx_classification],
-        # TODO: determine which bank is used and get logic accordingly.
+    result: Dict[LogicType, List[TransactionCategoryModel]] = {
         LogicType.RULE_BASED: [rule_based_model_tnx_classification],
     }
+    if _ai_available:
+        ai_model_tnx_classification: TransactionCategoryModel = ExampleAIModel()
+        result[LogicType.AI] = [ai_model_tnx_classification]
+    return result
 
 
 def get_receipt_image_to_obj_models() -> (
@@ -86,11 +105,13 @@ def get_receipt_img_classification_models() -> (
 def get_receipt_obj_classification_models() -> (
     Dict[str, List[ReceiptCategoryModel]]
 ):
-    ai_receipt_obj_classifier: ReceiptCategoryModel = ExampleAIModel()
     rule_based_receipt_obj_classifier: ReceiptCategoryModel = (
-        ExampleRuleBasedModel()
+        _get_rule_based_model()
     )
-    return {
-        LogicType.AI: [ai_receipt_obj_classifier],
+    result: Dict[LogicType, List[ReceiptCategoryModel]] = {
         LogicType.RULE_BASED: [rule_based_receipt_obj_classifier],
     }
+    if _ai_available:
+        ai_receipt_obj_classifier: ReceiptCategoryModel = ExampleAIModel()
+        result[LogicType.AI] = [ai_receipt_obj_classifier]
+    return result
