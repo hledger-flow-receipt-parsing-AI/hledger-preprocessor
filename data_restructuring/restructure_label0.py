@@ -67,14 +67,29 @@ def deep_rename_key(obj: Any, old_key: str, new_key: str) -> Any:
         return obj  # primitive value
 
 
+def deep_remove_key(obj: Any, key: str) -> Any:
+    """
+    Recursively remove every occurrence of `key` from dicts.
+    Works on dicts and lists, leaves other types untouched.
+    """
+    if isinstance(obj, dict):
+        return {k: deep_remove_key(v, key) for k, v in obj.items() if k != key}
+    elif isinstance(obj, list):
+        return [deep_remove_key(item, key) for item in obj]
+    return obj
+
+
 def deep_replace_account(obj: Any) -> Any:
     """
     Recursively walk JSON:
     1. Replace legacy account blocks when possible.
     2. Rename "amount_paid" → "tendered_amount_out" everywhere.
+    3. Remove "withdrawal_metadata" keys.
     """
     # First, perform the key renaming (safe to do always)
     obj = deep_rename_key(obj, "amount0", "amount")
+    # Remove withdrawal_metadata (no longer needed as separate field)
+    obj = deep_remove_key(obj, "withdrawal_metadata")
 
     # Then handle legacy account replacement
     if isinstance(obj, dict):
