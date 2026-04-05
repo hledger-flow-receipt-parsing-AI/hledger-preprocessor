@@ -43,30 +43,31 @@ def get_receipt_transaction_matches_in_csv_accounts(
         csv_account,
         csv_transactions_of_an_account,
     ) in csv_transactions_per_account.items():
-        # Only use csv_accounts that that are used in the receipt account.
-        if csv_account.has_input_csv():
-            yearly_transactions: List[Transaction] = (
-                get_transactions_in_date_range(
-                    transactions_per_year=csv_transactions_of_an_account,
-                    target_date=action_dataset.receipt.the_date,
-                    date_margin=timedelta(
-                        days=action_dataset.config.matching_algo.days
-                    ),
+        # Only search CSV accounts that match the receipt's account.
+        if not csv_account.has_input_csv():
+            continue
+        if csv_account.account != receipt_account:
+            continue
+        yearly_transactions: List[Transaction] = (
+            get_transactions_in_date_range(
+                transactions_per_year=csv_transactions_of_an_account,
+                target_date=action_dataset.receipt.the_date,
+                date_margin=timedelta(
+                    days=action_dataset.config.matching_algo.days
+                ),
+            )
+        )
+        if receipt_account in net_payed_amounts.keys():
+            transaction_matches.extend(
+                filter_transactions_by_amount(
+                    yearly_transactions=yearly_transactions,
+                    action_dataset=action_dataset,
                 )
             )
-            if receipt_account in net_payed_amounts.keys():
-                transaction_matches.extend(
-                    filter_transactions_by_amount(
-                        yearly_transactions=yearly_transactions,
-                        action_dataset=action_dataset,
-                    )
-                )
-            else:
-                raise ValueError(
-                    f"{receipt_account} not in keys {net_payed_amounts.keys()}"
-                )
         else:
-            pass  # The csv_account transaction is not the one from the receipt.
+            raise ValueError(
+                f"{receipt_account} not in keys {net_payed_amounts.keys()}"
+            )
     return transaction_matches
 
 
