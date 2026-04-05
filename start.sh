@@ -151,13 +151,25 @@ mkdir -p "$WORKING_DIR"
 validate_config
 
 
-# Preprocess accounts with csvs.
-# hledger_preprocessor \
-#             --config "$GENERAL_CONFIG_FILEPATH" \
-#             --preprocess-csvs || {
-#             echo "Error: hledger_preprocessor --preprocess-csvs failed."
-#             exit 1
-# }
+# Pre-flight check: uncategorised transactions (US-4.6).
+# Fails fast before interactive matching so the user doesn't waste time.
+echo "Checking for uncategorised transactions..."
+hledger_preprocessor \
+            --config "$GENERAL_CONFIG_FILEPATH" \
+            --check-categorisation || {
+    echo "Fix the uncategorised transactions above, then re-run ./start.sh"
+    exit 1
+}
+echo ""
+
+# Pre-flight check: unmatched receipt transactions (US-4.7).
+# Informational — shows what still needs matching before the interactive flow.
+echo "Checking for unmatched transactions..."
+hledger_preprocessor \
+            --config "$GENERAL_CONFIG_FILEPATH" \
+            --check-matching
+echo ""
+
 # Match receipt labels to bank CSV transactions AND reconcile linked-
 # account CSVs (cross-currency matches may prompt for user input).
 # Not captured with $() so that stdin remains interactive.

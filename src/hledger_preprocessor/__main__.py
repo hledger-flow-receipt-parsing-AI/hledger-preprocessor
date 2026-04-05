@@ -1,6 +1,7 @@
 """Entry point for the project."""
 
 import os
+import sys
 import warnings
 
 # Suppress TensorFlow/CUDA/absl warnings before any imports
@@ -22,6 +23,10 @@ from hledger_preprocessor.arg_parser import (
     assert_args_are_valid,
     create_arg_parser,
 )
+from hledger_preprocessor.checks.check_categorisation import (
+    check_categorisation,
+)
+from hledger_preprocessor.checks.check_matching import check_matching
 from hledger_preprocessor.config.load_config import Config, load_config
 from hledger_preprocessor.generics.enums import ClassifierType, LogicType
 from hledger_preprocessor.get_models import get_models
@@ -70,6 +75,52 @@ def main() -> None:
     )
 
     labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
+
+    # --- Pre-flight checks (US-4.6 and US-4.7) ---
+    if args.check_categorisation:
+        models_for_check: Dict[ClassifierType, Dict[LogicType, Any]] = (
+            get_models(quick_categorisation=True)
+        )
+        errors = check_categorisation(
+            config=config,
+            models=models_for_check,
+            labelled_receipts=labelled_receipts,
+        )
+        if errors:
+            print("")
+            print("=" * 60)
+            print(
+                f"  {len(errors)} uncategorised transaction(s) found"
+            )
+            print("=" * 60)
+            for err in errors:
+                print(str(err))
+            print("=" * 60)
+            sys.exit(1)
+        else:
+            print("All CSV transactions can be categorised.")
+
+    if args.check_matching:
+        check_matching(
+            config=config,
+            labelled_receipts=labelled_receipts,
+        )
+
+    # If only checks were requested, exit now.
+    if args.check_categorisation or args.check_matching:
+        if not any([
+            args.preprocess_csvs,
+            args.preprocess_assets,
+            args.link_receipts_to_transactions,
+            getattr(args, "match_receipts", False),
+            getattr(args, "match_csv_to_csv", False),
+            getattr(args, "match_transactions", False),
+            args.edit_receipt,
+            args.new_setup,
+            args.generate_rules,
+            args.tui_label_receipts,
+        ]):
+            return
 
     # --match-transactions expands into both matching sub-flags.
     if args.match_transactions:
