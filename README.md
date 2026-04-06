@@ -48,7 +48,11 @@ Algorithmically/semi-automated linking of receipts to your bank/exchange CSV tra
 
 **Step 4: Run the pipeline**
 
-Run `./start.sh` to generate journals and plots:
+Run the full pipeline (preprocess, import, balance report, plots) with a single command:
+
+```bash
+hledger_preprocessor --run-pipeline --config /path/to/your/config.yaml
+```
 
 ![Step 4: Run pipeline](gifs/4_run_pipeline/output/4_run_pipeline.gif)
 
