@@ -55,7 +55,7 @@ def _build_category_namespace() -> CategoryNamespace:
         "groceries": {"ekoplaza": {}, "supermarket": {}},
         "repairs": {"bike": {}},
         "wallet": {"physical": {}},
-        "withdrawl": {"euro": {"pound": {}}},
+        "withdrawl": {"euro": {"gbp": {}}},
         "cash": {"atm_withdrawal": {}},
         "house": {"furniture": {"ikea": {}}},
     }
@@ -73,7 +73,7 @@ class TestWithdrawalReceiptCategorisation:
     directly (e.g. "cash:atm_withdrawal").
 
     For GenericCsvTransaction (bank CSV debit): private_logic returns
-    the category (e.g. withdrawl:euro:pound) or an Account object
+    the category (e.g. withdrawl:euro:gbp) or an Account object
     which gets :withdrawl appended.
     """
 
@@ -152,7 +152,7 @@ class TestWithdrawalReceiptCategorisation:
         )
         # A bank CSV debit for "MFG - FOUR WANTZ FOUR" ATM withdrawal
         # This matches the private_logic rule that returns
-        # category_namespace.withdrawl.euro.pound
+        # category_namespace.withdrawl.euro.gbp
         atm_bank_debit = GenericCsvTransaction(
             account=triodos_account,
             the_date=datetime(2025, 3, 20, 0, 0, 0),
@@ -167,8 +167,8 @@ class TestWithdrawalReceiptCategorisation:
             transaction=atm_bank_debit, category_namespace=ns
         )
 
-        assert result == "withdrawl:euro:pound", (
-            f"Expected 'withdrawl:euro:pound', got: {result}"
+        assert result == "withdrawl:euro:gbp", (
+            f"Expected 'withdrawl:euro:gbp', got: {result}"
         )
 
 

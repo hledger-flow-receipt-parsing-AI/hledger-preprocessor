@@ -89,7 +89,7 @@ class TestCategoryValidation:
         assert validate_category("*withdrawl") is None
         assert validate_category("withdrawl*") is None
         assert validate_category("income:withdrawl") is None
-        assert validate_category("expenses:withdrawl:euro:pound") is None
+        assert validate_category("expenses:withdrawl:euro:gbp") is None
         assert validate_category("house:furniture:ikea") is None
 
 

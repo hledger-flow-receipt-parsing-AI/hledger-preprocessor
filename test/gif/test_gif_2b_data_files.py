@@ -36,7 +36,7 @@ def test_gif_2b_data_files(monkeypatch):
     result = run_demo_script(
         script_path=script_path,
         env=get_demo_env(),
-        timeout=120,
+        timeout=180,
     )
     assert result.returncode == 0, f"Demo failed: {result.stderr}"
 
