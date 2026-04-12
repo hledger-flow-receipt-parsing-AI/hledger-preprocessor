@@ -2,7 +2,7 @@ items = [
     "abbonement.monthly.phone",
     "abbonement.monthly.rent",
     "wallet.physical",
-    "withdrawl.euro.pound",
+    "withdrawl.euro.gbp",
 ]
 
 

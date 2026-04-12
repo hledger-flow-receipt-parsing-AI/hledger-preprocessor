@@ -55,6 +55,7 @@ def main() -> None:
         run_pipeline(
             config_path=args.config,
             randomize=args.randomize,
+            non_interactive=args.non_interactive,
         )
         return
 
