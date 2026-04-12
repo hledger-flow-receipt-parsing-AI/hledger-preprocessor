@@ -85,11 +85,14 @@ def run_pipeline(
     )
 
     # Link receipts to transactions (asset prerequisites).
-    manage_matching_manual_receipt_objs_to_account_transactions(
-        config=config,
-        models=models,
-        labelled_receipts=labelled_receipts,
-    )
+    if non_interactive:
+        print("Skipping receipt-to-transaction linking (--non-interactive).")
+    else:
+        manage_matching_manual_receipt_objs_to_account_transactions(
+            config=config,
+            models=models,
+            labelled_receipts=labelled_receipts,
+        )
 
     # --- 4. Pre-flight checks ---
     print("Checking for uncategorised transactions...")
