@@ -43,7 +43,12 @@ from hledger_receipt_processing.reading_history.load_receipts_from_dir import (
 
 
 @typechecked
-def run_pipeline(*, config_path: str, randomize: bool = False) -> None:
+def run_pipeline(
+    *,
+    config_path: str,
+    randomize: bool = False,
+    non_interactive: bool = False,
+) -> None:
     """Run the full preprocessing pipeline."""
     # --- 1. Load config ---
     print(f"Loading config from: {config_path}")
@@ -80,11 +85,14 @@ def run_pipeline(*, config_path: str, randomize: bool = False) -> None:
     )
 
     # Link receipts to transactions (asset prerequisites).
-    manage_matching_manual_receipt_objs_to_account_transactions(
-        config=config,
-        models=models,
-        labelled_receipts=labelled_receipts,
-    )
+    if non_interactive:
+        print("Skipping receipt-to-transaction linking (--non-interactive).")
+    else:
+        manage_matching_manual_receipt_objs_to_account_transactions(
+            config=config,
+            models=models,
+            labelled_receipts=labelled_receipts,
+        )
 
     # --- 4. Pre-flight checks ---
     print("Checking for uncategorised transactions...")
@@ -121,10 +129,13 @@ def run_pipeline(*, config_path: str, randomize: bool = False) -> None:
             labelled_receipts=labelled_receipts,
         )
 
-        manage_match_csv_to_csv(
-            config=config,
-            labelled_receipts=labelled_receipts,
-        )
+        if non_interactive:
+            print("Skipping CSV-to-CSV matching (--non-interactive).")
+        else:
+            manage_match_csv_to_csv(
+                config=config,
+                labelled_receipts=labelled_receipts,
+            )
     except Exception as e:
         print(f"Warning: transaction matching encountered errors (non-fatal).")
     print("")

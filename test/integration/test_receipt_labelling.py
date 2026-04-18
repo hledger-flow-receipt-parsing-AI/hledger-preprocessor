@@ -150,16 +150,20 @@ class TestReceiptCreation:
         if not receipts:
             pytest.skip("No receipts loaded (seed may have failed)")
 
-        # Find the ekoplaza receipt
-        ekoplaza = [
+        # Find the card ekoplaza receipt (Jan 15, tax=7.35).
+        # The cash ekoplaza receipt (May 20, tax=2.39) may also be loaded
+        # when session-scoped fixtures are shared across e2e tests.
+        ekoplaza_card = [
             r
             for r in receipts
-            if r.receipt_category and "ekoplaza" in r.receipt_category.lower()
+            if r.receipt_category
+            and "ekoplaza" in r.receipt_category.lower()
+            and r.the_date.month == 1
         ]
-        if not ekoplaza:
-            pytest.skip("Ekoplaza receipt not found in loaded receipts")
+        if not ekoplaza_card:
+            pytest.skip("Ekoplaza card receipt (Jan 15) not found")
 
-        receipt = ekoplaza[0]
+        receipt = ekoplaza_card[0]
         assert receipt.the_date.year == 2025
         assert receipt.the_date.month == 1
         assert receipt.shop_identifier.name == "Ekoplaza"

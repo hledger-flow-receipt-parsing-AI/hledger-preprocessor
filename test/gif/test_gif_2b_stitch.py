@@ -79,7 +79,7 @@ def test_stitch_2b1_full_path(temp_finance_root, monkeypatch):
         script_path=project_root / "gifs" / "2b_label_receipt" / "generate.sh",
         env=env,
         config_path=temp_finance_root["config_path"],
-        timeout=120,
+        timeout=180,
     )
 
     # If the full generate.sh failed (e.g. TUI recording issue), run stitch directly

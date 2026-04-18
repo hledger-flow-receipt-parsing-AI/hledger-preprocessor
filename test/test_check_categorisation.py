@@ -38,7 +38,7 @@ def _build_category_namespace() -> CategoryNamespace:
         "groceries": {"ekoplaza": {}, "supermarket": {}},
         "repairs": {"bike": {}},
         "wallet": {"physical": {}},
-        "withdrawl": {"euro": {"pound": {}}},
+        "withdrawl": {"euro": {"gbp": {}}},
         "cash": {"atm_withdrawal": {}},
         "house": {"furniture": {"ikea": {}}},
     }
