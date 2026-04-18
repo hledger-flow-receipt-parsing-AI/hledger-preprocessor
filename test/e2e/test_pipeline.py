@@ -957,20 +957,12 @@ description %description
             pytest.fail(f"hledger balance failed: {e.stderr}")
 
 
-@pytest.mark.skip(
-    reason=(
-        "Full --run-pipeline includes interactive TUI steps "
-        "(receipt-to-transaction matching) that cannot run without user input. "
-        "Individual pipeline stages are tested by TestPreprocessAssetsPhase, "
-        "TestHledgerFlowImport, TestPlotGeneration, and TestDashAppLaunch."
-    ),
-)
 class TestRunPipeline:
     """Test the --run-pipeline command end-to-end.
 
-    NOTE: This test is skipped because the pipeline includes interactive TUI
-    steps that require user input.  The individual pipeline stages are covered
-    by the other test classes in this file.
+    Uses --non-interactive to skip TUI prompts (cross-currency CSV matching).
+    Individual pipeline stages are also tested by TestPreprocessAssetsPhase,
+    TestHledgerFlowImport, TestPlotGeneration, and TestDashAppLaunch.
     """
 
     def test_run_pipeline_without_errors(
@@ -1027,6 +1019,7 @@ class TestRunPipeline:
         cmd = [
             "hledger_preprocessor",
             "--run-pipeline",
+            "--non-interactive",
             "--config",
             str(config_path),
         ]

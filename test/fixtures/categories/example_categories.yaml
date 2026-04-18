@@ -6,4 +6,4 @@ wallet:
   physical: {}
 withdrawl:
   euro:
-    pound: {}
+    gbp: {}
