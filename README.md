@@ -89,6 +89,23 @@ ______________________________________________________________________
 Browse user stories with synchronized video + interactive DAG diagrams.
 Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Click a node to seek.
 
+### Pipeline overview
+
+The diagram below shows how user stories flow from YAML definitions through
+test data, Python demo scripts, shell scripts, and recording tools to produce
+GIF/MP4 files and the interactive website. It also shows how the pre-commit
+staleness hook uses AST hashes and YAML patterns to detect when GIFs need
+re-recording.
+
+![GIF Pipeline & Pre-commit Staleness Check](docs/gif_pipeline_overview.svg)
+
+<details>
+<summary>PlantUML source</summary>
+
+See [docs/gif_pipeline_overview.puml](docs/gif_pipeline_overview.puml).
+To regenerate: `plantuml -tsvg docs/gif_pipeline_overview.puml`
+</details>
+
 ### Quick build & serve
 
 ```bash

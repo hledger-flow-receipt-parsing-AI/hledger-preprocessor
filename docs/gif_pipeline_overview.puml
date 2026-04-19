@@ -1,0 +1,202 @@
+@startuml gif_pipeline_overview
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 11
+skinparam packageStyle rectangle
+
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2196F3
+  FontColor #1565C0
+}
+
+skinparam database {
+  BackgroundColor #FFF3E0
+  BorderColor #FF9800
+  FontColor #E65100
+}
+
+skinparam artifact {
+  BackgroundColor #E8F5E9
+  BorderColor #4CAF50
+  FontColor #2E7D32
+}
+
+title GIF Pipeline & Pre-commit Staleness Check
+
+' ============================================================
+'  DATA SOURCES
+' ============================================================
+package "Data Sources" {
+  database "userstory_dag_data.yaml\n(DAG definition)" as dag_yaml
+  database "gif_config.yaml\n(themes, rendering)" as gif_config
+  database "config.yaml + categories.yaml\n(demo accounts)" as demo_config
+  database "test/fixtures/\n(CSV, receipts, journals)" as fixtures
+  database "gif_dependencies.yaml\n(non-Python watch patterns)" as gif_deps
+}
+
+' ============================================================
+'  TEST ENVIRONMENT SETUP
+' ============================================================
+package "Test Environment Setup" {
+  component "setup_test_environment.py" as setup_env
+  artifact "/tmp/hledger_demo/\n(config, CSV, receipts)" as tmp_demo
+}
+
+' ============================================================
+'  GIF RECORDING
+' ============================================================
+package "GIF Recording Pipeline" {
+  component "build_userstories.sh\n(orchestrator)" as build_sh
+
+  package "Per-GIF Recording" {
+    component "gifs/<name>/generate.sh\n(per-GIF entry point)" as generate_sh
+    component "common.sh\n(shared functions)" as common_sh
+
+    package "1. Coverage Setup" {
+      component "install_coverage_pth.py" as pth_install
+      artifact "COVERAGE_PROCESS_START\n(env var + .pth file)" as cov_env
+    }
+
+    package "2. Record" {
+      component "asciinema rec" as asciinema
+      component "Python demo script\n(gifs/automation/*.py)\nuses pexpect to drive CLI" as demo_script
+      component "Sub-packages\n(hledger-core, config,\ncsv-mapping, rules, ...)" as sub_pkgs
+      artifact "recordings/<name>.cast" as cast_file
+    }
+
+    package "3. Coverage Extract" {
+      component "extract_coverage.py" as extract_cov
+      artifact "_coverage.json\n(files_touched + ast_hashes)" as cov_json
+    }
+
+    package "4. Post-process" {
+      component "cast_postprocess.py\n(clean arrow keys, ctrl seqs)" as cast_pp
+    }
+
+    package "5. Render & Convert" {
+      component "agg (.cast -> .gif)" as agg
+      component "gifsicle (optimize)" as gifsicle
+      component "ffmpeg (.gif -> .mp4)" as ffmpeg
+      artifact "<name>.gif + <name>.mp4\n(per-theme variants)" as gif_mp4
+    }
+
+    package "6. Markers" {
+      component "Marker extraction\n(python3 -c in generate.sh)" as marker_extract
+      artifact "_markers.json\n(node timestamps for DAG sync)" as markers_json
+    }
+  }
+
+  package "Optional: Stitch" {
+    component "stitch_full_path.py\n(concatenate MP4s)" as stitch
+    artifact "full_path.mp4\n+ full_path_markers.json" as full_path
+  }
+}
+
+' ============================================================
+'  SITE GENERATION
+' ============================================================
+package "Site Generation" {
+  component "generate_userstory_artifacts.py\n(PlantUML DAGs + markdown)" as gen_artifacts
+  artifact "US_*.puml + US_*.png" as dag_pngs
+  component "generate_site.py\n(HTML + interactive SVG + JS)" as gen_site
+  artifact "/tmp/site/\n(index.html, story pages,\nSVGs, videos, CSS, JS)" as site_output
+}
+
+' ============================================================
+'  PRE-COMMIT HOOK
+' ============================================================
+package "Pre-commit Hook  (gif-staleness-hook repo)" {
+  component "git commit (staged changes)" as git_commit
+  component "check-gif-staleness.py" as hook
+
+  component "AST hash comparison\n(Python files)" as cov_check
+  component "YAML pattern match\n(non-Python files)" as yaml_check
+  component "Artifact check\n(GIF re-recorded?)" as artifact_check
+
+  artifact "PASS" as pass_result
+  artifact "WARN / BLOCK:\nre-record needed" as fail_result
+}
+
+' ============================================================
+'  CONNECTIONS: Data Sources -> Setup
+' ============================================================
+demo_config --> setup_env
+fixtures --> setup_env
+setup_env --> tmp_demo
+
+' ============================================================
+'  CONNECTIONS: Build orchestration
+' ============================================================
+build_sh --> setup_env : ensure_config()
+build_sh --> generate_sh : "--gif <name>"
+build_sh --> gen_artifacts : "--artifacts"
+build_sh --> gen_site : "--site / --serve"
+
+' ============================================================
+'  CONNECTIONS: Per-GIF recording flow
+' ============================================================
+generate_sh --> common_sh : source
+gif_config --> common_sh
+common_sh --> pth_install : setup_coverage()
+pth_install --> cov_env
+
+common_sh --> asciinema : record_demo()
+cov_env --> asciinema : env propagation
+asciinema --> demo_script : "--command"
+demo_script --> sub_pkgs : pexpect / import\n(traced by coverage)
+tmp_demo --> demo_script : CONFIG_FILEPATH
+asciinema --> cast_file
+
+common_sh --> extract_cov : teardown_coverage()
+extract_cov --> cov_json
+
+common_sh --> cast_pp : postprocess_cast()
+cast_pp --> cast_file : in-place edit
+
+common_sh --> agg : generate_themed_gifs()
+cast_file --> agg
+agg --> gifsicle
+gifsicle --> gif_mp4
+gif_mp4 --> ffmpeg
+ffmpeg --> gif_mp4
+
+cast_file --> marker_extract
+marker_extract --> markers_json
+
+gif_mp4 --> stitch
+markers_json --> stitch
+stitch --> full_path
+
+' ============================================================
+'  CONNECTIONS: Site generation
+' ============================================================
+dag_yaml --> gen_artifacts
+gen_artifacts --> dag_pngs
+
+dag_yaml --> gen_site
+gif_mp4 --> gen_site : videos
+markers_json --> gen_site : DAG sync
+full_path --> gen_site
+gen_site --> site_output
+
+' ============================================================
+'  CONNECTIONS: Pre-commit hook
+' ============================================================
+git_commit --> hook
+cov_json --> cov_check : stored ast_hashes
+gif_deps --> yaml_check : watch patterns
+
+hook --> cov_check
+hook --> yaml_check
+hook --> artifact_check
+
+cov_check --> pass_result : hash matches
+cov_check --> fail_result : hash differs
+yaml_check --> pass_result : no match
+yaml_check --> fail_result : pattern matched
+artifact_check --> pass_result : GIF also staged
+
+@enduml
