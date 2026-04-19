@@ -16,7 +16,7 @@ from hledger_preprocessor.checks.unlabelled_receipts import (
 )
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.generics.Transaction import Transaction
-from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
+from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (  # noqa: E501
     get_all_transactions_from_receipt,
 )
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt

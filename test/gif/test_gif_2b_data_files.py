@@ -25,7 +25,7 @@ DATA_FILE_SEGMENTS = [
 
 
 def test_gif_2b_data_files(monkeypatch):
-    """Test GIF 2b_data_files: generates all 3 data file typing GIFs with markers."""
+    """Test GIF 2b_data_files: generates all 3 data file typing GIFs with markers."""  # noqa: E501
     project_root = get_project_root()
     monkeypatch.chdir(project_root)
 
@@ -68,7 +68,7 @@ def test_gif_2b_data_files(monkeypatch):
         # Timestamp must be non-negative
         assert (
             markers[expected_marker] >= 0.0
-        ), f"Marker timestamp should be >= 0"
+        ), "Marker timestamp should be >= 0"
 
         # Duration must be positive
-        assert data["total_duration"] > 0.0, f"Total duration should be > 0"
+        assert data["total_duration"] > 0.0, "Total duration should be > 0"

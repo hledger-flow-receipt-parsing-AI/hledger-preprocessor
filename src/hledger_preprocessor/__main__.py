@@ -41,7 +41,7 @@ def main() -> None:
     # Parse input arguments
     parser = create_arg_parser()
 
-    ## NEW
+    # NEW
     args: Namespace = parser.parse_args()
     assert_args_are_valid(args=args)
 

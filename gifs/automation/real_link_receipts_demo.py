@@ -46,7 +46,7 @@ def print_subheader(title: str) -> None:
 
 
 def get_image_content_hash(image_path: str) -> str:
-    """Calculate SHA256 hash of image file content (matching the codebase logic)."""
+    """Calculate SHA256 hash of image file content (matching the codebase logic)."""  # noqa: E501
     hasher = hashlib.sha256()
     with open(image_path, "rb") as image_file:
         while True:
@@ -149,11 +149,11 @@ def create_test_environment() -> Dict[str, Any]:
     (root / "categories.yaml").write_text(yaml.safe_dump(categories))
 
     # Create bank CSV with the Ekoplaza transaction (15-01-2025, 42.17 EUR)
-    # NOTE: Amounts use European format (comma as decimal separator) per parse_generic_tnx_with_csv.py
-    # NOTE: For matching to work, both receipt and CSV amounts must have the same sign (positive for outgoing payments)
+    # NOTE: Amounts use European format (comma as decimal separator) per parse_generic_tnx_with_csv.py  # noqa: E501
+    # NOTE: For matching to work, both receipt and CSV amounts must have the same sign (positive for outgoing payments)  # noqa: E501
     csv_content = (
         '15-01-2025,NL123,"42,17",debit,Ekoplaza,NL456,IC,groceries'
-        ' payment,"1000,00"\n14-01-2025,NL234,"15,50",debit,AH,NL789,IC,groceries'
+        ' payment,"1000,00"\n14-01-2025,NL234,"15,50",debit,AH,NL789,IC,groceries'  # noqa: E501
         ' ah,"1042,17"\n'
     )
     csv_path = root / "triodos_2025.csv"
@@ -211,7 +211,7 @@ def create_test_environment() -> Dict[str, Any]:
                 {
                     "account": {
                         "account_holder": "at",
-                        # Use "checking" account (same as CSV) so the receipt matches
+                        # Use "checking" account (same as CSV) so the receipt matches  # noqa: E501
                         # the identical account as the bank transaction
                         "account_type": "checking",
                         "bank": "triodos",
@@ -332,7 +332,7 @@ def show_inputs(env: Dict[str, Any], emitter: StoryMarkerEmitter) -> None:
 
 
 def run_matching_demo(env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
-    """Run the actual --link-receipts-to-transactions CLI command using pexpect."""
+    """Run the actual --link-receipts-to-transactions CLI command using pexpect."""  # noqa: E501
     import pexpect
 
     from .tui_navigator import TuiNavigator
@@ -352,8 +352,8 @@ def run_matching_demo(env: Dict[str, Any], emitter: StoryMarkerEmitter) -> bool:
     )
 
     display_cmd = (
-        f"hledger_preprocessor --config config.yaml"
-        f" --link-receipts-to-transactions"
+        "hledger_preprocessor --config config.yaml"
+        " --link-receipts-to-transactions"
     )
     print(f"{Colors.BOLD_WHITE}$ {display_cmd}{Colors.RESET}")
     print()

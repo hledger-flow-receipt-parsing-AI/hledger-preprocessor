@@ -10,15 +10,15 @@ Usage:
     python generate_userstory_artifacts.py --all
 
     # Individual artifact types:
-    python generate_userstory_artifacts.py --dag-overlay          # all stories overlaid
-    python generate_userstory_artifacts.py --story US-3.2         # single story isolated
+    python generate_userstory_artifacts.py --dag-overlay          # all stories overlaid  # noqa: E501
+    python generate_userstory_artifacts.py --story US-3.2         # single story isolated  # noqa: E501
     python generate_userstory_artifacts.py --story US-3.2 --context full
-    python generate_userstory_artifacts.py --each                 # one file per story
-    python generate_userstory_artifacts.py --filter demo          # only demo data paths
-    python generate_userstory_artifacts.py --cli --story US-3.2   # ASCII box-drawing
-    python generate_userstory_artifacts.py --render               # also produce PNGs
-    python generate_userstory_artifacts.py --markdown             # userstories.md only
-    python generate_userstory_artifacts.py --usage-flows          # sequence diagrams only
+    python generate_userstory_artifacts.py --each                 # one file per story  # noqa: E501
+    python generate_userstory_artifacts.py --filter demo          # only demo data paths  # noqa: E501
+    python generate_userstory_artifacts.py --cli --story US-3.2   # ASCII box-drawing  # noqa: E501
+    python generate_userstory_artifacts.py --render               # also produce PNGs  # noqa: E501
+    python generate_userstory_artifacts.py --markdown             # userstories.md only  # noqa: E501
+    python generate_userstory_artifacts.py --usage-flows          # sequence diagrams only  # noqa: E501
 """
 
 import argparse
@@ -591,7 +591,7 @@ def generate_cli_view(
             if layer != prev_layer:
                 if prev_layer is not None:
                     lines.append(f"  {bar}")
-                    lines.append(f"  ▼")
+                    lines.append("  \u25bc")
                 lines.append(f"  ┌─ {layer} ──────────────────────────")
                 prev_layer = layer
 
@@ -602,7 +602,7 @@ def generate_cli_view(
             lines.append(f"  {bar}    {label}  {usage_str}")
             lines.append(f"  {bar}    {info['desc']}")
 
-        lines.append(f"  └──────────────────────────────────────")
+        lines.append("  " + "\u2514" + "\u2500" * 38)
         lines.append("")
 
     return "\n".join(lines)
@@ -625,7 +625,7 @@ cross-cutting concerns. Stories marked *[NOT YET IMPLEMENTED]* describe
 functionality that does not yet exist in the codebase.
 
 *This file is auto-generated from `user_stories/dag/userstory_dag_data.yaml`.*
-*Edit the YAML, then run `python user_stories/dag/generate_userstory_artifacts.py -a`.*
+*Edit the YAML, then run `python user_stories/dag/generate_userstory_artifacts.py -a`.*  # noqa: E501
 """
 
 
@@ -750,14 +750,14 @@ alt Use TUI
     ReceiptProcessor -[#FF00FF]-> User: Prompt for manual labeling
     User -[#0000FF]-> ReceiptProcessor: Provide labels
 else Use AI
-    ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Process images with AI models
+    ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Process images with AI models  # noqa: E501
 end alt
-ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Generate CSVs from receipt objects
+ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Generate CSVs from receipt objects  # noqa: E501
 ReceiptProcessor -[#FF00FF]-> Bash: CSVs ready
 
 == Match Receipts to Transactions/Assets ==
 User -[#0000FF]-> ReceiptProcessor: Match receipts to transactions/assets
-ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Enrich transactions with receipt details (account_holder, bank, account_type)
+ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Enrich transactions with receipt details (account_holder, bank, account_type)  # noqa: E501
 note right
     Matches receipts to bank transactions or assets (e.g., gold, BTC),
     adding receipt details to transactions
@@ -766,8 +766,8 @@ ReceiptProcessor -[#FF00FF]-> Bash: Enriched transactions ready
 
 == Re-Preprocess Enriched Transactions ==
 alt Transactions enriched
-    Bash -[#008000]-> Preprocessor: Re-run preprocessing for enriched transactions/CSVs
-    Preprocessor -[#800080]-> HledgerFlow: Update all-years.journal with enriched data
+    Bash -[#008000]-> Preprocessor: Re-run preprocessing for enriched transactions/CSVs  # noqa: E501
+    Preprocessor -[#800080]-> HledgerFlow: Update all-years.journal with enriched data  # noqa: E501
     HledgerFlow -[#008080]-> Bash: Journal updated
 end alt
 
@@ -808,16 +808,16 @@ Bash -> Filesystem: Clear and create WORKING_DIR
 Filesystem --> Bash: WORKING_DIR ready
 Bash -> Conda: Initialize and activate hledger_preprocessor env
 Conda --> Bash: Environment activated
-Bash -> Bash: Display WORKING_DIR, START_JOURNAL_FILEPATH, GENERAL_CONFIG_FILEPATH
+Bash -> Bash: Display WORKING_DIR, START_JOURNAL_FILEPATH, GENERAL_CONFIG_FILEPATH  # noqa: E501
 
 == Configuration Validation ==
-Bash -> ProcessBank: Call process_bank_config(GENERAL_CONFIG_FILEPATH, WORKING_DIR)
+Bash -> ProcessBank: Call process_bank_config(GENERAL_CONFIG_FILEPATH, WORKING_DIR)  # noqa: E501
 ProcessBank -> Filesystem: Verify GENERAL_CONFIG_FILEPATH is YAML
 Filesystem --> ProcessBank: File is valid YAML
 ProcessBank -> Filesystem: Check .accounts in YAML
 Filesystem --> ProcessBank: Accounts found
 loop for each account in .accounts
-    ProcessBank -> Filesystem: Read account details (csv_filepath, account_holder, bank, account_type)
+    ProcessBank -> Filesystem: Read account details (csv_filepath, account_holder, bank, account_type)  # noqa: E501
     Filesystem --> ProcessBank: Account details
     ProcessBank -> Filesystem: Verify csv_filepath exists
     Filesystem --> ProcessBank: CSV exists
@@ -842,21 +842,21 @@ Filesystem --> HledgerFlow: Journal updated
 HledgerFlow --> Bash: Import complete
 
 == Include Starting Position ==
-Bash -> Filesystem: Check if START_JOURNAL_FILEPATH included in all-years.journal
+Bash -> Filesystem: Check if START_JOURNAL_FILEPATH included in all-years.journal  # noqa: E501
 Filesystem --> Bash: Not included
 Bash -> Filesystem: Append "include START_JOURNAL_FILEPATH" to all-years.journal
 Filesystem --> Bash: Journal updated
 
 == Plotting or Balance Report ==
 alt RANDOMIZE_DATA == "true"
-    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s -r
+    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s -r  # noqa: E501
     HledgerPlot -> Filesystem: Read all-years.journal
     HledgerPlot --> Bash: Plot generated
 else RANDOMIZE_DATA == "false"
     Bash -> HledgerFlow: Run hledger bal -X EUR -f all-years.journal
     HledgerFlow -> Filesystem: Read all-years.journal
     HledgerFlow --> Bash: Balance report generated
-    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s
+    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s  # noqa: E501
     HledgerPlot -> Filesystem: Read all-years.journal
     HledgerPlot --> Bash: Plot generated
 end alt
@@ -888,21 +888,21 @@ Bash -[#008000]-> Filesystem: Clear and create WORKING_DIR
 Filesystem -[#808080]-> Bash: WORKING_DIR ready
 Bash -[#008000]-> Conda: Initialize and activate hledger_preprocessor env
 Conda -[#FFFF00]-> Bash: Environment activated
-Bash -[#008000]-> Bash: Display WORKING_DIR, START_JOURNAL_FILEPATH, GENERAL_CONFIG_FILEPATH
+Bash -[#008000]-> Bash: Display WORKING_DIR, START_JOURNAL_FILEPATH, GENERAL_CONFIG_FILEPATH  # noqa: E501
 
 == Configuration Validation ==
-Bash -[#008000]-> ProcessBank: Call process_bank_config(GENERAL_CONFIG_FILEPATH, WORKING_DIR)
+Bash -[#008000]-> ProcessBank: Call process_bank_config(GENERAL_CONFIG_FILEPATH, WORKING_DIR)  # noqa: E501
 ProcessBank -[#FFA500]-> Filesystem: Verify GENERAL_CONFIG_FILEPATH is YAML
 Filesystem -[#808080]-> ProcessBank: File is valid YAML
 ProcessBank -[#FFA500]-> Filesystem: Check .accounts in YAML
 Filesystem -[#808080]-> ProcessBank: Accounts found
 loop for each account in .accounts
-    ProcessBank -[#FFA500]-> Filesystem: Read account details (csv_filepath, account_holder, bank, account_type)
+    ProcessBank -[#FFA500]-> Filesystem: Read account details (csv_filepath, account_holder, bank, account_type)  # noqa: E501
     Filesystem -[#808080]-> ProcessBank: Account details
     ProcessBank -[#FFA500]-> Filesystem: Verify csv_filepath exists
     Filesystem -[#808080]-> ProcessBank: CSV exists
-    ProcessBank -[#FFA500]-> Preprocessor: Call hledger_preprocessor --config --new-setup
-    Preprocessor -[#800080]-> Filesystem: Process CSV for account_holder/bank/account_type
+    ProcessBank -[#FFA500]-> Preprocessor: Call hledger_preprocessor --config --new-setup  # noqa: E501
+    Preprocessor -[#800080]-> Filesystem: Process CSV for account_holder/bank/account_type  # noqa: E501
     Preprocessor -[#800080]-> ProcessBank: Processed transactions
 end loop
 
@@ -922,44 +922,44 @@ Filesystem -[#808080]-> HledgerFlow: Journal updated
 HledgerFlow -[#008080]-> Bash: Import complete
 
 == Include Starting Position ==
-Bash -[#008000]-> Filesystem: Check if START_JOURNAL_FILEPATH included in all-years.journal
+Bash -[#008000]-> Filesystem: Check if START_JOURNAL_FILEPATH included in all-years.journal  # noqa: E501
 Filesystem -[#808080]-> Bash: Not included
-Bash -[#008000]-> Filesystem: Append "include START_JOURNAL_FILEPATH" to all-years.journal
+Bash -[#008000]-> Filesystem: Append "include START_JOURNAL_FILEPATH" to all-years.journal  # noqa: E501
 Filesystem -[#808080]-> Bash: Journal updated
 
 == Receipt Image to Transaction Conversion ==
 alt Use TUI for Receipt Labeling
-    User -[#0000FF]-> ReceiptProcessor: Run manage_creating_receipt_img_labels_with_tui
-    ReceiptProcessor -[#FF00FF]-> Filesystem: Get receipt images from receipts_path
+    User -[#0000FF]-> ReceiptProcessor: Run manage_creating_receipt_img_labels_with_tui  # noqa: E501
+    ReceiptProcessor -[#FF00FF]-> Filesystem: Get receipt images from receipts_path  # noqa: E501
     Filesystem -[#808080]-> ReceiptProcessor: List of receipt filepaths
-    ReceiptProcessor -[#FF00FF]-> Preprocessor: Get transactions_per_year (csv_encoding)
-    Preprocessor -[#800080]-> Filesystem: Read CSVs for account_holder/bank/account_type
+    ReceiptProcessor -[#FF00FF]-> Preprocessor: Get transactions_per_year (csv_encoding)  # noqa: E501
+    Preprocessor -[#800080]-> Filesystem: Read CSVs for account_holder/bank/account_type  # noqa: E501
     Filesystem -[#808080]-> Preprocessor: CSV data
     Preprocessor -[#800080]-> ReceiptProcessor: Transactions per year
     ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Generate account info groups
-    ReceiptProcessor -[#FF00FF]-> User: Prompt for manual receipt labeling via TUI
+    ReceiptProcessor -[#FF00FF]-> User: Prompt for manual receipt labeling via TUI  # noqa: E501
     User -[#0000FF]-> ReceiptProcessor: Provide receipt labels
     ReceiptProcessor -[#FF00FF]-> Filesystem: Save receipt objects
     Filesystem -[#808080]-> ReceiptProcessor: Receipt objects saved
 else Use AI for Receipt Labeling
-    User -[#0000FF]-> ReceiptProcessor: Run manage_getting_ai_receipt_objects_from_images
-    ReceiptProcessor -[#FF00FF]-> Filesystem: Get receipt images from receipts_path
+    User -[#0000FF]-> ReceiptProcessor: Run manage_getting_ai_receipt_objects_from_images  # noqa: E501
+    ReceiptProcessor -[#FF00FF]-> Filesystem: Get receipt images from receipts_path  # noqa: E501
     Filesystem -[#808080]-> ReceiptProcessor: List of receipt filepaths
-    ReceiptProcessor -[#FF00FF]-> Preprocessor: Load AI models for receipt parsing
+    ReceiptProcessor -[#FF00FF]-> Preprocessor: Load AI models for receipt parsing  # noqa: E501
     Preprocessor -[#800080]-> ReceiptProcessor: AI models loaded
     ReceiptProcessor -[#FF00FF]-> Filesystem: Process images to receipt objects
     Filesystem -[#808080]-> ReceiptProcessor: Receipt objects generated
 end alt
 
 == Match Receipts to Transactions/Assets ==
-User -[#0000FF]-> ReceiptProcessor: Run manage_matching_manual_receipt_objs_to_account_transactions
-ReceiptProcessor -[#FF00FF]-> Preprocessor: Get transactions_per_year (csv_encoding)
-Preprocessor -[#800080]-> Filesystem: Read CSVs for account_holder/bank/account_type
+User -[#0000FF]-> ReceiptProcessor: Run manage_matching_manual_receipt_objs_to_account_transactions  # noqa: E501
+ReceiptProcessor -[#FF00FF]-> Preprocessor: Get transactions_per_year (csv_encoding)  # noqa: E501
+Preprocessor -[#800080]-> Filesystem: Read CSVs for account_holder/bank/account_type  # noqa: E501
 Filesystem -[#808080]-> Preprocessor: CSV data
 Preprocessor -[#800080]-> ReceiptProcessor: Transactions per year
 ReceiptProcessor -[#FF00FF]-> Filesystem: Load existing receipt objects
 Filesystem -[#808080]-> ReceiptProcessor: Receipt objects loaded
-ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Match\\n receipts to transactions\\n (account_holder\\n, bank\\n, account_type)
+ReceiptProcessor -[#FF00FF]-> ReceiptProcessor: Match\\n receipts to transactions\\n (account_holder\\n, bank\\n, account_type)  # noqa: E501
 note left
     Matches receipt objects to bank transactions or assets (e.g., gold, BTC)
     based on account_holder, bank, account_type, and transaction details
@@ -970,14 +970,14 @@ ReceiptProcessor -[#FF00FF]-> Bash: Matching complete
 
 == Plotting or Balance Report ==
 alt RANDOMIZE_DATA == "true"
-    Bash -[#008000]-> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s -r
+    Bash -[#008000]-> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s -r  # noqa: E501
     HledgerPlot -[#FF0000]-> Filesystem: Read all-years.journal
     HledgerPlot -[#FF0000]-> Bash: Plot generated
 else RANDOMIZE_DATA == "false"
     Bash -[#008000]-> HledgerFlow: Run hledger bal -X EUR -f all-years.journal
     HledgerFlow -[#008080]-> Filesystem: Read all-years.journal
     HledgerFlow -[#008080]-> Bash: Balance report generated
-    Bash -[#008000]-> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s
+    Bash -[#008000]-> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s  # noqa: E501
     HledgerPlot -[#FF0000]-> Filesystem: Read all-years.journal
     HledgerPlot -[#FF0000]-> Bash: Plot generated
 end alt
@@ -1009,16 +1009,16 @@ Bash -> Filesystem: Clear and create WORKING_DIR
 Filesystem --> Bash: WORKING_DIR ready
 Bash -> Conda: Initialize and activate hledger_preprocessor env
 Conda --> Bash: Environment activated
-Bash -> Bash: Display WORKING_DIR, START_JOURNAL_FILEPATH, GENERAL_CONFIG_FILEPATH
+Bash -> Bash: Display WORKING_DIR, START_JOURNAL_FILEPATH, GENERAL_CONFIG_FILEPATH  # noqa: E501
 
 == Configuration Validation ==
-Bash -> ProcessBank: Call process_bank_config(GENERAL_CONFIG_FILEPATH, WORKING_DIR)
+Bash -> ProcessBank: Call process_bank_config(GENERAL_CONFIG_FILEPATH, WORKING_DIR)  # noqa: E501
 ProcessBank -> Filesystem: Verify GENERAL_CONFIG_FILEPATH is YAML
 Filesystem --> ProcessBank: File is valid YAML
 ProcessBank -> Filesystem: Check .accounts in YAML
 Filesystem --> ProcessBank: Accounts found
 loop for each account in .accounts
-    ProcessBank -> Filesystem: Read account details (csv_filepath, account_holder, bank, account_type)
+    ProcessBank -> Filesystem: Read account details (csv_filepath, account_holder, bank, account_type)  # noqa: E501
     Filesystem --> ProcessBank: Account details
     ProcessBank -> Filesystem: Verify csv_filepath exists
     Filesystem --> ProcessBank: CSV exists
@@ -1043,21 +1043,21 @@ Filesystem --> HledgerFlow: Journal updated
 HledgerFlow --> Bash: Import complete
 
 == Include Starting Position ==
-Bash -> Filesystem: Check if START_JOURNAL_FILEPATH included in all-years.journal
+Bash -> Filesystem: Check if START_JOURNAL_FILEPATH included in all-years.journal  # noqa: E501
 Filesystem --> Bash: Not included
 Bash -> Filesystem: Append "include START_JOURNAL_FILEPATH" to all-years.journal
 Filesystem --> Bash: Journal updated
 
 == Plotting or Balance Report ==
 alt RANDOMIZE_DATA == "true"
-    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s -r
+    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s -r  # noqa: E501
     HledgerPlot -> Filesystem: Read all-years.journal
     HledgerPlot --> Bash: Plot generated
 else RANDOMIZE_DATA == "false"
     Bash -> HledgerFlow: Run hledger bal -X EUR -f all-years.journal
     HledgerFlow -> Filesystem: Read all-years.journal
     HledgerFlow --> Bash: Balance report generated
-    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s
+    Bash -> HledgerPlot: Run hledger_plot --journal-filepath all-years.journal -d EUR -s  # noqa: E501
     HledgerPlot -> Filesystem: Read all-years.journal
     HledgerPlot --> Bash: Plot generated
 end alt

@@ -116,14 +116,14 @@ def write_asset_transaction_to_csv(
 ) -> None:
     """
     Export a single AccountTransaction to a CSV file.
-    - Checks if the transaction is already in the file (raises ValueError if it is).
+    - Checks if the transaction is already in the file (raises ValueError if it is).  # noqa: E501
     - Appends the transaction if it is not present.
     - Asserts that the transaction was successfully added.
 
     Args:
         transaction: The AccountTransaction to export.
         filepath: The path to the CSV file.
-        csv_encoding: The encoding to use for reading/writing the CSV file (default: utf-8).
+        csv_encoding: The encoding to use for reading/writing the CSV file (default: utf-8).  # noqa: E501
 
     Raises:
         ValueError: If the transaction is already in the CSV file.

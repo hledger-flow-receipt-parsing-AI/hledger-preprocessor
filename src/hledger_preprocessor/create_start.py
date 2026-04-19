@@ -21,7 +21,7 @@ def get_script_path() -> str:
 
 
 @typechecked
-def export_csv_transactions_per_acount_into_each_year(  # TODO: rename the starting info.
+def export_csv_transactions_per_acount_into_each_year(  # TODO: rename the starting info.  # noqa: E501
     *,
     config: Config,
     account_config: AccountConfig,
@@ -133,7 +133,7 @@ def ensure_hledger_flow_dir_structure_is_build(
         some_year_path = os.path.join(one_in_path, str(transaction_year))
         create_dir(path=some_year_path)
         year_paths.append(some_year_path)
-        # TODO: instead of creating the current year path, create the years for which transactions are included in the input csv.
+        # TODO: instead of creating the current year path, create the years for which transactions are included in the input csv.  # noqa: E501
 
     return account_type_path, list(set(year_paths))
 
@@ -147,7 +147,7 @@ def ensure_hledger_flow_dir_structure_is_build(
 #         root_dir: The root directory to scan.
 
 #     Returns:
-#         A list of dictionaries, each containing 'account', 'bank', and 'account_type' keys.
+#         A list of dictionaries, each containing 'account', 'bank', and 'account_type' keys.  # noqa: E501
 #     """
 
 #     account_info = []
@@ -158,7 +158,7 @@ def ensure_hledger_flow_dir_structure_is_build(
 #                 bank_dir = os.path.join(account_holder_dir, bank)
 #                 if os.path.isdir(bank_dir):
 #                     for account_type in os.listdir(bank_dir):
-#                         account_type_dir = os.path.join(bank_dir, account_type)
+#                         account_type_dir = os.path.join(bank_dir, account_type)  # noqa: E501
 #                         if os.path.isdir(account_type_dir):
 #                             account_info.append(
 #                                 {

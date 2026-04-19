@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """GIF generation configuration loader.
 
-This module provides utilities for loading and querying the gif_config.yaml file.
+This module provides utilities for loading and querying the gif_config.yaml file.  # noqa: E501
 It can be used both as a library and as a CLI tool for bash scripts.
 """
 

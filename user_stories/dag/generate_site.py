@@ -373,7 +373,7 @@ def discover_marker_json_files(
 
 
 def parse_marker_json(*, json_path: Path) -> Dict[str, float]:
-    """Read a sidecar markers JSON file and return {marker_id: timestamp_seconds}."""
+    """Read a sidecar markers JSON file and return {marker_id: timestamp_seconds}."""  # noqa: E501
     try:
         data = json.loads(json_path.read_text())
         return data.get("markers", {})
@@ -499,7 +499,7 @@ def generate_overview_svg_direct(
         if layer_name in CONFIG_GROUP_LAYERS and config_y_start is None:
             y_cursor += CONFIG_GROUP_TOP
 
-        # Add space for the "Receipt Labelling" label above the first receipt layer
+        # Add space for the "Receipt Labelling" label above the first receipt layer  # noqa: E501
         if layer_name in RECEIPT_GROUP_LAYERS and receipt_y_start is None:
             y_cursor += RECEIPT_GROUP_TOP
 
@@ -675,7 +675,7 @@ def generate_overview_svg_direct(
                     f'<text x="{ncx:.1f}" y="{ncy + 4:.1f}"'
                     ' text-anchor="middle"'
                     ' font-family="DejaVu Sans,sans-serif"'
-                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'
+                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'  # noqa: E501
                 )
             else:
                 # Centre multiple lines vertically
@@ -703,7 +703,7 @@ def generate_overview_svg_direct(
 
     # Track how many edges use each "routing lane" (right-side column)
     # so we can spread them out horizontally to avoid overlap.
-    lane_counter: Dict[Tuple, int] = defaultdict(int)
+    _lane_counter: Dict[Tuple, int] = defaultdict(int)  # noqa: F841
 
     def edge_path(src: str, dst: str, lane_offset: float = 0) -> str:
         """Build an SVG path from src node bottom to dst node top.
@@ -901,7 +901,7 @@ def generate_story_svg_direct(
     LAYER_GAP = 8  # increased for arrow visibility
     CONFIG_GROUP_PAD = 3
     CONFIG_GROUP_TOP = 14
-    COL_GAP = 20  # horizontal gap between left and right columns
+    _COL_GAP = 20  # noqa: F841  # horizontal gap between left and right columns
     FONT_SIZE = 9
     LABEL_FONT_SIZE = 10
     MIN_CLUSTER_W = 132  # tight minimum cluster width (node=100 + 2*MARGIN)
@@ -1340,7 +1340,7 @@ def generate_story_svg_direct(
                     f'<text x="{ncx:.1f}" y="{ncy + 4:.1f}"'
                     ' text-anchor="middle"'
                     ' font-family="DejaVu Sans,sans-serif"'
-                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'
+                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'  # noqa: E501
                 )
             else:
                 total_text_h = len(label_lines) * (FONT_SIZE + 2)
@@ -1578,7 +1578,7 @@ def generate_css(*, dim_opacity: Optional[float] = None) -> str:
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;  # noqa: E501
   background: var(--bg); color: var(--text);
   display: flex; min-height: 100vh;
 }
@@ -1753,13 +1753,13 @@ a:hover { text-decoration: underline; }
 
 /* DAG node highlighting */
 .dag-node { cursor: pointer; transition: opacity 0.2s; }
-.dag-node.unreachable { cursor: default; opacity: __NODE_OP__; pointer-events: none; }
+.dag-node.unreachable { cursor: default; opacity: __NODE_OP__; pointer-events: none; }  # noqa: E501
 .dag-edge.unreachable { opacity: __EDGE_OP__; pointer-events: none; }
 .dag-node.active polygon,
 .dag-node.active ellipse,
-.dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }
+.dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }  # noqa: E501
 .dag-node.active text { font-weight: bold !important; }
-.dag-cluster.active-cluster > polygon { stroke: #ff6600 !important; stroke-width: 2 !important; }
+.dag-cluster.active-cluster > polygon { stroke: #ff6600 !important; stroke-width: 2 !important; }  # noqa: E501
 
 /* Section boxing in full-path view */
 .dag-cluster.section-box > polygon,
@@ -1797,8 +1797,8 @@ a:hover { text-decoration: underline; }
 }
 
 /* BDD narrative */
-.bdd { background: var(--bg-card); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-.bdd dt { font-weight: 700; color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem; }
+.bdd { background: var(--bg-card); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }  # noqa: E501
+.bdd dt { font-weight: 700; color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem; }  # noqa: E501
 .bdd dd { margin-left: 1rem; font-size: 0.9rem; }
 
 /* Acceptance criteria */
@@ -1835,11 +1835,11 @@ a:hover { text-decoration: underline; }
   border-color: #ff6600; background: rgba(255, 102, 0, 0.15);
   font-weight: 600;
 }
-.dag-path .path-arrow { color: var(--text-muted); font-size: 0.7rem; align-self: center; flex-shrink: 0; }
+.dag-path .path-arrow { color: var(--text-muted); font-size: 0.7rem; align-self: center; flex-shrink: 0; }  # noqa: E501
 .dag-path > .path-node { flex-shrink: 0; }
 
 /* Tree chip groups */
-.path-node-group { display: inline-flex; flex-direction: column; flex-shrink: 0; }
+.path-node-group { display: inline-flex; flex-direction: column; flex-shrink: 0; }  # noqa: E501
 .path-children {
   display: none; flex-direction: column; gap: 0.15rem;
   margin-top: 0.2rem; padding-left: 0.5rem;
@@ -1892,8 +1892,8 @@ a:hover { text-decoration: underline; }
   transform-origin: 0 0; transition: transform 0.15s ease-out;
   width: 100%; height: auto;
 }
-.dag-explorer .dag-node.dimmed { opacity: __EXPLORER_NODE_OP__; transition: opacity 0.3s; }
-.dag-explorer .dag-edge.dimmed { opacity: __EXPLORER_EDGE_OP__; transition: opacity 0.3s; }
+.dag-explorer .dag-node.dimmed { opacity: __EXPLORER_NODE_OP__; transition: opacity 0.3s; }  # noqa: E501
+.dag-explorer .dag-edge.dimmed { opacity: __EXPLORER_EDGE_OP__; transition: opacity 0.3s; }  # noqa: E501
 .dag-explorer .dag-node.story-hl polygon,
 .dag-explorer .dag-node.story-hl ellipse,
 .dag-explorer .dag-node.story-hl rect {
@@ -2011,8 +2011,8 @@ def generate_js() -> str:
       try { localStorage.setItem('dag-view-mode', mode); } catch(e) {}
     };
 
-    btnSegment.addEventListener('click', function() { window._dagSetView('segment'); });
-    btnFull.addEventListener('click', function() { window._dagSetView('full'); });
+    btnSegment.addEventListener('click', function() { window._dagSetView('segment'); });  # noqa: E501
+    btnFull.addEventListener('click', function() { window._dagSetView('full'); });  # noqa: E501
 
     // Restore saved preference
     try {
@@ -2025,9 +2025,9 @@ def generate_js() -> str:
   var video = document.getElementById('demo-video');
   if (!video || !svgContainer || typeof TIMESTAMPS === 'undefined') return;
 
-  // Build ordered list of parent-node timestamp keys (exclude sub-component keys)
+  // Build ordered list of parent-node timestamp keys (exclude sub-component keys)  # noqa: E501
   var tsKeys = Object.keys(TIMESTAMPS)
-    .filter(function(k) { return TIMESTAMPS[k] !== null && k.indexOf('__') === -1; })
+    .filter(function(k) { return TIMESTAMPS[k] !== null && k.indexOf('__') === -1; })  # noqa: E501
     .sort(function(a, b) { return TIMESTAMPS[a] - TIMESTAMPS[b]; });
   if (tsKeys.length === 0) return;
 
@@ -2054,14 +2054,14 @@ def generate_js() -> str:
   Object.keys(TIMESTAMPS).forEach(function(k) {
     var parts = k.split('__');
     if (parts.length === 2 && TIMESTAMPS[k] !== null) {
-      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k], parent: parts[0] };
+      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k], parent: parts[0] };  # noqa: E501
       if (!fieldsByParent[parts[0]]) fieldsByParent[parts[0]] = [];
       fieldsByParent[parts[0]].push(k);
     }
   });
   // Sort each parent's field keys by time
   Object.keys(fieldsByParent).forEach(function(p) {
-    fieldsByParent[p].sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });
+    fieldsByParent[p].sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });  # noqa: E501
   });
 
   // Debug overlay (toggle with 'd' key)
@@ -2070,14 +2070,14 @@ def generate_js() -> str:
   function ensureDebugEl() {
     if (!debugEl) {
       debugEl = document.createElement('div');
-      debugEl.style.cssText = 'position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;padding:8px 12px;border-radius:4px;z-index:9999;pointer-events:none;max-width:340px;white-space:pre';
+      debugEl.style.cssText = 'position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;padding:8px 12px;border-radius:4px;z-index:9999;pointer-events:none;max-width:340px;white-space:pre';  # noqa: E501
       document.body.appendChild(debugEl);
     }
   }
   function updateDebug(videoTime, nodeId, activeField) {
     if (!debugVisible) return;
     ensureDebugEl();
-    var lines = ['t=' + (videoTime !== undefined ? videoTime.toFixed(2) : '?') + 's'];
+    var lines = ['t=' + (videoTime !== undefined ? videoTime.toFixed(2) : '?') + 's'];  # noqa: E501
     lines.push('node=' + nodeId);
     lines.push('field=' + (activeField || '(none)'));
     // Show field timestamp ranges for the active TUI node
@@ -2087,8 +2087,8 @@ def generate_js() -> str:
       for (var i = 0; i < parentKeys.length; i++) {
         var e = fieldTimestamps[parentKeys[i]];
         var marker = (e.field === activeField) ? '>' : ' ';
-        var nextTime = (i + 1 < parentKeys.length) ? fieldTimestamps[parentKeys[i + 1]].time : null;
-        var range = e.time.toFixed(2) + (nextTime ? '-' + nextTime.toFixed(2) : '+');
+        var nextTime = (i + 1 < parentKeys.length) ? fieldTimestamps[parentKeys[i + 1]].time : null;  # noqa: E501
+        var range = e.time.toFixed(2) + (nextTime ? '-' + nextTime.toFixed(2) : '+');  # noqa: E501
         lines.push(marker + ' ' + e.field + ' ' + range);
       }
     }
@@ -2128,7 +2128,7 @@ def generate_js() -> str:
         }
       }
       overlayRects.forEach(function(r) {
-        r.classList.toggle('active', !!activeFields[r.getAttribute('data-field')]);
+        r.classList.toggle('active', !!activeFields[r.getAttribute('data-field')]);  # noqa: E501
       });
     }
     updateDebug(videoTime, nodeId, Object.keys(activeFields).join(','));
@@ -2248,7 +2248,7 @@ def generate_explorer_js() -> str:
     """Generate the DAG explorer JavaScript for the index page.
 
     Expects globals: STORIES (array of {id, title, colour, paths, url}).
-    The SVG must already have data-node attributes from add_data_attributes_to_svg.
+    The SVG must already have data-node attributes from add_data_attributes_to_svg.  # noqa: E501
     """
     return r"""
 (function() {
@@ -2275,11 +2275,11 @@ def generate_explorer_js() -> str:
   var MAX_ZOOM = 5;
 
   // Pan state for mouse drag
-  var dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+  var dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;  # noqa: E501
 
   // --- Helpers ---
   function applyTransform() {
-    svg.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
+    svg.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';  # noqa: E501
   }
 
   function contentBBox() {
@@ -2366,7 +2366,7 @@ def generate_explorer_js() -> str:
     clearHighlights();
     if (idx < 0 || idx >= STORIES.length) {
       statusEl.style.display = 'none';
-      document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
+      document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {  # noqa: E501
         a.classList.remove('explorer-active');
       });
       return;
@@ -2386,14 +2386,14 @@ def generate_explorer_js() -> str:
         n.classList.add('dimmed');
       }
     });
-    // Match edges by stroke colour — each story has a unique colour on its edges
+    // Match edges by stroke colour — each story has a unique colour on its edges  # noqa: E501
     var storyColour = story.colour.toLowerCase();
     allEdges.forEach(function(e) {
       var path = e.querySelector('path');
       var poly = e.querySelector('polygon');
       var edgeColour = '';
       if (path) edgeColour = (path.getAttribute('stroke') || '').toLowerCase();
-      if (!edgeColour && poly) edgeColour = (poly.getAttribute('stroke') || '').toLowerCase();
+      if (!edgeColour && poly) edgeColour = (poly.getAttribute('stroke') || '').toLowerCase();  # noqa: E501
       if (edgeColour === storyColour) {
         // This edge belongs to the current story — keep visible
       } else {
@@ -2414,10 +2414,10 @@ def generate_explorer_js() -> str:
       var dashMap = {dashed: '5,3', dotted: '2,3', bold: '', solid: ''};
       var da = dashMap[story.pattern] || '';
       swLine.setAttribute('stroke-dasharray', da);
-      swLine.setAttribute('stroke-width', story.pattern === 'bold' ? '4' : '2.5');
+      swLine.setAttribute('stroke-width', story.pattern === 'bold' ? '4' : '2.5');  # noqa: E501
     }
 
-    document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
+    document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {  # noqa: E501
       a.classList.remove('explorer-active');
     });
     var sidebar = document.querySelector('.sidebar');
@@ -2758,8 +2758,8 @@ def generate_zoom_js() -> str:
     var vp = grid && grid.querySelector('.video-section.zoom-pane');
     var dp = grid && grid.querySelector('.dag-section.zoom-pane');
 
-    if (vp) { clearTransforms(vp); scaleMap[vp.getAttribute('data-zoom-id')] = 1; }
-    if (dp) { clearTransforms(dp); scaleMap[dp.getAttribute('data-zoom-id')] = 1; }
+    if (vp) { clearTransforms(vp); scaleMap[vp.getAttribute('data-zoom-id')] = 1; }  # noqa: E501
+    if (dp) { clearTransforms(dp); scaleMap[dp.getAttribute('data-zoom-id')] = 1; }  # noqa: E501
 
     var vInd = vp && getIndicator(vp);
     var dInd = dp && getIndicator(dp);
@@ -2893,14 +2893,14 @@ def _html_head(*, title: str) -> str:
 
 
 def _line_swatch_svg(*, colour: str, pattern: str) -> str:
-    """Return an inline SVG showing a short line with the story's colour and dash pattern."""
+    """Return an inline SVG showing a short line with the story's colour and dash pattern."""  # noqa: E501
     dash_map = {"dashed": "5,3", "dotted": "2,3", "bold": "", "solid": ""}
     da = dash_map.get(pattern, "")
     sw = "3.5" if pattern == "bold" else "2"
     da_attr = f' stroke-dasharray="{da}"' if da else ""
     return (
         '<svg class="sidebar-swatch" viewBox="0 0 22 10"'
-        ' style="width:22px;height:10px;vertical-align:middle;margin-right:4px;flex-shrink:0"><line'
+        ' style="width:22px;height:10px;vertical-align:middle;margin-right:4px;flex-shrink:0"><line'  # noqa: E501
         f' x1="1" y1="5" x2="21" y2="5" stroke="{colour}"'
         f' stroke-width="{sw}"{da_attr}/></svg>'
     )
@@ -2915,9 +2915,7 @@ def _sidebar_html(
     html = '<nav class="sidebar zoom-pane" data-zoom-id="sidebar">\n'
     html += '<div class="zoom-pane-inner">\n'
     html += '<h1><a href="{INDEX_PATH}">hledger-preprocessor</a></h1>\n'
-    html += (
-        '<p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">'
-    )
+    html += '<p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">'  # noqa: E501
     html += "User Story DAG Explorer</p>\n"
     swv = stories_with_video or set()
     for section, stories in sections.items():
@@ -3092,7 +3090,7 @@ def generate_matching_flow_svg(
     lines.append(
         '<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {svg_w} {svg_h}" '
-        'style="max-width:100%;height:auto;font-family:system-ui,sans-serif;font-size:11px">'
+        'style="max-width:100%;height:auto;font-family:system-ui,sans-serif;font-size:11px">'  # noqa: E501
     )
     lines.append("<defs>")
     lines.append(

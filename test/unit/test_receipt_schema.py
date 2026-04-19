@@ -224,7 +224,7 @@ class TestAccountValidation:
         """Account requires Currency enum, not string."""
         with pytest.raises(TypeError):
             Account(
-                base_currency="EUR",  # type: ignore
+                base_currency="EUR",  # type: ignore[arg-type]
                 account_holder="at",
                 bank="triodos",
                 account_type="checking",

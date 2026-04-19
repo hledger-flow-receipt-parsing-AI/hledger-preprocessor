@@ -141,7 +141,7 @@ def show_sankey_diagram() -> None:
     print(f"  {Colors.GREEN}Income{Colors.RESET}")
     print(f"    {Colors.GRAY}│{Colors.RESET}")
     print(
-        f"    {Colors.GRAY}├──────────────────────────────────────┐{Colors.RESET}"
+        f"    {Colors.GRAY}├──────────────────────────────────────┐{Colors.RESET}"  # noqa: E501
     )
     print(
         f"    {Colors.GRAY}│{Colors.RESET}                                     "
@@ -194,15 +194,15 @@ def show_treemap_diagram() -> None:
 
     # ASCII art representation of Treemap
     print(
-        f"  {Colors.GRAY}┌─────────────────────────────────────────────────────┐{Colors.RESET}"
+        f"  {Colors.GRAY}┌─────────────────────────────────────────────────────┐{Colors.RESET}"  # noqa: E501
     )
     print(
-        f"  {Colors.GRAY}│{Colors.RESET} {Colors.BOLD_WHITE}Expenses{Colors.RESET} "
+        f"  {Colors.GRAY}│{Colors.RESET} {Colors.BOLD_WHITE}Expenses{Colors.RESET} "  # noqa: E501
         "                                          "
         f" {Colors.GRAY}│{Colors.RESET}"
     )
     print(
-        f"  {Colors.GRAY}├─────────────────────────┬───────────────────────────┤{Colors.RESET}"
+        f"  {Colors.GRAY}├─────────────────────────┬───────────────────────────┤{Colors.RESET}"  # noqa: E501
     )
     print(
         f"  {Colors.GRAY}│{Colors.RESET} {Colors.YELLOW}Rent{Colors.RESET}     "
@@ -232,11 +232,11 @@ def show_treemap_diagram() -> None:
         f" {Colors.GRAY}│{Colors.RESET}"
     )
     print(
-        f"  {Colors.GRAY}├─────────────────────────┴─────────────┴─────────────┤{Colors.RESET}"
+        f"  {Colors.GRAY}├─────────────────────────┴─────────────┴─────────────┤{Colors.RESET}"  # noqa: E501
     )
     print(
-        f"  {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Utilities{Colors.RESET} "
-        f" {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Transport{Colors.RESET} {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Entertainment{Colors.RESET} "
+        f"  {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Utilities{Colors.RESET} "  # noqa: E501
+        f" {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Transport{Colors.RESET} {Colors.GRAY}│{Colors.RESET} {Colors.MAGENTA}Entertainment{Colors.RESET} "  # noqa: E501
         f"           {Colors.GRAY}│{Colors.RESET}"
     )
     print(
@@ -246,7 +246,7 @@ def show_treemap_diagram() -> None:
         f" {Colors.GRAY}│{Colors.RESET}"
     )
     print(
-        f"  {Colors.GRAY}└────────────┴───────────┴─────────────────────────────┘{Colors.RESET}"
+        f"  {Colors.GRAY}└────────────┴───────────┴─────────────────────────────┘{Colors.RESET}"  # noqa: E501
     )
     print()
     time.sleep(2)
@@ -314,7 +314,7 @@ def show_generated_files(working_dir: str) -> None:
             print()
             for svg in sorted(svg_files)[:6]:
                 print(
-                    f"  {Colors.GREEN}✓{Colors.RESET} {Colors.CYAN}{svg}{Colors.RESET}"
+                    f"  {Colors.GREEN}✓{Colors.RESET} {Colors.CYAN}{svg}{Colors.RESET}"  # noqa: E501
                 )
                 time.sleep(0.2)
 

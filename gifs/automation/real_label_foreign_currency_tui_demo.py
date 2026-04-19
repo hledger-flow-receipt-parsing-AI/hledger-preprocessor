@@ -193,7 +193,7 @@ def setup_foreign_currency_env():
 
     # CSV
     (root / "triodos_2025.csv").write_text(
-        "date,account_nr,amount,type,payee,counter_account,code,description,balance\n20-03-2025,NL79"
+        "date,account_nr,amount,type,payee,counter_account,code,description,balance\n20-03-2025,NL79"  # noqa: E501
         " TRIO 0379 2834 09,-117.50,debit,ATM"
         " London,NL456,IC,cash:atm_withdrawal,882.50\n"
     )

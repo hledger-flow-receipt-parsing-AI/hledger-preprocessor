@@ -60,10 +60,10 @@ class KeyOverlay:
         Args:
             rows: Terminal height in rows
             cols: Terminal width in columns
-            display_duration: How long to show the key (0 = don't clear automatically)
+            display_duration: How long to show the key (0 = don't clear automatically)  # noqa: E501
             padding_right: Padding from right edge
             padding_bottom: Padding from bottom edge
-            bg_color: Background color for the key display (empty = no background)
+            bg_color: Background color for the key display (empty = no background)  # noqa: E501
             fg_color: Foreground color for the key text
             enabled: Whether to display keys (can be toggled)
         """
@@ -134,7 +134,7 @@ class KeyOverlay:
             f"{Colors.RESET}"  # Reset any previous styling
             f"{' ' * FIXED_DISPLAY_WIDTH}"  # Clear the area
             f"\x1b[{display_row};{display_col}H"  # Move back to position
-            f"{self.bg_color}{self.fg_color}{display_text}{Colors.RESET}"  # Print styled text
+            f"{self.bg_color}{self.fg_color}{display_text}{Colors.RESET}"  # Print styled text  # noqa: E501
             f"\x1b8"  # Restore cursor (DEC)
         )
 

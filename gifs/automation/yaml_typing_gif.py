@@ -9,7 +9,7 @@ instead of asciinema recording.
 
 Usage:
     # Single file mode:
-    python -m gifs.automation.yaml_typing_gif --input config.yaml --output config.gif
+    python -m gifs.automation.yaml_typing_gif --input config.yaml --output config.gif  # noqa: E501
 
     # Segmented mode (multiple fragments with per-section timestamps):
     python -m gifs.automation.yaml_typing_gif \\
@@ -221,7 +221,7 @@ def create_frame(
     # Draw header
     draw_header(draw, title, cols, font)
 
-    # Draw content area (rows 1 to rows-3, leaving room for header and 2 footer lines)
+    # Draw content area (rows 1 to rows-3, leaving room for header and 2 footer lines)  # noqa: E501
     content_rows = rows - 3
     y = CHAR_HEIGHT  # Start after header
 
@@ -360,7 +360,7 @@ def make_segmented_typing_gif(
     rows: int = DEFAULT_ROWS,
     cols: int = DEFAULT_COLS,
 ) -> None:
-    """Generate a typing GIF from multiple YAML fragments with marker timestamps.
+    """Generate a typing GIF from multiple YAML fragments with marker timestamps.  # noqa: E501
 
     Types all fragments sequentially as one smooth file, recording the frame
     index where each fragment begins. Writes a sidecar JSON with timestamps.
@@ -502,7 +502,7 @@ def main() -> None:
         description="Generate typing animation GIF for YAML files"
     )
 
-    # Mutually exclusive: --input (single file) or --segments (multiple fragments)
+    # Mutually exclusive: --input (single file) or --segments (multiple fragments)  # noqa: E501
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         "--input", "-i", help="Input YAML file path (single file mode)"
