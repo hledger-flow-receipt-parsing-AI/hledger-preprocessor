@@ -10,9 +10,12 @@ Uses two data sources:
 If a _coverage.json is MISSING for a GIF, the hook errors (forces re-record).
 If a _coverage.json has type "standalone", empty files_touched is accepted.
 
-Installation (per sub-repo):
-    ln -sf /home/a/git/git/hledger/hledger-preprocessor/hooks/check-gif-staleness.py \\
-           .git/hooks/pre-commit
+Installation (in each sub-repo's .pre-commit-config.yaml):
+    - repo: https://github.com/hledger-flow-receipt-parsing-AI/gif-staleness-hook
+      rev: v0.1.0
+      hooks:
+        - id: check-gif-staleness
+          args: [--bootstrap]  # remove once all GIFs have _coverage.json
 
 Usage:
     check-gif-staleness.py [--ci] [--block] [--bootstrap]
@@ -261,9 +264,7 @@ def check_yaml_staleness(
         watches = gif_info.get("watches", [])
         for pattern in watches:
             if any(match_path(f, pattern) for f in root_relative_files):
-                stale.append(
-                    (gif_name, gif_info.get("description", pattern))
-                )
+                stale.append((gif_name, gif_info.get("description", pattern)))
                 break
 
     return stale
@@ -281,7 +282,9 @@ def check_gif_artifacts_staged(
             f"gifs/{gif_name}/recordings/*",
         ]
         rerecorded = any(
-            match_path(f, pat) for f in staged_files for pat in artifact_patterns
+            match_path(f, pat)
+            for f in staged_files
+            for pat in artifact_patterns
         )
         if not rerecorded:
             not_rerecorded.append((gif_name, desc))
@@ -376,9 +379,7 @@ def main() -> int:
     # ── Check for missing coverage files ──
     all_gif_dirs = discover_gif_dirs(hledger_root)
     coverage_data = discover_coverage_jsons(hledger_root)
-    missing_coverage = [
-        d for d in all_gif_dirs if d not in coverage_data
-    ]
+    missing_coverage = [d for d in all_gif_dirs if d not in coverage_data]
 
     if missing_coverage:
         print_missing_coverage(missing_coverage, args.bootstrap)
@@ -391,11 +392,11 @@ def main() -> int:
     )
 
     # ── Check non-Python files against YAML deps ──
-    yaml_deps_path = hledger_root / "hledger-preprocessor" / "gif_dependencies.yaml"
-    yaml_deps = load_yaml_deps(yaml_deps_path)
-    stale_from_yaml = check_yaml_staleness(
-        repo_name, changed_files, yaml_deps
+    yaml_deps_path = (
+        hledger_root / "hledger-preprocessor" / "gif_dependencies.yaml"
     )
+    yaml_deps = load_yaml_deps(yaml_deps_path)
+    stale_from_yaml = check_yaml_staleness(repo_name, changed_files, yaml_deps)
 
     # ── Merge and deduplicate ──
     all_stale: Dict[str, str] = {}
