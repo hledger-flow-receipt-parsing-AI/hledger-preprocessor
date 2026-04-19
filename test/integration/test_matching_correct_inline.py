@@ -3,7 +3,6 @@
 Covers US-3.8: Correct receipt inline — matcher retries with updated data.
 """
 
-
 import pytest
 
 from hledger_preprocessor.config.load_config import load_config

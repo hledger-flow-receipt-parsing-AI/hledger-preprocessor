@@ -92,8 +92,8 @@ def check_matching(
     if unlabelled > 0:
         print(
             f"\nNote: {unlabelled} receipt image(s) have no labels yet."
-            f" The missing match may be in one of them."
-            f"\nRun --tui-label-receipts to label them."
+            " The missing match may be in one of them."
+            "\nRun --tui-label-receipts to label them."
         )
 
     return unmatched

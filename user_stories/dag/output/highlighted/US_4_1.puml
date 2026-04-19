@@ -16,11 +16,13 @@ digraph userstory_dag {
       label="Account Configuration";
       style=filled; fillcolor="#E3F2FD";
       rank=same;
+      acct_bitvavo_csv [label="Bitvavo exchange\n(atomic CSV)", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Bitvavo trading account — single-row atomic trades"];
       acct_btc_wallet [label="BTC digital\nwallet", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="BTC digital wallet / exchange"];
       acct_eur_wallet [label="EUR physical\nwallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="EUR cash wallet — no CSV import"];
       acct_gbp_wallet [label="GBP physical\nwallet", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="GBP cash wallet — foreign currency"];
       acct_gold_wallet [label="GOLD physical\nwallet", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="GOLD physical asset wallet"];
       acct_ing_csv [label="ING checking\n(EUR CSV)", shape=box3d, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="ING checking account — imports from CSV"];
+      acct_kraken_csv [label="Kraken exchange\n(multi-row CSV)", shape=box3d, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Kraken trading account — split spend/receive rows linked by refid"];
       acct_silver_wallet [label="SILVER physical\nwallet", shape=box3d, penwidth=2.0, color="#CCCCCC", fontcolor="#999999", tooltip="SILVER physical asset wallet"];
       acct_triodos_csv [label="Triodos checking\n(EUR CSV)", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking account — imports from CSV"];
     }
@@ -213,6 +215,7 @@ digraph userstory_dag {
     viz_treemap [label="Treemap Plot", shape=octagon, penwidth=1.5, color="#333333", fontcolor="#000000", tooltip="Interactive Plotly Treemap of spending"];
   }
 
+  acct_bitvavo_csv -> acct_triodos_csv [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_btc_wallet -> acct_gold_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_btc_wallet -> dirp_default [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_eur_wallet -> acct_gbp_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
@@ -221,6 +224,7 @@ digraph userstory_dag {
   acct_gold_wallet -> acct_silver_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_ing_csv -> acct_eur_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_ing_csv -> dirp_default [color="#DDDDDD", penwidth=1.0, style=solid];
+  acct_kraken_csv -> acct_bitvavo_csv [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_silver_wallet -> dirp_default [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_triodos_csv -> acct_btc_wallet [color="#DDDDDD", penwidth=1.0, style=solid];
   acct_triodos_csv -> acct_eur_wallet [color="#DDDDDD", penwidth=1.0, style=solid];

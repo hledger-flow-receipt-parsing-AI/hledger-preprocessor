@@ -1,8 +1,6 @@
 import os
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import pandas as pd
 from typeguard import typechecked
 
 from hledger_preprocessor.config.Config import Config
@@ -14,9 +12,6 @@ from hledger_preprocessor.csv_parsing.csv_to_transactions import (
     load_csv_transactions_from_file_per_year,
 )
 from hledger_preprocessor.csv_parsing.preprocess_csvs import pre_process_csvs
-from hledger_preprocessor.Currency import (
-    Currency,
-)
 from hledger_preprocessor.dir_reading_and_writing import (
     assert_dir_full_hierarchy_exists,
 )
@@ -38,6 +33,7 @@ from hledger_preprocessor.receipts_to_objects.make_receipt_labels import (
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
 # Action 0.
+
 
 @typechecked
 def edit_receipt(*, config: Config, labelled_receipts: List[Receipt]) -> None:
@@ -190,9 +186,7 @@ def match_csv_to_csv(
     )
 
     for ac, indices in suppressed.items():
-        suppress_ids[ac] = {
-            id(generic_txns[ac][i]) for i in indices
-        }
+        suppress_ids[ac] = {id(generic_txns[ac][i]) for i in indices}
 
     return suppress_ids, category_overrides
 
@@ -213,9 +207,7 @@ def preprocess_generic_csvs(
         reconcile_linked_accounts,
     )
 
-    has_linked = any(
-        ac.linked_accounts for ac in config.accounts
-    )
+    has_linked = any(ac.linked_accounts for ac in config.accounts)
 
     if has_linked:
         # Parse all CSVs once
@@ -257,9 +249,7 @@ def preprocess_generic_csvs(
             # SAME transaction objects that will be processed below.
             suppress_ids = {}
             for ac, indices in suppressed_indices.items():
-                suppress_ids[ac] = {
-                    id(flat_generic[ac][i]) for i in indices
-                }
+                suppress_ids[ac] = {id(flat_generic[ac][i]) for i in indices}
 
         # Filter suppressed transactions from year-based dicts
         if suppress_ids:
@@ -267,8 +257,7 @@ def preprocess_generic_csvs(
                 if suppress_ids.get(ac):
                     for year, txns in txns_by_year.items():
                         txns_by_year[year] = [
-                            t for t in txns
-                            if id(t) not in suppress_ids[ac]
+                            t for t in txns if id(t) not in suppress_ids[ac]
                         ]
 
         # Process

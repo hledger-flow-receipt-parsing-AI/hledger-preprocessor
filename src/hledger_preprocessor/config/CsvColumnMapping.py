@@ -1,3 +1,6 @@
 # Backward-compat re-export: moved to hledger-core
 from hledger_core.config.CsvColumnMapping import *  # noqa: F401,F403
-from hledger_core.config.CsvColumnMapping import CsvColumnMapping, ColumnNames  # noqa: F401
+from hledger_core.config.CsvColumnMapping import (  # noqa: F401
+    ColumnNames,
+    CsvColumnMapping,
+)

@@ -3,8 +3,6 @@
 Covers US-1a.5: Per-bank matching params override global defaults.
 """
 
-
-
 from hledger_preprocessor.config.load_config import load_config
 from hledger_preprocessor.matching.manual_actions.widen_amount_range import (
     widen_amount_range,

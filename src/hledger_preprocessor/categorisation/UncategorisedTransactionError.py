@@ -24,9 +24,9 @@ class UncategorisedTransactionError(Exception):
             f"{tnx_repr}\n"
             f"{'='*60}\n"
             f"Please add a categorisation rule for this {transaction_type} "
-            f"transaction in:\n"
-            f"  src/hledger_preprocessor/categorisation/rule_based/"
-            f"private_logic.py\n"
-            f"Then run ./start.sh again.\n"
+            "transaction in:\n"
+            "  src/hledger_preprocessor/categorisation/rule_based/"
+            "private_logic.py\n"
+            "Then run ./start.sh again.\n"
             f"{'='*60}"
         )

@@ -1,3 +1,5 @@
 # Backward-compat re-export: moved to hledger-core
 from hledger_core.generics.ReceiptImageToObjModel import *  # noqa: F401,F403
-from hledger_core.generics.ReceiptImageToObjModel import ReceiptImageToObjModel  # explicit for type checkers
+from hledger_core.generics.ReceiptImageToObjModel import (  # explicit for type checkers
+    ReceiptImageToObjModel,
+)

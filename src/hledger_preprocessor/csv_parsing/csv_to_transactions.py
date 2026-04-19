@@ -150,9 +150,11 @@ def process_transactions(
             all_indices_start_at = 1
         else:
             all_indices_start_at = 0
-        transactions: List[GenericCsvTransaction] = account_config.parse_csv_rows(
-            rows=rows,
-            start_index=all_indices_start_at,
+        transactions: List[GenericCsvTransaction] = (
+            account_config.parse_csv_rows(
+                rows=rows,
+                start_index=all_indices_start_at,
+            )
         )
         return transactions
     else:

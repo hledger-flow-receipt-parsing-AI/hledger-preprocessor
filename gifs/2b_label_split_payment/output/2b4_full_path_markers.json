@@ -1,64 +1,64 @@
 {
   "markers": {
-    "acct_triodos_csv": 0.0,
     "acct_eur_wallet": 23.16,
-    "dirp_default": 32.72,
-    "fnames_default": 49.96,
-    "catcfg_default": 65.4,
-    "malgo_default": 68.12,
+    "acct_triodos_csv": 0.0,
     "cat_basic__groceries": 74.72,
     "cat_basic__withdrawl": 77.32,
-    "start_2024_1000eur": 80.24,
+    "catcfg_default": 65.4,
     "csv_split_dinner_30": 90.16,
+    "dirp_default": 32.72,
+    "fnames_default": 49.96,
     "img_split_dinner": 101.44,
-    "nolbl_dinner_split": 103.63,
-    "lbl_dinner_split": 156.27,
-    "tui_dinner_split": 113.88,
-    "tui_dinner_split__date": 114.42,
-    "tui_dinner_split__time": 114.42,
-    "tui_dinner_split__category": 118.3,
-    "tui_dinner_split__bank_account": 121.35,
-    "tui_dinner_split__currency": 122.3,
-    "tui_dinner_split__amount": 123.26,
-    "tui_dinner_split__change": 124.58,
-    "tui_dinner_split__bank_account_2": 128.3,
-    "tui_dinner_split__currency_2": 129.26,
-    "tui_dinner_split__amount_2": 130.22,
-    "tui_dinner_split__change_2": 131.53,
-    "tui_dinner_split__shop_name": 137.47,
-    "tui_dinner_split__shop_street": 140.76,
-    "tui_dinner_split__shop_house_nr": 143.11,
-    "tui_dinner_split__shop_zipcode": 144.38,
-    "tui_dinner_split__shop_city": 146.14,
-    "tui_dinner_split__shop_country": 148.25,
-    "tui_dinner_split__tax": 150.6,
-    "jrnl_dinner_split_card": 164.59
+    "jrnl_dinner_split_card": 166.44,
+    "lbl_dinner_split": 161.5,
+    "malgo_default": 68.12,
+    "nolbl_dinner_split": 103.57,
+    "start_2024_1000eur": 80.24,
+    "tui_dinner_split": 112.21,
+    "tui_dinner_split__amount": 123.15,
+    "tui_dinner_split__amount_2": 130.08,
+    "tui_dinner_split__bank_account": 121.16,
+    "tui_dinner_split__bank_account_2": 128.1,
+    "tui_dinner_split__category": 116.55,
+    "tui_dinner_split__change": 124.44,
+    "tui_dinner_split__change_2": 131.59,
+    "tui_dinner_split__currency": 122.21,
+    "tui_dinner_split__currency_2": 129.14,
+    "tui_dinner_split__date": 112.74,
+    "tui_dinner_split__shop_city": 149.13,
+    "tui_dinner_split__shop_country": 152.17,
+    "tui_dinner_split__shop_house_nr": 145.95,
+    "tui_dinner_split__shop_name": 137.63,
+    "tui_dinner_split__shop_street": 142.46,
+    "tui_dinner_split__shop_zipcode": 147.2,
+    "tui_dinner_split__tax": 155.66,
+    "tui_dinner_split__time": 112.74
   },
-  "total_duration": 182.83,
   "segments": [
     {
-      "file": "cfg_1b1w.mp4",
-      "duration": 74.72
+      "duration": 74.72,
+      "file": "cfg_1b1w.mp4"
     },
     {
-      "file": "cat_basic.mp4",
-      "duration": 5.52
+      "duration": 5.52,
+      "file": "cat_basic.mp4"
     },
     {
-      "file": "starting_journal.mp4",
-      "duration": 9.92
+      "duration": 9.92,
+      "file": "starting_journal.mp4"
     },
     {
-      "file": "bank_csv_split_dinner.mp4",
-      "duration": 11.28
+      "duration": 11.28,
+      "file": "bank_csv_split_dinner.mp4"
     },
     {
-      "file": "2b_label_split_payment.mp4",
-      "duration": 63.15
+      "duration": 65.0,
+      "file": "2b_label_split_payment.mp4"
     },
     {
-      "file": "journal_output_split_dinner.mp4",
-      "duration": 18.24
+      "duration": 18.24,
+      "file": "journal_output_split_dinner.mp4"
     }
-  ]
+  ],
+  "total_duration": 184.68
 }

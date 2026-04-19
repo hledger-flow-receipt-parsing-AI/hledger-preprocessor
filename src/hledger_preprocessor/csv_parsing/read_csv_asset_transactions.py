@@ -14,12 +14,10 @@ from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
-from hledger_preprocessor.TransactionObjects.Address import Address
 from hledger_preprocessor.TransactionObjects.ProcessedTransaction import (
     ProcessedTransaction,
 )
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
-from hledger_preprocessor.TransactionObjects.ShopId import ShopId
 
 
 @typechecked

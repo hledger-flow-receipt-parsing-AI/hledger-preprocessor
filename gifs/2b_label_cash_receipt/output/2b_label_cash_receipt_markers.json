@@ -1,23 +1,23 @@
 {
   "markers": {
     "img_coffee_cash": 0.0,
-    "nolbl_coffee_cash": 3.51,
-    "lbl_coffee_cash": 46.35,
-    "tui_coffee_cash": 14.19,
-    "tui_coffee_cash__date": 14.64,
-    "tui_coffee_cash__time": 14.64,
-    "tui_coffee_cash__category": 17.88,
-    "tui_coffee_cash__bank_account": 20.02,
-    "tui_coffee_cash__currency": 20.82,
-    "tui_coffee_cash__amount": 21.62,
-    "tui_coffee_cash__change": 22.72,
-    "tui_coffee_cash__shop_name": 31.98,
-    "tui_coffee_cash__shop_street": 34.14,
-    "tui_coffee_cash__shop_house_nr": 36.01,
-    "tui_coffee_cash__shop_zipcode": 37.07,
-    "tui_coffee_cash__shop_city": 38.53,
-    "tui_coffee_cash__shop_country": 40.1,
-    "tui_coffee_cash__tax": 42.07
+    "lbl_coffee_cash": 52.21,
+    "nolbl_coffee_cash": 3.07,
+    "tui_coffee_cash": 11.63,
+    "tui_coffee_cash__amount": 18.38,
+    "tui_coffee_cash__bank_account": 17.05,
+    "tui_coffee_cash__category": 14.55,
+    "tui_coffee_cash__change": 19.26,
+    "tui_coffee_cash__currency": 17.75,
+    "tui_coffee_cash__date": 11.99,
+    "tui_coffee_cash__shop_city": 33.93,
+    "tui_coffee_cash__shop_country": 35.68,
+    "tui_coffee_cash__shop_house_nr": 31.5,
+    "tui_coffee_cash__shop_name": 26.8,
+    "tui_coffee_cash__shop_street": 29.3,
+    "tui_coffee_cash__shop_zipcode": 32.34,
+    "tui_coffee_cash__tax": 38.1,
+    "tui_coffee_cash__time": 11.99
   },
-  "total_duration": 54.2
+  "total_duration": 58.4
 }

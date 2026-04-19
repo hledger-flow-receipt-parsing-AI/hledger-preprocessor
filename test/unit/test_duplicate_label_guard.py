@@ -7,7 +7,6 @@ import hashlib
 import json
 
 
-
 class TestDuplicateLabelGuard:
     """US-X.6: Prevent multiple receipt labels for the same image."""
 

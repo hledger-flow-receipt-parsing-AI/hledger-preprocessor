@@ -15,7 +15,7 @@ The workflow: you provide a `config.yaml`, bank CSV exports, and optionally
 receipt images. `start.sh` orchestrates everything — preprocessing, hledger-flow
 import, and plotting.
 
----
+______________________________________________________________________
 
 ## A. Quick Start
 
@@ -81,15 +81,15 @@ The config has these sections:
 This will:
 
 1. Parse the config and validate prerequisites
-2. Activate the `hledger_preprocessor` conda environment
-3. Clear and recreate the working directory
-4. Run `hledger_preprocessor --preprocess-assets`
-5. Run `hledger-flow import`
-6. Generate balance reports and plots with `hledger_plot`
+1. Activate the `hledger_preprocessor` conda environment
+1. Clear and recreate the working directory
+1. Run `hledger_preprocessor --preprocess-assets`
+1. Run `hledger-flow import`
+1. Generate balance reports and plots with `hledger_plot`
 
 Add `--randomize` to anonymise amounts in the plots.
 
----
+______________________________________________________________________
 
 ## B. hledger CLI Basics
 
@@ -129,18 +129,18 @@ hledger balance -M -A -b 2024-05 -T assets expenses liabilities -X EUR
 
 ### B.3 CLI flag reference
 
-| Flag | Meaning |
-|------|---------|
-| `-X EUR` | Convert all amounts to EUR |
-| `cur:EUR` | Only include EUR transactions |
-| `balance` | Show account balances |
-| `-M` | Monthly granularity |
-| `-A` | Show averages |
-| `-b DATE` | Begin from date |
-| `-T` | Show totals |
+| Flag         | Meaning                                |
+| ------------ | -------------------------------------- |
+| `-X EUR`     | Convert all amounts to EUR             |
+| `cur:EUR`    | Only include EUR transactions          |
+| `balance`    | Show account balances                  |
+| `-M`         | Monthly granularity                    |
+| `-A`         | Show averages                          |
+| `-b DATE`    | Begin from date                        |
+| `-T`         | Show totals                            |
 | `--forecast` | Include periodic transaction forecasts |
 
----
+______________________________________________________________________
 
 ## C. hledger_preprocessor CLI
 
@@ -152,34 +152,34 @@ hledger_preprocessor --config ~/finance/config.yaml <action>
 
 ### Actions
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--new-setup` | `-n` | Create directory structure for a new account |
-| `--preprocess-csvs` | `-o` | Convert bank CSVs to hledger-flow format (requires `-p`) |
-| `--preprocess-assets` | `-s` | Preprocess exported asset CSVs |
-| `--generate-rules` | `-r` | Generate `.rules` file for hledger-flow |
-| `--tui-label-receipts` | `-t` | Label receipt images in the TUI |
-| `--make-ai-labels` | `-a` | Use AI (Donut model) to label receipts |
-| `--improve-manual-labels` | `-i` | Review/improve existing manual labels |
-| `--edit-receipt` | `-e` | Edit a receipt (rotate/crop) in the TUI |
-| `--link-receipts-to-transactions` | `-l` | Match receipts to bank transactions |
-| `--quick-categorisation` | `-q` | Fast feedback on uncategorised transactions (requires `-o` and `-p`) |
+| Flag                              | Short | Description                                                          |
+| --------------------------------- | ----- | -------------------------------------------------------------------- |
+| `--new-setup`                     | `-n`  | Create directory structure for a new account                         |
+| `--preprocess-csvs`               | `-o`  | Convert bank CSVs to hledger-flow format (requires `-p`)             |
+| `--preprocess-assets`             | `-s`  | Preprocess exported asset CSVs                                       |
+| `--generate-rules`                | `-r`  | Generate `.rules` file for hledger-flow                              |
+| `--tui-label-receipts`            | `-t`  | Label receipt images in the TUI                                      |
+| `--make-ai-labels`                | `-a`  | Use AI (Donut model) to label receipts                               |
+| `--improve-manual-labels`         | `-i`  | Review/improve existing manual labels                                |
+| `--edit-receipt`                  | `-e`  | Edit a receipt (rotate/crop) in the TUI                              |
+| `--link-receipts-to-transactions` | `-l`  | Match receipts to bank transactions                                  |
+| `--quick-categorisation`          | `-q`  | Fast feedback on uncategorised transactions (requires `-o` and `-p`) |
 
----
+______________________________________________________________________
 
 ## D. Receipt Workflow
 
 1. **Rotate & crop** — `--edit-receipt` opens the OpenCV TUI. Arrow keys move
    crop corners (10% steps), Alt switches corners, `r` rotates, Enter saves.
 
-2. **Label** — `--tui-label-receipts` opens the urwid TUI where you enter
+1. **Label** — `--tui-label-receipts` opens the urwid TUI where you enter
    amount, date, store, category, and payment account for each receipt.
 
-3. **Match to transactions** — `--link-receipts-to-transactions` matches
+1. **Match to transactions** — `--link-receipts-to-transactions` matches
    labelled receipts to bank CSV rows using date window (`matching_algo.days`),
    amount tolerance (`matching_algo.amount_range`), and optional day/month swap.
 
----
+______________________________________________________________________
 
 ## E. Developer Instructions
 
@@ -253,24 +253,24 @@ make html
 Add manual documentation as `.md` files in `docs/source/manual_documentation/`
 and reference them in `docs/source/manual.rst`.
 
----
+______________________________________________________________________
 
 ## F. Receipt-Transaction Matching Algorithm
 
 For each receipt:
 
 1. Find all accounts involved with the receipt
-2. Get the receipt's transaction date and amount
-3. For each relevant account, find transactions within `matching_algo.days`
+1. Get the receipt's transaction date and amount
+1. For each relevant account, find transactions within `matching_algo.days`
    days that match `matching_algo.amount_range` tolerance
-4. If exactly 1 match: auto-link
-5. If 0 matches and `days_month_swap` is true: retry with month/day swapped
-6. If 0 matches still: prompt user to widen margins or check data
-7. If 2-14 matches: rank by weighted closeness score (date 50%, amount 30%,
+1. If exactly 1 match: auto-link
+1. If 0 matches and `days_month_swap` is true: retry with month/day swapped
+1. If 0 matches still: prompt user to widen margins or check data
+1. If 2-14 matches: rank by weighted closeness score (date 50%, amount 30%,
    time 20%) and let user pick
-8. If 15+ matches: prompt user to narrow margins
+1. If 15+ matches: prompt user to narrow margins
 
----
+______________________________________________________________________
 
 ## G. AI Model Installation (CUDA/NVIDIA)
 

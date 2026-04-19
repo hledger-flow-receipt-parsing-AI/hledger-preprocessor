@@ -1,23 +1,23 @@
 {
   "markers": {
     "img_return_item": 0.0,
-    "nolbl_return_item": 2.21,
-    "lbl_return_item": 46.29,
-    "tui_return_item": 12.56,
-    "tui_return_item__date": 13.11,
-    "tui_return_item__time": 13.11,
-    "tui_return_item__category": 17.04,
-    "tui_return_item__bank_account": 20.01,
-    "tui_return_item__currency": 20.98,
-    "tui_return_item__amount": 21.95,
-    "tui_return_item__change": 23.28,
-    "tui_return_item__shop_name": 29.29,
-    "tui_return_item__shop_street": 30.82,
-    "tui_return_item__shop_house_nr": 33.32,
-    "tui_return_item__shop_zipcode": 34.61,
-    "tui_return_item__shop_city": 36.39,
-    "tui_return_item__shop_country": 38.53,
-    "tui_return_item__tax": 40.91
+    "lbl_return_item": 51.03,
+    "nolbl_return_item": 2.16,
+    "tui_return_item": 10.95,
+    "tui_return_item__amount": 21.76,
+    "tui_return_item__bank_account": 19.75,
+    "tui_return_item__category": 15.32,
+    "tui_return_item__change": 23.07,
+    "tui_return_item__currency": 20.81,
+    "tui_return_item__date": 11.49,
+    "tui_return_item__shop_city": 38.29,
+    "tui_return_item__shop_country": 41.37,
+    "tui_return_item__shop_house_nr": 34.64,
+    "tui_return_item__shop_name": 29.17,
+    "tui_return_item__shop_street": 30.88,
+    "tui_return_item__shop_zipcode": 35.9,
+    "tui_return_item__tax": 45.01,
+    "tui_return_item__time": 11.49
   },
-  "total_duration": 54.72
+  "total_duration": 55.99
 }

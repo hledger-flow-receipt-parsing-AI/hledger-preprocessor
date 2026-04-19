@@ -1,55 +1,55 @@
 {
   "markers": {
-    "acct_triodos_csv": 0.0,
     "acct_eur_wallet": 23.16,
-    "dirp_default": 32.72,
-    "fnames_default": 49.96,
-    "catcfg_default": 65.4,
-    "malgo_default": 68.12,
+    "acct_triodos_csv": 0.0,
     "cat_basic__groceries": 74.72,
     "cat_basic__withdrawl": 77.32,
-    "start_2024_1000eur": 80.24,
+    "catcfg_default": 65.4,
+    "dirp_default": 32.72,
+    "fnames_default": 49.96,
     "img_return_item": 90.16,
-    "nolbl_return_item": 92.37,
-    "lbl_return_item": 136.45,
-    "tui_return_item": 102.72,
-    "tui_return_item__date": 103.27,
-    "tui_return_item__time": 103.27,
-    "tui_return_item__category": 107.2,
-    "tui_return_item__bank_account": 110.17,
-    "tui_return_item__currency": 111.14,
-    "tui_return_item__amount": 112.11,
-    "tui_return_item__change": 113.44,
-    "tui_return_item__shop_name": 119.45,
-    "tui_return_item__shop_street": 120.98,
-    "tui_return_item__shop_house_nr": 123.48,
-    "tui_return_item__shop_zipcode": 124.77,
-    "tui_return_item__shop_city": 126.55,
-    "tui_return_item__shop_country": 128.69,
-    "tui_return_item__tax": 131.07,
-    "jrnl_return_net": 144.86
+    "jrnl_return_net": 146.16,
+    "lbl_return_item": 141.19,
+    "malgo_default": 68.12,
+    "nolbl_return_item": 92.32,
+    "start_2024_1000eur": 80.24,
+    "tui_return_item": 101.11,
+    "tui_return_item__amount": 111.92,
+    "tui_return_item__bank_account": 109.91,
+    "tui_return_item__category": 105.48,
+    "tui_return_item__change": 113.23,
+    "tui_return_item__currency": 110.97,
+    "tui_return_item__date": 101.65,
+    "tui_return_item__shop_city": 128.45,
+    "tui_return_item__shop_country": 131.53,
+    "tui_return_item__shop_house_nr": 124.8,
+    "tui_return_item__shop_name": 119.33,
+    "tui_return_item__shop_street": 121.04,
+    "tui_return_item__shop_zipcode": 126.06,
+    "tui_return_item__tax": 135.17,
+    "tui_return_item__time": 101.65
   },
-  "total_duration": 158.82,
   "segments": [
     {
-      "file": "cfg_1b1w.mp4",
-      "duration": 74.72
+      "duration": 74.72,
+      "file": "cfg_1b1w.mp4"
     },
     {
-      "file": "cat_basic.mp4",
-      "duration": 5.52
+      "duration": 5.52,
+      "file": "cat_basic.mp4"
     },
     {
-      "file": "starting_journal.mp4",
-      "duration": 9.92
+      "duration": 9.92,
+      "file": "starting_journal.mp4"
     },
     {
-      "file": "2b_label_returned_items.mp4",
-      "duration": 54.7
+      "duration": 56.0,
+      "file": "2b_label_returned_items.mp4"
     },
     {
-      "file": "journal_output_return_net.mp4",
-      "duration": 13.96
+      "duration": 13.96,
+      "file": "journal_output_return_net.mp4"
     }
-  ]
+  ],
+  "total_duration": 160.12
 }
