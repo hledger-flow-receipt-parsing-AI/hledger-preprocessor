@@ -282,6 +282,67 @@ init_demo() {
     log "Output: ${OUTPUT_DIR}"
 }
 
+# ================================ Coverage ====================================
+
+GIF_COVERAGE_DIR="/tmp/gif_coverage"
+GIF_COVERAGERC=""
+GIF_COVERAGE_ENABLED="false"
+
+setup_coverage() {
+    # Enable coverage tracing for GIF recording.
+    # Installs the .pth file and sets env vars so all Python subprocesses
+    # (including those spawned by pexpect) are traced.
+
+    GIF_COVERAGERC="${PROJECT_ROOT}/gifs/.coveragerc"
+
+    if [[ ! -f "$GIF_COVERAGERC" ]]; then
+        warn "Coverage config not found: $GIF_COVERAGERC (skipping coverage)"
+        return 0
+    fi
+
+    # Install the .pth file (temporary — removed in teardown_coverage).
+    python -m gifs.automation.install_coverage_pth --install || {
+        warn "Failed to install coverage .pth file (skipping coverage)"
+        return 0
+    }
+
+    # Clean previous coverage data.
+    rm -rf "$GIF_COVERAGE_DIR"
+    mkdir -p "$GIF_COVERAGE_DIR"
+
+    # Export so all child processes (asciinema -> python -> pexpect) inherit it.
+    export COVERAGE_PROCESS_START="$GIF_COVERAGERC"
+    GIF_COVERAGE_ENABLED="true"
+    log "Coverage enabled (data -> ${GIF_COVERAGE_DIR})"
+}
+
+teardown_coverage() {
+    # Uninstall the .pth file and extract coverage data.
+
+    # Always uninstall the .pth file, even if coverage was not fully set up.
+    python -m gifs.automation.install_coverage_pth --uninstall 2>/dev/null || true
+    unset COVERAGE_PROCESS_START 2>/dev/null || true
+
+    if [[ "$GIF_COVERAGE_ENABLED" != "true" ]]; then
+        return 0
+    fi
+
+    local coverage_output="${OUTPUT_DIR}/${DEMO_NAME}_coverage.json"
+
+    log "Extracting coverage data..."
+    python -m gifs.automation.extract_coverage \
+        --gif-name "$DEMO_NAME" \
+        --output "$coverage_output" \
+        --type "config-dependent" \
+        --coverage-dir "$GIF_COVERAGE_DIR" || {
+        warn "Coverage extraction failed (non-fatal)"
+    }
+
+    # Clean up temporary coverage files.
+    rm -rf "$GIF_COVERAGE_DIR"
+    GIF_COVERAGE_ENABLED="false"
+}
+
 # ================================ Recording ==================================
 
 record_demo() {
@@ -299,15 +360,21 @@ record_demo() {
     # Remove old cast file
     rm -f "$CAST_FILE"
 
+    # Build the --env list.  Include COVERAGE_PROCESS_START if coverage is on.
+    local env_list="CONFIG_FILEPATH,PYTHONPATH"
+    if [[ "$GIF_COVERAGE_ENABLED" == "true" ]]; then
+        env_list="${env_list},COVERAGE_PROCESS_START"
+    fi
+
     if asciinema rec "$CAST_FILE" \
         --command="python -m ${python_module}" \
         --title "$title" \
         --idle-time-limit="$idle_time_limit" \
         --rows "$rows" \
         --cols "$cols" \
-        --env="CONFIG_FILEPATH,PYTHONPATH" \
+        --env="$env_list" \
         -y -q; then
-        log "Recording completed → ${CAST_FILE}"
+        log "Recording completed -> ${CAST_FILE}"
         return 0
     else
         error "Recording failed!"
@@ -605,8 +672,16 @@ run_full_pipeline() {
     local rows="${3:-$DEFAULT_ROWS}"
     local cols="${4:-$DEFAULT_COLS}"
 
+    # 0. Enable coverage tracing (installs .pth, sets env vars)
+    setup_coverage
+
     # 1. Record
-    record_demo "$python_module" "$title" "$rows" "$cols" || exit 1
+    record_demo "$python_module" "$title" "$rows" "$cols" || {
+        teardown_coverage; exit 1;
+    }
+
+    # 1b. Extract coverage and uninstall .pth before post-processing
+    teardown_coverage
 
     # 2. Post-process
     postprocess_cast || exit 1
@@ -627,3 +702,4 @@ run_full_pipeline() {
     # 7. Summary
     print_summary
 }
+# test

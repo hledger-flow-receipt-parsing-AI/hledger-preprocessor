@@ -82,9 +82,7 @@ def write_processed_csv(
         # all split groups) so the CSV matches the rules file layout.
         # Then append any enrichment columns (classification, etc.)
         # that appear in actual dicts but not in the base mapping.
-        all_keys: list = list(
-            account_config.get_hledger_csv_column_names()
-        )
+        all_keys: list = list(account_config.get_hledger_csv_column_names())
         for d in hledger_tnx_dicts:
             for k in d:
                 if k not in all_keys:

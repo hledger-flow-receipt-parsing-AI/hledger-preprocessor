@@ -7,12 +7,12 @@ Uses the real TUI to fill in coffee_cash receipt fields.
 
 import os
 
+from .core import Colors
 from .receipt_editor import (
     CASH_RECEIPT,
-    run_label_receipt_demo,
     _write_tui_markers_json,
+    run_label_receipt_demo,
 )
-from .core import Colors
 
 
 def main() -> None:

@@ -101,7 +101,9 @@ def show_after_state(
         time.sleep(0.2)
         print(f"{Colors.BOLD_GREEN}  Receipt label output JSON:{Colors.RESET}")
         print()
-        print(f"{Colors.BOLD_BLUE}$ jq '.' after_edit_receipt.json{Colors.RESET}")
+        print(
+            f"{Colors.BOLD_BLUE}$ jq '.' after_edit_receipt.json{Colors.RESET}"
+        )
         print()
         result = subprocess.run(
             ["jq", ".", after_file], capture_output=True, text=True

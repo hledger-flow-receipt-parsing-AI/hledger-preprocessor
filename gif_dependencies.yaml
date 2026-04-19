@@ -1,0 +1,113 @@
+# GIF Dependency Map — NON-PYTHON FILES ONLY
+#
+# Python file dependencies are tracked automatically via _coverage.json
+# files generated during GIF recording (see gifs/*/output/*_coverage.json).
+#
+# This file tracks non-Python files that coverage.py cannot trace:
+# shell scripts, YAML fixtures, receipt images, config files.
+#
+# Used by: hooks/check-gif-staleness.py (pre-commit hook)
+# Paths use glob syntax relative to /home/a/git/git/hledger/.
+
+gifs:
+
+  # ── Standalone GIFs ────────────────────────────────────────────────
+  # These don't execute hledger CLI code, so they have no _coverage.json.
+  # All dependencies are non-Python (YAML fixtures, shell scripts).
+
+  1a_setup_config:
+    description: "Config YAML typing animation"
+    watches:
+      - hledger-preprocessor/gifs/1a_setup_config/generate.sh
+      - hledger-preprocessor/test/fixtures/config_fragments/accounts/**
+      - hledger-preprocessor/test/fixtures/config_fragments/shared/**
+
+  1b_add_category:
+    description: "Category YAML typing animation"
+    watches:
+      - hledger-preprocessor/gifs/1b_add_category/generate.sh
+      - hledger-preprocessor/test/fixtures/config_fragments/categories/**
+
+  2b_data_files:
+    description: "Journal and CSV data typing animation"
+    watches:
+      - hledger-preprocessor/gifs/2b_data_files/generate.sh
+      - hledger-preprocessor/test/fixtures/config_fragments/data_files/**
+
+  # ── Config-dependent GIFs ──────────────────────────────────────────
+  # Python deps are in _coverage.json.  Only non-Python deps listed here.
+
+  2a_crop_receipt:
+    description: "Receipt rotation and cropping"
+    watches:
+      - hledger-preprocessor/gifs/2a_crop_receipt/generate.sh
+      - hledger-preprocessor/gifs/assets/receipts/**
+
+  2b_label_receipt:
+    description: "Label card receipt in TUI"
+    watches:
+      - hledger-preprocessor/gifs/2b_label_receipt/generate.sh
+      - hledger-preprocessor/gifs/assets/receipts/**
+
+  2b_label_cash_receipt:
+    description: "Label cash receipt in TUI"
+    watches:
+      - hledger-preprocessor/gifs/2b_label_cash_receipt/generate.sh
+      - hledger-preprocessor/gifs/assets/receipts/**
+
+  2b_label_foreign_currency:
+    description: "Label foreign currency receipt in TUI"
+    watches:
+      - hledger-preprocessor/gifs/2b_label_foreign_currency/generate.sh
+      - hledger-preprocessor/gifs/assets/receipts/**
+
+  2b_label_split_payment:
+    description: "Label split payment receipt in TUI"
+    watches:
+      - hledger-preprocessor/gifs/2b_label_split_payment/generate.sh
+      - hledger-preprocessor/gifs/assets/receipts/**
+
+  2b_label_returned_items:
+    description: "Label returned items receipt in TUI"
+    watches:
+      - hledger-preprocessor/gifs/2b_label_returned_items/generate.sh
+      - hledger-preprocessor/gifs/assets/receipts/**
+
+  3_match_receipt_to_csv:
+    description: "Auto-match receipt to bank CSV transaction"
+    watches:
+      - hledger-preprocessor/gifs/3_match_receipt_to_csv/generate.sh
+
+  3b_foreign_currency_match:
+    description: "Foreign currency matching"
+    watches:
+      - hledger-preprocessor/gifs/3b_foreign_currency_match/generate.sh
+
+  3c_widen_date_match:
+    description: "Widen date tolerance matching"
+    watches:
+      - hledger-preprocessor/gifs/3c_widen_date_match/generate.sh
+
+  3d_disambiguate_match:
+    description: "Disambiguate multiple matches"
+    watches:
+      - hledger-preprocessor/gifs/3d_disambiguate_match/generate.sh
+
+  4_run_pipeline:
+    description: "Full pipeline execution"
+    watches:
+      - hledger-preprocessor/gifs/4_run_pipeline/generate.sh
+
+  5_show_plots:
+    description: "Sankey/treemap visualizations"
+    watches:
+      - hledger-preprocessor/gifs/5_show_plots/generate.sh
+
+# Shared GIF automation infrastructure — changes here affect ALL GIFs.
+shared_automation:
+  - hledger-preprocessor/gifs/automation/core/**
+  - hledger-preprocessor/gifs/automation/display/**
+  - hledger-preprocessor/gifs/automation/key_display.py
+  - hledger-preprocessor/gifs/scripts/common.sh
+  - hledger-preprocessor/gifs/gif_config.yaml
+  - hledger-preprocessor/build_userstories.sh

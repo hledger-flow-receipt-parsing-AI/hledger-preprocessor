@@ -6,9 +6,7 @@ Otherwise, only rule-based models are available.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
-
-from typeguard import typechecked
+from typing import Any
 
 from hledger_core.generics.enums import ClassifierType, LogicType
 from hledger_core.generics.ReceiptCategoryModel import (
@@ -20,6 +18,7 @@ from hledger_core.generics.ReceiptImageToObjModel import (
 from hledger_core.generics.TransactionCategoryModel import (
     TransactionCategoryModel,
 )
+from typeguard import typechecked
 
 try:
     from hledger_ai.categorisation.ai_based.ai_eg0 import ExampleAIModel
@@ -41,16 +40,16 @@ def _get_rule_based_model():
 
 def get_models(
     *, quick_categorisation: bool
-) -> Dict[ClassifierType, Dict[LogicType, Any]]:
+) -> dict[ClassifierType, dict[LogicType, Any]]:
 
     if quick_categorisation:
-        classifiers: Dict[ClassifierType, Dict[LogicType, Any]] = {
+        classifiers: dict[ClassifierType, dict[LogicType, Any]] = {
             ClassifierType.TRANSACTION_CATEGORY: (
                 get_transaction_classification_models()
             ),
         }
     else:
-        classifiers: Dict[ClassifierType, Dict[LogicType, Any]] = {
+        classifiers: dict[ClassifierType, dict[LogicType, Any]] = {
             ClassifierType.TRANSACTION_CATEGORY: (
                 get_transaction_classification_models()
             ),
@@ -70,12 +69,12 @@ def get_models(
 
 @typechecked
 def get_transaction_classification_models() -> (
-    Dict[LogicType, List[TransactionCategoryModel]]
+    dict[LogicType, list[TransactionCategoryModel]]
 ):
     rule_based_model_tnx_classification: TransactionCategoryModel = (
         _get_rule_based_model()
     )
-    result: Dict[LogicType, List[TransactionCategoryModel]] = {
+    result: dict[LogicType, list[TransactionCategoryModel]] = {
         LogicType.RULE_BASED: [rule_based_model_tnx_classification],
     }
     if _ai_available:
@@ -85,7 +84,7 @@ def get_transaction_classification_models() -> (
 
 
 def get_receipt_image_to_obj_models() -> (
-    Dict[str, List[ReceiptImageToObjModel]]
+    dict[str, list[ReceiptImageToObjModel]]
 ):
     ai_img_to_receipt_obj: ReceiptImageToObjModel = DonutAI()
     return {
@@ -94,7 +93,7 @@ def get_receipt_image_to_obj_models() -> (
 
 
 def get_receipt_img_classification_models() -> (
-    Dict[str, List[ReceiptCategoryModel]]
+    dict[str, list[ReceiptCategoryModel]]
 ):
     ai_img_classifier: ReceiptCategoryModel = ExampleAIModel()
     return {
@@ -103,12 +102,12 @@ def get_receipt_img_classification_models() -> (
 
 
 def get_receipt_obj_classification_models() -> (
-    Dict[str, List[ReceiptCategoryModel]]
+    dict[str, list[ReceiptCategoryModel]]
 ):
     rule_based_receipt_obj_classifier: ReceiptCategoryModel = (
         _get_rule_based_model()
     )
-    result: Dict[LogicType, List[ReceiptCategoryModel]] = {
+    result: dict[LogicType, list[ReceiptCategoryModel]] = {
         LogicType.RULE_BASED: [rule_based_receipt_obj_classifier],
     }
     if _ai_available:

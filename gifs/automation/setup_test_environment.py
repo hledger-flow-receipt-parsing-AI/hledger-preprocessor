@@ -18,17 +18,16 @@ Then pass the generated config to ``build_userstories.sh``::
         --config /tmp/hledger_demo/config.yaml --site --serve
 """
 
-import json
 import shutil
 import textwrap
 from pathlib import Path
+from test.helpers import seed_receipt_images_only
 from typing import List
 
 import yaml
 
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import load_config
-from test.helpers import seed_receipt_images_only
 
 
 def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
@@ -69,7 +68,10 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
     # 2. Load template config, patch root path, write final config
     # ------------------------------------------------------------------
     template_path = (
-        project_root / "test" / "fixtures" / "config_templates"
+        project_root
+        / "test"
+        / "fixtures"
+        / "config_templates"
         / "1_bank_1_wallet.yaml"
     )
     config_dict = yaml.safe_load(template_path.read_text())
@@ -82,7 +84,9 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
     # 3. Categories YAML
     # ------------------------------------------------------------------
     categories_path = root / "categories.yaml"
-    categories_path.write_text(textwrap.dedent("""\
+    categories_path.write_text(
+        textwrap.dedent(
+            """\
         groceries:
           ekoplaza: {}
           supermarket: {}
@@ -95,7 +99,9 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
           monthly:
             phone: {}
             rent: {}
-    """))
+    """
+        )
+    )
 
     # ------------------------------------------------------------------
     # 4. Triodos bank CSV (matches groceries_ekoplaza_card.json receipt)
@@ -112,11 +118,15 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
     # 5. Start journal with opening balances
     # ------------------------------------------------------------------
     journal_path = root / "start_pos" / "2024_complete.journal"
-    journal_path.write_text(textwrap.dedent("""\
+    journal_path.write_text(
+        textwrap.dedent(
+            """\
         2024/01/01 Opening Balances
             Assets:Checking          €1000.00
             Equity:Opening Balances
-    """))
+    """
+        )
+    )
 
     # ------------------------------------------------------------------
     # 6. hledger-flow import directory structure
@@ -128,33 +138,45 @@ def setup_demo_environment(base_dir: str = "/tmp/hledger_demo") -> dict:
     for subdir in ["1-in", "2-csv", "3-journal"]:
         (triodos_import / subdir).mkdir(parents=True, exist_ok=True)
 
-    (triodos_import / "triodos.rules").write_text(textwrap.dedent("""\
+    (triodos_import / "triodos.rules").write_text(
+        textwrap.dedent(
+            """\
         # hledger CSV import rules for triodos
         skip 0
         fields date, _, amount, _, payee, _, _, description, _
         date-format %d-%m-%Y
         currency EUR
         account1 Assets:Checking:Triodos
-    """))
+    """
+        )
+    )
 
     # EUR wallet account
     wallet_import = working_dir / "import" / "at" / "wallet" / "physical"
     for subdir in ["1-in", "2-csv", "3-journal"]:
         (wallet_import / subdir).mkdir(parents=True, exist_ok=True)
 
-    (wallet_import / "eur.rules").write_text(textwrap.dedent("""\
+    (wallet_import / "eur.rules").write_text(
+        textwrap.dedent(
+            """\
         # hledger CSV import rules for EUR wallet
         skip 0
         fields date, amount, description
         date-format %Y-%m-%d
         currency EUR
         account1 Assets:Wallet:Physical:EUR
-    """))
+    """
+        )
+    )
 
     # Wallet asset CSV (required by get_all_accounts)
     wallet_asset_csv = (
-        working_dir / "asset_transaction_csvs"
-        / "at" / "wallet" / "physical" / "Currency.EUR.csv"
+        working_dir
+        / "asset_transaction_csvs"
+        / "at"
+        / "wallet"
+        / "physical"
+        / "Currency.EUR.csv"
     )
     wallet_asset_csv.parent.mkdir(parents=True, exist_ok=True)
     wallet_asset_csv.write_text(

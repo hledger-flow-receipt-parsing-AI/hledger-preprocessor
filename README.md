@@ -89,6 +89,24 @@ ______________________________________________________________________
 Browse user stories with synchronized video + interactive DAG diagrams.
 Use **Up/Down** arrows (or **j/k**) to jump between DAG nodes in the video. Click a node to seek.
 
+### Pipeline overview
+
+The diagram below shows how user stories flow from YAML definitions through
+test data, Python demo scripts, shell scripts, and recording tools to produce
+GIF/MP4 files and the interactive website. It also shows how the pre-commit
+staleness hook uses AST hashes and YAML patterns to detect when GIFs need
+re-recording.
+
+![GIF Pipeline & Pre-commit Staleness Check](docs/gif_pipeline_overview.svg)
+
+<details>
+<summary>PlantUML source</summary>
+
+See [docs/gif_pipeline_overview.puml](docs/gif_pipeline_overview.puml).
+To regenerate: `plantuml -tsvg docs/gif_pipeline_overview.puml`
+
+</details>
+
 ### Quick build & serve
 
 ```bash
@@ -159,6 +177,48 @@ The e2e tests (`test/e2e/test_gif_*.py`) call the same `generate.sh` scripts
 used by `build_userstories.sh`, so running `python -m pytest test/e2e/` will
 regenerate GIFs and validate their output (GIF/MP4 existence, marker JSON
 structure, timestamp ordering).
+
+## GIF Staleness Pre-commit Hook
+
+A pre-commit hook detects when code changes may invalidate GIF recordings.
+It uses two data sources:
+
+1. **Coverage traces** (primary) — when a GIF is recorded, `coverage.py`
+   traces every Python file executed. The trace is saved as
+   `gifs/<name>/output/<name>_coverage.json`. On commit, the hook checks
+   whether any staged file appears in a GIF's trace.
+1. **`gif_dependencies.yaml`** (secondary) — manually maintained patterns
+   for non-Python files (shell scripts, YAML fixtures, receipt images).
+
+### Installation
+
+Add to your `.pre-commit-config.yaml`:
+
+```yaml
+- repo: https://github.com/hledger-flow-receipt-parsing-AI/gif-staleness-hook
+  rev: v0.1.0
+  hooks:
+    - id: check-gif-staleness
+      args: [--bootstrap]  # remove once all GIFs have _coverage.json
+```
+
+Then run `pre-commit install`.
+
+### Usage
+
+The hook runs automatically on `git commit`. Flags:
+
+| Flag          | Effect                                                             |
+| ------------- | ------------------------------------------------------------------ |
+| `--bootstrap` | Treat missing `_coverage.json` as warnings (use during transition) |
+| `--block`     | Exit 1 on stale GIFs (default: warn only)                          |
+| `--ci`        | Compare `HEAD~1..HEAD` instead of staged files                     |
+
+### Recording GIFs with coverage
+
+Coverage tracing is built into `common.sh`. When you record a GIF via
+`build_userstories.sh --gif <name>`, coverage is automatically collected
+and written to `gifs/<name>/output/<name>_coverage.json`.
 
 ## Getting Started
 

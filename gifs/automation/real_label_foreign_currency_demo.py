@@ -291,9 +291,7 @@ def show_label_result(
     time.sleep(2)
 
     # Highlight key fields
-    print(
-        f"{Colors.BOLD_YELLOW}  Key: currency = GBP (not EUR){Colors.RESET}"
-    )
+    print(f"{Colors.BOLD_YELLOW}  Key: currency = GBP (not EUR){Colors.RESET}")
     print(
         f"{Colors.BOLD_YELLOW}  Key: tendered_amount_out = 100.00"
         f" (GBP){Colors.RESET}"
