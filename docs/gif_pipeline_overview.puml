@@ -1,79 +1,58 @@
 @startuml gif_pipeline_overview
-skinparam backgroundColor #FFFFFF
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam defaultFontName "DejaVu Sans"
-skinparam defaultFontSize 11
-skinparam packageStyle rectangle
-
-top to bottom direction
-
-skinparam component {
-  BackgroundColor #E8F4FD
-  BorderColor #2196F3
-  FontColor #1565C0
-}
-
-skinparam database {
-  BackgroundColor #FFF3E0
-  BorderColor #FF9800
-  FontColor #E65100
-}
-
-skinparam artifact {
-  BackgroundColor #E8F5E9
-  BorderColor #4CAF50
-  FontColor #2E7D32
-}
-
-skinparam package {
-  BackgroundColor #FAFAFA
-  BorderColor #9E9E9E
-}
+' NOTE: The SVG (gif_pipeline_overview.svg) is now HAND-CRAFTED,
+' not generated from this .puml file.
+'
+' This .puml is kept as a reference for the logical structure only.
+' To update the diagram, edit the .svg directly.
+'
+' The hand-crafted SVG was needed because PlantUML 1.2020.02 could not
+' produce the desired layout:
+'   - Data Sources left, orchestrator right (same row)
+'   - Test Environment left, Per-GIF Recording right (same row)
+'   - Post-processing below (full width)
+'   - Stitch below post-processing
+'   - Site Generation left, Pre-commit Hook right (same row, bottom)
+'   - Straight lines, color-coded by flow type
+'   - No floating label text
+'
+' Color key for connections:
+'   Blue (#2196F3)    = orchestrator dispatch
+'   Orange (#FF9800)  = data source feeds
+'   Green (#4CAF50)   = recording flow
+'   Purple (#9C27B0)  = post-processing flow
+'   Teal (#00897B)    = site generation inputs
+'   Red (#E53935)     = pre-commit hook data (dashed)
 
 title GIF Pipeline & Pre-commit Staleness Check
 
-' ===========================================================================
-'  ROW 1: Data Sources (left) | Orchestrator (right)
-' ===========================================================================
-together {
-  package "Data Sources" as ds {
-    database "config.yaml +\ncategories.yaml" as demo_config
-    database "gif_config.yaml" as gif_config
-    database "userstory_dag_data.yaml" as dag_yaml
-    database "gif_dependencies.yaml" as gif_deps
-    database "test/fixtures/" as fixtures
-  }
-
-  component "build_userstories.sh\n(orchestrator)" as build_sh
+package "Data Sources" {
+  database "config.yaml + categories.yaml" as demo_config
+  database "gif_config.yaml" as gif_config
+  database "userstory_dag_data.yaml" as dag_yaml
+  database "gif_dependencies.yaml" as gif_deps
+  database "test/fixtures/" as fixtures
 }
 
-' ===========================================================================
-'  ROW 2: Test Environment (left) | Per-GIF Recording (right)
-' ===========================================================================
-together {
-  package "Test Environment" as env {
-    component "setup_test_environment.py" as setup_env
-    artifact "/tmp/hledger_demo/" as tmp_demo
-  }
+component "build_userstories.sh (orchestrator)" as build_sh
 
-  package "Per-GIF Recording" as rec {
-    component "generate.sh" as generate_sh
-    component "common.sh" as common_sh
-    component "install_coverage_pth.py" as pth_install
-    component "asciinema rec" as asciinema
-    component "Python demo script\n(pexpect)" as demo_script
-    component "Sub-packages\n(core, config, csv-mapping,\nrules, receipt, ai)" as sub_pkgs
-    artifact "recordings/<name>.cast" as cast_file
-  }
+package "Test Environment" {
+  component "setup_test_environment.py" as setup_env
+  artifact "/tmp/hledger_demo/" as tmp_demo
 }
 
-' ===========================================================================
-'  ROW 3: Post-processing (full width)
-' ===========================================================================
-package "Post-processing" as post {
+package "Per-GIF Recording" {
+  component "generate.sh" as generate_sh
+  component "common.sh" as common_sh
+  component "install_coverage_pth.py" as pth_install
+  component "asciinema rec" as asciinema
+  component "Python demo script (pexpect)" as demo_script
+  component "Sub-packages (core, config, ...)" as sub_pkgs
+  artifact "recordings/<name>.cast" as cast_file
+}
+
+package "Post-processing" {
   component "extract_coverage.py" as extract_cov
-  artifact "_coverage.json\n(files + ast_hashes)" as cov_json
+  artifact "_coverage.json (files + ast_hashes)" as cov_json
   component "cast_postprocess.py" as cast_pp
   component "agg -> gifsicle -> ffmpeg" as render_chain
   component "Marker extraction" as marker_extract
@@ -81,52 +60,37 @@ package "Post-processing" as post {
   artifact "<name>.gif + <name>.mp4" as gif_mp4
 }
 
-' ===========================================================================
-'  ROW 4: Stitch
-' ===========================================================================
-package "Stitch (optional)" as stitch_pkg {
+package "Stitch (optional)" {
   component "stitch_full_path.py" as stitch
   artifact "full_path.mp4" as full_path
 }
 
-' ===========================================================================
-'  ROW 5: Site Generation (left) | Pre-commit Hook (right)
-' ===========================================================================
-together {
-  package "Site Generation" as site {
-    component "generate_userstory_artifacts.py" as gen_artifacts
-    artifact "US_*.puml + US_*.png" as dag_pngs
-    component "generate_site.py" as gen_site
-    artifact "/tmp/site/" as site_output
-  }
-
-  package "Pre-commit Hook\n(gif-staleness-hook)" as hook_pkg {
-    component "check-gif-staleness.py" as hook
-    component "AST hash comparison" as cov_check
-    component "YAML pattern match" as yaml_check
-    component "Artifact check" as artifact_check
-    artifact "PASS / WARN / BLOCK" as hook_result
-  }
+package "Site Generation" {
+  component "generate_userstory_artifacts.py" as gen_artifacts
+  artifact "US_*.puml + US_*.png" as dag_pngs
+  component "generate_site.py" as gen_site
+  artifact "/tmp/site/" as site_output
 }
 
-' ===========================================================================
-'  CONNECTIONS
-' ===========================================================================
+package "Pre-commit Hook (gif-staleness-hook)" {
+  component "check-gif-staleness.py" as hook
+  component "AST hash comparison" as cov_check
+  component "YAML pattern match" as yaml_check
+  component "Artifact check" as artifact_check
+  artifact "PASS / WARN / BLOCK" as hook_result
+}
 
-' Data sources -> test env
-demo_config --> setup_env
-fixtures --> setup_env
-setup_env --> tmp_demo
-
-' Orchestrator dispatches
 build_sh --> setup_env
 build_sh --> generate_sh
 build_sh --> gen_artifacts
 build_sh --> gen_site
 
-' Recording flow
-generate_sh --> common_sh
+demo_config --> setup_env
+fixtures --> setup_env
+setup_env --> tmp_demo
 gif_config --> common_sh
+
+generate_sh --> common_sh
 common_sh --> pth_install
 common_sh --> asciinema
 asciinema --> demo_script
@@ -134,7 +98,6 @@ demo_script --> sub_pkgs
 tmp_demo --> demo_script
 asciinema --> cast_file
 
-' Post-processing
 common_sh --> extract_cov
 extract_cov --> cov_json
 common_sh --> cast_pp
@@ -143,12 +106,10 @@ render_chain --> gif_mp4
 cast_file --> marker_extract
 marker_extract --> markers_json
 
-' Stitch
 gif_mp4 --> stitch
 markers_json --> stitch
 stitch --> full_path
 
-' Site generation
 dag_yaml --> gen_artifacts
 gen_artifacts --> dag_pngs
 dag_yaml --> gen_site
@@ -157,7 +118,6 @@ markers_json --> gen_site
 full_path --> gen_site
 gen_site --> site_output
 
-' Pre-commit hook
 cov_json ..> cov_check
 gif_deps ..> yaml_check
 hook --> cov_check

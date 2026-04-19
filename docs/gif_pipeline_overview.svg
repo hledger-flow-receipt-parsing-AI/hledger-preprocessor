@@ -1,237 +1,448 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="1381px" preserveAspectRatio="none" style="width:1916px;height:1381px;" version="1.1" viewBox="0 0 1916 1381" width="1916px" zoomAndPan="magnify"><defs/><g><text fill="#000000" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="248" x="857" y="10.2104">GIF Pipeline &amp; Pre-commit Staleness Check</text><!--MD5=[66364f09398c3a243e3d666421fb090a]
-cluster ds--><path d="M1112,60.8047 L1195,60.8047 A6,6 0 0 1 1199,64.8047 L1206,79.6094 L1900,79.6094 A4,4 0 0 1 1904,83.6094 L1904,158.8047 A4,4 0 0 1 1900,162.8047 L1112,162.8047 A4,4 0 0 1 1108,158.8047 L1108,64.8047 A4,4 0 0 1 1112,60.8047 " fill="#FAFAFA" style="stroke: #9E9E9E; stroke-width: 1.5;"/><line style="stroke: #9E9E9E; stroke-width: 1.5;" x1="1108" x2="1206" y1="79.6094" y2="79.6094"/><text fill="#000000" font-family="DejaVu Sans" font-size="11" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="85" x="1112" y="73.0151">Data Sources</text><!--MD5=[a5f6d7e9f88b7365548164145cca9219]
-cluster env--><path d="M1161,327.8047 L1271,327.8047 A6,6 0 0 1 1275,331.8047 L1282,346.6094 L1359,346.6094 A4,4 0 0 1 1363,350.6094 L1363,499.8047 A4,4 0 0 1 1359,503.8047 L1161,503.8047 A4,4 0 0 1 1157,499.8047 L1157,331.8047 A4,4 0 0 1 1161,327.8047 " fill="#FAFAFA" style="stroke: #9E9E9E; stroke-width: 1.5;"/><line style="stroke: #9E9E9E; stroke-width: 1.5;" x1="1157" x2="1282" y1="346.6094" y2="346.6094"/><text fill="#000000" font-family="DejaVu Sans" font-size="11" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="112" x="1161" y="340.0151">Test Environment</text><!--MD5=[bca38f1da1346f2fbcdd06bc55f8413e]
-cluster rec--><path d="M766,234.8047 L879,234.8047 A6,6 0 0 1 883,238.8047 L890,253.6094 L1129,253.6094 A4,4 0 0 1 1133,257.6094 L1133,723.8047 A4,4 0 0 1 1129,727.8047 L766,727.8047 A4,4 0 0 1 762,723.8047 L762,238.8047 A4,4 0 0 1 766,234.8047 " fill="#FAFAFA" style="stroke: #9E9E9E; stroke-width: 1.5;"/><line style="stroke: #9E9E9E; stroke-width: 1.5;" x1="762" x2="890" y1="253.6094" y2="253.6094"/><text fill="#000000" font-family="DejaVu Sans" font-size="11" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="115" x="766" y="247.0151">Per-GIF Recording</text><!--MD5=[7897f92c915a4f2d5b020cb8df715334]
-cluster post--><path d="M26,635.3047 L127,635.3047 A6,6 0 0 1 131,639.3047 L138,654.1094 L710,654.1094 A4,4 0 0 1 714,658.1094 L714,832.8047 A4,4 0 0 1 710,836.8047 L26,836.8047 A4,4 0 0 1 22,832.8047 L22,639.3047 A4,4 0 0 1 26,635.3047 " fill="#FAFAFA" style="stroke: #9E9E9E; stroke-width: 1.5;"/><line style="stroke: #9E9E9E; stroke-width: 1.5;" x1="22" x2="138" y1="654.1094" y2="654.1094"/><text fill="#000000" font-family="DejaVu Sans" font-size="11" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="103" x="26" y="647.5151">Post-processing</text><!--MD5=[69a75b924caa70b27e7cd1153f213136]
-cluster stitch_pkg--><path d="M528,860.8047 L630,860.8047 A6,6 0 0 1 634,864.8047 L641,879.6094 L674,879.6094 A4,4 0 0 1 678,883.6094 L678,1032.8047 A4,4 0 0 1 674,1036.8047 L528,1036.8047 A4,4 0 0 1 524,1032.8047 L524,864.8047 A4,4 0 0 1 528,860.8047 " fill="#FAFAFA" style="stroke: #9E9E9E; stroke-width: 1.5;"/><line style="stroke: #9E9E9E; stroke-width: 1.5;" x1="524" x2="641" y1="879.6094" y2="879.6094"/><text fill="#000000" font-family="DejaVu Sans" font-size="11" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="104" x="528" y="873.0151">Stitch (optional)</text><!--MD5=[90ed57f55aa7f67662f19dad38956f8d]
-cluster site--><path d="M1299,1097.8047 L1397,1097.8047 A6,6 0 0 1 1401,1101.8047 L1408,1116.6094 L1676,1116.6094 A4,4 0 0 1 1680,1120.6094 L1680,1269.8047 A4,4 0 0 1 1676,1273.8047 L1299,1273.8047 A4,4 0 0 1 1295,1269.8047 L1295,1101.8047 A4,4 0 0 1 1299,1097.8047 " fill="#FAFAFA" style="stroke: #9E9E9E; stroke-width: 1.5;"/><line style="stroke: #9E9E9E; stroke-width: 1.5;" x1="1295" x2="1408" y1="1116.6094" y2="1116.6094"/><text fill="#000000" font-family="DejaVu Sans" font-size="11" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="100" x="1299" y="1110.0151">Site Generation</text><!--MD5=[71c4dff42125b10dbacc11f498bd217e]
-cluster hook_pkg--><path d="M797,1084.8047 L925,1084.8047 A6,6 0 0 1 929,1088.8047 L936,1116.4141 L1267,1116.4141 A4,4 0 0 1 1271,1120.4141 L1271,1365.8047 A4,4 0 0 1 1267,1369.8047 L797,1369.8047 A4,4 0 0 1 793,1365.8047 L793,1088.8047 A4,4 0 0 1 797,1084.8047 " fill="#FAFAFA" style="stroke: #9E9E9E; stroke-width: 1.5;"/><line style="stroke: #9E9E9E; stroke-width: 1.5;" x1="793" x2="936" y1="1116.4141" y2="1116.4141"/><text fill="#000000" font-family="DejaVu Sans" font-size="11" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="108" x="808" y="1097.0151">Pre-commit Hook</text><text fill="#000000" font-family="DejaVu Sans" font-size="11" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="130" x="797" y="1109.8198">(gif-staleness-hook)</text><!--MD5=[8c9334eb67bb67a420277ee7dbfb306b]
-entity build_sh--><rect fill="#E8F4FD" height="45.6094" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="137" x="952.5" y="96.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="947.5" y="101.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="947.5" y="131.9141"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="117" x="962.5" y="116.5151">build_userstories.sh</text><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="79" x="962.5" y="129.3198">(orchestrator)</text><!--MD5=[2d14926b8e70908b1cef3a571ef2f220]
-entity demo_config--><path d="M1392.5,101.8047 C1392.5,91.8047 1448,91.8047 1448,91.8047 C1448,91.8047 1503.5,91.8047 1503.5,101.8047 L1503.5,136.4141 C1503.5,146.4141 1448,146.4141 1448,146.4141 C1448,146.4141 1392.5,146.4141 1392.5,136.4141 L1392.5,101.8047 " fill="#FFF3E0" style="stroke: #FF9800; stroke-width: 1.5;"/><path d="M1392.5,101.8047 C1392.5,111.8047 1448,111.8047 1448,111.8047 C1448,111.8047 1503.5,111.8047 1503.5,101.8047 " fill="none" style="stroke: #FF9800; stroke-width: 1.5;"/><text fill="#E65100" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="78" x="1402.5" y="126.0151">config.yaml +</text><text fill="#E65100" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="91" x="1402.5" y="138.8198">categories.yaml</text><!--MD5=[20193174f2debda488188f8712a7a6fb]
-entity gif_config--><path d="M1124.5,108.3047 C1124.5,98.3047 1177,98.3047 1177,98.3047 C1177,98.3047 1229.5,98.3047 1229.5,108.3047 L1229.5,130.1094 C1229.5,140.1094 1177,140.1094 1177,140.1094 C1177,140.1094 1124.5,140.1094 1124.5,130.1094 L1124.5,108.3047 " fill="#FFF3E0" style="stroke: #FF9800; stroke-width: 1.5;"/><path d="M1124.5,108.3047 C1124.5,118.3047 1177,118.3047 1177,118.3047 C1177,118.3047 1229.5,118.3047 1229.5,108.3047 " fill="none" style="stroke: #FF9800; stroke-width: 1.5;"/><text fill="#E65100" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="85" x="1134.5" y="132.5151">gif_config.yaml</text><!--MD5=[43fd915fd685d2921f949f6c61fa9457]
-entity dag_yaml--><path d="M1539,108.3047 C1539,98.3047 1621,98.3047 1621,98.3047 C1621,98.3047 1703,98.3047 1703,108.3047 L1703,130.1094 C1703,140.1094 1621,140.1094 1621,140.1094 C1621,140.1094 1539,140.1094 1539,130.1094 L1539,108.3047 " fill="#FFF3E0" style="stroke: #FF9800; stroke-width: 1.5;"/><path d="M1539,108.3047 C1539,118.3047 1621,118.3047 1621,118.3047 C1621,118.3047 1703,118.3047 1703,108.3047 " fill="none" style="stroke: #FF9800; stroke-width: 1.5;"/><text fill="#E65100" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="144" x="1549" y="132.5151">userstory_dag_data.yaml</text><!--MD5=[89ac9e2a1a5f320e05a963d9a3de3fb9]
-entity gif_deps--><path d="M1738,108.3047 C1738,98.3047 1813,98.3047 1813,98.3047 C1813,98.3047 1888,98.3047 1888,108.3047 L1888,130.1094 C1888,140.1094 1813,140.1094 1813,140.1094 C1813,140.1094 1738,140.1094 1738,130.1094 L1738,108.3047 " fill="#FFF3E0" style="stroke: #FF9800; stroke-width: 1.5;"/><path d="M1738,108.3047 C1738,118.3047 1813,118.3047 1813,118.3047 C1813,118.3047 1888,118.3047 1888,108.3047 " fill="none" style="stroke: #FF9800; stroke-width: 1.5;"/><text fill="#E65100" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="130" x="1748" y="132.5151">gif_dependencies.yaml</text><!--MD5=[62e0e0ae444cc4f88bf1830801bd3b66]
-entity fixtures--><path d="M1264.5,108.3047 C1264.5,98.3047 1311,98.3047 1311,98.3047 C1311,98.3047 1357.5,98.3047 1357.5,108.3047 L1357.5,130.1094 C1357.5,140.1094 1311,140.1094 1311,140.1094 C1311,140.1094 1264.5,140.1094 1264.5,130.1094 L1264.5,108.3047 " fill="#FFF3E0" style="stroke: #FF9800; stroke-width: 1.5;"/><path d="M1264.5,108.3047 C1264.5,118.3047 1311,118.3047 1311,118.3047 C1311,118.3047 1357.5,118.3047 1357.5,108.3047 " fill="none" style="stroke: #FF9800; stroke-width: 1.5;"/><text fill="#E65100" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="73" x="1274.5" y="132.5151">test/fixtures/</text><!--MD5=[e22908737987feaccd77ec1287dbd4fd]
-entity setup_env--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="174" x="1173" y="358.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="1168" y="363.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="1168" y="381.6094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="154" x="1183" y="379.0151">setup_test_environment.py</text><!--MD5=[9e67e59913d86750ac07351e59f45471]
-entity tmp_demo--><rect fill="#E8F5E9" height="35.8047" rx="4" ry="4" style="stroke: #4CAF50; stroke-width: 1.5;" width="145" x="1180.5" y="451.8047"/><polygon fill="#E8F5E9" points="1308.5,456.8047,1308.5,470.8047,1320.5,470.8047,1320.5,462.8047,1314.5,456.8047,1308.5,456.8047" style="stroke: #4CAF50; stroke-width: 1.5;"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="1314.5" x2="1314.5" y1="456.8047" y2="462.8047"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="1320.5" x2="1314.5" y1="462.8047" y2="462.8047"/><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="115" x="1190.5" y="475.0151">/tmp/hledger_demo/</text><!--MD5=[5f2894780f6a81f3ff45e39f72ca5eaa]
-entity generate_sh--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="89" x="885.5" y="265.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="880.5" y="270.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="880.5" y="288.6094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="69" x="895.5" y="286.0151">generate.sh</text><!--MD5=[ad0b36cc1b78be82bd358cd5043d0b78]
-entity common_sh--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="87" x="795.5" y="358.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="790.5" y="363.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="790.5" y="381.6094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="67" x="805.5" y="379.0151">common.sh</text><!--MD5=[489108823109a78dfe12cc352214e3f9]
-entity pth_install--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="153" x="778.5" y="453.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="773.5" y="458.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="773.5" y="476.1094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="133" x="788.5" y="473.5151">install_coverage_pth.py</text><!--MD5=[ea371c49687de38df8786a18fc600120]
-entity asciinema--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="100" x="967" y="453.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="962" y="458.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="962" y="476.1094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="80" x="977" y="473.5151">asciinema rec</text><!--MD5=[89537f2024c5a17135f48d33f4f33fff]
-entity demo_script--><rect fill="#E8F4FD" height="45.6094" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="130" x="987" y="547.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="982" y="552.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="982" y="583.4141"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="110" x="997" y="568.0151">Python demo script</text><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="52" x="997" y="580.8198">(pexpect)</text><!--MD5=[77d65355fd442d09d43598d7aab27eb1]
-entity sub_pkgs--><rect fill="#E8F4FD" height="58.4141" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="175" x="941.5" y="653.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="936.5" y="658.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="936.5" y="702.2188"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="80" x="951.5" y="674.0151">Sub-packages</text><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="155" x="951.5" y="686.8198">(core, config, csv-mapping,</text><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="98" x="951.5" y="699.6245">rules, receipt, ai)</text><!--MD5=[79713c50b565be5d4433130dcd40e4bd]
-entity cast_file--><rect fill="#E8F5E9" height="35.8047" rx="4" ry="4" style="stroke: #4CAF50; stroke-width: 1.5;" width="173" x="778.5" y="552.8047"/><polygon fill="#E8F5E9" points="934.5,557.8047,934.5,571.8047,946.5,571.8047,946.5,563.8047,940.5,557.8047,934.5,557.8047" style="stroke: #4CAF50; stroke-width: 1.5;"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="940.5" x2="940.5" y1="557.8047" y2="563.8047"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="946.5" x2="940.5" y1="563.8047" y2="563.8047"/><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="143" x="788.5" y="576.0151">recordings/&lt;name&gt;.cast</text><!--MD5=[556b87a36bd692f5ebbc526e7e033c04]
-entity extract_cov--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="134" x="211" y="666.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="206" y="671.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="206" y="689.1094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="114" x="221" y="686.5151">extract_coverage.py</text><!--MD5=[51f9320993ba25732c02a8c40803be74]
-entity cov_json--><rect fill="#E8F5E9" height="48.6094" rx="4" ry="4" style="stroke: #4CAF50; stroke-width: 1.5;" width="145" x="176.5" y="771.8047"/><polygon fill="#E8F5E9" points="304.5,776.8047,304.5,790.8047,316.5,790.8047,316.5,782.8047,310.5,776.8047,304.5,776.8047" style="stroke: #4CAF50; stroke-width: 1.5;"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="310.5" x2="310.5" y1="776.8047" y2="782.8047"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="316.5" x2="310.5" y1="782.8047" y2="782.8047"/><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="86" x="186.5" y="795.0151">_coverage.json</text><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="115" x="186.5" y="807.8198">(files + ast_hashes)</text><!--MD5=[88262e02bddeac25a0937c8d8855c66a]
-entity cast_pp--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="138" x="38" y="666.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="33" y="671.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="33" y="689.1094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="118" x="48" y="686.5151">cast_postprocess.py</text><!--MD5=[03cb9d1b2be33bfc0080ff4782220845]
-entity render_chain--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="163" x="534.5" y="666.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="529.5" y="671.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="529.5" y="689.1094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="143" x="544.5" y="686.5151">agg -&gt; gifsicle -&gt; ffmpeg</text><!--MD5=[03e22b975dd0fbdf7dd48a4800c8e4b6]
-entity marker_extract--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="119" x="380.5" y="666.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="375.5" y="671.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="375.5" y="689.1094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="99" x="390.5" y="686.5151">Marker extraction</text><!--MD5=[aea5e935493bee469b713c18671b96a5]
-entity markers_json--><rect fill="#E8F5E9" height="35.8047" rx="4" ry="4" style="stroke: #4CAF50; stroke-width: 1.5;" width="112" x="357" y="778.3047"/><polygon fill="#E8F5E9" points="452,783.3047,452,797.3047,464,797.3047,464,789.3047,458,783.3047,452,783.3047" style="stroke: #4CAF50; stroke-width: 1.5;"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="458" x2="458" y1="783.3047" y2="789.3047"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="464" x2="458" y1="789.3047" y2="789.3047"/><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="82" x="367" y="801.5151">_markers.json</text><!--MD5=[bb3e6e5cd42267be46e60b0c7ce6274c]
-entity gif_mp4--><rect fill="#E8F5E9" height="35.8047" rx="4" ry="4" style="stroke: #4CAF50; stroke-width: 1.5;" width="194" x="504" y="778.3047"/><polygon fill="#E8F5E9" points="681,783.3047,681,797.3047,693,797.3047,693,789.3047,687,783.3047,681,783.3047" style="stroke: #4CAF50; stroke-width: 1.5;"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="687" x2="687" y1="783.3047" y2="789.3047"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="693" x2="687" y1="789.3047" y2="789.3047"/><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="164" x="514" y="801.5151">&lt;name&gt;.gif + &lt;name&gt;.mp4</text><!--MD5=[522f98d030004aaf0d362a8c676ce968]
-entity stitch--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="122" x="540" y="891.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="535" y="896.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="535" y="914.6094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="102" x="550" y="912.0151">stitch_full_path.py</text><!--MD5=[02e8d249476f4c7917831b1e31b49a92]
-entity full_path--><rect fill="#E8F5E9" height="35.8047" rx="4" ry="4" style="stroke: #4CAF50; stroke-width: 1.5;" width="107" x="551.5" y="984.8047"/><polygon fill="#E8F5E9" points="641.5,989.8047,641.5,1003.8047,653.5,1003.8047,653.5,995.8047,647.5,989.8047,641.5,989.8047" style="stroke: #4CAF50; stroke-width: 1.5;"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="647.5" x2="647.5" y1="989.8047" y2="995.8047"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="653.5" x2="647.5" y1="995.8047" y2="995.8047"/><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="77" x="561.5" y="1008.0151">full_path.mp4</text><!--MD5=[cdf0c5c176c2d84bb0fcd794f615e880]
-entity gen_artifacts--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="202" x="1462" y="1128.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="1457" y="1133.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="1457" y="1151.6094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="182" x="1472" y="1149.0151">generate_userstory_artifacts.py</text><!--MD5=[078f5ec62d71d77bd21c6bd841f4af18]
-entity dag_pngs--><rect fill="#E8F5E9" height="35.8047" rx="4" ry="4" style="stroke: #4CAF50; stroke-width: 1.5;" width="160" x="1483" y="1221.8047"/><polygon fill="#E8F5E9" points="1626,1226.8047,1626,1240.8047,1638,1240.8047,1638,1232.8047,1632,1226.8047,1626,1226.8047" style="stroke: #4CAF50; stroke-width: 1.5;"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="1632" x2="1632" y1="1226.8047" y2="1232.8047"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="1638" x2="1632" y1="1232.8047" y2="1232.8047"/><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="130" x="1493" y="1245.0151">US_*.puml + US_*.png</text><!--MD5=[9c4cfd23e627a988905e4e6f88cae42d]
-entity gen_site--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="115" x="1311.5" y="1128.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="1306.5" y="1133.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="1306.5" y="1151.6094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="95" x="1321.5" y="1149.0151">generate_site.py</text><!--MD5=[e2969c801f733b2c28ca012ca01de400]
-entity site_output--><rect fill="#E8F5E9" height="35.8047" rx="4" ry="4" style="stroke: #4CAF50; stroke-width: 1.5;" width="85" x="1326.5" y="1221.8047"/><polygon fill="#E8F5E9" points="1394.5,1226.8047,1394.5,1240.8047,1406.5,1240.8047,1406.5,1232.8047,1400.5,1226.8047,1394.5,1226.8047" style="stroke: #4CAF50; stroke-width: 1.5;"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="1400.5" x2="1400.5" y1="1226.8047" y2="1232.8047"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="1406.5" x2="1400.5" y1="1232.8047" y2="1232.8047"/><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="55" x="1336.5" y="1245.0151">/tmp/site/</text><!--MD5=[07b28e4ab14dd080a64abe5dcbedc759]
-entity hook--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="147" x="964.5" y="1128.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="959.5" y="1133.8047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="959.5" y="1151.6094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="127" x="974.5" y="1149.0151">check-gif-staleness.py</text><!--MD5=[f04e1e2dab3c874136f30ad5669b95c1]
-entity cov_check--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="145" x="809.5" y="1223.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="804.5" y="1228.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="804.5" y="1246.1094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="125" x="819.5" y="1243.5151">AST hash comparison</text><!--MD5=[f89232ffea36ce60a952c8b57316c0c1]
-entity yaml_check--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="133" x="1121.5" y="1223.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="1116.5" y="1228.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="1116.5" y="1246.1094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="113" x="1131.5" y="1243.5151">YAML pattern match</text><!--MD5=[30e738a77c67bebd183ade5dc944cdc7]
-entity artifact_check--><rect fill="#E8F4FD" height="32.8047" rx="4" ry="4" style="stroke: #2196F3; stroke-width: 1.5;" width="96" x="990" y="1223.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="985" y="1228.3047"/><rect fill="#E8F4FD" height="5" style="stroke: #2196F3; stroke-width: 1.5;" width="10" x="985" y="1246.1094"/><text fill="#1565C0" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="76" x="1000" y="1243.5151">Artifact check</text><!--MD5=[bf670f12eff30399ef20555901e4761b]
-entity hook_result--><rect fill="#E8F5E9" height="35.8047" rx="4" ry="4" style="stroke: #4CAF50; stroke-width: 1.5;" width="153" x="961.5" y="1317.8047"/><polygon fill="#E8F5E9" points="1097.5,1322.8047,1097.5,1336.8047,1109.5,1336.8047,1109.5,1328.8047,1103.5,1322.8047,1097.5,1322.8047" style="stroke: #4CAF50; stroke-width: 1.5;"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="1103.5" x2="1103.5" y1="1322.8047" y2="1328.8047"/><line style="stroke: #4CAF50; stroke-width: 1.5;" x1="1109.5" x2="1103.5" y1="1328.8047" y2="1328.8047"/><text fill="#2E7D32" font-family="DejaVu Sans" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="123" x="971.5" y="1341.0151">PASS / WARN / BLOCK</text><!--MD5=[fbb717940c02674052f6c6e91c2b47d7]
-link demo_config to setup_env--><path d="M1428.24,147.0047 C1390.33,198.2147 1308.23,309.1447 1274.7,354.4347 " fill="none" id="demo_config-&gt;setup_env" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1271.61,358.6147,1280.1714,353.7461,1274.5779,354.5908,1273.7332,348.9974,1271.61,358.6147" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[6b1e3ae21ff20acfed3b7586be7df6a4]
-link fixtures to setup_env--><path d="M1300.36,140.3547 C1289.58,158.3147 1271.08,183.5047 1247,194.8047 C1234.8,200.5247 771.45,193.1947 762,202.8047 C732.08,233.2247 732.7,267.7947 762,298.8047 C790.36,328.8147 1092.81,310.3547 1133,319.8047 C1166.42,327.6647 1202.16,343.7647 1227.18,356.4347 " fill="none" id="fixtures-&gt;setup_env" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1231.73,358.7647,1225.5274,351.1143,1227.2751,356.4944,1221.895,358.2421,1231.73,358.7647" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[69e1959b3ab0db904c18fc38b4af9443]
-link setup_env to tmp_demo--><path d="M1258.81,391.9947 C1257.67,407.0347 1255.95,429.8847 1254.67,446.7547 " fill="none" id="setup_env-&gt;tmp_demo" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1254.29,451.7847,1258.9476,443.1067,1254.6615,446.7985,1250.9697,442.5124,1254.29,451.7847" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[ad7531a245e3395924738801f64da0d9]
-link build_sh to setup_env--><path d="M952.41,130.2747 C875.65,143.0047 758.52,167.6647 732,202.8047 C706.3,236.8647 702.63,267.8547 732,298.8047 C762.71,331.1647 1089.55,309.6847 1133,319.8047 C1166.44,327.5947 1202.17,343.7047 1227.19,356.3947 " fill="none" id="build_sh-&gt;setup_env" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1231.74,358.7247,1225.5374,351.0743,1227.2851,356.4544,1221.905,358.2021,1231.74,358.7247" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[442abca385f2c435b0df3deca4666915]
-link build_sh to generate_sh--><path d="M1008.54,142.3547 C990.79,173.7447 958.51,230.8647 941.38,261.1647 " fill="none" id="build_sh-&gt;generate_sh" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="938.77,265.7947,946.6751,259.9202,941.2261,261.4395,939.7067,255.9905,938.77,265.7947" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[b16601a8b5672a239178161b4d6a1b1a]
-link build_sh to gen_artifacts--><path d="M1039.15,142.3447 C1055.2,160.0547 1080.31,183.7247 1108,194.8047 C1139.2,207.2847 1226.74,193.4147 1259,202.8047 C1407.95,246.1647 1563,219.1747 1563,374.3047 C1563,374.3047 1563,374.3047 1563,909.3047 C1563,988.3747 1563,1082.4047 1563,1123.4247 " fill="none" id="build_sh-&gt;gen_artifacts" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1563,1128.6247,1567,1119.6247,1563,1123.6247,1559,1119.6247,1563,1128.6247" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[a26be13c78f3cabbe9de2aef2693dc42]
-link build_sh to gen_site--><path d="M1042.03,142.5947 C1058.59,159.0247 1082.99,180.8547 1108,194.8047 C1118.19,200.4847 1122.21,198.3647 1133,202.8047 C1239.07,246.4247 1269.16,253.8747 1363,319.8047 C1391.94,340.1347 1421,338.9347 1421,374.3047 C1421,374.3047 1421,374.3047 1421,909.3047 C1421,990.0847 1391.35,1082.8747 1376.83,1123.4647 " fill="none" id="build_sh-&gt;gen_site" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1374.97,1128.6147,1381.7927,1121.5118,1376.6707,1123.9128,1374.2697,1118.7908,1374.97,1128.6147" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[a07cb90ab0889d4427a0d4207437813d]
-link generate_sh to common_sh--><path d="M914.15,299.1547 C898.62,314.6847 874.93,338.3747 858.31,354.9947 " fill="none" id="generate_sh-&gt;common_sh" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="854.67,358.6347,863.8624,355.0992,858.2055,355.0992,858.2055,349.4423,854.67,358.6347" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[385c018425783dbe179c4b1c9c40d086]
-link gif_config to common_sh--><path d="M1167.9,140.6147 C1158.66,158.4847 1142.52,183.3947 1120,194.8047 C1100.77,204.5547 747.09,187.4047 732,202.8047 C702.14,233.2847 712.37,260.9247 732,298.8047 C745.53,324.9147 772.72,343.9247 796.3,356.3347 " fill="none" id="gif_config-&gt;common_sh" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="800.96,358.7247,794.7869,351.0505,796.5139,356.4373,791.1271,358.1643,800.96,358.7247" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[1d2fa6d4a32980083c92db325287ca63]
-link common_sh to pth_install--><path d="M841.71,391.9947 C844.38,407.4147 848.46,431.0247 851.4,447.9947 " fill="none" id="common_sh-&gt;pth_install" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="852.27,453.0347,854.691,443.488,851.4248,448.1066,846.8062,444.8404,852.27,453.0347" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[011f47b548fcf2a06ee13772792b8aaa]
-link common_sh to asciinema--><path d="M869.2,391.9947 C900.49,408.2547 949.33,433.6447 982.22,450.7347 " fill="none" id="common_sh-&gt;asciinema" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="986.95,453.1947,980.8065,445.4968,982.5127,450.8902,977.1193,452.5964,986.95,453.1947" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[926e1a8d28bb9826bd73526ee6ba1e0b]
-link asciinema to demo_script--><path d="M1022.62,486.7147 C1027.96,501.7947 1036.08,524.7747 1042.43,542.7447 " fill="none" id="asciinema-&gt;demo_script" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1044.17,547.6647,1044.9326,537.8454,1042.4992,542.9521,1037.3925,540.5187,1044.17,547.6647" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[44353ab302d8689581ebb8e429745dc3]
-link demo_script to sub_pkgs--><path d="M1047.35,594.0647 C1044.09,609.6547 1039.67,630.7547 1035.99,648.3647 " fill="none" id="demo_script-&gt;sub_pkgs" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1034.88,653.7047,1040.6259,645.7057,1035.8963,648.8091,1032.7929,644.0795,1034.88,653.7047" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[932b3fda5e3988e1f00d66d4209df1b6]
-link tmp_demo to demo_script--><path d="M1218.45,487.8247 C1186.33,503.6447 1138.12,527.3847 1101.84,545.2547 " fill="none" id="tmp_demo-&gt;demo_script" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1097.03,547.6247,1106.8709,547.2277,1101.5135,545.4115,1103.3297,540.0541,1097.03,547.6247" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[42ac7bd1fe68d8475aac9b934350d86c]
-link asciinema to cast_file--><path d="M992.92,486.4947 C966.61,503.6247 924.42,531.1047 895.75,549.7747 " fill="none" id="asciinema-&gt;cast_file" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="891.27,552.6947,900.9939,551.1307,895.4586,549.9642,896.6251,544.429,891.27,552.6947" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[f74c340de82940ba9fdc8d05e460951f]
-link common_sh to extract_cov--><path d="M807.31,391.8447 C730.15,429.9347 526.85,531.8047 363,627.3047 C343.48,638.6847 322.07,652.4147 305.62,663.2547 " fill="none" id="common_sh-&gt;extract_cov" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="301.12,666.2247,310.8338,664.5991,305.2912,663.4677,306.4226,657.9251,301.12,666.2247" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[2a03bd48aca309ce9fa600cd970a86ca]
-link extract_cov to cov_json--><path d="M273.97,699.3047 C269.44,716.7047 262.01,745.2947 256.43,766.7547 " fill="none" id="extract_cov-&gt;cov_json" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="255.12,771.7647,261.2799,764.0799,256.3932,766.9295,253.5436,762.0428,255.12,771.7647" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[7d0bc2bab71f17245bffa340811a744e]
-link common_sh to cast_pp--><path d="M795.11,386.1547 C740.92,398.8547 646.32,422.7947 568,451.8047 C395.44,515.7147 354.38,538.8747 193,627.3047 C172.88,638.3347 151.05,652.1847 134.43,663.1647 " fill="none" id="common_sh-&gt;cast_pp" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="129.88,666.1847,139.5912,664.5437,134.0468,663.4211,135.1695,657.8768,129.88,666.1847" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[eefb36b6682e1998b14fd318a1d04e19]
-link cast_file to render_chain--><path d="M826.37,588.8747 C780.01,609.3447 702.69,643.5047 655.82,664.2147 " fill="none" id="cast_file-&gt;render_chain" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="651.1,666.2947,660.9488,666.3261,655.6755,664.2786,657.7231,659.0053,651.1,666.2947" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[d694e78a8b4d79ba4df9c0ec2646ea86]
-link render_chain to gif_mp4--><path d="M613.91,699.3047 C611.34,718.4747 606.93,751.2347 603.99,773.0747 " fill="none" id="render_chain-&gt;gif_mp4" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="603.31,778.1047,608.4818,769.723,603.9811,773.1499,600.5542,768.6492,603.31,778.1047" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[3428fe901a000a8810d0a9aa8e2ceb64]
-link cast_file to marker_extract--><path d="M778.4,574.7047 C706.15,579.6547 601.7,592.7847 517,627.3047 C496.21,635.7847 475.6,650.8147 460.94,662.9447 " fill="none" id="cast_file-&gt;marker_extract" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="456.97,666.2847,466.4348,663.5613,460.7994,663.0697,461.2909,657.4343,456.97,666.2847" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[cf96d8f362473438df0e735ff9a9a45c]
-link marker_extract to markers_json--><path d="M436.25,699.3047 C431.6,718.4747 423.67,751.2347 418.38,773.0747 " fill="none" id="marker_extract-&gt;markers_json" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="417.17,778.1047,423.1686,770.2934,418.3423,773.2441,415.3916,768.4177,417.17,778.1047" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[d72e9390d6d3e9e1bc8b403299ae7ee8]
-link gif_mp4 to stitch--><path d="M601,814.4947 C601,833.9847 601,865.7747 601,886.6147 " fill="none" id="gif_mp4-&gt;stitch" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="601,891.6647,605,882.6647,601,886.6647,597,882.6647,601,891.6647" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[ac7d5a3122bd1017502803b64d1fd8b1]
-link markers_json to stitch--><path d="M438.36,814.5147 C452.26,823.7647 469.89,835.2047 486,844.8047 C512.54,860.6147 543.32,877.2547 566.35,889.3947 " fill="none" id="markers_json-&gt;stitch" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="570.85,891.7547,564.7559,884.0176,566.4276,889.4218,561.0234,891.0935,570.85,891.7547" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[9b766bdf4a39c8ab3fc797c79ebea7fa]
-link stitch to full_path--><path d="M601.68,924.9947 C602.33,940.0347 603.32,962.8847 604.05,979.7547 " fill="none" id="stitch-&gt;full_path" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="604.26,984.7847,607.8448,975.6114,604.0317,979.7899,599.8532,975.9767,604.26,984.7847" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[f43f7518d12f5d9e105b16a31ec98a2c]
-link dag_yaml to gen_artifacts--><path d="M1632.68,140.6247 C1655.76,182.7447 1705,283.2747 1705,374.3047 C1705,374.3047 1705,374.3047 1705,909.3047 C1705,1001.2047 1624.47,1087.9547 1584.7,1125.2047 " fill="none" id="dag_yaml-&gt;gen_artifacts" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1580.98,1128.6547,1590.3012,1125.4743,1584.6485,1125.2574,1584.8655,1119.6047,1580.98,1128.6547" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[c51e8eacb9ad4141d12467910dbfd41a]
-link gen_artifacts to dag_pngs--><path d="M1563,1161.9947 C1563,1177.0347 1563,1199.8847 1563,1216.7547 " fill="none" id="gen_artifacts-&gt;dag_pngs" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1563,1221.7847,1567,1212.7847,1563,1216.7847,1559,1212.7847,1563,1221.7847" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[0bc0693fce20d543c4f8cecaf46ac846]
-link dag_yaml to gen_site--><path d="M1622.73,140.3747 C1626.26,183.2747 1634,287.0947 1634,374.3047 C1634,374.3047 1634,374.3047 1634,797.3047 C1634,817.9247 1442.42,1054.3347 1385.05,1124.6747 " fill="none" id="dag_yaml-&gt;gen_site" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1381.78,1128.6847,1390.5678,1124.2379,1384.94,1124.8098,1384.368,1119.1819,1381.78,1128.6847" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[8b436717347fd286734e4d3802329c9a]
-link gif_mp4 to gen_site--><path d="M698.04,809.6147 C753.01,818.2747 822.47,832.0847 882,852.8047 C1065.6,916.7047 1111.99,940.9647 1271,1052.8047 C1301.7,1074.3947 1332.61,1105.0947 1351.28,1124.8547 " fill="none" id="gif_mp4-&gt;gen_site" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1354.85,1128.6547,1351.6139,1119.3527,1351.4308,1125.0066,1345.7769,1124.8234,1354.85,1128.6547" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[1835e84b64ece63a8a969b92f62fdf22]
-link markers_json to gen_site--><path d="M432.87,814.4647 C446.75,825.3447 466.27,838.5047 486,844.8047 C526.68,857.8047 636.23,843.9447 678,852.8047 C791.6,876.8947 1050.82,1018.8447 1164,1044.8047 C1187.24,1050.1347 1249.16,1043.2347 1271,1052.8047 C1306.58,1068.3947 1337.42,1102.5347 1354.57,1124.4247 " fill="none" id="markers_json-&gt;gen_site" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1357.82,1128.6247,1355.4831,1119.0571,1354.7632,1124.6679,1349.1523,1123.948,1357.82,1128.6247" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[44f9ad9e30c860fcf8e1cf240384b1b9]
-link full_path to gen_site--><path d="M658.75,1016.1347 C704.12,1025.9347 770.93,1038.9247 830,1044.8047 C854.38,1047.2347 1248.29,1043.6147 1271,1052.8047 C1307.21,1067.4647 1338.06,1102.2247 1355.01,1124.4247 " fill="none" id="full_path-&gt;gen_site" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1358.22,1128.6947,1356.0035,1119.0985,1355.2131,1124.6998,1349.6118,1123.9095,1358.22,1128.6947" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[79a91ad4efa3782062ec1bf252c0b624]
-link gen_site to site_output--><path d="M1369,1161.9947 C1369,1177.0347 1369,1199.8847 1369,1216.7547 " fill="none" id="gen_site-&gt;site_output" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1369,1221.7847,1373,1212.7847,1369,1216.7847,1365,1212.7847,1369,1221.7847" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[2bfa26d35fea01005e98bc6a682887d9]
-link cov_json to cov_check--><path d="M271.32,820.8147 C316.22,867.3147 421.94,972.7547 524,1044.8047 C632.42,1121.3447 774.36,1189.9647 842.35,1221.1047 " fill="none" id="cov_json-&gt;cov_check" style="stroke: #A80036; stroke-width: 1.0; stroke-dasharray: 7.0,7.0;"/><polygon fill="#A80036" points="847.11,1223.2847,840.5719,1215.919,842.5582,1221.2157,837.2615,1223.2019,847.11,1223.2847" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[4bcfb60b25453765e335d1ceab435483]
-link gif_deps to yaml_check--><path d="M1811.41,140.3747 C1808.14,183.2747 1801,287.1147 1801,374.3047 C1801,374.3047 1801,374.3047 1801,1003.8047 C1801,1092.2547 1756.05,1116.6347 1680,1161.8047 C1531.1,1250.2347 1466.07,1194.8847 1295,1221.8047 C1283.62,1223.5947 1271.56,1225.5047 1259.8,1227.3647 " fill="none" id="gif_deps-&gt;yaml_check" style="stroke: #A80036; stroke-width: 1.0; stroke-dasharray: 7.0,7.0;"/><polygon fill="#A80036" points="1254.78,1228.1647,1264.2975,1230.6979,1259.7176,1227.3775,1263.038,1222.7977,1254.78,1228.1647" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[5a34521520ddd41e95bbd5695d9041f9]
-link hook to cov_check--><path d="M1011.54,1161.9947 C984.22,1178.1947 941.65,1203.4347 912.83,1220.5247 " fill="none" id="hook-&gt;cov_check" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="908.33,1223.1947,918.11,1222.0325,912.6275,1220.639,914.021,1215.1565,908.33,1223.1947" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[6391219623c04f10173eaab25772986c]
-link hook to yaml_check--><path d="M1063.45,1161.9947 C1089.71,1178.1947 1130.64,1203.4347 1158.35,1220.5247 " fill="none" id="hook-&gt;yaml_check" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1162.68,1223.1947,1157.1039,1215.0764,1158.4193,1220.5782,1152.9175,1221.8936,1162.68,1223.1947" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[ddfa2e319b893ad90932e95c91e7b71b]
-link hook to artifact_check--><path d="M1038,1161.9947 C1038,1177.4147 1038,1201.0247 1038,1217.9947 " fill="none" id="hook-&gt;artifact_check" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1038,1223.0347,1042,1214.0347,1038,1218.0347,1034,1214.0347,1038,1223.0347" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[718b1d1b8be93c2ff6acab485c769261]
-link cov_check to hook_result--><path d="M907.76,1256.3247 C934.38,1272.3647 976.01,1297.4547 1005.01,1314.9247 " fill="none" id="cov_check-&gt;hook_result" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1009.56,1317.6647,1003.9203,1309.5904,1005.2788,1315.0817,999.7875,1316.4403,1009.56,1317.6647" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[94798392fd748107d3fecd948fed8c12]
-link yaml_check to hook_result--><path d="M1163.23,1256.3247 C1137.64,1272.3647 1097.61,1297.4547 1069.72,1314.9247 " fill="none" id="yaml_check-&gt;hook_result" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1065.35,1317.6647,1075.1041,1316.3015,1069.594,1315.0211,1070.8743,1309.5111,1065.35,1317.6647" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[2255db3c32d6f158829b376d533256c0]
-link artifact_check to hook_result--><path d="M1038,1256.3247 C1038,1271.6347 1038,1295.1947 1038,1312.5147 " fill="none" id="artifact_check-&gt;hook_result" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="1038,1317.6647,1042,1308.6647,1038,1312.6647,1034,1308.6647,1038,1317.6647" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[80b5008f28bffbbf35ba61eea9e3973d]
-@startuml gif_pipeline_overview
-skinparam backgroundColor #FFFFFF
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam defaultFontName "DejaVu Sans"
-skinparam defaultFontSize 11
-skinparam packageStyle rectangle
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1450" width="1200" height="1450" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11">
+  <defs>
+    <!-- Arrow markers per color -->
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#2196F3"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#4CAF50"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#FF9800"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#9C27B0"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#E53935"/>
+    </marker>
+    <marker id="arrow-teal" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#00897B"/>
+    </marker>
+  </defs>
 
-top to bottom direction
+  <!-- Background -->
+  <rect width="1200" height="1450" fill="#FFFFFF"/>
 
-skinparam component {
-  BackgroundColor #E8F4FD
-  BorderColor #2196F3
-  FontColor #1565C0
-}
+  <!-- Title -->
+  <text x="600" y="24" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">GIF Pipeline &amp; Pre-commit Staleness Check</text>
 
-skinparam database {
-  BackgroundColor #FFF3E0
-  BorderColor #FF9800
-  FontColor #E65100
-}
+  <!-- ================================================================== -->
+  <!--  ROW 1: Data Sources (left) | build_userstories.sh (right)         -->
+  <!-- ================================================================== -->
 
-skinparam artifact {
-  BackgroundColor #E8F5E9
-  BorderColor #4CAF50
-  FontColor #2E7D32
-}
+  <!-- Package: Data Sources -->
+  <rect x="20" y="40" width="620" height="180" rx="6" fill="#FAFAFA" stroke="#9E9E9E" stroke-width="1.5"/>
+  <text x="30" y="56" font-weight="bold" fill="#333">Data Sources</text>
 
-skinparam package {
-  BackgroundColor #FAFAFA
-  BorderColor #9E9E9E
-}
+  <!-- Sub-group: Config Files -->
+  <rect x="35" y="65" width="175" height="145" rx="4" fill="#FFF8E1" stroke="#FFB74D" stroke-width="1"/>
+  <text x="45" y="80" font-size="10" font-weight="bold" fill="#E65100">Config Files</text>
+  <!-- db: config.yaml + categories.yaml -->
+  <ellipse cx="122" cy="97" rx="65" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <rect x="57" y="97" width="130" height="30" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <ellipse cx="122" cy="127" rx="65" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <text x="122" y="117" text-anchor="middle" fill="#E65100" font-size="10">config.yaml +</text>
+  <text x="122" y="128" text-anchor="middle" fill="#E65100" font-size="9">categories.yaml</text>
+  <!-- db: gif_config.yaml -->
+  <ellipse cx="122" cy="152" rx="65" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <rect x="57" y="152" width="130" height="25" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <ellipse cx="122" cy="177" rx="65" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <text x="122" y="170" text-anchor="middle" fill="#E65100" font-size="10">gif_config.yaml</text>
 
-title GIF Pipeline & Pre-commit Staleness Check
+  <!-- Sub-group: DAG & Dependencies -->
+  <rect x="225" y="65" width="200" height="145" rx="4" fill="#FFF8E1" stroke="#FFB74D" stroke-width="1"/>
+  <text x="235" y="80" font-size="10" font-weight="bold" fill="#E65100">DAG &amp; Dependencies</text>
+  <!-- db: userstory_dag_data.yaml -->
+  <ellipse cx="325" cy="97" rx="80" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <rect x="245" y="97" width="160" height="30" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <ellipse cx="325" cy="127" rx="80" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <text x="325" y="117" text-anchor="middle" fill="#E65100" font-size="10">userstory_dag_data.yaml</text>
+  <!-- db: gif_dependencies.yaml -->
+  <ellipse cx="325" cy="152" rx="80" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <rect x="245" y="152" width="160" height="25" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <ellipse cx="325" cy="177" rx="80" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <text x="325" y="170" text-anchor="middle" fill="#E65100" font-size="10">gif_dependencies.yaml</text>
 
-together {
-  package "Data Sources" as ds {
-    database "config.yaml +\ncategories.yaml" as demo_config
-    database "gif_config.yaml" as gif_config
-    database "userstory_dag_data.yaml" as dag_yaml
-    database "gif_dependencies.yaml" as gif_deps
-    database "test/fixtures/" as fixtures
-  }
+  <!-- Sub-group: Test Data -->
+  <rect x="440" y="65" width="185" height="145" rx="4" fill="#FFF8E1" stroke="#FFB74D" stroke-width="1"/>
+  <text x="450" y="80" font-size="10" font-weight="bold" fill="#E65100">Test Data</text>
+  <!-- db: test/fixtures/ -->
+  <ellipse cx="532" cy="107" rx="70" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <rect x="462" y="107" width="140" height="30" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <ellipse cx="532" cy="137" rx="70" ry="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="1"/>
+  <text x="532" y="124" text-anchor="middle" fill="#E65100" font-size="10">test/fixtures/</text>
+  <text x="532" y="135" text-anchor="middle" fill="#E65100" font-size="9">(CSV, receipts, journals)</text>
 
-  component "build_userstories.sh\n(orchestrator)" as build_sh
-}
+  <!-- build_userstories.sh (orchestrator) -->
+  <rect x="700" y="85" width="200" height="50" rx="6" fill="#E8F4FD" stroke="#2196F3" stroke-width="2"/>
+  <text x="800" y="107" text-anchor="middle" font-weight="bold" fill="#1565C0">build_userstories.sh</text>
+  <text x="800" y="120" text-anchor="middle" fill="#1565C0" font-size="10">(orchestrator)</text>
 
-together {
-  package "Test Environment" as env {
-    component "setup_test_environment.py" as setup_env
-    artifact "/tmp/hledger_demo/" as tmp_demo
-  }
+  <!-- ================================================================== -->
+  <!--  ROW 2: Test Environment (left) | Per-GIF Recording (right)        -->
+  <!-- ================================================================== -->
 
-  package "Per-GIF Recording" as rec {
-    component "generate.sh" as generate_sh
-    component "common.sh" as common_sh
-    component "install_coverage_pth.py" as pth_install
-    component "asciinema rec" as asciinema
-    component "Python demo script\n(pexpect)" as demo_script
-    component "Sub-packages\n(core, config, csv-mapping,\nrules, receipt, ai)" as sub_pkgs
-    artifact "recordings/<name>.cast" as cast_file
-  }
-}
+  <!-- Package: Test Environment -->
+  <rect x="20" y="250" width="280" height="170" rx="6" fill="#FAFAFA" stroke="#9E9E9E" stroke-width="1.5"/>
+  <text x="30" y="266" font-weight="bold" fill="#333">Test Environment</text>
 
-package "Post-processing" as post {
-  component "extract_coverage.py" as extract_cov
-  artifact "_coverage.json\n(files + ast_hashes)" as cov_json
-  component "cast_postprocess.py" as cast_pp
-  component "agg -> gifsicle -> ffmpeg" as render_chain
-  component "Marker extraction" as marker_extract
-  artifact "_markers.json" as markers_json
-  artifact "<name>.gif + <name>.mp4" as gif_mp4
-}
+  <rect x="35" y="278" width="250" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="160" y="300" text-anchor="middle" fill="#1565C0">setup_test_environment.py</text>
 
-package "Stitch (optional)" as stitch_pkg {
-  component "stitch_full_path.py" as stitch
-  artifact "full_path.mp4" as full_path
-}
+  <rect x="35" y="328" width="250" height="35" rx="4" fill="#E8F5E9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="160" y="350" text-anchor="middle" fill="#2E7D32">/tmp/hledger_demo/</text>
+  <text x="160" y="362" text-anchor="middle" fill="#2E7D32" font-size="9">(config, CSV, receipts)</text>
 
-together {
-  package "Site Generation" as site {
-    component "generate_userstory_artifacts.py" as gen_artifacts
-    artifact "US_*.puml + US_*.png" as dag_pngs
-    component "generate_site.py" as gen_site
-    artifact "/tmp/site/" as site_output
-  }
+  <!-- Package: Per-GIF Recording -->
+  <rect x="340" y="250" width="840" height="430" rx="6" fill="#FAFAFA" stroke="#9E9E9E" stroke-width="1.5"/>
+  <text x="350" y="266" font-weight="bold" fill="#333">Per-GIF Recording</text>
 
-  package "Pre-commit Hook\n(gif-staleness-hook)" as hook_pkg {
-    component "check-gif-staleness.py" as hook
-    component "AST hash comparison" as cov_check
-    component "YAML pattern match" as yaml_check
-    component "Artifact check" as artifact_check
-    artifact "PASS / WARN / BLOCK" as hook_result
-  }
-}
+  <!-- generate.sh -->
+  <rect x="355" y="278" width="140" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="425" y="300" text-anchor="middle" fill="#1565C0">generate.sh</text>
 
+  <!-- common.sh -->
+  <rect x="510" y="278" width="140" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="580" y="300" text-anchor="middle" fill="#1565C0">common.sh</text>
 
-demo_config - -> setup_env
-fixtures - -> setup_env
-setup_env - -> tmp_demo
+  <!-- install_coverage_pth.py -->
+  <rect x="355" y="333" width="195" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="452" y="355" text-anchor="middle" fill="#1565C0">install_coverage_pth.py</text>
 
-build_sh - -> setup_env
-build_sh - -> generate_sh
-build_sh - -> gen_artifacts
-build_sh - -> gen_site
+  <!-- COVERAGE_PROCESS_START -->
+  <rect x="570" y="333" width="220" height="35" rx="4" fill="#E8F5E9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="680" y="350" text-anchor="middle" fill="#2E7D32">COVERAGE_PROCESS_START</text>
+  <text x="680" y="362" text-anchor="middle" fill="#2E7D32" font-size="9">(env var + .pth)</text>
 
-generate_sh - -> common_sh
-gif_config - -> common_sh
-common_sh - -> pth_install
-common_sh - -> asciinema
-asciinema - -> demo_script
-demo_script - -> sub_pkgs
-tmp_demo - -> demo_script
-asciinema - -> cast_file
+  <!-- asciinema rec -->
+  <rect x="355" y="388" width="140" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="425" y="410" text-anchor="middle" fill="#1565C0">asciinema rec</text>
 
-common_sh - -> extract_cov
-extract_cov - -> cov_json
-common_sh - -> cast_pp
-cast_file - -> render_chain
-render_chain - -> gif_mp4
-cast_file - -> marker_extract
-marker_extract - -> markers_json
+  <!-- Python demo script -->
+  <rect x="510" y="388" width="195" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="607" y="404" text-anchor="middle" fill="#1565C0">Python demo script</text>
+  <text x="607" y="416" text-anchor="middle" fill="#1565C0" font-size="9">(gifs/automation/*.py, pexpect)</text>
 
-gif_mp4 - -> stitch
-markers_json - -> stitch
-stitch - -> full_path
+  <!-- Sub-packages -->
+  <rect x="720" y="388" width="210" height="50" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="825" y="405" text-anchor="middle" fill="#1565C0">Sub-packages</text>
+  <text x="825" y="417" text-anchor="middle" fill="#1565C0" font-size="9">(core, config, csv-mapping,</text>
+  <text x="825" y="429" text-anchor="middle" fill="#1565C0" font-size="9">rules, receipt, ai)</text>
 
-dag_yaml - -> gen_artifacts
-gen_artifacts - -> dag_pngs
-dag_yaml - -> gen_site
-gif_mp4 - -> gen_site
-markers_json - -> gen_site
-full_path - -> gen_site
-gen_site - -> site_output
+  <!-- recordings/<name>.cast -->
+  <rect x="950" y="278" width="210" height="35" rx="4" fill="#E8F5E9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="1055" y="300" text-anchor="middle" fill="#2E7D32">recordings/&lt;name&gt;.cast</text>
 
-cov_json ..> cov_check
-gif_deps ..> yaml_check
-hook - -> cov_check
-hook - -> yaml_check
-hook - -> artifact_check
-cov_check - -> hook_result
-yaml_check - -> hook_result
-artifact_check - -> hook_result
+  <!-- ================================================================== -->
+  <!--  ROW 3: Post-processing                                            -->
+  <!-- ================================================================== -->
 
-@enduml
+  <rect x="20" y="710" width="1160" height="180" rx="6" fill="#FAFAFA" stroke="#9E9E9E" stroke-width="1.5"/>
+  <text x="30" y="726" font-weight="bold" fill="#333">Post-processing</text>
 
-PlantUML version 1.2020.02(Sun Mar 01 11:22:07 CET 2020)
-(GPL source distribution)
-Java Runtime: OpenJDK Runtime Environment
-JVM: OpenJDK 64-Bit Server VM
-Java Version: 21.0.10+7-Ubuntu-124.04
-Operating System: Linux
-Default Encoding: UTF-8
-Language: en
-Country: US
---></g></svg>
+  <!-- extract_coverage.py -->
+  <rect x="35" y="738" width="170" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="120" y="760" text-anchor="middle" fill="#1565C0">extract_coverage.py</text>
+
+  <!-- _coverage.json -->
+  <rect x="35" y="788" width="170" height="45" rx="4" fill="#E8F5E9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="120" y="808" text-anchor="middle" fill="#2E7D32">_coverage.json</text>
+  <text x="120" y="822" text-anchor="middle" fill="#2E7D32" font-size="9">(files + ast_hashes)</text>
+
+  <!-- cast_postprocess.py -->
+  <rect x="230" y="738" width="170" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="315" y="760" text-anchor="middle" fill="#1565C0">cast_postprocess.py</text>
+
+  <!-- agg -->
+  <rect x="425" y="738" width="120" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="485" y="760" text-anchor="middle" fill="#1565C0">agg (.cast-&gt;.gif)</text>
+
+  <!-- gifsicle -->
+  <rect x="560" y="738" width="120" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="620" y="760" text-anchor="middle" fill="#1565C0">gifsicle (opt.)</text>
+
+  <!-- ffmpeg -->
+  <rect x="695" y="738" width="135" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="762" y="760" text-anchor="middle" fill="#1565C0">ffmpeg (.gif-&gt;.mp4)</text>
+
+  <!-- Marker extraction -->
+  <rect x="855" y="738" width="150" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="930" y="760" text-anchor="middle" fill="#1565C0">Marker extraction</text>
+
+  <!-- _markers.json -->
+  <rect x="855" y="788" width="150" height="35" rx="4" fill="#E8F5E9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="930" y="810" text-anchor="middle" fill="#2E7D32">_markers.json</text>
+
+  <!-- <name>.gif + <name>.mp4 -->
+  <rect x="425" y="795" width="230" height="35" rx="4" fill="#E8F5E9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="540" y="817" text-anchor="middle" fill="#2E7D32">&lt;name&gt;.gif + &lt;name&gt;.mp4</text>
+
+  <!-- ================================================================== -->
+  <!--  ROW 4: Stitch                                                     -->
+  <!-- ================================================================== -->
+
+  <rect x="350" y="920" width="500" height="100" rx="6" fill="#FAFAFA" stroke="#9E9E9E" stroke-width="1.5"/>
+  <text x="360" y="936" font-weight="bold" fill="#333">Stitch (optional)</text>
+
+  <rect x="365" y="948" width="180" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="455" y="970" text-anchor="middle" fill="#1565C0">stitch_full_path.py</text>
+
+  <rect x="575" y="948" width="250" height="35" rx="4" fill="#E8F5E9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="700" y="964" text-anchor="middle" fill="#2E7D32">full_path.mp4 +</text>
+  <text x="700" y="976" text-anchor="middle" fill="#2E7D32" font-size="9">full_path_markers.json</text>
+
+  <!-- ================================================================== -->
+  <!--  ROW 5: Site Generation (left) | Pre-commit Hook (right)           -->
+  <!-- ================================================================== -->
+
+  <!-- Package: Site Generation -->
+  <rect x="20" y="1060" width="530" height="160" rx="6" fill="#FAFAFA" stroke="#9E9E9E" stroke-width="1.5"/>
+  <text x="30" y="1076" font-weight="bold" fill="#333">Site Generation</text>
+
+  <rect x="35" y="1088" width="240" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="155" y="1110" text-anchor="middle" fill="#1565C0">generate_userstory_artifacts.py</text>
+
+  <rect x="295" y="1088" width="240" height="35" rx="4" fill="#E8F5E9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="415" y="1110" text-anchor="middle" fill="#2E7D32">US_*.puml + US_*.png</text>
+
+  <rect x="35" y="1138" width="175" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="122" y="1154" text-anchor="middle" fill="#1565C0">generate_site.py</text>
+  <text x="122" y="1166" text-anchor="middle" fill="#1565C0" font-size="9">(HTML + SVG + JS)</text>
+
+  <rect x="230" y="1138" width="140" height="35" rx="4" fill="#E8F5E9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="300" y="1160" text-anchor="middle" fill="#2E7D32">/tmp/site/</text>
+
+  <!-- Package: Pre-commit Hook -->
+  <rect x="600" y="1060" width="580" height="350" rx="6" fill="#FFF3E0" stroke="#FF9800" stroke-width="1.5"/>
+  <text x="610" y="1076" font-weight="bold" fill="#E65100">Pre-commit Hook (gif-staleness-hook repo)</text>
+
+  <rect x="615" y="1093" width="155" height="45" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="692" y="1112" text-anchor="middle" fill="#1565C0">git commit</text>
+  <text x="692" y="1126" text-anchor="middle" fill="#1565C0" font-size="9">(staged changes)</text>
+
+  <rect x="800" y="1093" width="180" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="890" y="1115" text-anchor="middle" fill="#1565C0">check-gif-staleness.py</text>
+
+  <!-- Staleness Checks sub-box -->
+  <rect x="615" y="1158" width="550" height="100" rx="4" fill="#FAFAFA" stroke="#BDBDBD" stroke-width="1"/>
+  <text x="625" y="1173" font-size="10" font-weight="bold" fill="#666">Staleness Checks</text>
+
+  <rect x="625" y="1183" width="160" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="705" y="1199" text-anchor="middle" fill="#1565C0" font-size="10">AST hash comparison</text>
+  <text x="705" y="1211" text-anchor="middle" fill="#1565C0" font-size="9">(Python files)</text>
+
+  <rect x="800" y="1183" width="160" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="880" y="1199" text-anchor="middle" fill="#1565C0" font-size="10">YAML pattern match</text>
+  <text x="880" y="1211" text-anchor="middle" fill="#1565C0" font-size="9">(non-Python files)</text>
+
+  <rect x="975" y="1183" width="175" height="35" rx="4" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="1062" y="1199" text-anchor="middle" fill="#1565C0" font-size="10">Artifact check</text>
+  <text x="1062" y="1211" text-anchor="middle" fill="#1565C0" font-size="9">(GIF re-recorded?)</text>
+
+  <!-- Result sub-box -->
+  <rect x="615" y="1278" width="550" height="115" rx="4" fill="#FAFAFA" stroke="#BDBDBD" stroke-width="1"/>
+  <text x="625" y="1293" font-size="10" font-weight="bold" fill="#666">Result</text>
+
+  <rect x="625" y="1303" width="120" height="35" rx="4" fill="#C8E6C9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="685" y="1325" text-anchor="middle" font-weight="bold" fill="#2E7D32">PASS</text>
+
+  <rect x="770" y="1303" width="200" height="35" rx="4" fill="#FFCDD2" stroke="#E53935" stroke-width="1.5"/>
+  <text x="870" y="1319" text-anchor="middle" font-weight="bold" fill="#C62828">WARN / BLOCK</text>
+  <text x="870" y="1331" text-anchor="middle" fill="#C62828" font-size="9">re-record needed</text>
+
+  <!-- ================================================================== -->
+  <!--  CONNECTIONS                                                       -->
+  <!--  Color key:                                                        -->
+  <!--    Blue (#2196F3)    = orchestrator dispatch                       -->
+  <!--    Orange (#FF9800)  = data source feeds                           -->
+  <!--    Green (#4CAF50)   = recording flow                              -->
+  <!--    Purple (#9C27B0)  = post-processing flow                        -->
+  <!--    Teal (#00897B)    = site generation inputs                      -->
+  <!--    Red (#E53935)     = pre-commit hook data (dashed)               -->
+  <!-- ================================================================== -->
+
+  <!-- Legend -->
+  <rect x="20" y="1430" width="1160" height="15" rx="3" fill="#F5F5F5" stroke="none"/>
+  <line x1="30" y1="1440" x2="55" y2="1440" stroke="#2196F3" stroke-width="2"/>
+  <text x="60" y="1443" font-size="9" fill="#666">Orchestrator</text>
+  <line x1="140" y1="1440" x2="165" y2="1440" stroke="#FF9800" stroke-width="2"/>
+  <text x="170" y="1443" font-size="9" fill="#666">Data feed</text>
+  <line x1="230" y1="1440" x2="255" y2="1440" stroke="#4CAF50" stroke-width="2"/>
+  <text x="260" y="1443" font-size="9" fill="#666">Recording</text>
+  <line x1="330" y1="1440" x2="355" y2="1440" stroke="#9C27B0" stroke-width="2"/>
+  <text x="360" y="1443" font-size="9" fill="#666">Post-process</text>
+  <line x1="440" y1="1440" x2="465" y2="1440" stroke="#00897B" stroke-width="2"/>
+  <text x="470" y="1443" font-size="9" fill="#666">Site gen</text>
+  <line x1="530" y1="1440" x2="555" y2="1440" stroke="#E53935" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="560" y="1443" font-size="9" fill="#666">Pre-commit data</text>
+
+  <!-- ===== BLUE: Orchestrator dispatch ===== -->
+  <!-- build_sh -> setup_env -->
+  <line x1="700" y1="110" x2="285" y2="110" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="285" y1="110" x2="285" y2="278" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <!-- build_sh -> generate.sh -->
+  <line x1="800" y1="135" x2="800" y2="210" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="800" y1="210" x2="425" y2="210" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="425" y1="210" x2="425" y2="278" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <!-- build_sh -> gen_artifacts (long path down-left) -->
+  <line x1="900" y1="110" x2="940" y2="110" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="940" y1="110" x2="940" y2="1040" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="940" y1="1040" x2="155" y2="1040" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="155" y1="1040" x2="155" y2="1088" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <!-- build_sh -> gen_site -->
+  <line x1="900" y1="122" x2="960" y2="122" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="960" y1="122" x2="960" y2="1050" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="960" y1="1050" x2="122" y2="1050" stroke="#2196F3" stroke-width="1.5"/>
+  <line x1="122" y1="1050" x2="122" y2="1138" stroke="#2196F3" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+  <!-- ===== ORANGE: Data source feeds ===== -->
+  <!-- demo_config -> setup_env -->
+  <line x1="122" y1="135" x2="122" y2="232" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="122" y1="232" x2="100" y2="232" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="100" y1="232" x2="100" y2="278" stroke="#FF9800" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+  <!-- fixtures -> setup_env -->
+  <line x1="532" y1="145" x2="532" y2="238" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="532" y1="238" x2="220" y2="238" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="220" y1="238" x2="220" y2="278" stroke="#FF9800" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+  <!-- gif_config -> common.sh -->
+  <line x1="187" y1="170" x2="200" y2="170" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="200" y1="170" x2="200" y2="240" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="200" y1="240" x2="580" y2="240" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="580" y1="240" x2="580" y2="278" stroke="#FF9800" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+  <!-- dag_yaml -> gen_artifacts -->
+  <line x1="325" y1="135" x2="325" y2="227" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="325" y1="227" x2="10" y2="227" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="10" y1="227" x2="10" y2="1100" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="10" y1="1100" x2="35" y2="1100" stroke="#FF9800" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+  <!-- dag_yaml -> gen_site -->
+  <line x1="325" y1="135" x2="325" y2="227" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="10" y1="1150" x2="35" y2="1150" stroke="#FF9800" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+  <line x1="10" y1="1100" x2="10" y2="1150" stroke="#FF9800" stroke-width="1.5"/>
+
+  <!-- ===== GREEN: Recording flow ===== -->
+  <!-- setup_env -> tmp_demo -->
+  <line x1="160" y1="313" x2="160" y2="328" stroke="#4CAF50" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <!-- generate.sh -> common.sh -->
+  <line x1="495" y1="296" x2="510" y2="296" stroke="#4CAF50" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <!-- common.sh -> install_coverage_pth.py -->
+  <line x1="560" y1="313" x2="560" y2="321" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="560" y1="321" x2="452" y2="321" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="452" y1="321" x2="452" y2="333" stroke="#4CAF50" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <!-- install_coverage_pth.py -> COVERAGE_PROCESS_START -->
+  <line x1="550" y1="351" x2="570" y2="351" stroke="#4CAF50" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <!-- common.sh -> asciinema -->
+  <line x1="580" y1="313" x2="580" y2="375" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="580" y1="375" x2="425" y2="375" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="425" y1="375" x2="425" y2="388" stroke="#4CAF50" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <!-- asciinema -> demo_script -->
+  <line x1="495" y1="406" x2="510" y2="406" stroke="#4CAF50" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <!-- demo_script -> sub_pkgs -->
+  <line x1="705" y1="406" x2="720" y2="406" stroke="#4CAF50" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <!-- asciinema -> cast_file -->
+  <line x1="425" y1="423" x2="425" y2="460" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="425" y1="460" x2="1055" y2="460" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="1055" y1="460" x2="1055" y2="313" stroke="#4CAF50" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <!-- tmp_demo -> demo_script -->
+  <line x1="285" y1="350" x2="320" y2="350" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="320" y1="350" x2="320" y2="406" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="320" y1="406" x2="340" y2="406" stroke="#4CAF50" stroke-width="1.5"/>
+  <line x1="340" y1="406" x2="355" y2="406" stroke="#4CAF50" stroke-width="1.5"/>
+  <!-- (goes into Per-GIF Recording, reaches asciinema line at y=406, then to demo_script via asciinema) -->
+  <!-- Actually, let's connect directly to demo_script entry point -->
+
+  <!-- ===== PURPLE: Post-processing flow ===== -->
+  <!-- common.sh -> extract_cov -->
+  <line x1="510" y1="300" x2="505" y2="300" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="505" y1="300" x2="505" y2="695" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="505" y1="695" x2="120" y2="695" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="120" y1="695" x2="120" y2="738" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- extract_cov -> cov_json -->
+  <line x1="120" y1="773" x2="120" y2="788" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- common.sh -> cast_pp -->
+  <line x1="510" y1="305" x2="500" y2="305" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="500" y1="305" x2="500" y2="700" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="500" y1="700" x2="315" y2="700" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="315" y1="700" x2="315" y2="738" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- cast_file -> agg (render chain) -->
+  <line x1="1055" y1="313" x2="1055" y2="690" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="1055" y1="690" x2="485" y2="690" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="485" y1="690" x2="485" y2="738" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- agg -> gifsicle -->
+  <line x1="545" y1="756" x2="560" y2="756" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- gifsicle -> ffmpeg -->
+  <line x1="680" y1="756" x2="695" y2="756" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- ffmpeg -> gif+mp4 -->
+  <line x1="762" y1="773" x2="762" y2="786" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="762" y1="786" x2="655" y2="786" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="655" y1="786" x2="655" y2="795" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- cast_file -> marker_extract -->
+  <line x1="1060" y1="690" x2="1060" y2="700" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="1060" y1="700" x2="930" y2="700" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="930" y1="700" x2="930" y2="738" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- marker_extract -> markers_json -->
+  <line x1="930" y1="773" x2="930" y2="788" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+
+  <!-- ===== PURPLE: Stitch flow ===== -->
+  <!-- gif_mp4 -> stitch -->
+  <line x1="540" y1="830" x2="540" y2="900" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="540" y1="900" x2="455" y2="900" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="455" y1="900" x2="455" y2="948" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- markers_json -> stitch -->
+  <line x1="930" y1="823" x2="930" y2="908" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="930" y1="908" x2="490" y2="908" stroke="#9C27B0" stroke-width="1.5"/>
+  <line x1="490" y1="908" x2="490" y2="948" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- stitch -> full_path -->
+  <line x1="545" y1="966" x2="575" y2="966" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+
+  <!-- ===== TEAL: Site generation inputs ===== -->
+  <!-- gif_mp4 -> gen_site -->
+  <line x1="425" y1="812" x2="405" y2="812" stroke="#00897B" stroke-width="1.5"/>
+  <line x1="405" y1="812" x2="405" y2="1150" stroke="#00897B" stroke-width="1.5"/>
+  <line x1="405" y1="1150" x2="370" y2="1150" stroke="#00897B" stroke-width="1.5"/>
+  <line x1="370" y1="1150" x2="210" y2="1150" stroke="#00897B" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
+  <!-- markers_json -> gen_site -->
+  <line x1="1005" y1="806" x2="1020" y2="806" stroke="#00897B" stroke-width="1.5"/>
+  <line x1="1020" y1="806" x2="1020" y2="1150" stroke="#00897B" stroke-width="1.5"/>
+  <line x1="1020" y1="1150" x2="980" y2="1150" stroke="#00897B" stroke-width="1.5"/>
+  <line x1="980" y1="1150" x2="980" y2="1048" stroke="#00897B" stroke-width="1.5"/>
+  <line x1="980" y1="1048" x2="160" y2="1048" stroke="#00897B" stroke-width="1.5"/>
+  <line x1="160" y1="1048" x2="160" y2="1138" stroke="#00897B" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
+  <!-- full_path -> gen_site -->
+  <line x1="700" y1="983" x2="700" y2="1155" stroke="#00897B" stroke-width="1.5"/>
+  <line x1="700" y1="1155" x2="210" y2="1155" stroke="#00897B" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
+  <!-- gen_artifacts -> dag_pngs -->
+  <line x1="275" y1="1105" x2="295" y2="1105" stroke="#00897B" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
+  <!-- gen_site -> site_output -->
+  <line x1="210" y1="1155" x2="230" y2="1155" stroke="#00897B" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
+
+  <!-- ===== RED DASHED: Pre-commit hook data ===== -->
+  <!-- cov_json -> AST hash comparison -->
+  <line x1="205" y1="812" x2="590" y2="812" stroke="#E53935" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <line x1="590" y1="812" x2="590" y2="1195" stroke="#E53935" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <line x1="590" y1="1195" x2="625" y2="1195" stroke="#E53935" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-red)"/>
+  <!-- gif_deps -> YAML pattern match -->
+  <line x1="405" y1="170" x2="412" y2="170" stroke="#E53935" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <line x1="412" y1="170" x2="412" y2="224" stroke="#E53935" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <line x1="412" y1="224" x2="1190" y2="224" stroke="#E53935" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <line x1="1190" y1="224" x2="1190" y2="1195" stroke="#E53935" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <line x1="1190" y1="1195" x2="960" y2="1195" stroke="#E53935" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-red)"/>
+  <!-- hook -> checks -->
+  <line x1="890" y1="1128" x2="890" y2="1158" stroke="#E53935" stroke-width="1.5"/>
+  <line x1="705" y1="1158" x2="705" y2="1183" stroke="#E53935" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <line x1="880" y1="1158" x2="880" y2="1183" stroke="#E53935" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <line x1="1062" y1="1158" x2="1062" y2="1183" stroke="#E53935" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <line x1="705" y1="1158" x2="1062" y2="1158" stroke="#E53935" stroke-width="1.5"/>
+  <!-- git_commit -> hook -->
+  <line x1="770" y1="1110" x2="800" y2="1110" stroke="#E53935" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <!-- checks -> results -->
+  <line x1="705" y1="1218" x2="705" y2="1268" stroke="#E53935" stroke-width="1.5"/>
+  <line x1="705" y1="1268" x2="685" y2="1268" stroke="#E53935" stroke-width="1.5"/>
+  <line x1="685" y1="1268" x2="685" y2="1303" stroke="#E53935" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <line x1="880" y1="1218" x2="880" y2="1268" stroke="#E53935" stroke-width="1.5"/>
+  <line x1="880" y1="1268" x2="870" y2="1268" stroke="#E53935" stroke-width="1.5"/>
+  <line x1="870" y1="1268" x2="870" y2="1303" stroke="#E53935" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <line x1="1062" y1="1218" x2="1062" y2="1268" stroke="#E53935" stroke-width="1.5"/>
+  <line x1="1062" y1="1268" x2="685" y2="1268" stroke="#E53935" stroke-width="1.5"/>
+</svg>
