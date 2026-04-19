@@ -25,7 +25,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-
 HLEDGER_ROOT_DEFAULT = "/home/a/git/git/hledger"
 COVERAGE_DIR_DEFAULT = "/tmp/gif_coverage"
 
@@ -52,7 +51,7 @@ def extract_files(
     files = []
     for filepath in sorted(cov_data.measured_files()):
         if filepath.startswith(root):
-            relative = filepath[len(root):]
+            relative = filepath[len(root) :]
             files.append(relative)
     return files
 
@@ -159,7 +158,7 @@ def main() -> int:
             return 0
         print(
             f"WARNING: No coverage data found in {coverage_dir}. "
-            f"Was COVERAGE_PROCESS_START set during recording?",
+            "Was COVERAGE_PROCESS_START set during recording?",
             file=sys.stderr,
         )
         # Still write empty JSON so the file exists (hook will see 0 files).

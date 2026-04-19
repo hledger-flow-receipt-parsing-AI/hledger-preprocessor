@@ -1,7 +1,7 @@
 {
+  "frame_duration_ms": 40,
   "markers": {
     "csv_atm_gbp_11750": 0.0
   },
-  "total_duration": 11.36,
-  "frame_duration_ms": 40
+  "total_duration": 11.36
 }

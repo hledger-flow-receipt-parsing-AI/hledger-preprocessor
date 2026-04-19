@@ -4,7 +4,6 @@ Covers US-3.4: Widen amount range — receipt 49.99, CSV 50.00 →
 no exact match → widen ±0.02 → match.
 """
 
-
 from hledger_preprocessor.matching.searching.helper import (
     is_amount_within_margin,
 )

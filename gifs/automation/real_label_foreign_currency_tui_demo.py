@@ -12,11 +12,10 @@ from pathlib import Path
 import yaml
 from PIL import Image
 
-from .core import Colors
 from .receipt_editor import (
     FOREIGN_CURRENCY_RECEIPT,
-    run_label_receipt_demo,
     _write_tui_markers_json,
+    run_label_receipt_demo,
 )
 
 
@@ -51,8 +50,8 @@ def setup_foreign_currency_env():
     for subdir in ["1-in", "2-csv", "3-journal"]:
         (wallet_import / subdir).mkdir(parents=True, exist_ok=True)
     (wallet_import / "eur.rules").write_text(
-        "skip 0\nfields date, amount, description\n"
-        "date-format %Y-%m-%d\ncurrency EUR\naccount1 Assets:Wallet:Physical:EUR\n"
+        "skip 0\nfields date, amount, description\ndate-format"
+        " %Y-%m-%d\ncurrency EUR\naccount1 Assets:Wallet:Physical:EUR\n"
     )
 
     csv_header = (
@@ -62,16 +61,14 @@ def setup_foreign_currency_env():
 
     # Create asset transaction CSVs for all wallet accounts
     wallet_phys_csv_dir = (
-        working_dir / "asset_transaction_csvs"
-        / "at" / "wallet" / "physical"
+        working_dir / "asset_transaction_csvs" / "at" / "wallet" / "physical"
     )
     wallet_phys_csv_dir.mkdir(parents=True, exist_ok=True)
     for cur in ("EUR", "GBP", "GOLD", "SILVER"):
         (wallet_phys_csv_dir / f"Currency.{cur}.csv").write_text(csv_header)
 
     wallet_dig_csv_dir = (
-        working_dir / "asset_transaction_csvs"
-        / "at" / "wallet" / "digital"
+        working_dir / "asset_transaction_csvs" / "at" / "wallet" / "digital"
     )
     wallet_dig_csv_dir.mkdir(parents=True, exist_ok=True)
     (wallet_dig_csv_dir / "Currency.BTC.csv").write_text(csv_header)
@@ -86,14 +83,19 @@ def setup_foreign_currency_env():
                 "account_type": "checking",
                 "input_csv_filename": "triodos_2025.csv",
                 "csv_column_mapping": [
-                    ["the_date", "date"], ["", ""],
+                    ["the_date", "date"],
+                    ["", ""],
                     ["tendered_amount_out", "amount"],
-                    ["transaction_code", ""], ["other_party_name", ""],
-                    ["other_party_account_name", ""], ["", ""],
-                    ["description", "description"], ["", ""],
+                    ["transaction_code", ""],
+                    ["other_party_name", ""],
+                    ["other_party_account_name", ""],
+                    ["", ""],
+                    ["description", "description"],
+                    ["", ""],
                 ],
                 "tnx_date_columns": [
-                    ["the_date", "date"], ["description", "description"],
+                    ["the_date", "date"],
+                    ["description", "description"],
                 ],
             },
             {
@@ -167,24 +169,33 @@ def setup_foreign_currency_env():
         },
         "categorisation": {"quick": True, "csv_encoding": "utf-8"},
         "matching_algo": {
-            "days": 2, "amount_range": 0,
-            "days_month_swap": True, "multiple_receipts_per_transaction": False,
+            "days": 2,
+            "amount_range": 0,
+            "days_month_swap": True,
+            "multiple_receipts_per_transaction": False,
         },
     }
 
     config_path = root / "config.yaml"
-    config_path.write_text(yaml.safe_dump(config_dict, default_flow_style=False))
+    config_path.write_text(
+        yaml.safe_dump(config_dict, default_flow_style=False)
+    )
 
     # Categories
-    (root / "categories.yaml").write_text(yaml.safe_dump({
-        "cash": {"atm_withdrawal": {}},
-        "groceries": {"ekoplaza": {}},
-    }))
+    (root / "categories.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "cash": {"atm_withdrawal": {}},
+                "groceries": {"ekoplaza": {}},
+            }
+        )
+    )
 
     # CSV
     (root / "triodos_2025.csv").write_text(
-        "date,account_nr,amount,type,payee,counter_account,code,description,balance\n"
-        "20-03-2025,NL79 TRIO 0379 2834 09,-117.50,debit,ATM London,NL456,IC,cash:atm_withdrawal,882.50\n"
+        "date,account_nr,amount,type,payee,counter_account,code,description,balance\n20-03-2025,NL79"
+        " TRIO 0379 2834 09,-117.50,debit,ATM"
+        " London,NL456,IC,cash:atm_withdrawal,882.50\n"
     )
 
     # Start journal

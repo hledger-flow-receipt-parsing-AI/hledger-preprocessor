@@ -5,7 +5,6 @@ transactions and that unlabelled receipt images produce a hint.
 """
 
 from pathlib import Path
-from typing import List
 
 import pytest
 
@@ -13,7 +12,6 @@ from hledger_preprocessor.checks.check_matching import check_matching
 from hledger_preprocessor.checks.unlabelled_receipts import (
     get_unlabelled_receipt_count,
 )
-from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import load_config
 from hledger_preprocessor.reading_history.load_receipts_from_dir import (
     load_receipts_from_dir,
@@ -34,9 +32,7 @@ class TestUnlabelledReceiptCount:
             pre_processed_output_dir=None,
         )
         count = get_unlabelled_receipt_count(config=config)
-        assert count == 0, (
-            f"Expected 0 unlabelled images, got {count}"
-        )
+        assert count == 0, f"Expected 0 unlabelled images, got {count}"
 
     def test_correct_count_with_missing_labels(self, temp_finance_root):
         """When some images lack labels, the count should reflect that."""
@@ -61,9 +57,9 @@ class TestUnlabelledReceiptCount:
         )
 
         count = get_unlabelled_receipt_count(config=config)
-        assert count >= 1, (
-            f"Expected at least 1 unlabelled image after seeding, got {count}"
-        )
+        assert (
+            count >= 1
+        ), f"Expected at least 1 unlabelled image after seeding, got {count}"
 
 
 # ---------------------------------------------------------------
@@ -86,7 +82,8 @@ class TestCheckMatchingAllMatched:
 
         # Filter to only wallet receipts (no CSV match expected).
         wallet_receipts = [
-            r for r in labelled_receipts
+            r
+            for r in labelled_receipts
             if all(
                 txn.account.bank == "wallet"
                 for txn in _get_account_transactions(r)
@@ -101,7 +98,8 @@ class TestCheckMatchingAllMatched:
             labelled_receipts=wallet_receipts,
         )
         assert unmatched == [], (
-            f"Wallet receipts should not appear as unmatched, got {len(unmatched)}"
+            "Wallet receipts should not appear as unmatched, got"
+            f" {len(unmatched)}"
         )
 
 
@@ -112,9 +110,7 @@ class TestCheckMatchingUnmatched:
     """Receipt transactions on accounts with CSVs that are not linked
     should be reported."""
 
-    def test_unmatched_card_receipt_listed(
-        self, temp_finance_root, capsys
-    ):
+    def test_unmatched_card_receipt_listed(self, temp_finance_root, capsys):
         """The ekoplaza card receipt (triodos account) has
         original_transaction=None, so it should be reported as unmatched."""
         config = load_config(
@@ -132,18 +128,16 @@ class TestCheckMatchingUnmatched:
 
         # The ekoplaza card receipt has account=triodos (has CSV) and
         # original_transaction=None (not yet linked).
-        card_unmatched = [
-            t for t in unmatched if t.account.bank == "triodos"
-        ]
+        card_unmatched = [t for t in unmatched if t.account.bank == "triodos"]
         assert len(card_unmatched) >= 1, (
-            f"Expected at least 1 unmatched triodos transaction, "
+            "Expected at least 1 unmatched triodos transaction, "
             f"got {len(card_unmatched)}. All unmatched: {unmatched}"
         )
 
         # Check that the summary was printed.
-        assert "not yet matched" in captured.out, (
-            f"Expected 'not yet matched' in output, got:\n{captured.out}"
-        )
+        assert (
+            "not yet matched" in captured.out
+        ), f"Expected 'not yet matched' in output, got:\n{captured.out}"
 
     def test_hint_printed_when_unlabelled_images_exist(
         self, temp_finance_root, capsys
@@ -180,7 +174,7 @@ class TestCheckMatchingUnmatched:
         if unmatched:
             # If there are unmatched AND unlabelled, hint should be there.
             assert "no labels yet" in captured.out, (
-                f"Expected unlabelled receipt hint in output, "
+                "Expected unlabelled receipt hint in output, "
                 f"got:\n{captured.out}"
             )
 
@@ -194,4 +188,5 @@ def _get_account_transactions(receipt: Receipt):
     from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
         get_all_transactions_from_receipt,
     )
+
     return get_all_transactions_from_receipt(receipt=receipt)

@@ -24,10 +24,13 @@ from hledger_preprocessor.config.load_config import load_config
 
 # These e2e tests spawn subprocesses that import the full package (without
 # conftest.py mocks), so heavy ML deps like gpt4all must be installed.
-_has_gpt4all = bool(shutil.which("hledger_preprocessor")) and not subprocess.run(
-    ["python", "-c", "import gpt4all"],
-    capture_output=True,
-).returncode
+_has_gpt4all = (
+    bool(shutil.which("hledger_preprocessor"))
+    and not subprocess.run(
+        ["python", "-c", "import gpt4all"],
+        capture_output=True,
+    ).returncode
+)
 _has_hledger_plot = bool(shutil.which("hledger_plot"))
 _has_hledger_flow = bool(shutil.which("hledger-flow"))
 
@@ -1116,7 +1119,8 @@ class TestRunPipeline:
                     for error in errors_found[:10]:
                         print(f"  • {error}")
                 pytest.fail(
-                    f"--run-pipeline failed with return code {result.returncode}"
+                    "--run-pipeline failed with return code"
+                    f" {result.returncode}"
                 )
 
             if errors_found:

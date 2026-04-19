@@ -9,14 +9,11 @@ These tests use real data elements (like userstories 2b.1–2b.5) and verify:
 """
 
 import csv
-import json
 import os
 import subprocess
-import sys
 import textwrap
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
 
 import pytest
 import yaml
@@ -98,13 +95,11 @@ class TestWithdrawalReceiptCategorisation:
             parent_receipt_category="cash:atm_withdrawal",
         )
 
-        result = model.classify(
-            transaction=atm_txn, category_namespace=ns
-        )
+        result = model.classify(transaction=atm_txn, category_namespace=ns)
 
-        assert result == "cash:atm_withdrawal", (
-            f"Expected 'cash:atm_withdrawal', got: {result}"
-        )
+        assert (
+            result == "cash:atm_withdrawal"
+        ), f"Expected 'cash:atm_withdrawal', got: {result}"
 
     def test_cash_wallet_receipt_returns_receipt_category(self):
         """A cash purchase from EUR wallet returns parent receipt category."""
@@ -126,13 +121,11 @@ class TestWithdrawalReceiptCategorisation:
             parent_receipt_category="groceries:ekoplaza",
         )
 
-        result = model.classify(
-            transaction=cash_txn, category_namespace=ns
-        )
+        result = model.classify(transaction=cash_txn, category_namespace=ns)
 
-        assert result == "groceries:ekoplaza", (
-            f"Expected 'groceries:ekoplaza', got: {result}"
-        )
+        assert (
+            result == "groceries:ekoplaza"
+        ), f"Expected 'groceries:ekoplaza', got: {result}"
 
     def test_bank_csv_withdrawal_debit_categorised_with_withdrawl(self):
         """When private_logic returns an Account object for a bank CSV
@@ -200,13 +193,11 @@ class TestBankCsvDebitCategorisation:
             transaction_code=TransactionCode.DEBIT,
         )
 
-        result = model.classify(
-            transaction=eko_txn, category_namespace=ns
-        )
+        result = model.classify(transaction=eko_txn, category_namespace=ns)
 
-        assert result == "groceries:ekoplaza", (
-            f"Expected 'groceries:ekoplaza', got: {result}"
-        )
+        assert (
+            result == "groceries:ekoplaza"
+        ), f"Expected 'groceries:ekoplaza', got: {result}"
 
     def test_ikea_debit_categorised_as_furniture(self):
         """A bank CSV debit with 'IKEA BV' should be house:furniture:ikea."""
@@ -229,13 +220,11 @@ class TestBankCsvDebitCategorisation:
             transaction_code=TransactionCode.DEBIT,
         )
 
-        result = model.classify(
-            transaction=ikea_txn, category_namespace=ns
-        )
+        result = model.classify(transaction=ikea_txn, category_namespace=ns)
 
-        assert result == "house:furniture:ikea", (
-            f"Expected 'house:furniture:ikea', got: {result}"
-        )
+        assert (
+            result == "house:furniture:ikea"
+        ), f"Expected 'house:furniture:ikea', got: {result}"
 
 
 # ---------------------------------------------------------------
@@ -268,9 +257,7 @@ class TestUncategorisedTransactionError:
         )
 
         with pytest.raises(UncategorisedTransactionError) as exc_info:
-            model.classify(
-                transaction=unknown_txn, category_namespace=ns
-            )
+            model.classify(transaction=unknown_txn, category_namespace=ns)
 
         error_msg = str(exc_info.value)
         assert "UNCATEGORISED TRANSACTION" in error_msg
@@ -300,9 +287,7 @@ class TestUncategorisedTransactionError:
         )
 
         with pytest.raises(UncategorisedTransactionError) as exc_info:
-            model.classify(
-                transaction=unknown_txn, category_namespace=ns
-            )
+            model.classify(transaction=unknown_txn, category_namespace=ns)
 
         error_msg = str(exc_info.value)
         assert "UNCATEGORISED TRANSACTION" in error_msg
@@ -334,9 +319,7 @@ class TestUncategorisedTransactionError:
         # Should NOT raise EOFError (which was the old bug)
         # Should raise UncategorisedTransactionError instead
         try:
-            model.classify(
-                transaction=unknown_txn, category_namespace=ns
-            )
+            model.classify(transaction=unknown_txn, category_namespace=ns)
             pytest.fail("Expected UncategorisedTransactionError to be raised")
         except UncategorisedTransactionError:
             pass  # Expected
@@ -389,7 +372,8 @@ class TestPreprocessAssetsWithWithdrawal:
         # Categories with withdrawal support
         _create_file(
             root / "categories.yaml",
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 groceries:
                   ekoplaza: {}
                   supermarket: {}
@@ -406,26 +390,31 @@ class TestPreprocessAssetsWithWithdrawal:
                     pound: {}
                 cash:
                   atm_withdrawal: {}
-            """),
+            """
+            ),
         )
 
         # Bank CSV with transactions (including an ATM withdrawal debit)
         _create_file(
             root / "triodos_2025.csv",
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 15-01-2025,NL123,-42.17,debit,Ekoplaza,NL456,IC,groceries:ekoplaza,1000.00
                 20-03-2025,NL123,-115.50,debit,MFG - FOUR WANTZ FOUR - ONGAR - Verenigd,NL789,BA,currency swap GBP,884.50
-            """),
+            """
+            ),
         )
 
         # Start journal
         _create_file(
             root / "start_pos" / "2024_complete.journal",
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 2024/01/01 Opening Balances
                     Assets:Checking          EUR 1000.00
                     Equity:Opening Balances
-            """),
+            """
+            ),
         )
 
         # hledger-flow import structure
@@ -435,13 +424,15 @@ class TestPreprocessAssetsWithWithdrawal:
             (triodos_import / subdir).mkdir(parents=True, exist_ok=True)
         _create_file(
             triodos_import / "triodos.rules",
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 skip 0
                 fields date, _, amount, _, payee, _, _, description, _
                 date-format %d-%m-%Y
                 currency EUR
                 account1 Assets:Checking:Triodos
-            """),
+            """
+            ),
         )
 
         wallet_import = working_dir / "import" / "at" / "wallet" / "physical"
@@ -449,13 +440,15 @@ class TestPreprocessAssetsWithWithdrawal:
             (wallet_import / subdir).mkdir(parents=True, exist_ok=True)
         _create_file(
             wallet_import / "eur.rules",
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 skip 0
                 fields date, amount, description
                 date-format %Y-%m-%d
                 currency EUR
                 account1 Assets:Wallet:Physical:EUR
-            """),
+            """
+            ),
         )
 
         # Seed receipt images and labels
@@ -539,23 +532,21 @@ class TestPreprocessAssetsWithWithdrawal:
 
         # Check that asset CSV directory was created
         asset_csv_dir = working_dir / "asset_transaction_csvs"
-        assert asset_csv_dir.exists(), (
-            f"asset_transaction_csvs not created at {asset_csv_dir}"
-        )
+        assert (
+            asset_csv_dir.exists()
+        ), f"asset_transaction_csvs not created at {asset_csv_dir}"
 
         # Find CSV files
         csv_files = list(asset_csv_dir.rglob("*.csv"))
-        assert len(csv_files) > 0, (
-            f"No CSV files in {asset_csv_dir}"
-        )
+        assert len(csv_files) > 0, f"No CSV files in {asset_csv_dir}"
 
         # Read the wallet CSV and verify it contains the groceries transaction
         wallet_csvs = [
             f for f in csv_files if "wallet" in str(f) and "physical" in str(f)
         ]
-        assert len(wallet_csvs) > 0, (
-            f"No wallet CSV files found. All CSVs: {csv_files}"
-        )
+        assert (
+            len(wallet_csvs) > 0
+        ), f"No wallet CSV files found. All CSVs: {csv_files}"
 
         # Read wallet CSV content
         for wcsv in wallet_csvs:
@@ -567,9 +558,9 @@ class TestPreprocessAssetsWithWithdrawal:
             if "wallet" in str(wcsv):
                 reader = csv.DictReader(content.strip().splitlines())
                 rows = list(reader)
-                assert len(rows) >= 1, (
-                    f"Expected at least 1 row in wallet CSV, got {len(rows)}"
-                )
+                assert (
+                    len(rows) >= 1
+                ), f"Expected at least 1 row in wallet CSV, got {len(rows)}"
 
     def test_preprocess_assets_uncategorised_error_output(
         self, withdrawal_finance_root, monkeypatch, tmp_path
@@ -584,7 +575,6 @@ class TestPreprocessAssetsWithWithdrawal:
         # not in config. But for this test, we just verify the error
         # class works properly (unit-level).
         # The actual subprocess test is in test_unknown_debit above.
-        pass
 
 
 # ---------------------------------------------------------------
@@ -614,9 +604,9 @@ class TestWithdrawalAssetCsvValues:
 
         hledger_dict = atm_txn.to_hledger_dict()
 
-        assert hledger_dict["amount"] == 100.0, (
-            f"Expected amount=100.0, got: {hledger_dict['amount']}"
-        )
+        assert (
+            hledger_dict["amount"] == 100.0
+        ), f"Expected amount=100.0, got: {hledger_dict['amount']}"
         assert hledger_dict["tendered_amount_out"] == 100.0
         assert hledger_dict["change_returned"] == 0.0
         assert hledger_dict["base_currency"] == "EUR"
@@ -644,9 +634,9 @@ class TestWithdrawalAssetCsvValues:
 
         hledger_dict = cash_txn.to_hledger_dict()
 
-        assert hledger_dict["amount"] == 5.0, (
-            f"Expected amount=5.0, got: {hledger_dict['amount']}"
-        )
+        assert (
+            hledger_dict["amount"] == 5.0
+        ), f"Expected amount=5.0, got: {hledger_dict['amount']}"
         assert hledger_dict["tendered_amount_out"] == 20.0
         assert hledger_dict["change_returned"] == 15.0
 
@@ -669,9 +659,9 @@ class TestWithdrawalAssetCsvValues:
 
         hledger_dict = groceries_txn.to_hledger_dict()
 
-        assert abs(hledger_dict["amount"] - 28.95) < 0.01, (
-            f"Expected amount≈28.95, got: {hledger_dict['amount']}"
-        )
+        assert (
+            abs(hledger_dict["amount"] - 28.95) < 0.01
+        ), f"Expected amount≈28.95, got: {hledger_dict['amount']}"
         assert hledger_dict["tendered_amount_out"] == 50.0
         assert hledger_dict["change_returned"] == 21.05
         assert hledger_dict["description"] == "groceries:ekoplaza"

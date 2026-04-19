@@ -146,7 +146,9 @@ def manage_preprocessing_csvs(
     )
 
     preprocess_generic_csvs(
-        config=config, labelled_receipts=labelled_receipts, models=models,
+        config=config,
+        labelled_receipts=labelled_receipts,
+        models=models,
         suppress_ids=suppress_ids,
         category_overrides=category_overrides,
     )
@@ -431,15 +433,11 @@ def manage_batch_match_receipts(
             if matching_account_config is None:
                 continue  # Account has no CSV — nothing to match.
 
-            txns_by_year = csv_transactions_per_account[
-                matching_account_config
-            ]
+            txns_by_year = csv_transactions_per_account[matching_account_config]
             candidates = get_transactions_in_date_range(
                 transactions_per_year=txns_by_year,
                 target_date=receipt.the_date,
-                date_margin=timedelta(
-                    days=config.matching_algo.days
-                ),
+                date_margin=timedelta(days=config.matching_algo.days),
             )
 
             # Filter by amount.
@@ -455,15 +453,9 @@ def manage_batch_match_receipts(
                 if not isinstance(cand, GenericCsvTransaction):
                     continue
                 cand_net = cand.tendered_amount_out - cand.change_returned
-                if (
-                    abs(
-                        float(
-                            Decimal(str(cand_net))
-                            - Decimal(str(net_amount))
-                        )
-                    )
-                    <= amount_margin * max(abs(net_amount), 0.01)
-                ):
+                if abs(
+                    float(Decimal(str(cand_net)) - Decimal(str(net_amount)))
+                ) <= amount_margin * max(abs(net_amount), 0.01):
                     matches.append(cand)
 
             if len(matches) == 1:

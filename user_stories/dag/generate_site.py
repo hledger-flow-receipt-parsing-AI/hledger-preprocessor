@@ -918,9 +918,7 @@ def generate_story_svg_direct(
             receipt_split_idx = i
             break
 
-    use_two_columns = (
-        receipt_split_idx is not None and len(ordered_layers) >= 7
-    )
+    use_two_columns = receipt_split_idx is not None and len(ordered_layers) >= 7
 
     if use_two_columns:
         left_layers = ordered_layers[:receipt_split_idx]
@@ -947,7 +945,9 @@ def generate_story_svg_direct(
     config_y_start = None
     config_y_end = None
     config_max_right = 0.0
-    config_first_layer_bottom = None  # bottom of the first (widest) config layer
+    config_first_layer_bottom = (
+        None  # bottom of the first (widest) config layer
+    )
 
     RECEIPT_GROUP_PAD = CONFIG_GROUP_PAD
     RECEIPT_GROUP_TOP = CONFIG_GROUP_TOP
@@ -1124,7 +1124,8 @@ def generate_story_svg_direct(
         receipt_group_box = (
             rcpt_x,
             receipt_y_start - RECEIPT_GROUP_TOP - RECEIPT_GROUP_PAD,
-            receipt_max_right - (right_col_x if use_two_columns else MARGIN)
+            receipt_max_right
+            - (right_col_x if use_two_columns else MARGIN)
             + RECEIPT_GROUP_PAD * 2,
             receipt_y_end
             - receipt_y_start
@@ -1166,7 +1167,7 @@ def generate_story_svg_direct(
         dst_in_right = dst_layer in right_layer_set
         if use_two_columns and not src_in_right and dst_in_right:
             # Route: go down from source, curve right, go up to target
-            mid_x = (sx + tx) / 2
+            (sx + tx) / 2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" C{sx:.1f},{s_bot + 20:.1f}"
@@ -1282,9 +1283,7 @@ def generate_story_svg_direct(
         gx, gy, gw, gh = receipt_group_box
         rcpt_cls = " section-box" if "receipt_group" in hl_layers else ""
         rcpt_stroke = (
-            "var(--accent, #2563eb)"
-            if "receipt_group" in hl_layers
-            else "#bbb"
+            "var(--accent, #2563eb)" if "receipt_group" in hl_layers else "#bbb"
         )
         rcpt_sw = "2.5" if "receipt_group" in hl_layers else "1.5"
         lines.append(
@@ -3563,9 +3562,9 @@ def generate_story_html(
                         f'width="{box["w"]}" height="{box["h"]}" rx="2"/>'
                     )
             receipt_overlay = (
-                f'<svg class="receipt-overlay" '
+                '<svg class="receipt-overlay" '
                 f'viewBox="0 0 {img_w} {img_h}"'
-                f' preserveAspectRatio="xMidYMid meet">\n'
+                ' preserveAspectRatio="xMidYMid meet">\n'
                 + "\n".join(rects)
                 + "\n</svg>\n"
             )
@@ -3575,7 +3574,7 @@ def generate_story_html(
             '<img class="receipt-image-inline" '
             f'src="../assets/receipts/{_esc(receipt_image)}" '
             f'alt="Receipt: {_esc(story["title"])}">\n'
-            f'{receipt_overlay}'
+            f"{receipt_overlay}"
             "</div></div>\n"
         )
 

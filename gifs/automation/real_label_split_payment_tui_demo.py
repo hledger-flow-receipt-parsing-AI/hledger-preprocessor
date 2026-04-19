@@ -13,11 +13,10 @@ from pathlib import Path
 import yaml
 from PIL import Image
 
-from .core import Colors
 from .receipt_editor import (
     SPLIT_PAYMENT_RECEIPT,
-    run_label_receipt_demo,
     _write_tui_markers_json,
+    run_label_receipt_demo,
 )
 
 
@@ -50,13 +49,17 @@ def setup_split_payment_env():
     for subdir in ["1-in", "2-csv", "3-journal"]:
         (wallet_import / subdir).mkdir(parents=True, exist_ok=True)
     (wallet_import / "eur.rules").write_text(
-        "skip 0\nfields date, amount, description\n"
-        "date-format %Y-%m-%d\ncurrency EUR\naccount1 Assets:Wallet:Physical:EUR\n"
+        "skip 0\nfields date, amount, description\ndate-format"
+        " %Y-%m-%d\ncurrency EUR\naccount1 Assets:Wallet:Physical:EUR\n"
     )
 
     wallet_asset_csv = (
-        working_dir / "asset_transaction_csvs"
-        / "at" / "wallet" / "physical" / "Currency.EUR.csv"
+        working_dir
+        / "asset_transaction_csvs"
+        / "at"
+        / "wallet"
+        / "physical"
+        / "Currency.EUR.csv"
     )
     wallet_asset_csv.parent.mkdir(parents=True, exist_ok=True)
     wallet_asset_csv.write_text(
@@ -73,17 +76,30 @@ def setup_split_payment_env():
                 "account_type": "checking",
                 "input_csv_filename": "triodos_2025.csv",
                 "csv_column_mapping": [
-                    ["the_date", "date"], ["", ""],
+                    ["the_date", "date"],
+                    ["", ""],
                     ["tendered_amount_out", "amount"],
-                    ["transaction_code", ""], ["other_party_name", ""],
-                    ["other_party_account_name", ""], ["", ""],
-                    ["description", "description"], ["", ""],
+                    ["transaction_code", ""],
+                    ["other_party_name", ""],
+                    ["other_party_account_name", ""],
+                    ["", ""],
+                    ["description", "description"],
+                    ["", ""],
                 ],
                 "tnx_date_columns": [
-                    ["the_date", "date"], ["description", "description"],
+                    ["the_date", "date"],
+                    ["description", "description"],
                 ],
             },
-            {"base_currency": "EUR", "account_holder": "at", "bank": "wallet", "account_type": "physical", "input_csv_filename": None, "csv_column_mapping": None, "tnx_date_columns": None},
+            {
+                "base_currency": "EUR",
+                "account_holder": "at",
+                "bank": "wallet",
+                "account_type": "physical",
+                "input_csv_filename": None,
+                "csv_column_mapping": None,
+                "tnx_date_columns": None,
+            },
         ],
         "dir_paths": {
             "root_finance_path": str(root),
@@ -110,22 +126,31 @@ def setup_split_payment_env():
         },
         "categorisation": {"quick": True, "csv_encoding": "utf-8"},
         "matching_algo": {
-            "days": 2, "amount_range": 0,
-            "days_month_swap": True, "multiple_receipts_per_transaction": False,
+            "days": 2,
+            "amount_range": 0,
+            "days_month_swap": True,
+            "multiple_receipts_per_transaction": False,
         },
     }
 
     config_path = root / "config.yaml"
-    config_path.write_text(yaml.safe_dump(config_dict, default_flow_style=False))
+    config_path.write_text(
+        yaml.safe_dump(config_dict, default_flow_style=False)
+    )
 
-    (root / "categories.yaml").write_text(yaml.safe_dump({
-        "food": {"restaurant": {}},
-        "groceries": {"ekoplaza": {}},
-    }))
+    (root / "categories.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "food": {"restaurant": {}},
+                "groceries": {"ekoplaza": {}},
+            }
+        )
+    )
 
     (root / "triodos_2025.csv").write_text(
-        "date,account_nr,amount,type,payee,counter_account,code,description,balance\n"
-        "05-04-2025,NL79 TRIO 0379 2834 09,-30.00,debit,Restaurant De Kas,NL456,IC,food:restaurant,970.00\n"
+        "date,account_nr,amount,type,payee,counter_account,code,description,balance\n05-04-2025,NL79"
+        " TRIO 0379 2834 09,-30.00,debit,Restaurant De"
+        " Kas,NL456,IC,food:restaurant,970.00\n"
     )
 
     (root / "start_pos" / "2024_complete.journal").write_text(

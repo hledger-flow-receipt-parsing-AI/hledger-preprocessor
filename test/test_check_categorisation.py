@@ -4,29 +4,13 @@ Verifies that check_categorisation() correctly identifies uncategorised
 CSV transactions without producing any file output.
 """
 
-from datetime import datetime
-from typing import Any, Dict, List
-
-import pytest
-
 from hledger_preprocessor.categorisation.Categories import CategoryNamespace
-from hledger_preprocessor.categorisation.UncategorisedTransactionError import (
-    UncategorisedTransactionError,
-)
 from hledger_preprocessor.checks.check_categorisation import (
     check_categorisation,
 )
 from hledger_preprocessor.Currency import Currency
-from hledger_preprocessor.generics.enums import ClassifierType, LogicType
-from hledger_preprocessor.generics.GenericTransactionWithCsv import (
-    GenericCsvTransaction,
-)
 from hledger_preprocessor.get_models import get_models
 from hledger_preprocessor.TransactionObjects.Account import Account
-from hledger_preprocessor.TransactionObjects.AccountTransaction import (
-    AccountTransaction,
-)
-from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
 
 
 # ---------------------------------------------------------------
@@ -157,9 +141,9 @@ class TestCheckCategorisationWithUnknown:
             labelled_receipts=labelled_receipts,
         )
 
-        assert len(errors) == 1, (
-            f"Expected 1 error for unknown debit, got {len(errors)}"
-        )
+        assert (
+            len(errors) == 1
+        ), f"Expected 1 error for unknown debit, got {len(errors)}"
         assert "UNCATEGORISED TRANSACTION" in str(errors[0])
         assert "expense" in str(errors[0])
 
@@ -221,9 +205,9 @@ class TestCheckCategorisationWithUnknown:
             labelled_receipts=labelled_receipts,
         )
 
-        assert len(errors) == 1, (
-            f"Expected 1 error for unknown credit, got {len(errors)}"
-        )
+        assert (
+            len(errors) == 1
+        ), f"Expected 1 error for unknown credit, got {len(errors)}"
         assert "UNCATEGORISED TRANSACTION" in str(errors[0])
         assert "income" in str(errors[0])
 
@@ -297,6 +281,6 @@ class TestCheckCategorisationWithUnknown:
             labelled_receipts=labelled_receipts,
         )
 
-        assert len(errors) == 2, (
-            f"Expected 2 errors for 2 unknown transactions, got {len(errors)}"
-        )
+        assert (
+            len(errors) == 2
+        ), f"Expected 2 errors for 2 unknown transactions, got {len(errors)}"

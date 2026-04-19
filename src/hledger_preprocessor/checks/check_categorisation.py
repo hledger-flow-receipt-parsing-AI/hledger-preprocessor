@@ -10,7 +10,6 @@ from typing import Any, Dict, List
 
 from typeguard import typechecked
 
-from hledger_preprocessor.categorisation.Categories import CategoryNamespace
 from hledger_preprocessor.categorisation.UncategorisedTransactionError import (
     UncategorisedTransactionError,
 )

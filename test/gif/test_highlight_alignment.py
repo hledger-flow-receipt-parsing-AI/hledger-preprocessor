@@ -173,6 +173,7 @@ BOXES_JSON = (
     PROJECT_ROOT / "gifs" / "assets" / "receipts" / "ekoplaza_card_boxes.json"
 )
 
+
 def _get_highlightable_fields() -> list:
     """Return fields that exist in both the boxes JSON and the markers JSON."""
     if not BOXES_JSON.exists() or not MARKERS_JSON.exists():
@@ -201,10 +202,12 @@ class TestHighlightAlignment:
     def test_page_has_overlay_rects(self, browser_page):
         """Sanity check: SVG overlay rects exist for known fields."""
         rect_count = browser_page.evaluate(
-            "document.querySelectorAll('.receipt-overlay rect[data-field]').length"
+            "document.querySelectorAll('.receipt-overlay"
+            " rect[data-field]').length"
         )
         assert rect_count >= len(ALL_FIELDS) - 1, (
-            f"Expected at least {len(ALL_FIELDS) - 1} overlay rects, got {rect_count}"
+            f"Expected at least {len(ALL_FIELDS) - 1} overlay rects, got"
+            f" {rect_count}"
         )
 
     @pytest.mark.parametrize(
@@ -318,7 +321,9 @@ class TestHighlightTransitions:
             gap_fields = [
                 f
                 for f in all_tui_fields
-                if f[1] > curr_start and f[1] < next_start and f[0] not in highlightable
+                if f[1] > curr_start
+                and f[1] < next_start
+                and f[0] not in highlightable
             ]
 
             if not gap_fields:
@@ -529,7 +534,9 @@ def _extract_cast_field_starts(cast_path: Path, raw_to_gif) -> dict:
         result["time"] = _gif(date_enter)
 
     # category: first char 'g' (for "groceries:ekoplaza")
-    cat_start = _first_key_after("g", date_enter if date_enter > 0 else date_start + 2)
+    cat_start = _first_key_after(
+        "g", date_enter if date_enter > 0 else date_start + 2
+    )
     if cat_start > 0:
         result["category"] = _gif(cat_start)
 
@@ -584,8 +591,12 @@ def _extract_cast_field_starts(cast_path: Path, raw_to_gif) -> dict:
 
     # tax: first typed char after subtotal Enter (skip)
     country_enter = _first_enter_after(prev_ts) if prev_ts > 0 else -1.0
-    subtotal_enter = _first_enter_after(country_enter) if country_enter > 0 else -1.0
-    tax_start = _first_typed_after(subtotal_enter) if subtotal_enter > 0 else -1.0
+    subtotal_enter = (
+        _first_enter_after(country_enter) if country_enter > 0 else -1.0
+    )
+    tax_start = (
+        _first_typed_after(subtotal_enter) if subtotal_enter > 0 else -1.0
+    )
     if tax_start > 0:
         result["tax"] = _gif(tax_start)
 

@@ -4,8 +4,6 @@ import sys
 from argparse import Namespace
 from typing import Any, Dict, List
 
-from typeguard import typechecked
-
 from hledger_config.arg_parser import (
     assert_args_are_valid,
     create_arg_parser,
@@ -13,10 +11,18 @@ from hledger_config.arg_parser import (
 from hledger_config.config.load_config import Config, load_config
 from hledger_core.generics.enums import ClassifierType, LogicType
 from hledger_core.TransactionObjects.Receipt import Receipt
+from hledger_receipt_processing.reading_history.load_receipts_from_dir import (
+    load_receipts_from_dir,
+)
+from typeguard import typechecked
+
 from hledger_preprocessor.checks.check_categorisation import (
     check_categorisation,
 )
 from hledger_preprocessor.checks.check_matching import check_matching
+
+# get_models uses try/except ImportError internally for optional hledger-ai
+from hledger_preprocessor.get_models import get_models
 from hledger_preprocessor.management.helper import edit_receipt
 from hledger_preprocessor.management.main_manager import (
     manage_batch_match_receipts,
@@ -28,12 +34,6 @@ from hledger_preprocessor.management.main_manager import (
     manage_preprocessing_assets,
     manage_preprocessing_csvs,
 )
-from hledger_receipt_processing.reading_history.load_receipts_from_dir import (
-    load_receipts_from_dir,
-)
-
-# get_models uses try/except ImportError internally for optional hledger-ai
-from hledger_preprocessor.get_models import get_models
 
 
 @typechecked
@@ -92,9 +92,7 @@ def main() -> None:
         if errors:
             print("")
             print("=" * 60)
-            print(
-                f"  {len(errors)} uncategorised transaction(s) found"
-            )
+            print(f"  {len(errors)} uncategorised transaction(s) found")
             print("=" * 60)
             for err in errors:
                 print(str(err))
@@ -111,18 +109,20 @@ def main() -> None:
 
     # If only checks were requested, exit now.
     if args.check_categorisation or args.check_matching:
-        if not any([
-            args.preprocess_csvs,
-            args.preprocess_assets,
-            args.link_receipts_to_transactions,
-            getattr(args, "match_receipts", False),
-            getattr(args, "match_csv_to_csv", False),
-            getattr(args, "match_transactions", False),
-            args.edit_receipt,
-            args.new_setup,
-            args.generate_rules,
-            args.tui_label_receipts,
-        ]):
+        if not any(
+            [
+                args.preprocess_csvs,
+                args.preprocess_assets,
+                args.link_receipts_to_transactions,
+                getattr(args, "match_receipts", False),
+                getattr(args, "match_csv_to_csv", False),
+                getattr(args, "match_transactions", False),
+                args.edit_receipt,
+                args.new_setup,
+                args.generate_rules,
+                args.tui_label_receipts,
+            ]
+        ):
             return
 
     # --match-transactions expands into both matching sub-flags.
@@ -168,7 +168,9 @@ def main() -> None:
                 models=models,
                 labelled_receipts=labelled_receipts,
                 suppress_ids=suppress_ids if suppress_ids else None,
-                category_overrides=category_overrides if category_overrides else None,
+                category_overrides=(
+                    category_overrides if category_overrides else None
+                ),
             )
 
         if args.preprocess_assets:

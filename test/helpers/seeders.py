@@ -199,9 +199,7 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
         )
         y += line_height
         if is_card_payment:
-            draw.text(
-                (20, y), "Card: XXXX5342", fill="black", font=font
-            )
+            draw.text((20, y), "Card: XXXX5342", fill="black", font=font)
             y += line_height
 
     if change > 0:

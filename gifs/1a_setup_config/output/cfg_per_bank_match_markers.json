@@ -1,13 +1,13 @@
 {
+  "frame_duration_ms": 40,
   "markers": {
-    "acct_triodos_csv": 0.0,
-    "acct_ing_csv": 23.16,
     "acct_eur_wallet": 39.36,
+    "acct_ing_csv": 23.16,
+    "acct_triodos_csv": 0.0,
+    "catcfg_default": 82.8,
     "dirp_default": 50.0,
     "fnames_default": 67.36,
-    "catcfg_default": 82.8,
     "malgo_default": 85.52
   },
-  "total_duration": 92.12,
-  "frame_duration_ms": 40
+  "total_duration": 92.12
 }
