@@ -160,6 +160,43 @@ used by `build_userstories.sh`, so running `python -m pytest test/e2e/` will
 regenerate GIFs and validate their output (GIF/MP4 existence, marker JSON
 structure, timestamp ordering).
 
+## GIF Staleness Pre-commit Hook
+
+A pre-commit hook detects when code changes may invalidate GIF recordings.
+It uses two data sources:
+
+1. **Coverage traces** (primary) — when a GIF is recorded, `coverage.py`
+   traces every Python file executed. The trace is saved as
+   `gifs/<name>/output/<name>_coverage.json`. On commit, the hook checks
+   whether any staged file appears in a GIF's trace.
+2. **`gif_dependencies.yaml`** (secondary) — manually maintained patterns
+   for non-Python files (shell scripts, YAML fixtures, receipt images).
+
+### Installation
+
+Symlink the hook into each sub-repo you work on:
+
+```bash
+ln -sf /home/a/git/git/hledger/hledger-preprocessor/hooks/check-gif-staleness.py \
+       .git/hooks/pre-commit
+```
+
+### Usage
+
+The hook runs automatically on `git commit`. Flags:
+
+| Flag | Effect |
+|------|--------|
+| `--bootstrap` | Treat missing `_coverage.json` as warnings (use during transition) |
+| `--block` | Exit 1 on stale GIFs (default: warn only) |
+| `--ci` | Compare `HEAD~1..HEAD` instead of staged files |
+
+### Recording GIFs with coverage
+
+Coverage tracing is built into `common.sh`. When you record a GIF via
+`build_userstories.sh --gif <name>`, coverage is automatically collected
+and written to `gifs/<name>/output/<name>_coverage.json`.
+
 ## Getting Started
 
 This is a HELPER-MODULE for `hledger-flow`.
