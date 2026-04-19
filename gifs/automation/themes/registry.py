@@ -32,7 +32,7 @@ BUILTIN_THEMES: List[Theme] = [
     Theme("solarized-light", "solarized-light", "Solarized light variant"),
 ]
 
-# Custom retro themes (format: bg,fg,black,red,green,yellow,blue,magenta,cyan,white)
+# Custom retro themes (format: bg,fg,black,red,green,yellow,blue,magenta,cyan,white)  # noqa: E501
 RETRO_THEMES: List[Theme] = [
     Theme(
         "amber",

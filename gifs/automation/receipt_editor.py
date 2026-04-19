@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Receipt labelling demo automation - labels a receipt and shows before/after diff."""
+"""Receipt labelling demo automation - labels a receipt and shows before/after diff."""  # noqa: E501
 
 import glob
 import json
@@ -47,7 +47,7 @@ class ReceiptDemoValues:
       4. currency_index    – Currency selection (0-based, see Currency enum)
       5. amount            – Amount paid from account (float as string)
       6. change            – Change returned to account (float as string)
-      7. add_another_acct  – "y" or "n" (horizontal choice, "y"=index 0, "n"=index 1)
+      7. add_another_acct  – "y" or "n" (horizontal choice, "y"=index 0, "n"=index 1)  # noqa: E501
       8. shop_index        – Select Shop Address (0-based, 0 = "manual address")
       9. shop_name         – Only if shop_index selects "manual address"
      10. shop_street       – Only if manual address
@@ -84,7 +84,7 @@ class ReceiptDemoValues:
     # Field 8 – Shop address index (0 = "manual address" when no history)
     shop_index: str = "0"
 
-    # Fields 8a–8f – Manual address fields (used when shop_index picks "manual address")
+    # Fields 8a–8f – Manual address fields (used when shop_index picks "manual address")  # noqa: E501
     shop_name: str = "Ekoplaza"
     shop_street: str = "Groenerstraat"
     shop_house_nr: str = "89"
@@ -359,7 +359,6 @@ def _fill_receipt_fields(
     and written to the sidecar JSON — no stdout output that would corrupt
     the urwid screen.
     """
-    global _tui_markers
 
     def _mark(field: str) -> None:
         if marker_prefix:
@@ -663,7 +662,6 @@ def _write_tui_markers_json() -> None:
     ``nolbl_ekoplaza_card_eur`` structural marker emitted to both
     ``.cast`` and ``_tui_markers``).
     """
-    global _tui_markers
     if not _tui_markers:
         return
 

@@ -49,7 +49,7 @@ class TestCheckCategorisationIntegration:
         """When all CSV transactions match known rules, the check returns
         an empty error list."""
         from hledger_preprocessor.config.load_config import load_config
-        from hledger_preprocessor.reading_history.load_receipts_from_dir import (
+        from hledger_preprocessor.reading_history.load_receipts_from_dir import (  # noqa: E501
             load_receipts_from_dir,
         )
 
@@ -84,7 +84,7 @@ class TestCheckCategorisationWithUnknown:
         import yaml
 
         from hledger_preprocessor.config.load_config import load_config
-        from hledger_preprocessor.reading_history.load_receipts_from_dir import (
+        from hledger_preprocessor.reading_history.load_receipts_from_dir import (  # noqa: E501
             load_receipts_from_dir,
         )
 
@@ -152,7 +152,7 @@ class TestCheckCategorisationWithUnknown:
         import yaml
 
         from hledger_preprocessor.config.load_config import load_config
-        from hledger_preprocessor.reading_history.load_receipts_from_dir import (
+        from hledger_preprocessor.reading_history.load_receipts_from_dir import (  # noqa: E501
             load_receipts_from_dir,
         )
 
@@ -217,7 +217,7 @@ class TestCheckCategorisationWithUnknown:
         import yaml
 
         from hledger_preprocessor.config.load_config import load_config
-        from hledger_preprocessor.reading_history.load_receipts_from_dir import (
+        from hledger_preprocessor.reading_history.load_receipts_from_dir import (  # noqa: E501
             load_receipts_from_dir,
         )
 

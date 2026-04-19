@@ -1,16 +1,21 @@
 """Test data seeders for populating test environments with realistic data."""
 
+from __future__ import annotations
+
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
 from typeguard import typechecked
 
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.dir_reading_and_writing import get_receipt_folder_name
 
+if TYPE_CHECKING:
+    from PIL.Image import Image
 
-def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
+
+def _create_receipt_image(data: dict[str, Any], receipt_index: int) -> Image:
     """Create a realistic-looking receipt image from JSON data.
 
     Args:
@@ -238,7 +243,7 @@ def _create_receipt_image(data: Dict[str, Any], receipt_index: int) -> "Image":
 
 @typechecked
 def _seed_receipt_images(
-    *, config: Config, source_json_paths: List[Path]
+    *, config: Config, source_json_paths: list[Path]
 ) -> None:
     """Seed receipt images (input + cropped) into a test environment.
 
@@ -283,7 +288,7 @@ def _seed_receipt_images(
 
 @typechecked
 def seed_receipts_into_root(
-    *, config: Config, source_json_paths: List[Path]
+    *, config: Config, source_json_paths: list[Path]
 ) -> None:
     """Seed receipt data into a test environment.
 
@@ -326,7 +331,7 @@ def seed_receipts_into_root(
         img_stem = Path(img_filename).stem
         cropped_filename = f"{img_stem}_cropped.jpg"
         cropped_path = processed_dir / cropped_filename
-        # Use same image for cropped version (slightly different to get unique hash)
+        # Use same image for cropped version (slightly different to get unique hash)  # noqa: E501
         img_cropped = _create_receipt_image(
             data, i + 100
         )  # Different index for unique hash
@@ -339,18 +344,18 @@ def seed_receipts_into_root(
         )
         receipt_subdir = labels_dir / receipt_folder_name
         receipt_subdir.mkdir(parents=True, exist_ok=True)
-        # Save as receipt_image_to_obj_label.json - the filename expected by hledger_preprocessor
+        # Save as receipt_image_to_obj_label.json - the filename expected by hledger_preprocessor  # noqa: E501
         dest_path = receipt_subdir / "receipt_image_to_obj_label.json"
         dest_path.write_text(json.dumps(data))
-        print(f"wrote:")
+        print("wrote:")
         pprint(data)
-        print(f"to:")
+        print("to:")
         print(dest_path)
 
 
 @typechecked
 def seed_receipt_images_only(
-    *, config: Config, source_json_paths: List[Path]
+    *, config: Config, source_json_paths: list[Path]
 ) -> None:
     """Seed only receipt images (no labels) into a test environment.
 

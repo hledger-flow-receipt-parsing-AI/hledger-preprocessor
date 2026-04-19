@@ -26,7 +26,7 @@ def _find_receipt_linked_to_csv_transaction(
 ) -> Optional[Receipt]:
     """Find the receipt whose AccountTransaction.original_transaction
     matches *csv_txn* (by hash).  Returns ``None`` when no link exists."""
-    from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
+    from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (  # noqa: E501
         collect_non_csv_transactions,
     )
 
@@ -84,7 +84,7 @@ def classify_transactions(
         processed_txn: ProcessedTransaction = classify_transaction(
             txn=txn,
             ai_models_tnx_classification=ai_models_tnx_classification,
-            rule_based_models_tnx_classification=rule_based_models_tnx_classification,
+            rule_based_models_tnx_classification=rule_based_models_tnx_classification,  # noqa: E501
             category_namespace=category_namespace,
             parent_receipt=txn_parent_receipt,
             category_overrides=category_overrides,
@@ -105,7 +105,7 @@ def classify_transaction(
 ) -> ProcessedTransaction:
     ai_classifications: Dict[str, str] = {}
     for ai_model in ai_models_tnx_classification:
-        # AI-based classification (replace `ai_model.predict` with your actual model logic)
+        # AI-based classification (replace `ai_model.predict` with your actual model logic)  # noqa: E501
         # ai_classification = ai_model.classify(
         #     {
         #         "bank": txn.bank,
@@ -133,7 +133,7 @@ def classify_transaction(
             transaction=txn,
             category_namespace=category_namespace,
         )
-        # txn.logic_classification = {rule_based_model.name: logic_classification}
+        # txn.logic_classification = {rule_based_model.name: logic_classification}  # noqa: E501
         logic_classifications[rule_based_model.name] = logic_classification
     # object.__setattr__(
     #     txn,

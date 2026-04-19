@@ -160,9 +160,9 @@ class TestWithdrawalReceiptCategorisation:
             transaction=atm_bank_debit, category_namespace=ns
         )
 
-        assert result == "withdrawl:euro:gbp", (
-            f"Expected 'withdrawl:euro:gbp', got: {result}"
-        )
+        assert (
+            result == "withdrawl:euro:gbp"
+        ), f"Expected 'withdrawl:euro:gbp', got: {result}"
 
 
 # ---------------------------------------------------------------
@@ -400,7 +400,7 @@ class TestPreprocessAssetsWithWithdrawal:
             textwrap.dedent(
                 """\
                 15-01-2025,NL123,-42.17,debit,Ekoplaza,NL456,IC,groceries:ekoplaza,1000.00
-                20-03-2025,NL123,-115.50,debit,MFG - FOUR WANTZ FOUR - ONGAR - Verenigd,NL789,BA,currency swap GBP,884.50
+                20-03-2025,NL123,-115.50,debit,MFG - FOUR WANTZ FOUR - ONGAR - Verenigd,NL789,BA,currency swap GBP,884.50  # noqa: E501
             """
             ),
         )
@@ -481,7 +481,7 @@ class TestPreprocessAssetsWithWithdrawal:
         )
         _create_file(
             wallet_csv,
-            '"base_currency","account_holder","bank","account_type","date","amount","tendered_amount_out","change_returned"',
+            '"base_currency","account_holder","bank","account_type","date","amount","tendered_amount_out","change_returned"',  # noqa: E501
         )
 
         return {

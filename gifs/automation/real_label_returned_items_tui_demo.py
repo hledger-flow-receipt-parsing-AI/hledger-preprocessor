@@ -148,7 +148,7 @@ def setup_returned_items_env():
     )
 
     (root / "triodos_2025.csv").write_text(
-        "date,account_nr,amount,type,payee,counter_account,code,description,balance\n01-03-2025,NL79"
+        "date,account_nr,amount,type,payee,counter_account,code,description,balance\n01-03-2025,NL79"  # noqa: E501
         " TRIO 0379 2834 09,-50.00,debit,H&M,NL456,IC,clothing:store,950.00\n"
     )
 

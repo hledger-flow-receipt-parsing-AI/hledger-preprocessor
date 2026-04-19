@@ -40,9 +40,7 @@ def generate_random_category(min_length: int = 3, max_length: int = 10) -> str:
     )
 
     # Add more characters including colons
-    random_category = (
-        f'{random_category}{"".join(choices(category_chars, k=randint(min_length, max_length)))}'
-    )
+    random_category = f'{random_category}{"".join(choices(category_chars, k=randint(min_length, max_length)))}'  # noqa: E501
 
     if random_category == "":
         raise ValueError("Generated category was empty.")

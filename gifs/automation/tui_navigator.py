@@ -255,7 +255,7 @@ class TuiNavigator:
         return self.spawn()
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Context manager exit - ensure process is terminated and key display cleared."""
+        """Context manager exit - ensure process is terminated and key display cleared."""  # noqa: E501
         # Clear key display
         if self._key_overlay is not None:
             self._key_overlay.clear()

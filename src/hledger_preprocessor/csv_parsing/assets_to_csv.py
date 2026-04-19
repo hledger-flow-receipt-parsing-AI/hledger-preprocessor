@@ -10,7 +10,7 @@ from hledger_preprocessor.csv_parsing.check_assets_in_csv_status import (
     classified_transaction_is_exported,
     get_classified_transaction,
 )
-from hledger_preprocessor.csv_parsing.export_to_csv import (  # export_asset_transactions_to_csv,
+from hledger_preprocessor.csv_parsing.export_to_csv import (  # export_asset_transactions_to_csv,  # noqa: E501
     write_asset_transaction_to_csv,
 )
 from hledger_preprocessor.csv_parsing.read_csv_asset_transactions import (
@@ -44,7 +44,7 @@ def export_asset_transaction_to_csv(
     Export an asset transaction to a CSV file, organized by year.
     Avoids appending duplicate transactions.
     """
-    # if search_receipt_account_transaction.account.asset_type != AssetType.ASSET:
+    # if search_receipt_account_transaction.account.asset_type != AssetType.ASSET:  # noqa: E501
     #     raise ValueError(
     #         "Expected found asset transaction to be of type asset."
     #     )
@@ -54,7 +54,9 @@ def export_asset_transaction_to_csv(
         account=search_receipt_account_transaction.account,
     ):
 
-        asset_path: str = ensure_asset_path_is_created(config=config)
+        _asset_path: str = ensure_asset_path_is_created(  # noqa: F841
+            config=config
+        )
         account_config: AccountConfig = get_account_config(
             config=config, account=search_receipt_account_transaction.account
         )
@@ -78,10 +80,10 @@ def export_asset_transaction_to_csv(
 
         classified_transaction: Union[ProcessedTransaction, Transaction] = (
             get_classified_transaction(
-                search_receipt_account_transaction=search_receipt_account_transaction,
+                search_receipt_account_transaction=search_receipt_account_transaction,  # noqa: E501
                 parent_receipt=parent_receipt,
                 ai_models_tnx_classification=ai_models_tnx_classification,
-                rule_based_models_tnx_classification=rule_based_models_tnx_classification,
+                rule_based_models_tnx_classification=rule_based_models_tnx_classification,  # noqa: E501
                 category_namespace=config.category_namespace,
             )
         )
@@ -91,7 +93,7 @@ def export_asset_transaction_to_csv(
         else:
             raise ValueError("The transaction is already exported.")
 
-        # TODO: determine why all asset transactions are exported instead of only this one.
+        # TODO: determine why all asset transactions are exported instead of only this one.  # noqa: E501
         write_asset_transaction_to_csv(
             config=config,
             labelled_receipts=labelled_receipts,
