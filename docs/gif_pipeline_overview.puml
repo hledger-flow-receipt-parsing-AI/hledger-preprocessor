@@ -5,6 +5,9 @@ skinparam roundcorner 8
 skinparam defaultFontName "DejaVu Sans"
 skinparam defaultFontSize 11
 skinparam packageStyle rectangle
+skinparam linetype ortho
+
+top to bottom direction
 
 skinparam component {
   BackgroundColor #E8F4FD
@@ -24,179 +27,212 @@ skinparam artifact {
   FontColor #2E7D32
 }
 
-title GIF Pipeline & Pre-commit Staleness Check
-
-' ============================================================
-'  DATA SOURCES
-' ============================================================
-package "Data Sources" {
-  database "userstory_dag_data.yaml\n(DAG definition)" as dag_yaml
-  database "gif_config.yaml\n(themes, rendering)" as gif_config
-  database "config.yaml + categories.yaml\n(demo accounts)" as demo_config
-  database "test/fixtures/\n(CSV, receipts, journals)" as fixtures
-  database "gif_dependencies.yaml\n(non-Python watch patterns)" as gif_deps
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #9E9E9E
 }
 
-' ============================================================
-'  TEST ENVIRONMENT SETUP
-' ============================================================
-package "Test Environment Setup" {
+title GIF Pipeline & Pre-commit Staleness Check\n(top-to-bottom flow)
+
+' ===========================================================================
+'  LEVEL 0: ORCHESTRATOR
+' ===========================================================================
+component "build_userstories.sh\n(orchestrator)" as build_sh
+
+' ===========================================================================
+'  LEVEL 1: DATA SOURCES
+' ===========================================================================
+package "Data Sources" as ds {
+  package "Config Files" as ds_config {
+    database "config.yaml +\ncategories.yaml" as demo_config
+    database "gif_config.yaml\n(themes, rendering)" as gif_config
+  }
+  package "DAG & Dependencies" as ds_dag {
+    database "userstory_dag_data.yaml\n(DAG definition)" as dag_yaml
+    database "gif_dependencies.yaml\n(non-Python watches)" as gif_deps
+  }
+  package "Test Data" as ds_test {
+    database "test/fixtures/\n(CSV, receipts, journals)" as fixtures
+  }
+}
+
+' ===========================================================================
+'  LEVEL 2: TEST ENVIRONMENT
+' ===========================================================================
+package "Test Environment" as env {
   component "setup_test_environment.py" as setup_env
   artifact "/tmp/hledger_demo/\n(config, CSV, receipts)" as tmp_demo
+  setup_env --> tmp_demo
 }
 
-' ============================================================
-'  GIF RECORDING
-' ============================================================
-package "GIF Recording Pipeline" {
-  component "build_userstories.sh\n(orchestrator)" as build_sh
+' ===========================================================================
+'  LEVEL 3: PER-GIF RECORDING
+' ===========================================================================
+package "Per-GIF Recording" as rec {
+  component "generate.sh\n(per-GIF entry)" as generate_sh
+  component "common.sh\n(shared functions)" as common_sh
 
-  package "Per-GIF Recording" {
-    component "gifs/<name>/generate.sh\n(per-GIF entry point)" as generate_sh
-    component "common.sh\n(shared functions)" as common_sh
-
-    package "1. Coverage Setup" {
-      component "install_coverage_pth.py" as pth_install
-      artifact "COVERAGE_PROCESS_START\n(env var + .pth file)" as cov_env
-    }
-
-    package "2. Record" {
-      component "asciinema rec" as asciinema
-      component "Python demo script\n(gifs/automation/*.py)\nuses pexpect to drive CLI" as demo_script
-      component "Sub-packages\n(hledger-core, config,\ncsv-mapping, rules, ...)" as sub_pkgs
-      artifact "recordings/<name>.cast" as cast_file
-    }
-
-    package "3. Coverage Extract" {
-      component "extract_coverage.py" as extract_cov
-      artifact "_coverage.json\n(files_touched + ast_hashes)" as cov_json
-    }
-
-    package "4. Post-process" {
-      component "cast_postprocess.py\n(clean arrow keys, ctrl seqs)" as cast_pp
-    }
-
-    package "5. Render & Convert" {
-      component "agg (.cast -> .gif)" as agg
-      component "gifsicle (optimize)" as gifsicle
-      component "ffmpeg (.gif -> .mp4)" as ffmpeg
-      artifact "<name>.gif + <name>.mp4\n(per-theme variants)" as gif_mp4
-    }
-
-    package "6. Markers" {
-      component "Marker extraction\n(python3 -c in generate.sh)" as marker_extract
-      artifact "_markers.json\n(node timestamps for DAG sync)" as markers_json
-    }
+  package "Coverage Setup" as rec_cov {
+    component "install_coverage_pth.py" as pth_install
+    artifact "COVERAGE_PROCESS_START\n(env var + .pth)" as cov_env
   }
 
-  package "Optional: Stitch" {
-    component "stitch_full_path.py\n(concatenate MP4s)" as stitch
-    artifact "full_path.mp4\n+ full_path_markers.json" as full_path
+  package "Recording" as rec_rec {
+    component "asciinema rec" as asciinema
+    component "Python demo script\n(gifs/automation/*.py)\ndrives CLI via pexpect" as demo_script
+    component "Sub-packages\n(core, config, csv-mapping,\nrules, receipt, ai, ...)" as sub_pkgs
+  }
+
+  artifact "recordings/<name>.cast" as cast_file
+}
+
+' ===========================================================================
+'  LEVEL 4: POST-PROCESSING
+' ===========================================================================
+package "Post-processing" as post {
+  package "Coverage Extract" as post_cov {
+    component "extract_coverage.py" as extract_cov
+    artifact "_coverage.json\n(files_touched + ast_hashes)" as cov_json
+  }
+
+  package "Cast Cleanup" as post_cast {
+    component "cast_postprocess.py\n(clean arrow keys, ctrl seqs)" as cast_pp
+  }
+
+  package "Render & Convert" as post_render {
+    component "agg (.cast -> .gif)" as agg
+    component "gifsicle (optimize)" as gifsicle
+    component "ffmpeg (.gif -> .mp4)" as ffmpeg
+  }
+
+  package "Markers" as post_markers {
+    component "Marker extraction\n(python3 -c in generate.sh)" as marker_extract
+    artifact "_markers.json\n(timestamps for DAG sync)" as markers_json
+  }
+
+  package "Output Artifacts" as post_out {
+    artifact "<name>.gif + <name>.mp4\n(per-theme variants)" as gif_mp4
   }
 }
 
-' ============================================================
-'  SITE GENERATION
-' ============================================================
-package "Site Generation" {
-  component "generate_userstory_artifacts.py\n(PlantUML DAGs + markdown)" as gen_artifacts
-  artifact "US_*.puml + US_*.png" as dag_pngs
-  component "generate_site.py\n(HTML + interactive SVG + JS)" as gen_site
-  artifact "/tmp/site/\n(index.html, story pages,\nSVGs, videos, CSS, JS)" as site_output
+' ===========================================================================
+'  LEVEL 5: STITCH
+' ===========================================================================
+package "Stitch (optional)" as stitch_pkg {
+  component "stitch_full_path.py\n(concatenate MP4s)" as stitch
+  artifact "full_path.mp4 +\nfull_path_markers.json" as full_path
 }
 
-' ============================================================
-'  PRE-COMMIT HOOK
-' ============================================================
-package "Pre-commit Hook  (gif-staleness-hook repo)" {
-  component "git commit (staged changes)" as git_commit
+' ===========================================================================
+'  LEVEL 6: SITE GENERATION
+' ===========================================================================
+package "Site Generation" as site {
+  package "DAG Artifacts" as site_dag {
+    component "generate_userstory_artifacts.py\n(PlantUML DAGs + markdown)" as gen_artifacts
+    artifact "US_*.puml + US_*.png" as dag_pngs
+  }
+  package "Website" as site_web {
+    component "generate_site.py\n(HTML + SVG + JS)" as gen_site
+    artifact "/tmp/site/\n(pages, videos, CSS, JS)" as site_output
+  }
+}
+
+' ===========================================================================
+'  LEVEL 7: PRE-COMMIT HOOK
+' ===========================================================================
+package "Pre-commit Hook\n(gif-staleness-hook repo)" as hook_pkg {
+  component "git commit\n(staged changes)" as git_commit
   component "check-gif-staleness.py" as hook
 
-  component "AST hash comparison\n(Python files)" as cov_check
-  component "YAML pattern match\n(non-Python files)" as yaml_check
-  component "Artifact check\n(GIF re-recorded?)" as artifact_check
+  package "Staleness Checks" as hook_checks {
+    component "AST hash comparison\n(Python files)" as cov_check
+    component "YAML pattern match\n(non-Python files)" as yaml_check
+    component "Artifact check\n(GIF re-recorded?)" as artifact_check
+  }
 
-  artifact "PASS" as pass_result
-  artifact "WARN / BLOCK:\nre-record needed" as fail_result
+  package "Result" as hook_result {
+    artifact "PASS" as pass_result
+    artifact "WARN / BLOCK:\nre-record needed" as fail_result
+  }
 }
 
-' ============================================================
-'  CONNECTIONS: Data Sources -> Setup
-' ============================================================
-demo_config --> setup_env
-fixtures --> setup_env
-setup_env --> tmp_demo
+' ===========================================================================
+'  CONNECTIONS: Orchestrator dispatches
+' ===========================================================================
+build_sh -down-> setup_env : ensure_config()
+build_sh -down-> generate_sh : "--gif <name>"
+build_sh -down-> gen_artifacts : "--artifacts"
+build_sh -down-> gen_site : "--site / --serve"
 
-' ============================================================
-'  CONNECTIONS: Build orchestration
-' ============================================================
-build_sh --> setup_env : ensure_config()
-build_sh --> generate_sh : "--gif <name>"
-build_sh --> gen_artifacts : "--artifacts"
-build_sh --> gen_site : "--site / --serve"
+' ===========================================================================
+'  CONNECTIONS: Data sources feed setup
+' ===========================================================================
+demo_config -down-> setup_env
+fixtures -down-> setup_env
 
-' ============================================================
-'  CONNECTIONS: Per-GIF recording flow
-' ============================================================
-generate_sh --> common_sh : source
-gif_config --> common_sh
-common_sh --> pth_install : setup_coverage()
-pth_install --> cov_env
+' ===========================================================================
+'  CONNECTIONS: Recording flow
+' ===========================================================================
+generate_sh -down-> common_sh : source
+gif_config -down-> common_sh
+common_sh -down-> pth_install : setup_coverage()
+pth_install -down-> cov_env
+common_sh -down-> asciinema : record_demo()
+cov_env -down-> asciinema : env propagation
+asciinema -down-> demo_script : "--command"
+demo_script -down-> sub_pkgs : "pexpect / import\n(traced by coverage)"
+tmp_demo -down-> demo_script : CONFIG_FILEPATH
+asciinema -down-> cast_file
 
-common_sh --> asciinema : record_demo()
-cov_env --> asciinema : env propagation
-asciinema --> demo_script : "--command"
-demo_script --> sub_pkgs : pexpect / import\n(traced by coverage)
-tmp_demo --> demo_script : CONFIG_FILEPATH
-asciinema --> cast_file
+' ===========================================================================
+'  CONNECTIONS: Post-processing
+' ===========================================================================
+common_sh -down-> extract_cov : teardown_coverage()
+extract_cov -down-> cov_json
+common_sh -down-> cast_pp : postprocess_cast()
+cast_pp -right-> cast_file : in-place edit
+common_sh -down-> agg : generate_themed_gifs()
+cast_file -down-> agg
+agg -down-> gifsicle
+gifsicle -down-> gif_mp4
+gif_mp4 -down-> ffmpeg
+ffmpeg -down-> gif_mp4
+cast_file -down-> marker_extract
+marker_extract -down-> markers_json
 
-common_sh --> extract_cov : teardown_coverage()
-extract_cov --> cov_json
+' ===========================================================================
+'  CONNECTIONS: Stitch
+' ===========================================================================
+gif_mp4 -down-> stitch
+markers_json -down-> stitch
+stitch -down-> full_path
 
-common_sh --> cast_pp : postprocess_cast()
-cast_pp --> cast_file : in-place edit
-
-common_sh --> agg : generate_themed_gifs()
-cast_file --> agg
-agg --> gifsicle
-gifsicle --> gif_mp4
-gif_mp4 --> ffmpeg
-ffmpeg --> gif_mp4
-
-cast_file --> marker_extract
-marker_extract --> markers_json
-
-gif_mp4 --> stitch
-markers_json --> stitch
-stitch --> full_path
-
-' ============================================================
+' ===========================================================================
 '  CONNECTIONS: Site generation
-' ============================================================
-dag_yaml --> gen_artifacts
-gen_artifacts --> dag_pngs
+' ===========================================================================
+dag_yaml -down-> gen_artifacts
+gen_artifacts -down-> dag_pngs
+dag_yaml -down-> gen_site
+gif_mp4 -down-> gen_site : videos
+markers_json -down-> gen_site : DAG sync
+full_path -down-> gen_site
+gen_site -down-> site_output
 
-dag_yaml --> gen_site
-gif_mp4 --> gen_site : videos
-markers_json --> gen_site : DAG sync
-full_path --> gen_site
-gen_site --> site_output
-
-' ============================================================
+' ===========================================================================
 '  CONNECTIONS: Pre-commit hook
-' ============================================================
-git_commit --> hook
-cov_json --> cov_check : stored ast_hashes
-gif_deps --> yaml_check : watch patterns
+' ===========================================================================
+git_commit -down-> hook
+cov_json ..> cov_check : stored\nast_hashes
+gif_deps ..> yaml_check : watch\npatterns
 
-hook --> cov_check
-hook --> yaml_check
-hook --> artifact_check
+hook -down-> cov_check
+hook -down-> yaml_check
+hook -down-> artifact_check
 
-cov_check --> pass_result : hash matches
-cov_check --> fail_result : hash differs
-yaml_check --> pass_result : no match
-yaml_check --> fail_result : pattern matched
-artifact_check --> pass_result : GIF also staged
+cov_check -down-> pass_result : hash matches
+cov_check -down-> fail_result : hash differs
+yaml_check -down-> pass_result : no match
+yaml_check -down-> fail_result : pattern hit
+artifact_check -down-> pass_result : GIF staged
 
 @enduml
