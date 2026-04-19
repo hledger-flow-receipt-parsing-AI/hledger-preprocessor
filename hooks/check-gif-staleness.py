@@ -25,7 +25,9 @@ Usage:
     --bootstrap  Treat missing coverage files as warnings instead of errors.
 """
 import argparse
+import ast
 import fnmatch
+import hashlib
 import json
 import subprocess
 import sys
@@ -193,6 +195,24 @@ def _parse_yaml_minimal(path: Path) -> dict:
     return result
 
 
+# ── AST hashing ──────────────────────────────────────────────────────
+
+
+def compute_ast_hash(filepath: Path) -> Optional[str]:
+    """Compute SHA-256 of a Python file's AST (ignores comments/whitespace).
+
+    Returns None if the file is not .py, doesn't exist, or fails to parse.
+    """
+    if not filepath.suffix == ".py":
+        return None
+    try:
+        source = filepath.read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        return hashlib.sha256(ast.dump(tree).encode("utf-8")).hexdigest()
+    except (SyntaxError, UnicodeDecodeError, FileNotFoundError, OSError):
+        return None
+
+
 # ── Matching ─────────────────────────────────────────────────────────
 
 
@@ -208,24 +228,48 @@ def check_coverage_staleness(
     repo_name: str,
     changed_files: List[str],
     coverage_data: Dict[str, dict],
+    hledger_root: Path,
 ) -> List[Tuple[str, str]]:
-    """Check changed files against coverage traces (Python files)."""
+    """Check changed files against coverage traces (Python files).
+
+    If the coverage JSON contains ast_hashes, compares the current AST
+    hash of each changed file against the stored hash.  Only flags as
+    stale when the AST actually differs (ignoring comments/whitespace).
+    Falls back to "any change = stale" when ast_hashes is missing.
+    """
     root_relative_files = [f"{repo_name}/{f}" for f in changed_files]
     stale = []
     for gif_name, cov in coverage_data.items():
         gif_type = cov.get("type", "config-dependent")
         files_touched: List[str] = cov.get("files_touched", [])
+        ast_hashes: Dict[str, str] = cov.get("ast_hashes", {})
 
         if gif_type == "standalone" and not files_touched:
-            # Standalone GIFs have no Python deps — skip.
             continue
 
         touched_set: Set[str] = set(files_touched)
         for changed in root_relative_files:
-            if changed in touched_set:
+            if changed not in touched_set:
+                continue
+
+            # If we have a stored AST hash, compare against current.
+            stored_hash = ast_hashes.get(changed)
+            if stored_hash is not None:
+                current_hash = compute_ast_hash(hledger_root / changed)
+                if current_hash == stored_hash:
+                    # AST unchanged — skip (comment/whitespace only).
+                    continue
+                if current_hash is None:
+                    # File deleted or unparseable — treat as stale.
+                    desc = f"cannot parse {changed} (deleted or syntax error)"
+                else:
+                    desc = f"AST changed in {changed}"
+            else:
+                # No stored hash — fall back to any-change-is-stale.
                 desc = f"coverage trace includes {changed}"
-                stale.append((gif_name, desc))
-                break
+
+            stale.append((gif_name, desc))
+            break
 
     return stale
 
@@ -388,7 +432,7 @@ def main() -> int:
 
     # ── Check Python files against coverage traces ──
     stale_from_coverage = check_coverage_staleness(
-        repo_name, changed_files, coverage_data
+        repo_name, changed_files, coverage_data, hledger_root
     )
 
     # ── Check non-Python files against YAML deps ──
