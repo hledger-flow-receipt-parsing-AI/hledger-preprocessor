@@ -1,0 +1,31 @@
+# Coverage configuration for GIF recording.
+# Traces which Python files are executed during a GIF demo so the
+# pre-commit hook can detect stale recordings.
+#
+# Activated via: export COVERAGE_PROCESS_START=/abs/path/to/this/file
+
+[run]
+parallel = true
+data_file = /tmp/gif_coverage/.coverage
+branch = false
+
+# Trace all hledger sub-packages.
+source =
+    /home/a/git/git/hledger/hledger-core/src
+    /home/a/git/git/hledger/hledger-config/src
+    /home/a/git/git/hledger/hledger-csv-mapping/src
+    /home/a/git/git/hledger/hledger-receipt-processing/src
+    /home/a/git/git/hledger/hledger-ai/src
+    /home/a/git/git/hledger/hledger-rules/src
+    /home/a/git/git/hledger/hledger-preprocessor/src
+    /home/a/git/git/hledger/tui-image-labeller/src
+    /home/a/git/git/hledger/hledger-plot/src
+
+# Omit test code and GIF automation infrastructure — we care about
+# what the GIF demonstrates, not the recording machinery.
+omit =
+    */test/*
+    */tests/*
+    */gifs/automation/*
+    */gifs/scripts/*
+    */.git/*
