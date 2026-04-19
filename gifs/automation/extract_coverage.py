@@ -16,12 +16,14 @@ Usage:
         [--coverage-dir /tmp/gif_coverage]
 """
 import argparse
+import ast
+import hashlib
 import json
 import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 HLEDGER_ROOT_DEFAULT = "/home/a/git/git/hledger"
@@ -55,11 +57,50 @@ def extract_files(
     return files
 
 
+def compute_ast_hash(filepath: str) -> Optional[str]:
+    """Compute a SHA-256 hash of a Python file's AST.
+
+    Returns None for non-Python files or files that fail to parse.
+    The hash is deterministic for a given Python version and ignores
+    comments, whitespace, and formatting.
+    """
+    if not filepath.endswith(".py"):
+        return None
+    try:
+        source = Path(filepath).read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        return hashlib.sha256(ast.dump(tree).encode("utf-8")).hexdigest()
+    except (SyntaxError, UnicodeDecodeError, FileNotFoundError):
+        return None
+
+
+def compute_ast_hashes(
+    files: List[str],
+    hledger_root: str,
+) -> Dict[str, str]:
+    """Compute AST hashes for all Python files in the coverage trace.
+
+    Returns a dict mapping repo-relative path to its AST hash.
+    Non-Python files and files that fail to parse are skipped.
+    """
+    root = hledger_root.rstrip("/")
+    hashes: Dict[str, str] = {}
+    for relative in files:
+        if not relative.endswith(".py"):
+            continue
+        absolute = f"{root}/{relative}"
+        h = compute_ast_hash(absolute)
+        if h is not None:
+            hashes[relative] = h
+    return hashes
+
+
 def write_coverage_json(
     output_path: str,
     gif_name: str,
     gif_type: str,
     files_touched: List[str],
+    ast_hashes: Optional[Dict[str, str]] = None,
 ) -> None:
     """Write the coverage JSON sidecar."""
     data = {
@@ -67,6 +108,7 @@ def write_coverage_json(
         "type": gif_type,
         "recorded_at": datetime.now(timezone.utc).isoformat(),
         "files_touched": files_touched,
+        "ast_hashes": ast_hashes or {},
     }
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
@@ -131,7 +173,10 @@ def main() -> int:
         return 1
 
     files = extract_files(cov_data, args.hledger_root)
-    write_coverage_json(args.output, args.gif_name, args.type, files)
+    ast_hashes = compute_ast_hashes(files, args.hledger_root)
+    write_coverage_json(
+        args.output, args.gif_name, args.type, files, ast_hashes
+    )
     return 0
 
 
