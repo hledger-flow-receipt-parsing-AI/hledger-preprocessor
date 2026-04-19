@@ -201,11 +201,8 @@ repos:
      - id: markdownlint
 
 # Check if code changes require GIF re-recording.
- - repo: local
+ - repo: https://github.com/hledger-flow-receipt-parsing-AI/gif-staleness-hook
+   rev: v0.1.0
    hooks:
      - id: check-gif-staleness
-       name: check-gif-staleness
-       entry: python hooks/check-gif-staleness.py --bootstrap
-       language: system
-       always_run: true
-       pass_filenames: false
+       args: [--bootstrap]

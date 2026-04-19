@@ -174,12 +174,17 @@ It uses two data sources:
 
 ### Installation
 
-Symlink the hook into each sub-repo you work on:
+Add to your `.pre-commit-config.yaml`:
 
-```bash
-ln -sf /home/a/git/git/hledger/hledger-preprocessor/hooks/check-gif-staleness.py \
-       .git/hooks/pre-commit
+```yaml
+- repo: https://github.com/hledger-flow-receipt-parsing-AI/gif-staleness-hook
+  rev: v0.1.0
+  hooks:
+    - id: check-gif-staleness
+      args: [--bootstrap]  # remove once all GIFs have _coverage.json
 ```
+
+Then run `pre-commit install`.
 
 ### Usage
 
