@@ -10,20 +10,20 @@ Tests cover:
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 from unittest.mock import MagicMock
 
 import pytest
 
 from hledger_preprocessor.config.AccountConfig import AccountConfig
 from hledger_preprocessor.config.CsvColumnMapping import CsvColumnMapping
-from hledger_preprocessor.config.load_config import Config
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
-from hledger_preprocessor.generics.Transaction import Transaction
-from hledger_preprocessor.rules.generate_rules_content import RulesContentCreator
+from hledger_preprocessor.rules.generate_rules_content import (
+    RulesContentCreator,
+)
 from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
@@ -175,7 +175,9 @@ class TestWithdrawalQuestions:
             accounts_without_csv=set(),
         )
         q = wq.get_atm_fee_question()
-        assert q.question == "ATM operator fee (in withdrawn currency, 0 if none):"
+        assert (
+            q.question == "ATM operator fee (in withdrawn currency, 0 if none):"
+        )
 
     def test_creates_exchange_rate_question(self):
         from tui_labeller.tuis.urwid.receipts.WithdrawalQuestions import (
@@ -397,9 +399,7 @@ class TestBackgroundWithdrawalMatch:
             account=account,
             input_csv_filename="bank.csv" if has_csv else None,
             csv_column_mapping=(
-                CsvColumnMapping(
-                    csv_column_mapping=(("the_date", "date"),)
-                )
+                CsvColumnMapping(csv_column_mapping=(("the_date", "date"),))
                 if has_csv
                 else None
             ),
@@ -793,9 +793,7 @@ class TestRulesFileBankSideWithdrawal:
         )
         return creator.create_rulecontent()
 
-    def test_bank_side_domestic_rule_uses_dest_account(
-        self, temp_finance_root
-    ):
+    def test_bank_side_domestic_rule_uses_dest_account(self, temp_finance_root):
         content = self._make_rules_content(temp_finance_root)
         assert "account1 assets:%withdrawal_dest_account" in content
 
@@ -805,9 +803,7 @@ class TestRulesFileBankSideWithdrawal:
         content = self._make_rules_content(temp_finance_root)
         assert "amount1 %withdrawal_change_returned" in content
 
-    def test_bank_side_rule_conditions_on_dest_account(
-        self, temp_finance_root
-    ):
+    def test_bank_side_rule_conditions_on_dest_account(self, temp_finance_root):
         content = self._make_rules_content(temp_finance_root)
         assert "& %withdrawal_dest_account ." in content
 
@@ -817,9 +813,7 @@ class TestRulesFileBankSideWithdrawal:
         content = self._make_rules_content(temp_finance_root)
         assert "& %withdrawal_dest_account ^$" in content
 
-    def test_withdrawal_fields_include_new_fields(
-        self, temp_finance_root
-    ):
+    def test_withdrawal_fields_include_new_fields(self, temp_finance_root):
         content = self._make_rules_content(temp_finance_root)
         assert "withdrawal_dest_account" in content
         assert "withdrawal_change_returned" in content
@@ -870,6 +864,7 @@ class TestShouldSkipWithdrawalTransaction:
 
         # Patch collect_non_csv_transactions to return our linked txn.
         import hledger_preprocessor.management.main_manager as mm
+
         original_func = mm.collect_non_csv_transactions
 
         def mock_collect(receipt):
@@ -894,7 +889,9 @@ class TestShouldSkipWithdrawalTransaction:
 
         # Unlinked AccountTransaction (original_transaction is None).
         wallet_txn = _make_account_transaction(
-            account=wallet_account, amount=0.0, change=250.0,
+            account=wallet_account,
+            amount=0.0,
+            change=250.0,
         )
 
         config = MagicMock()
@@ -910,6 +907,7 @@ class TestShouldSkipWithdrawalTransaction:
         )
 
         import hledger_preprocessor.management.main_manager as mm
+
         original_func = mm.collect_non_csv_transactions
 
         def mock_collect(receipt):

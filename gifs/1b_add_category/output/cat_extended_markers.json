@@ -1,12 +1,12 @@
 {
+  "frame_duration_ms": 40,
   "markers": {
-    "cat_extended__groceries": 0.0,
-    "cat_extended__transport": 2.6,
     "cat_extended__dining": 4.04,
-    "cat_extended__utilities": 5.6,
     "cat_extended__gold": 7.28,
-    "cat_extended__silver": 8.28
+    "cat_extended__groceries": 0.0,
+    "cat_extended__silver": 8.28,
+    "cat_extended__transport": 2.6,
+    "cat_extended__utilities": 5.6
   },
-  "total_duration": 10.92,
-  "frame_duration_ms": 40
+  "total_duration": 10.92
 }

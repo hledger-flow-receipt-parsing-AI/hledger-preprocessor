@@ -18,13 +18,25 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from typeguard import typechecked
 
-from hledger_preprocessor.config.AccountConfig import AccountConfig, LinkedAccount
+from hledger_preprocessor.config.AccountConfig import (
+    AccountConfig,
+)
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
 
 # Fiat currencies for which a missing counterpart is an error
-_FIAT_CURRENCIES = {"EUR", "USD", "GBP", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK"}
+_FIAT_CURRENCIES = {
+    "EUR",
+    "USD",
+    "GBP",
+    "CHF",
+    "SEK",
+    "NOK",
+    "DKK",
+    "PLN",
+    "CZK",
+}
 
 # Matching tolerances
 _AMOUNT_TOLERANCE = 0.01
@@ -44,7 +56,7 @@ def _load_matches(matches_path: str) -> Dict:
     "match_type": "suppress"|"category_override"}).
     """
     if os.path.isfile(matches_path):
-        with open(matches_path, "r") as f:
+        with open(matches_path) as f:
             raw = json.load(f)
         # Migrate old list-based entries to new dict format.
         for key, value in raw.items():
@@ -135,7 +147,7 @@ def _prompt_manual_match(
         print(
             f"\nWARNING: No exact match for {acct_id} {row_type} of "
             f"{currency} {amount:.2f} on {date_str} in {linked_id}. "
-            f"Cannot prompt (non-interactive). Keeping both sides.\n"
+            "Cannot prompt (non-interactive). Keeping both sides.\n"
         )
         return []
 
@@ -168,13 +180,11 @@ def _prompt_manual_match(
             for i, (_, c_txn) in enumerate(candidates, 1):
                 print(f"  {i}. {_format_txn(c_txn)}")
 
-        print(
-            "\nPlease select an action:\n"
-        )
+        print("\nPlease select an action:\n")
         if candidates:
             print(
                 f"  1-{len(candidates)}. Select candidate(s) "
-                f"(comma-separated for multiple, e.g. 1,3)"
+                "(comma-separated for multiple, e.g. 1,3)"
             )
         n_actions_start = len(candidates) + 1
         widen_date_n = n_actions_start
@@ -205,7 +215,7 @@ def _prompt_manual_match(
                 if valid and selected_indices:
                     return selected_indices
                 print(
-                    f"Invalid input. Enter candidate numbers between "
+                    "Invalid input. Enter candidate numbers between "
                     f"1 and {len(candidates)}, comma-separated."
                 )
                 continue
@@ -226,8 +236,7 @@ def _prompt_manual_match(
         # Widen date margin
         if choice == widen_date_n:
             extra = input(
-                f"Additional days to add (current: "
-                f"{date_tolerance.days}): "
+                f"Additional days to add (current: {date_tolerance.days}): "
             ).strip()
             try:
                 extra_days = int(extra)
@@ -242,7 +251,7 @@ def _prompt_manual_match(
         # Widen amount margin
         if choice == widen_amount_n:
             extra = input(
-                f"Additional tolerance to add (current: "
+                "Additional tolerance to add (current: "
                 f"{amount_tolerance:.2f}): "
             ).strip()
             try:
@@ -296,7 +305,9 @@ def reconcile_linked_accounts(
         saved_matches = _load_matches(matches_path)
 
     # Build account_id → (AccountConfig, transactions) lookup
-    id_to_data: Dict[str, Tuple[AccountConfig, List[GenericCsvTransaction]]] = {}
+    id_to_data: Dict[str, Tuple[AccountConfig, List[GenericCsvTransaction]]] = (
+        {}
+    )
     for ac, txns in transactions_per_account.items():
         acct = ac.account
         acct_id = f"{acct.account_holder}:{acct.bank}:{acct.account_type}"
@@ -334,7 +345,9 @@ def reconcile_linked_accounts(
             linked_data = id_to_data.get(linked_id)
             if linked_data is None:
                 acct = ac.account
-                acct_id = f"{acct.account_holder}:{acct.bank}:{acct.account_type}"
+                acct_id = (
+                    f"{acct.account_holder}:{acct.bank}:{acct.account_type}"
+                )
                 raise ValueError(
                     f"Account {linked_id} is declared as linked to "
                     f"{acct_id} but has no CSV config. Configure it first."
@@ -348,9 +361,7 @@ def reconcile_linked_accounts(
             # equity:clearing) instead of suppressions.
 
             acct = ac.account
-            acct_id = (
-                f"{acct.account_holder}:{acct.bank}:{acct.account_type}"
-            )
+            acct_id = f"{acct.account_holder}:{acct.bank}:{acct.account_type}"
 
             # Find transactions whose split-group type matches transfer_types
             for idx, txn in enumerate(txns):
@@ -439,7 +450,10 @@ def reconcile_linked_accounts(
                         if hasattr(linked_base, "value")
                         else str(linked_base)
                     )
-                    if both_have_csv and currency.upper() == linked_base_str.upper():
+                    if (
+                        both_have_csv
+                        and currency.upper() == linked_base_str.upper()
+                    ):
                         continue
 
                     if currency.upper() in _FIAT_CURRENCIES or both_have_csv:

@@ -46,9 +46,7 @@ def get_receipt_that_contain_asset_txn(
 
     if len(matching_receipts) == 0:
         pprint(some_txn)
-        raise NotFoundErr(
-            "Did not find any matching receipt for above txn."
-        )
+        raise NotFoundErr("Did not find any matching receipt for above txn.")
 
     if len(matching_receipts) > 1:
         # Multiple receipt photos of the same purchase were labelled

@@ -3,7 +3,6 @@
 Covers US-3.2: Foreign currency match — conversion rate calculation.
 """
 
-
 from hledger_preprocessor.Currency import Currency
 
 

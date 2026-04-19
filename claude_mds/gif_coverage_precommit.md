@@ -29,11 +29,11 @@ Pre-commit (any sub-repo)
 ## Files to create/modify
 
 1. `hledger-preprocessor/gifs/.coveragerc` — coverage config (parallel=true, source=all sub-packages)
-2. `hledger-preprocessor/gifs/automation/install_coverage_pth.py` — installs .pth in conda env
-3. `hledger-preprocessor/gifs/scripts/common.sh` — add coverage env vars to recording
-4. `hledger-preprocessor/gifs/automation/extract_coverage.py` — .coverage → _coverage.json
-5. `hooks/check-gif-staleness.py` — read _coverage.json instead of gif_dependencies.yaml
-6. `gif_dependencies.yaml` — keep but reduce to NON-Python files only
+1. `hledger-preprocessor/gifs/automation/install_coverage_pth.py` — installs .pth in conda env
+1. `hledger-preprocessor/gifs/scripts/common.sh` — add coverage env vars to recording
+1. `hledger-preprocessor/gifs/automation/extract_coverage.py` — .coverage → \_coverage.json
+1. `hooks/check-gif-staleness.py` — read \_coverage.json instead of gif_dependencies.yaml
+1. `gif_dependencies.yaml` — keep but reduce to NON-Python files only
 
 ## Known Gaps & Fixes
 
@@ -61,9 +61,11 @@ Standalone GIFs are still tracked for changes to their own scripts via the reduc
 ### Gap 3: hledger_plot subprocess env propagation
 
 `show_plots_demo.py` runs:
+
 ```python
 cmd = f"bash -c 'source .../conda.sh && conda activate hledger_preprocessor && hledger_plot ...'"
 ```
+
 `COVERAGE_PROCESS_START` must survive bash → conda activate → python. The asciinema
 `--env=` flag passes it to the top-level shell, but `bash -c` starts a new shell.
 
@@ -75,6 +77,7 @@ through the full chain.
 ### Gap 4: Non-Python files are invisible to coverage
 
 Changes to these won't appear in Python coverage traces:
+
 - `generate.sh`, `common.sh` (shell scripts)
 - `gif_config.yaml` (rendering config)
 - Receipt images (`gifs/assets/receipts/`)
@@ -83,6 +86,7 @@ Changes to these won't appear in Python coverage traces:
 
 **Fix:** Keep a reduced `gif_dependencies.yaml` for non-Python watch patterns only.
 The pre-commit hook checks BOTH sources:
+
 - `_coverage.json` for Python file changes
 - `gif_dependencies.yaml` for shell scripts, YAML, images, fixtures
 
@@ -112,15 +116,15 @@ The `.pth` file approach modifies the conda environment's site-packages. Concern
 1. **Install/uninstall lifecycle:** The .pth is installed before recording and
    uninstalled after. It does NOT persist. No impact on normal development.
 
-2. **`coverage.process_startup()` overhead:** When `COVERAGE_PROCESS_START` is not
+1. **`coverage.process_startup()` overhead:** When `COVERAGE_PROCESS_START` is not
    set, the function is a fast no-op (checks env var, returns immediately). The
    import of `coverage` itself adds ~5ms to Python startup. Negligible.
 
-3. **Concurrent processes:** If you run pytest in another terminal while a GIF is
+1. **Concurrent processes:** If you run pytest in another terminal while a GIF is
    recording, the .pth file would be present. But `COVERAGE_PROCESS_START` is only
    set in the recording terminal's env, not globally. pytest would not be affected.
 
-4. **conda activate/deactivate:** The .pth file lives in site-packages, not in
+1. **conda activate/deactivate:** The .pth file lives in site-packages, not in
    conda's activation scripts. `conda deactivate` doesn't remove it. This is why
    install/uninstall must be explicit, not tied to conda lifecycle.
 
@@ -129,19 +133,23 @@ The `.pth` file approach modifies the conda environment's site-packages. Concern
 Python coverage.py cannot trace shell scripts. Options:
 
 ### Option A: Keep shell, track via gif_dependencies.yaml (recommended)
+
 The shell scripts (`generate.sh`, `common.sh`) are thin wrappers — they call
 asciinema, ffmpeg, agg, and Python modules. The actual logic is in Python.
 Tracking shell changes via static patterns in `gif_dependencies.yaml` is
 sufficient and simple.
 
 ### Option B: Convert shell to Python
+
 The `generate.sh` scripts could be rewritten as Python modules using `subprocess`
 for asciinema/ffmpeg/agg calls. This would make them traceable by coverage.
 
 **However:** asciinema recording requires a real PTY. The current flow is:
+
 ```
 generate.sh → asciinema rec --command="python -m demo_module"
 ```
+
 asciinema itself is a Go binary — it can't be traced by Python coverage regardless
 of whether the wrapper is shell or Python. The Python demo module inside asciinema
 IS traced (via the .pth file).
@@ -150,6 +158,7 @@ Converting generate.sh to Python would add complexity without meaningful coverag
 gain. The shell scripts are stable infrastructure that rarely changes.
 
 ### Option C: Use bash -x tracing
+
 `bash -x` logs every command executed. Could capture this to a file alongside
 the coverage JSON. But it would trace asciinema/ffmpeg internals which aren't
 useful for staleness detection.

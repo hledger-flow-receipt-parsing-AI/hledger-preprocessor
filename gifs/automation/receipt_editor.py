@@ -537,7 +537,7 @@ def run_label_receipt_demo(
         )
         if keep_image:
             # Keep only the image matching the substring
-            to_keep = [f for f in images if keep_image in f]
+            [f for f in images if keep_image in f]
             to_remove = [f for f in images if keep_image not in f]
             for extra in to_remove:
                 os.remove(os.path.join(input_dir, extra))
@@ -611,9 +611,7 @@ def run_label_receipt_demo(
         _tui_markers[marker_tui] = time.time()
 
         # ── Fill in every field ─────────────────────────────────────────
-        _fill_receipt_fields(
-            nav, receipt, marker_prefix=marker_tui
-        )
+        _fill_receipt_fields(nav, receipt, marker_prefix=marker_tui)
 
         # Wait for the process to exit after the TUI saves
         time.sleep(0.5)
@@ -669,9 +667,9 @@ def _write_tui_markers_json() -> None:
     if not _tui_markers:
         return
 
-    out_path = Path(os.environ.get(
-        "TUI_MARKERS_JSON", "/tmp/tui_field_markers.json"
-    ))
+    out_path = Path(
+        os.environ.get("TUI_MARKERS_JSON", "/tmp/tui_field_markers.json")
+    )
     out_path.write_text(json.dumps(_tui_markers, indent=2) + "\n")
     print(f"  TUI field markers ({len(_tui_markers)}) → {out_path}", flush=True)
 

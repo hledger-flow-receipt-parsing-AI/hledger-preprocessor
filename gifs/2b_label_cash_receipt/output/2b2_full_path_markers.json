@@ -1,55 +1,55 @@
 {
   "markers": {
-    "acct_triodos_csv": 0.0,
     "acct_eur_wallet": 23.16,
-    "dirp_default": 32.72,
-    "fnames_default": 49.96,
-    "catcfg_default": 65.4,
-    "malgo_default": 68.12,
+    "acct_triodos_csv": 0.0,
     "cat_basic__groceries": 74.72,
     "cat_basic__withdrawl": 77.32,
+    "catcfg_default": 65.4,
+    "dirp_default": 32.72,
+    "fnames_default": 49.96,
+    "img_coffee_cash": 90.16,
+    "jrnl_groceries_ekoplaza": 148.56,
+    "lbl_coffee_cash": 142.37,
+    "malgo_default": 68.12,
+    "nolbl_coffee_cash": 93.23,
     "start_2024_1000eur": 80.24,
-    "img_coffee_cash": 88.56,
-    "nolbl_coffee_cash": 92.07,
-    "lbl_coffee_cash": 134.91,
-    "tui_coffee_cash": 102.75,
-    "tui_coffee_cash__date": 103.2,
-    "tui_coffee_cash__time": 103.2,
-    "tui_coffee_cash__category": 106.44,
-    "tui_coffee_cash__bank_account": 108.58,
-    "tui_coffee_cash__currency": 109.38,
-    "tui_coffee_cash__amount": 110.18,
-    "tui_coffee_cash__change": 111.28,
-    "tui_coffee_cash__shop_name": 120.54,
-    "tui_coffee_cash__shop_street": 122.7,
-    "tui_coffee_cash__shop_house_nr": 124.57,
-    "tui_coffee_cash__shop_zipcode": 125.63,
-    "tui_coffee_cash__shop_city": 127.09,
-    "tui_coffee_cash__shop_country": 128.66,
-    "tui_coffee_cash__tax": 130.63,
-    "jrnl_groceries_ekoplaza": 142.76
+    "tui_coffee_cash": 101.79,
+    "tui_coffee_cash__amount": 108.54,
+    "tui_coffee_cash__bank_account": 107.21,
+    "tui_coffee_cash__category": 104.71,
+    "tui_coffee_cash__change": 109.42,
+    "tui_coffee_cash__currency": 107.91,
+    "tui_coffee_cash__date": 102.15,
+    "tui_coffee_cash__shop_city": 124.09,
+    "tui_coffee_cash__shop_country": 125.84,
+    "tui_coffee_cash__shop_house_nr": 121.66,
+    "tui_coffee_cash__shop_name": 116.96,
+    "tui_coffee_cash__shop_street": 119.46,
+    "tui_coffee_cash__shop_zipcode": 122.5,
+    "tui_coffee_cash__tax": 128.26,
+    "tui_coffee_cash__time": 102.15
   },
-  "total_duration": 152.76,
   "segments": [
     {
-      "file": "cfg_1b1w.mp4",
-      "duration": 74.72
+      "duration": 74.72,
+      "file": "cfg_1b1w.mp4"
     },
     {
-      "file": "cat_basic.mp4",
-      "duration": 5.52
+      "duration": 5.52,
+      "file": "cat_basic.mp4"
     },
     {
-      "file": "starting_journal.mp4",
-      "duration": 8.32
+      "duration": 9.92,
+      "file": "starting_journal.mp4"
     },
     {
-      "file": "2b_label_cash_receipt.mp4",
-      "duration": 54.2
+      "duration": 58.4,
+      "file": "2b_label_cash_receipt.mp4"
     },
     {
-      "file": "journal_output.mp4",
-      "duration": 10.0
+      "duration": 11.6,
+      "file": "journal_output.mp4"
     }
-  ]
+  ],
+  "total_duration": 160.16
 }

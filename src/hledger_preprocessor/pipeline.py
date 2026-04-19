@@ -18,13 +18,16 @@ import os
 import shutil
 import subprocess
 import sys
-from typing import Any, Dict, List
-
-from typeguard import typechecked
+from typing import Any
 
 from hledger_config.config.load_config import Config, load_config
 from hledger_core.generics.enums import ClassifierType, LogicType
 from hledger_core.TransactionObjects.Receipt import Receipt
+from hledger_receipt_processing.reading_history.load_receipts_from_dir import (
+    load_receipts_from_dir,
+)
+from typeguard import typechecked
+
 from hledger_preprocessor.checks.check_categorisation import (
     check_categorisation,
 )
@@ -36,9 +39,6 @@ from hledger_preprocessor.management.main_manager import (
     manage_match_csv_to_csv,
     manage_matching_manual_receipt_objs_to_account_transactions,
     manage_preprocessing_assets,
-)
-from hledger_receipt_processing.reading_history.load_receipts_from_dir import (
-    load_receipts_from_dir,
 )
 
 
@@ -73,14 +73,14 @@ def run_pipeline(
     # Equivalent to start.sh's validate_config() which calls:
     #   proces_config_accounts -> hledger_preprocessor --new-setup per account
     #   complete_asset_prerequisites -> --link-receipts-to-transactions
-    labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
+    labelled_receipts: list[Receipt] = load_receipts_from_dir(config=config)
 
     manage_creating_new_setup(
         config=config,
         labelled_receipts=labelled_receipts,
     )
 
-    models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
+    models: dict[ClassifierType, dict[LogicType, Any]] = get_models(
         quick_categorisation=True
     )
 
@@ -179,7 +179,9 @@ def run_pipeline(
         if "UNCATEGORISED TRANSACTION" in output:
             print("")
             print("=" * 60)
-            print("  hledger-flow import triggered an uncategorised transaction")
+            print(
+                "  hledger-flow import triggered an uncategorised transaction"
+            )
             print("  error in the hledger-preprocessor preprocessing step.")
             print("=" * 60)
             # Print relevant section
@@ -197,7 +199,7 @@ def run_pipeline(
     all_years_journal = os.path.join(working_dir, "all-years.journal")
     include_line = f"include {start_journal}"
     if os.path.exists(all_years_journal):
-        with open(all_years_journal, "r") as f:
+        with open(all_years_journal) as f:
             content = f.read()
         if include_line not in content:
             with open(all_years_journal, "a") as f:
@@ -208,9 +210,12 @@ def run_pipeline(
         result = subprocess.run(
             [
                 "hledger_plot",
-                "--config", config_path,
-                "--journal-filepath", all_years_journal,
-                "-d", "EUR",
+                "--config",
+                config_path,
+                "--journal-filepath",
+                all_years_journal,
+                "-d",
+                "EUR",
                 "-s",
                 "-r",
             ],
@@ -222,9 +227,12 @@ def run_pipeline(
         # Generate balance report
         result = subprocess.run(
             [
-                "hledger", "bal",
-                "-X", "EUR",
-                "-f", all_years_journal,
+                "hledger",
+                "bal",
+                "-X",
+                "EUR",
+                "-f",
+                all_years_journal,
             ],
         )
         if result.returncode != 0:
@@ -234,9 +242,12 @@ def run_pipeline(
         result = subprocess.run(
             [
                 "hledger_plot",
-                "--config", config_path,
-                "--journal-filepath", all_years_journal,
-                "-d", "EUR",
+                "--config",
+                config_path,
+                "--journal-filepath",
+                all_years_journal,
+                "-d",
+                "EUR",
                 "-s",
             ],
         )

@@ -1,10 +1,10 @@
 {
+  "frame_duration_ms": 40,
   "markers": {
     "acct_eur_wallet": 0.0,
+    "catcfg_default": 40.64,
     "dirp_default": 10.24,
-    "fnames_default": 26.4,
-    "catcfg_default": 40.64
+    "fnames_default": 26.4
   },
-  "total_duration": 44.8,
-  "frame_duration_ms": 40
+  "total_duration": 44.8
 }

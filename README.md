@@ -104,6 +104,7 @@ re-recording.
 
 See [docs/gif_pipeline_overview.puml](docs/gif_pipeline_overview.puml).
 To regenerate: `plantuml -tsvg docs/gif_pipeline_overview.puml`
+
 </details>
 
 ### Quick build & serve
@@ -186,7 +187,7 @@ It uses two data sources:
    traces every Python file executed. The trace is saved as
    `gifs/<name>/output/<name>_coverage.json`. On commit, the hook checks
    whether any staged file appears in a GIF's trace.
-2. **`gif_dependencies.yaml`** (secondary) — manually maintained patterns
+1. **`gif_dependencies.yaml`** (secondary) — manually maintained patterns
    for non-Python files (shell scripts, YAML fixtures, receipt images).
 
 ### Installation
@@ -207,11 +208,11 @@ Then run `pre-commit install`.
 
 The hook runs automatically on `git commit`. Flags:
 
-| Flag | Effect |
-|------|--------|
+| Flag          | Effect                                                             |
+| ------------- | ------------------------------------------------------------------ |
 | `--bootstrap` | Treat missing `_coverage.json` as warnings (use during transition) |
-| `--block` | Exit 1 on stale GIFs (default: warn only) |
-| `--ci` | Compare `HEAD~1..HEAD` instead of staged files |
+| `--block`     | Exit 1 on stale GIFs (default: warn only)                          |
+| `--ci`        | Compare `HEAD~1..HEAD` instead of staged files                     |
 
 ### Recording GIFs with coverage
 
