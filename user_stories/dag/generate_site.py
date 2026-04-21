@@ -1578,7 +1578,7 @@ def generate_css(*, dim_opacity: Optional[float] = None) -> str:
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;  # noqa: E501
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg); color: var(--text);
   display: flex; min-height: 100vh;
 }
@@ -1746,6 +1746,11 @@ a:hover { text-decoration: underline; }
 .video-dag-row .dag-section {
   grid-column: 2; grid-row: 1 / span 3;
   margin-bottom: 0;
+  align-self: start;
+}
+.video-dag-row .dag-section .dag-svg {
+  width: auto; max-width: 100%;
+  max-height: var(--left-col-height, 80vh);
 }
 .video-dag-row .below-row {
   grid-column: 1; grid-row: 2;
@@ -1753,13 +1758,13 @@ a:hover { text-decoration: underline; }
 
 /* DAG node highlighting */
 .dag-node { cursor: pointer; transition: opacity 0.2s; }
-.dag-node.unreachable { cursor: default; opacity: __NODE_OP__; pointer-events: none; }  # noqa: E501
+.dag-node.unreachable { cursor: default; opacity: __NODE_OP__; pointer-events: none; }
 .dag-edge.unreachable { opacity: __EDGE_OP__; pointer-events: none; }
 .dag-node.active polygon,
 .dag-node.active ellipse,
-.dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }  # noqa: E501
+.dag-node.active rect { stroke: #ff6600 !important; stroke-width: 3 !important; }
 .dag-node.active text { font-weight: bold !important; }
-.dag-cluster.active-cluster > polygon { stroke: #ff6600 !important; stroke-width: 2 !important; }  # noqa: E501
+.dag-cluster.active-cluster > polygon { stroke: #ff6600 !important; stroke-width: 2 !important; }
 
 /* Section boxing in full-path view */
 .dag-cluster.section-box > polygon,
@@ -1797,8 +1802,8 @@ a:hover { text-decoration: underline; }
 }
 
 /* BDD narrative */
-.bdd { background: var(--bg-card); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }  # noqa: E501
-.bdd dt { font-weight: 700; color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem; }  # noqa: E501
+.bdd { background: var(--bg-card); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+.bdd dt { font-weight: 700; color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem; }
 .bdd dd { margin-left: 1rem; font-size: 0.9rem; }
 
 /* Acceptance criteria */
@@ -1835,11 +1840,11 @@ a:hover { text-decoration: underline; }
   border-color: #ff6600; background: rgba(255, 102, 0, 0.15);
   font-weight: 600;
 }
-.dag-path .path-arrow { color: var(--text-muted); font-size: 0.7rem; align-self: center; flex-shrink: 0; }  # noqa: E501
+.dag-path .path-arrow { color: var(--text-muted); font-size: 0.7rem; align-self: center; flex-shrink: 0; }
 .dag-path > .path-node { flex-shrink: 0; }
 
 /* Tree chip groups */
-.path-node-group { display: inline-flex; flex-direction: column; flex-shrink: 0; }  # noqa: E501
+.path-node-group { display: inline-flex; flex-direction: column; flex-shrink: 0; }
 .path-children {
   display: none; flex-direction: column; gap: 0.15rem;
   margin-top: 0.2rem; padding-left: 0.5rem;
@@ -1892,8 +1897,8 @@ a:hover { text-decoration: underline; }
   transform-origin: 0 0; transition: transform 0.15s ease-out;
   width: 100%; height: auto;
 }
-.dag-explorer .dag-node.dimmed { opacity: __EXPLORER_NODE_OP__; transition: opacity 0.3s; }  # noqa: E501
-.dag-explorer .dag-edge.dimmed { opacity: __EXPLORER_EDGE_OP__; transition: opacity 0.3s; }  # noqa: E501
+.dag-explorer .dag-node.dimmed { opacity: __EXPLORER_NODE_OP__; transition: opacity 0.3s; }
+.dag-explorer .dag-edge.dimmed { opacity: __EXPLORER_EDGE_OP__; transition: opacity 0.3s; }
 .dag-explorer .dag-node.story-hl polygon,
 .dag-explorer .dag-node.story-hl ellipse,
 .dag-explorer .dag-node.story-hl rect {
@@ -2011,8 +2016,8 @@ def generate_js() -> str:
       try { localStorage.setItem('dag-view-mode', mode); } catch(e) {}
     };
 
-    btnSegment.addEventListener('click', function() { window._dagSetView('segment'); });  # noqa: E501
-    btnFull.addEventListener('click', function() { window._dagSetView('full'); });  # noqa: E501
+    btnSegment.addEventListener('click', function() { window._dagSetView('segment'); });
+    btnFull.addEventListener('click', function() { window._dagSetView('full'); });
 
     // Restore saved preference
     try {
@@ -2025,9 +2030,9 @@ def generate_js() -> str:
   var video = document.getElementById('demo-video');
   if (!video || !svgContainer || typeof TIMESTAMPS === 'undefined') return;
 
-  // Build ordered list of parent-node timestamp keys (exclude sub-component keys)  # noqa: E501
+  // Build ordered list of parent-node timestamp keys (exclude sub-component keys)
   var tsKeys = Object.keys(TIMESTAMPS)
-    .filter(function(k) { return TIMESTAMPS[k] !== null && k.indexOf('__') === -1; })  # noqa: E501
+    .filter(function(k) { return TIMESTAMPS[k] !== null && k.indexOf('__') === -1; })
     .sort(function(a, b) { return TIMESTAMPS[a] - TIMESTAMPS[b]; });
   if (tsKeys.length === 0) return;
 
@@ -2054,14 +2059,14 @@ def generate_js() -> str:
   Object.keys(TIMESTAMPS).forEach(function(k) {
     var parts = k.split('__');
     if (parts.length === 2 && TIMESTAMPS[k] !== null) {
-      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k], parent: parts[0] };  # noqa: E501
+      fieldTimestamps[k] = { field: parts[1], time: TIMESTAMPS[k], parent: parts[0] };
       if (!fieldsByParent[parts[0]]) fieldsByParent[parts[0]] = [];
       fieldsByParent[parts[0]].push(k);
     }
   });
   // Sort each parent's field keys by time
   Object.keys(fieldsByParent).forEach(function(p) {
-    fieldsByParent[p].sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });  # noqa: E501
+    fieldsByParent[p].sort(function(a, b) { return fieldTimestamps[a].time - fieldTimestamps[b].time; });
   });
 
   // Debug overlay (toggle with 'd' key)
@@ -2070,14 +2075,14 @@ def generate_js() -> str:
   function ensureDebugEl() {
     if (!debugEl) {
       debugEl = document.createElement('div');
-      debugEl.style.cssText = 'position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;padding:8px 12px;border-radius:4px;z-index:9999;pointer-events:none;max-width:340px;white-space:pre';  # noqa: E501
+      debugEl.style.cssText = 'position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;padding:8px 12px;border-radius:4px;z-index:9999;pointer-events:none;max-width:340px;white-space:pre';
       document.body.appendChild(debugEl);
     }
   }
   function updateDebug(videoTime, nodeId, activeField) {
     if (!debugVisible) return;
     ensureDebugEl();
-    var lines = ['t=' + (videoTime !== undefined ? videoTime.toFixed(2) : '?') + 's'];  # noqa: E501
+    var lines = ['t=' + (videoTime !== undefined ? videoTime.toFixed(2) : '?') + 's'];
     lines.push('node=' + nodeId);
     lines.push('field=' + (activeField || '(none)'));
     // Show field timestamp ranges for the active TUI node
@@ -2087,8 +2092,8 @@ def generate_js() -> str:
       for (var i = 0; i < parentKeys.length; i++) {
         var e = fieldTimestamps[parentKeys[i]];
         var marker = (e.field === activeField) ? '>' : ' ';
-        var nextTime = (i + 1 < parentKeys.length) ? fieldTimestamps[parentKeys[i + 1]].time : null;  # noqa: E501
-        var range = e.time.toFixed(2) + (nextTime ? '-' + nextTime.toFixed(2) : '+');  # noqa: E501
+        var nextTime = (i + 1 < parentKeys.length) ? fieldTimestamps[parentKeys[i + 1]].time : null;
+        var range = e.time.toFixed(2) + (nextTime ? '-' + nextTime.toFixed(2) : '+');
         lines.push(marker + ' ' + e.field + ' ' + range);
       }
     }
@@ -2128,7 +2133,7 @@ def generate_js() -> str:
         }
       }
       overlayRects.forEach(function(r) {
-        r.classList.toggle('active', !!activeFields[r.getAttribute('data-field')]);  # noqa: E501
+        r.classList.toggle('active', !!activeFields[r.getAttribute('data-field')]);
       });
     }
     updateDebug(videoTime, nodeId, Object.keys(activeFields).join(','));
@@ -2248,7 +2253,7 @@ def generate_explorer_js() -> str:
     """Generate the DAG explorer JavaScript for the index page.
 
     Expects globals: STORIES (array of {id, title, colour, paths, url}).
-    The SVG must already have data-node attributes from add_data_attributes_to_svg.  # noqa: E501
+    The SVG must already have data-node attributes from add_data_attributes_to_svg.
     """
     return r"""
 (function() {
@@ -2275,11 +2280,11 @@ def generate_explorer_js() -> str:
   var MAX_ZOOM = 5;
 
   // Pan state for mouse drag
-  var dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;  # noqa: E501
+  var dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
 
   // --- Helpers ---
   function applyTransform() {
-    svg.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';  # noqa: E501
+    svg.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
   }
 
   function contentBBox() {
@@ -2366,7 +2371,7 @@ def generate_explorer_js() -> str:
     clearHighlights();
     if (idx < 0 || idx >= STORIES.length) {
       statusEl.style.display = 'none';
-      document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {  # noqa: E501
+      document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
         a.classList.remove('explorer-active');
       });
       return;
@@ -2386,14 +2391,14 @@ def generate_explorer_js() -> str:
         n.classList.add('dimmed');
       }
     });
-    // Match edges by stroke colour — each story has a unique colour on its edges  # noqa: E501
+    // Match edges by stroke colour — each story has a unique colour on its edges
     var storyColour = story.colour.toLowerCase();
     allEdges.forEach(function(e) {
       var path = e.querySelector('path');
       var poly = e.querySelector('polygon');
       var edgeColour = '';
       if (path) edgeColour = (path.getAttribute('stroke') || '').toLowerCase();
-      if (!edgeColour && poly) edgeColour = (poly.getAttribute('stroke') || '').toLowerCase();  # noqa: E501
+      if (!edgeColour && poly) edgeColour = (poly.getAttribute('stroke') || '').toLowerCase();
       if (edgeColour === storyColour) {
         // This edge belongs to the current story — keep visible
       } else {
@@ -2414,10 +2419,10 @@ def generate_explorer_js() -> str:
       var dashMap = {dashed: '5,3', dotted: '2,3', bold: '', solid: ''};
       var da = dashMap[story.pattern] || '';
       swLine.setAttribute('stroke-dasharray', da);
-      swLine.setAttribute('stroke-width', story.pattern === 'bold' ? '4' : '2.5');  # noqa: E501
+      swLine.setAttribute('stroke-width', story.pattern === 'bold' ? '4' : '2.5');
     }
 
-    document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {  # noqa: E501
+    document.querySelectorAll('.sidebar li a.explorer-active').forEach(function(a) {
       a.classList.remove('explorer-active');
     });
     var sidebar = document.querySelector('.sidebar');
@@ -2758,8 +2763,8 @@ def generate_zoom_js() -> str:
     var vp = grid && grid.querySelector('.video-section.zoom-pane');
     var dp = grid && grid.querySelector('.dag-section.zoom-pane');
 
-    if (vp) { clearTransforms(vp); scaleMap[vp.getAttribute('data-zoom-id')] = 1; }  # noqa: E501
-    if (dp) { clearTransforms(dp); scaleMap[dp.getAttribute('data-zoom-id')] = 1; }  # noqa: E501
+    if (vp) { clearTransforms(vp); scaleMap[vp.getAttribute('data-zoom-id')] = 1; }
+    if (dp) { clearTransforms(dp); scaleMap[dp.getAttribute('data-zoom-id')] = 1; }
 
     var vInd = vp && getIndicator(vp);
     var dInd = dp && getIndicator(dp);
@@ -2900,7 +2905,7 @@ def _line_swatch_svg(*, colour: str, pattern: str) -> str:
     da_attr = f' stroke-dasharray="{da}"' if da else ""
     return (
         '<svg class="sidebar-swatch" viewBox="0 0 22 10"'
-        ' style="width:22px;height:10px;vertical-align:middle;margin-right:4px;flex-shrink:0"><line'  # noqa: E501
+        ' style="width:22px;height:10px;vertical-align:middle;margin-right:4px;flex-shrink:0"><line'
         f' x1="1" y1="5" x2="21" y2="5" stroke="{colour}"'
         f' stroke-width="{sw}"{da_attr}/></svg>'
     )
@@ -2915,7 +2920,9 @@ def _sidebar_html(
     html = '<nav class="sidebar zoom-pane" data-zoom-id="sidebar">\n'
     html += '<div class="zoom-pane-inner">\n'
     html += '<h1><a href="{INDEX_PATH}">hledger-preprocessor</a></h1>\n'
-    html += '<p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">'  # noqa: E501
+    html += (
+        '<p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">'
+    )
     html += "User Story DAG Explorer</p>\n"
     swv = stories_with_video or set()
     for section, stories in sections.items():
@@ -3090,7 +3097,7 @@ def generate_matching_flow_svg(
     lines.append(
         '<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {svg_w} {svg_h}" '
-        'style="max-width:100%;height:auto;font-family:system-ui,sans-serif;font-size:11px">'  # noqa: E501
+        'style="max-width:100%;height:auto;font-family:system-ui,sans-serif;font-size:11px">'
     )
     lines.append("<defs>")
     lines.append(
@@ -3629,17 +3636,22 @@ def generate_story_html(
     main += '<div class="dag-section zoom-pane" data-zoom-id="dag">\n'
     main += '<div class="zoom-pane-inner">\n'
     has_both_views = bool(svg_content and full_svg_content)
+    # Default to full-path view when the GIF demonstrates the full path
+    gif_video = story.get("gif_video", "")
+    default_full = "full_path" in gif_video if gif_video else False
     if has_both_views:
+        seg_active = "" if default_full else " active"
+        full_active = " active" if default_full else ""
         main += '<div class="dag-header">\n'
         main += "<h2>DAG Diagram</h2>\n"
         main += '<div class="dag-view-toggle">\n'
         main += (
-            '<button id="btn-segment-view" class="toggle-btn active"'
+            f'<button id="btn-segment-view" class="toggle-btn{seg_active}"'
             ' title="Show only this story\'s segment">'
             "Segment</button>\n"
         )
         main += (
-            '<button id="btn-full-view" class="toggle-btn"'
+            f'<button id="btn-full-view" class="toggle-btn{full_active}"'
             ' title="Show full end-to-end path">'
             "Full path</button>\n"
         )
@@ -3648,12 +3660,16 @@ def generate_story_html(
     else:
         main += "<h2>DAG Diagram</h2>\n"
 
+    seg_display = ' style="display:none"' if default_full else ""
+    full_display = "" if default_full else ' style="display:none"'
     if svg_content:
-        main += f'<div id="dag-segment-view">\n{svg_content}\n</div>\n'
+        main += (
+            f'<div id="dag-segment-view"{seg_display}>\n{svg_content}\n</div>\n'
+        )
     elif has_png_fallback:
         safe = story_id_to_safe(story_id=sid)
         main += (
-            '<div id="dag-segment-view">\n'
+            f'<div id="dag-segment-view"{seg_display}>\n'
             '<img class="dag-fallback-img" '
             f'src="../assets/images/isolated/{safe}.png" '
             f'alt="DAG for {_esc(sid)}">\n'
@@ -3661,7 +3677,7 @@ def generate_story_html(
         )
     if full_svg_content:
         main += (
-            '<div id="dag-full-view" style="display:none">\n'
+            f'<div id="dag-full-view"{full_display}>\n'
             f"{full_svg_content}\n</div>\n"
         )
     main += "</div>\n"  # close zoom-pane-inner
@@ -3718,6 +3734,25 @@ def generate_story_html(
         f"<script>\nconst TIMESTAMPS = {ts_json};\n</script>\n"
         f'<script src="../assets/js/dag-sync.js"></script>\n'
         f'<script src="../assets/js/zoom-pane.js"></script>\n'
+        "<script>\n"
+        "(function() {\n"
+        "  function matchLeftCol() {\n"
+        "    var grid = document.querySelector('.video-dag-row');\n"
+        "    if (!grid) return;\n"
+        "    var vid = grid.querySelector('.video-section');\n"
+        "    var below = grid.querySelector('.below-row');\n"
+        "    if (!vid) return;\n"
+        "    var h = vid.offsetHeight + (below ? below.offsetHeight : 0);\n"
+        "    if (h > 0) grid.style.setProperty('--left-col-height', h +"
+        " 'px');\n"
+        "  }\n"
+        "  matchLeftCol();\n"
+        "  window.addEventListener('load', matchLeftCol);\n"
+        "  window.addEventListener('resize', matchLeftCol);\n"
+        "  var vid = document.getElementById('demo-video');\n"
+        "  if (vid) vid.addEventListener('loadedmetadata', matchLeftCol);\n"
+        "})();\n"
+        "</script>\n"
     )
 
     return head + sidebar + main + js_block + "</body>\n</html>\n"

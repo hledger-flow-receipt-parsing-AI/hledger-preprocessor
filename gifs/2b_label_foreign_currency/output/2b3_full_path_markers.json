@@ -13,28 +13,19 @@
     "dirp_default": 70.88,
     "fnames_default": 88.24,
     "img_atm_gbp": 139.8,
-    "jrnl_triodos_debit_gbp": 233.38,
-    "jrnl_wallet_gbp": 224.26,
-    "lbl_atm_100gbp": 193.3,
+    "jrnl_triodos_debit_gbp": 233.48,
+    "jrnl_wallet_gbp": 224.36,
+    "lbl_atm_100gbp": 190.19,
     "malgo_default": 106.4,
     "nolbl_atm_100gbp": 141.95,
-    "out_currency_convert": 205.43,
+    "out_currency_convert": 205.53,
     "start_2024_1000eur": 118.52,
-    "tui_atm_100gbp": 150.74,
-    "tui_atm_100gbp__amount": 162.8,
-    "tui_atm_100gbp__bank_account": 160.66,
-    "tui_atm_100gbp__category": 155.11,
-    "tui_atm_100gbp__change": 164.24,
-    "tui_atm_100gbp__currency": 161.71,
-    "tui_atm_100gbp__date": 151.28,
-    "tui_atm_100gbp__shop_city": 181.69,
-    "tui_atm_100gbp__shop_country": 184.07,
-    "tui_atm_100gbp__shop_house_nr": 178.04,
-    "tui_atm_100gbp__shop_name": 170.33,
-    "tui_atm_100gbp__shop_street": 174.07,
-    "tui_atm_100gbp__shop_zipcode": 179.18,
-    "tui_atm_100gbp__tax": 188.38,
-    "tui_atm_100gbp__time": 151.28
+    "tui_atm_100gbp": 150.85,
+    "tui_atm_100gbp__bank_account": 176.23,
+    "tui_atm_100gbp__category": 156.72,
+    "tui_atm_100gbp__currency": 188.07,
+    "tui_atm_100gbp__date": 151.39,
+    "tui_atm_100gbp__time": 151.39
   },
   "segments": [
     {
@@ -54,7 +45,7 @@
       "file": "bank_csv_atm_gbp.mp4"
     },
     {
-      "duration": 58.5,
+      "duration": 58.6,
       "file": "2b_label_foreign_currency.mp4"
     },
     {
@@ -66,5 +57,5 @@
       "file": "journal_output_atm_gbp.mp4"
     }
   ],
-  "total_duration": 236.98
+  "total_duration": 237.08
 }

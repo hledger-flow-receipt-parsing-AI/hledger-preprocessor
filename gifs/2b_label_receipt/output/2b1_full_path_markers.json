@@ -9,26 +9,26 @@
     "dirp_default": 32.72,
     "fnames_default": 49.96,
     "img_ekoplaza_card": 99.48,
-    "jrnl_groceries_ekoplaza": 157.7,
-    "lbl_ekoplaza_card_eur": 152.74,
+    "jrnl_groceries_ekoplaza": 155.28,
+    "lbl_ekoplaza_card_eur": 147.12,
     "malgo_default": 68.12,
     "nolbl_ekoplaza_card_eur": 101.64,
     "start_2024_1000eur": 80.24,
-    "tui_ekoplaza_card_eur": 110.92,
-    "tui_ekoplaza_card_eur__amount": 122.64,
-    "tui_ekoplaza_card_eur__bank_account": 120.63,
-    "tui_ekoplaza_card_eur__category": 115.3,
-    "tui_ekoplaza_card_eur__change": 124.37,
-    "tui_ekoplaza_card_eur__currency": 121.69,
-    "tui_ekoplaza_card_eur__date": 111.46,
-    "tui_ekoplaza_card_eur__shop_city": 140.94,
-    "tui_ekoplaza_card_eur__shop_country": 144.23,
-    "tui_ekoplaza_card_eur__shop_house_nr": 137.29,
-    "tui_ekoplaza_card_eur__shop_name": 130.47,
-    "tui_ekoplaza_card_eur__shop_street": 133.31,
-    "tui_ekoplaza_card_eur__shop_zipcode": 138.55,
-    "tui_ekoplaza_card_eur__tax": 146.73,
-    "tui_ekoplaza_card_eur__time": 111.46
+    "tui_ekoplaza_card_eur": 110.6,
+    "tui_ekoplaza_card_eur__amount": 123.77,
+    "tui_ekoplaza_card_eur__bank_account": 121.87,
+    "tui_ekoplaza_card_eur__category": 117.73,
+    "tui_ekoplaza_card_eur__change": 125.5,
+    "tui_ekoplaza_card_eur__currency": 122.82,
+    "tui_ekoplaza_card_eur__date": 111.13,
+    "tui_ekoplaza_card_eur__shop_city": 138.94,
+    "tui_ekoplaza_card_eur__shop_country": 141.15,
+    "tui_ekoplaza_card_eur__shop_house_nr": 135.94,
+    "tui_ekoplaza_card_eur__shop_name": 131.38,
+    "tui_ekoplaza_card_eur__shop_street": 133.36,
+    "tui_ekoplaza_card_eur__shop_zipcode": 137.2,
+    "tui_ekoplaza_card_eur__tax": 142.89,
+    "tui_ekoplaza_card_eur__time": 111.13
   },
   "segments": [
     {
@@ -48,7 +48,7 @@
       "file": "bank_csv.mp4"
     },
     {
-      "duration": 58.22,
+      "duration": 55.8,
       "file": "2b_label_receipt.mp4"
     },
     {
@@ -56,5 +56,5 @@
       "file": "journal_output.mp4"
     }
   ],
-  "total_duration": 169.3
+  "total_duration": 166.88
 }
