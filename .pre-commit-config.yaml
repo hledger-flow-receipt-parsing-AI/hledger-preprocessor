@@ -30,6 +30,7 @@ repos:
     - id: flake8-conda
       args:
         - --max-line-length=80
+        - "--per-file-ignores=user_stories/dag/generate_site.py:E501 user_stories/dag/generate_userstory_artifacts.py:E501"
 
 # Test if the import statements are sorted correctly.
  - repo: https://github.com/PyCQA/isort

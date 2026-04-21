@@ -8,26 +8,26 @@
     "dirp_default": 32.72,
     "fnames_default": 49.96,
     "img_coffee_cash": 90.16,
-    "jrnl_groceries_ekoplaza": 148.56,
-    "lbl_coffee_cash": 142.37,
+    "jrnl_groceries_ekoplaza": 145.36,
+    "lbl_coffee_cash": 138.73,
     "malgo_default": 68.12,
-    "nolbl_coffee_cash": 93.23,
+    "nolbl_coffee_cash": 93.16,
     "start_2024_1000eur": 80.24,
-    "tui_coffee_cash": 101.79,
-    "tui_coffee_cash__amount": 108.54,
-    "tui_coffee_cash__bank_account": 107.21,
-    "tui_coffee_cash__category": 104.71,
-    "tui_coffee_cash__change": 109.42,
-    "tui_coffee_cash__currency": 107.91,
-    "tui_coffee_cash__date": 102.15,
-    "tui_coffee_cash__shop_city": 124.09,
-    "tui_coffee_cash__shop_country": 125.84,
-    "tui_coffee_cash__shop_house_nr": 121.66,
-    "tui_coffee_cash__shop_name": 116.96,
-    "tui_coffee_cash__shop_street": 119.46,
-    "tui_coffee_cash__shop_zipcode": 122.5,
-    "tui_coffee_cash__tax": 128.26,
-    "tui_coffee_cash__time": 102.15
+    "tui_coffee_cash": 101.73,
+    "tui_coffee_cash__amount": 118.4,
+    "tui_coffee_cash__bank_account": 117.04,
+    "tui_coffee_cash__category": 114.68,
+    "tui_coffee_cash__change": 119.33,
+    "tui_coffee_cash__currency": 117.72,
+    "tui_coffee_cash__date": 102.12,
+    "tui_coffee_cash__shop_city": 132.73,
+    "tui_coffee_cash__shop_country": 134.06,
+    "tui_coffee_cash__shop_house_nr": 130.59,
+    "tui_coffee_cash__shop_name": 127.17,
+    "tui_coffee_cash__shop_street": 129.0,
+    "tui_coffee_cash__shop_zipcode": 131.49,
+    "tui_coffee_cash__tax": 135.72,
+    "tui_coffee_cash__time": 102.12
   },
   "segments": [
     {
@@ -43,7 +43,7 @@
       "file": "starting_journal.mp4"
     },
     {
-      "duration": 58.4,
+      "duration": 55.2,
       "file": "2b_label_cash_receipt.mp4"
     },
     {
@@ -51,5 +51,5 @@
       "file": "journal_output.mp4"
     }
   ],
-  "total_duration": 160.16
+  "total_duration": 156.96
 }
