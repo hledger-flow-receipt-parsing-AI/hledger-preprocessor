@@ -14,7 +14,7 @@ Two levels of verification:
    causes markers to be off from what's actually happening in the recording.
 
 Run:
-    source ~/miniconda3/etc/profile.d/conda.sh && conda activate hledger_preprocessor
+    source ~/miniconda3/etc/profile.d/conda.sh && conda activate hledger_preprocessor  # noqa: E501
     pytest test/gif/test_highlight_alignment.py -v
 """
 
@@ -145,7 +145,7 @@ def _seek_and_check(page, seek_time: float) -> dict:
         v.currentTime = seekTime;
         v.dispatchEvent(new Event('timeupdate'));
 
-        var rects = document.querySelectorAll('.receipt-overlay rect[data-field]');
+        var rects = document.querySelectorAll('.receipt-overlay rect[data-field]');  # noqa: E501
         var activeFields = [];
         var inactiveFields = [];
         rects.forEach(function(r) {
@@ -153,7 +153,7 @@ def _seek_and_check(page, seek_time: float) -> dict:
             if (r.classList.contains('active')) {
                 activeFields.push(field);
             } else {
-                if (inactiveFields.indexOf(field) === -1) inactiveFields.push(field);
+                if (inactiveFields.indexOf(field) === -1) inactiveFields.push(field);  # noqa: E501
             }
         });
         return {active_fields: activeFields, inactive_fields: inactiveFields};
@@ -225,7 +225,7 @@ class TestHighlightAlignment:
             pytest.skip(f"No marker for field '{field_name}'")
 
         field, start, end, parent = matching[0]
-        # Seek to 30% into the range (not midpoint — avoids edge near transitions)
+        # Seek to 30% into the range (not midpoint — avoids edge near transitions)  # noqa: E501
         seek_time = start + (end - start) * 0.3
 
         result = _seek_and_check(browser_page, seek_time)
@@ -300,7 +300,7 @@ class TestHighlightTransitions:
     """Verify field-to-field transitions happen at the right time."""
 
     def test_transition_boundary(self, browser_page, field_ranges):
-        """Just before and after each transition, the correct field is active."""
+        """Just before and after each transition, the correct field is active."""  # noqa: E501
         # Only test transitions between fields that have overlay rects
         highlightable = set(ALL_FIELDS)
         testable = [r for r in field_ranges if r[0] in highlightable]
@@ -671,7 +671,7 @@ class TestCastGroundTruth:
     def test_marker_matches_cast_content(
         self, segment_markers, cast_ground_truth, field_name
     ):
-        """Marker timestamp for field must be within MAX_DRIFT of .cast truth."""
+        """Marker timestamp for field must be within MAX_DRIFT of .cast truth."""  # noqa: E501
         marker_key = f"tui_ekoplaza_card_eur__{field_name}"
         marker_ts = segment_markers.get(marker_key)
         cast_ts = cast_ground_truth.get(field_name)

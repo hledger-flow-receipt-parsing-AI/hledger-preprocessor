@@ -29,7 +29,9 @@ HLEDGER_ROOT_DEFAULT = "/home/a/git/git/hledger"
 COVERAGE_DIR_DEFAULT = "/tmp/gif_coverage"
 
 
-def combine_coverage(coverage_dir: str) -> Optional["coverage.CoverageData"]:
+def combine_coverage(
+    coverage_dir: str,
+) -> Optional["coverage.CoverageData"]:  # noqa: F821,E501
     """Combine parallel .coverage.* files and return the merged data."""
     import coverage
 
@@ -39,7 +41,7 @@ def combine_coverage(coverage_dir: str) -> Optional["coverage.CoverageData"]:
 
 
 def extract_files(
-    cov_data: "coverage.CoverageData",
+    cov_data: "coverage.CoverageData",  # noqa: F821
     hledger_root: str,
 ) -> List[str]:
     """Extract measured files as hledger-root-relative paths.

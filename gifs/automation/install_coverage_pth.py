@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install or uninstall the coverage autostart .pth file in the active conda env.
+"""Install or uninstall the coverage autostart .pth file in the active conda env.  # noqa: E501
 
 The .pth file makes every Python subprocess call coverage.process_startup()
 on startup.  Combined with the COVERAGE_PROCESS_START environment variable

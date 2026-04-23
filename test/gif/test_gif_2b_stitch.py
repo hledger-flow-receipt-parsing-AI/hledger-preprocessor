@@ -49,7 +49,7 @@ PREREQUISITE_SEGMENTS = [
 
 
 def test_stitch_2b1_full_path(temp_finance_root, monkeypatch):
-    """Test stitching all segments into 2b1_full_path.mp4 with merged markers."""
+    """Test stitching all segments into 2b1_full_path.mp4 with merged markers."""  # noqa: E501
     project_root = get_project_root()
     monkeypatch.chdir(project_root)
 
@@ -82,7 +82,7 @@ def test_stitch_2b1_full_path(temp_finance_root, monkeypatch):
         timeout=180,
     )
 
-    # If the full generate.sh failed (e.g. TUI recording issue), run stitch directly
+    # If the full generate.sh failed (e.g. TUI recording issue), run stitch directly  # noqa: E501
     if stitch_result.returncode != 0:
         import subprocess
         import sys

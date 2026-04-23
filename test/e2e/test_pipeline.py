@@ -150,7 +150,7 @@ class TestPreprocessAssetsPhase:
         temp_finance_root: Dict[str, Any],
         monkeypatch,
     ):
-        """Test that --preprocess-assets creates the expected directory structure.
+        """Test that --preprocess-assets creates the expected directory structure.  # noqa: E501
 
         This tests scenario 2.2 from TEST_SCENARIOS.md:
         - Asset CSVs contain correct transaction format
@@ -230,7 +230,7 @@ class TestPreprocessAssetsPhase:
 
 @_skip_no_hledger_plot
 class TestDashAppLaunch:
-    """Test the Dash app launch and functionality (Issue #142, scenarios 1.5-1.6).
+    """Test the Dash app launch and functionality (Issue #142, scenarios 1.5-1.6).  # noqa: E501
 
     These tests verify that the hledger_plot Dash dashboard:
     1. Starts successfully on localhost:8050
@@ -307,7 +307,7 @@ class TestDashAppLaunch:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=env,
-            preexec_fn=os.setsid,  # Create new process group for clean termination
+            preexec_fn=os.setsid,  # Create new process group for clean termination  # noqa: E501
         )
 
         try:
@@ -833,7 +833,7 @@ description %description
         hledger_flow_structure: Dict[str, Any],
         monkeypatch,
     ):
-        """Test that hledger-flow import creates the correct directory structure.
+        """Test that hledger-flow import creates the correct directory structure.  # noqa: E501
 
         This tests scenario 3.2 from TEST_SCENARIOS.md.
         """

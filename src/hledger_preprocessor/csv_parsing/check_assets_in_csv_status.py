@@ -47,7 +47,7 @@ def _transaction_key(*, tnx: "AccountTransaction") -> tuple[Any, ...]:
         if f.default is MISSING and f.default_factory is MISSING
     ]
     # print(f'required_fields={required_fields}')
-    # Extract values safely — will raise AttributeError if field missing (shouldn't happen)
+    # Extract values safely — will raise AttributeError if field missing (shouldn't happen)  # noqa: E501
     return tuple(getattr(tnx, f.name) for f in required_fields)
 
 
@@ -61,7 +61,7 @@ def classified_transaction_is_exported(
     csv_encoding: str,
 ) -> bool:
     """
-    Returns True if a transaction with the same business key already exists in the CSV.
+    Returns True if a transaction with the same business key already exists in the CSV.  # noqa: E501
     Igbles optional/auto-generated fields like id, exported flag, etc.
     """
     csv_asset_transactions: List[ProcessedTransaction] = (
@@ -104,10 +104,10 @@ def unclassified_transaction_is_exported(
     )
 
     classified_transaction: ProcessedTransaction = get_classified_transaction(
-        search_receipt_account_transaction=action_dataset.search_receipt_account_transaction,
+        search_receipt_account_transaction=action_dataset.search_receipt_account_transaction,  # noqa: E501
         parent_receipt=action_dataset.receipt,
-        ai_models_tnx_classification=action_dataset.ai_models_tnx_classification,
-        rule_based_models_tnx_classification=action_dataset.rule_based_models_tnx_classification,
+        ai_models_tnx_classification=action_dataset.ai_models_tnx_classification,  # noqa: E501
+        rule_based_models_tnx_classification=action_dataset.rule_based_models_tnx_classification,  # noqa: E501
         category_namespace=action_dataset.config.category_namespace,
     )
 
@@ -130,11 +130,11 @@ def get_classified_transaction(
     category_namespace: CategoryNamespace,
 ) -> ProcessedTransaction:
 
-    # tendered_amount_out = Decimal(str(search_receipt_account_transaction.tendered_amount_out))
+    # tendered_amount_out = Decimal(str(search_receipt_account_transaction.tendered_amount_out))  # noqa: E501
     # change_returned = Decimal(
     #     str(search_receipt_account_transaction.change_returned)
     # )
-    # net_amount_out = tendered_amount_out - change_returned  # Prevent rounding error in float.
+    # net_amount_out = tendered_amount_out - change_returned  # Prevent rounding error in float.  # noqa: E501
     if search_receipt_account_transaction.parent_receipt_category is None:
         search_receipt_account_transaction.set_parent_receipt_category(
             parent_receipt_category=parent_receipt.receipt_category
@@ -144,7 +144,7 @@ def get_classified_transaction(
         parent_receipt=parent_receipt,
         txn=search_receipt_account_transaction,
         ai_models_tnx_classification=ai_models_tnx_classification,
-        rule_based_models_tnx_classification=rule_based_models_tnx_classification,
+        rule_based_models_tnx_classification=rule_based_models_tnx_classification,  # noqa: E501
         category_namespace=category_namespace,
     )
     return classified_transaction

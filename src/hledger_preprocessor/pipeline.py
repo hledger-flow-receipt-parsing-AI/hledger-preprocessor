@@ -136,8 +136,8 @@ def run_pipeline(
                 config=config,
                 labelled_receipts=labelled_receipts,
             )
-    except Exception as e:
-        print(f"Warning: transaction matching encountered errors (non-fatal).")
+    except Exception:
+        print("Warning: transaction matching encountered errors (non-fatal).")
     print("")
 
     # --- 6. Preprocess assets ---
@@ -207,7 +207,7 @@ def run_pipeline(
 
     # --- 9. Generate balance report / plots ---
     if randomize:
-        result = subprocess.run(
+        result = subprocess.run(  # type: ignore[assignment]
             [
                 "hledger_plot",
                 "--config",
@@ -225,7 +225,7 @@ def run_pipeline(
             sys.exit(1)
     else:
         # Generate balance report
-        result = subprocess.run(
+        result = subprocess.run(  # type: ignore[assignment]
             [
                 "hledger",
                 "bal",
@@ -239,7 +239,7 @@ def run_pipeline(
             print("Error: hledger balance report failed.")
             sys.exit(1)
 
-        result = subprocess.run(
+        result = subprocess.run(  # type: ignore[assignment]
             [
                 "hledger_plot",
                 "--config",

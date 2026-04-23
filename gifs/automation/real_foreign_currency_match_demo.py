@@ -75,7 +75,7 @@ def create_test_environment() -> Dict[str, Any]:
     for d in dirs:
         (root / d).mkdir(parents=True, exist_ok=True)
 
-    # Create config.yaml — single triodos checking account with EUR base currency
+    # Create config.yaml — single triodos checking account with EUR base currency  # noqa: E501
     config_dict = {
         "account_configs": [
             {

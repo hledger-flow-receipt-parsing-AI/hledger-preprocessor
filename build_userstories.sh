@@ -269,6 +269,7 @@ STANDALONE_GIFS=(
     1a_setup_config
     1b_add_category
     2a_crop_receipt
+    2b_label_receipt_mismatch
     3_match_receipt_to_csv
     3b_foreign_currency_match
     3c_widen_date_match

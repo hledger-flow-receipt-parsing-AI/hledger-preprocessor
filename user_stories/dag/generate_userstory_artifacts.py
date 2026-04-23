@@ -133,18 +133,22 @@ def count_node_usage(stories: List[Dict]) -> Counter:
     """Count how many stories use each node (for thickness)."""
     counter: Counter = Counter()
     for story in stories:
-        nodes = collect_nodes_from_paths(story["paths"])
-        for n in nodes:
-            counter[n] += 1
+        paths = story.get("paths", [])
+        if paths:
+            nodes = collect_nodes_from_paths(paths)
+            for n in nodes:
+                counter[n] += 1
     return counter
 
 
 def count_edge_usage(stories: List[Dict]) -> Counter:
     counter: Counter = Counter()
     for story in stories:
-        edges = collect_edges_from_paths(story["paths"])
-        for e in edges:
-            counter[e] += 1
+        paths = story.get("paths", [])
+        if paths:
+            edges = collect_edges_from_paths(paths)
+            for e in edges:
+                counter[e] += 1
     return counter
 
 
@@ -591,7 +595,7 @@ def generate_cli_view(
             if layer != prev_layer:
                 if prev_layer is not None:
                     lines.append(f"  {bar}")
-                    lines.append(f"  ▼")
+                    lines.append("  \u25bc")
                 lines.append(f"  ┌─ {layer} ──────────────────────────")
                 prev_layer = layer
 
@@ -602,7 +606,7 @@ def generate_cli_view(
             lines.append(f"  {bar}    {label}  {usage_str}")
             lines.append(f"  {bar}    {info['desc']}")
 
-        lines.append(f"  └──────────────────────────────────────")
+        lines.append("  " + "\u2514" + "\u2500" * 38)
         lines.append("")
 
     return "\n".join(lines)

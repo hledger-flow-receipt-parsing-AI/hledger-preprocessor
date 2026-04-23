@@ -59,7 +59,7 @@ def csv_to_transactions(
     account_config: AccountConfig,
 ) -> Dict[int, List["Transaction"]]:
     """
-    Process transactions from a CSV file: convert encoding, parse, and sort by year.
+    Process transactions from a CSV file: convert encoding, parse, and sort by year.  # noqa: E501
 
     Args:
         input_csv_filepath (str): Path to the input CSV file

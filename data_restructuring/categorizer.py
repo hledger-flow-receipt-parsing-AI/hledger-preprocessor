@@ -1,12 +1,11 @@
+from collections import defaultdict
+
 items = [
     "abbonement.monthly.phone",
     "abbonement.monthly.rent",
     "wallet.physical",
     "withdrawl.euro.gbp",
 ]
-
-
-from collections import defaultdict
 
 
 def tree():

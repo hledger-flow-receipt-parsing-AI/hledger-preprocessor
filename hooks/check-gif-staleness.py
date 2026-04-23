@@ -11,7 +11,7 @@ If a _coverage.json is MISSING for a GIF, the hook errors (forces re-record).
 If a _coverage.json has type "standalone", empty files_touched is accepted.
 
 Installation (in each sub-repo's .pre-commit-config.yaml):
-    - repo: https://github.com/hledger-flow-receipt-parsing-AI/gif-staleness-hook
+    - repo: https://github.com/hledger-flow-receipt-parsing-AI/gif-staleness-hook  # noqa: E501
       rev: v0.1.0
       hooks:
         - id: check-gif-staleness
@@ -348,7 +348,7 @@ def print_missing_coverage(missing: List[str], bootstrap: bool) -> None:
     print("These GIFs have no _coverage.json (re-record to generate):\n")
     for name in missing:
         print(f"  - {name}")
-    print(f"\nRe-record from hledger-preprocessor:")
+    print("\nRe-record from hledger-preprocessor:")
     for name in missing:
         print(f"  ./build_userstories.sh --gif {name}")
     print(f"{sep}\n")
@@ -373,7 +373,7 @@ def print_stale_warning(
     for name, desc in stale_gifs:
         print(f"  - {name}: {desc}")
 
-    print(f"\nRe-record from hledger-preprocessor:")
+    print("\nRe-record from hledger-preprocessor:")
     # Deduplicate names (a GIF might appear from both coverage + yaml).
     seen = set()
     for name, _ in stale_gifs:

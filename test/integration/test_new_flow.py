@@ -46,7 +46,7 @@ class Test_script_with_multiline_args(unittest.TestCase):
 
         # Simulate the CLI args.
         cli_args = [
-            "hledger_preprocessor_filler_name_to_skip_script_at_arg[0]",  # Dummy program name
+            "hledger_preprocessor_filler_name_to_skip_script_at_arg[0]",  # Dummy program name  # noqa: E501
             "--new",
             "--start-path",
             f"{self.existent_tmp_dir}",
@@ -61,14 +61,14 @@ class Test_script_with_multiline_args(unittest.TestCase):
         ]
         print(f"self.existent_tmp_dir={self.existent_tmp_dir}")
 
-        # Simulate user input for `export_csv_transactions_per_acount_into_each_year(..)`
+        # Simulate user input for `export_csv_transactions_per_acount_into_each_year(..)`  # noqa: E501
         user_input = StringIO(f"{account_holder}\n{bank_name}\n{account_type}")
 
         with patch("sys.argv", cli_args), patch("sys.stdin", user_input):
             main()
 
-        # For example, if the script is expected to create a file, you could check its existence:
-        expected_filepath = f"{self.existent_tmp_dir}/import/{account_holder}/{bank_name}/{account_type}"
+        # For example, if the script is expected to create a file, you could check its existence:  # noqa: E501
+        expected_filepath = f"{self.existent_tmp_dir}/import/{account_holder}/{bank_name}/{account_type}"  # noqa: E501
         print(f"expected_filepath={expected_filepath}")
         self.assertTrue(os.path.exists(expected_filepath))
 
@@ -78,7 +78,7 @@ class Test_script_with_multiline_args(unittest.TestCase):
             f"{self.existent_tmp_dir}/import",
             f"{self.existent_tmp_dir}/import/{account_holder}",
             f"{self.existent_tmp_dir}/import/{account_holder}/{bank_name}",
-            f"{self.existent_tmp_dir}/import/{account_holder}/{bank_name}/{account_type}",
+            f"{self.existent_tmp_dir}/import/{account_holder}/{bank_name}/{account_type}",  # noqa: E501
         ]
 
         # Verify all directories exist

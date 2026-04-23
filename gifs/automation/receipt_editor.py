@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Receipt labelling demo automation - labels a receipt and shows before/after diff."""
+"""Receipt labelling demo automation - labels a receipt and shows before/after diff."""  # noqa: E501
 
 import glob
 import json
@@ -42,49 +42,73 @@ class ReceiptDemoValues:
 
     TUI field sequence (in order):
       1. date_digits       – Overwrite the datetime field digit-by-digit
-      2. category          – Bookkeeping expense category (text)
-      3. account_index     – "Belongs to bank/accounts_without_csv" (0-based)
-      4. currency_index    – Currency selection (0-based, see Currency enum)
-      5. amount            – Amount paid from account (float as string)
-      6. change            – Change returned to account (float as string)
-      7. add_another_acct  – "y" or "n" (horizontal choice, "y"=index 0, "n"=index 1)
-      8. shop_index        – Select Shop Address (0-based, 0 = "manual address")
-      9. shop_name         – Only if shop_index selects "manual address"
-     10. shop_street       – Only if manual address
-     11. shop_house_nr     – Only if manual address
-     12. shop_zipcode      – Only if manual address
-     13. shop_city         – Only if manual address
-     14. shop_country      – Only if manual address
-     15. subtotal          – Optional float (empty string to skip)
-     16. total_tax         – Optional float (empty string to skip)
+      2. is_withdrawal     – "y" or "n" horizontal choice
+      3. category          – Expense category (not withdrawal)
+      -- withdrawal-only fields (if is_withdrawal = True) --
+      3w. withdrawal_source_index – Withdrawal source account (0-based)
+      4w. withdrawal_currency_index – Source account currency (0-based)
+      5w. withdrawal_amount – Amount debited from source account
+      -- common fields --
+      4. account_index     – "Belongs to bank/accounts_without_csv" (0-based)
+      5. currency_index    – Currency selection (0-based, see Currency enum)
+      6. amount            – Amount paid from account (not for withdrawals)
+      7. change            – Change returned to account (float as string)
+      8. add_another_acct  – "y" or "n" (horizontal choice)
+      -- withdrawal post-account fields (if is_withdrawal = True) --
+      8w. atm_fee          – ATM operator fee (default "0")
+      9w. bank_fee         – Bank fee (default "0")
+      10w. exchange_rate   – Exchange rate (only if foreign withdrawal)
+      -- common fields --
+      9. shop_index        – Select Shop Address (0-based, 0 = "manual address")
+     10. shop_name         – Only if shop_index selects "manual address"
+     11. shop_street       – Only if manual address
+     12. shop_house_nr     – Only if manual address
+     13. shop_zipcode      – Only if manual address
+     14. shop_city         – Only if manual address
+     15. shop_country      – Only if manual address
+     16. subtotal          – Optional float (empty string to skip)
+     17. total_tax         – Optional float (empty string to skip)
     """
 
     # Field 1 – Date/time digits typed left-to-right over the pre-filled
     # "YYYY-MM-DD HH:MM" (separators are auto-skipped by the widget).
     date_digits: str = "202501151030"
 
-    # Field 2 – Bookkeeping expense category
+    # Field 2 – Is this a withdrawal? (horizontal y/n choice)
+    is_withdrawal: bool = False
+
+    # Field 3 – Bookkeeping expense category (skipped for withdrawals)
     category: str = "groceries:ekoplaza"
 
-    # Field 3 – Account (0-based index in the vertical list)
+    # ── Withdrawal-only fields (used when is_withdrawal = True) ──
+    withdrawal_source_index: str = ""  # source account (0-based)
+    withdrawal_currency_index: str = ""  # source currency (0-based)
+    withdrawal_amount: str = ""  # amount debited from source
+
+    # Field 4 – Account (0-based index in the vertical list)
     account_index: str = "0"
 
-    # Field 4 – Currency (0-based index: 0=BTC … 9=EUR, 10=USD, 11=GBP …)
+    # Field 5 – Currency (0-based index: 0=BTC … 9=EUR, 10=USD, 11=GBP …)
     currency_index: str = "9"
 
-    # Field 5 – Amount paid
+    # Field 6 – Amount paid (skipped for withdrawals)
     amount: str = "42.17"
 
-    # Field 6 – Change returned
+    # Field 7 – Change returned
     change: str = "0"
 
-    # Field 7 – Add another account? 0 = "y", 1 = "n"
+    # Field 8 – Add another account? 0 = "y", 1 = "n"
     add_another_account: bool = False
 
-    # Field 8 – Shop address index (0 = "manual address" when no history)
+    # ── Withdrawal post-account fields ──
+    atm_fee: str = "0"
+    bank_fee: str = "0"
+    exchange_rate: str = ""  # only for foreign withdrawals (empty = not asked)
+
+    # Field 9 – Shop address index (0 = "manual address" when no history)
     shop_index: str = "0"
 
-    # Fields 8a–8f – Manual address fields (used when shop_index picks "manual address")
+    # Fields 9a–9f – Manual address fields (used when shop_index picks "manual address")  # noqa: E501
     shop_name: str = "Ekoplaza"
     shop_street: str = "Groenerstraat"
     shop_house_nr: str = "89"
@@ -98,10 +122,10 @@ class ReceiptDemoValues:
     amount_2: str = ""
     change_2: str = "0"
 
-    # Field 9 – Subtotal (empty string → press Enter to skip)
+    # Field 10 – Subtotal (empty string → press Enter to skip)
     subtotal: str = ""
 
-    # Field 10 – Total tax (empty string → press Enter to skip)
+    # Field 11 – Total tax (empty string → press Enter to skip)
     total_tax: str = "7.35"
 
 
@@ -132,12 +156,23 @@ CASH_RECEIPT = ReceiptDemoValues(
 # ATM withdrawal in London — 100 GBP from Triodos checking (EUR base)
 FOREIGN_CURRENCY_RECEIPT = ReceiptDemoValues(
     date_digits="202503201400",
-    category="cash:atm_withdrawal",
-    account_index="0",  # Triodos checking
+    is_withdrawal=True,
+    # category is skipped for withdrawals (removed by reconfigurer)
+    category="",
+    # Withdrawal source: Triodos checking (EUR)
+    withdrawal_source_index="0",  # Triodos checking
+    withdrawal_currency_index="9",  # EUR
+    withdrawal_amount="117.50",  # EUR debited from source
+    # Destination: GBP wallet
+    account_index="2",  # GBP wallet (3rd account: at:wallet:physical GBP)
     currency_index="11",  # GBP
-    amount="100",
-    change="0",
+    amount="",  # amount paid is hidden for withdrawals
+    change="100",  # 100 GBP received
     add_another_account=False,
+    # Post-account withdrawal fields
+    atm_fee="0",
+    bank_fee="0",
+    exchange_rate="1.175",  # 1 EUR = 1.175 ... → 117.50 EUR / 100 GBP
     shop_index="0",
     shop_name="Barclays ATM",
     shop_street="Oxford Street",
@@ -359,7 +394,6 @@ def _fill_receipt_fields(
     and written to the sidecar JSON — no stdout output that would corrupt
     the urwid screen.
     """
-    global _tui_markers
 
     def _mark(field: str) -> None:
         if marker_prefix:
@@ -371,39 +405,88 @@ def _fill_receipt_fields(
     # ── Field 1: Receipt date ───────────────────────────────────────────
     _mark("date")
     _fill_datetime(nav, vals.date_digits)
-    nav.press_enter(pause=_BETWEEN)
+    # NOTE: No press_enter here — the DateTimeQuestion widget
+    # auto-advances to the next question after the last digit is typed.
+    # A stray Enter would land on the withdrawal toggle and select "y".
+
+    # ── Field 2: Is this a withdrawal? (horizontal y/n) ─────────────────
+    nav.wait_for("withdrawal", timeout=10, silent=True)
+    _mark("is_withdrawal")
+    time.sleep(0.5)
+    if vals.is_withdrawal:
+        _select_horizontal_first(nav)  # "y" (first option)
+    else:
+        _select_horizontal_n(nav)  # "n" (second option)
     nav.flush_output()
 
-    # ── Field 1b: Time highlight starts after date Enter ────────────────
-    _mark("time")
-    time.sleep(0.3)
-
-    # ── Field 2: Bookkeeping expense category ───────────────────────────
-    _mark("category")
-    _fill_text(nav, vals.category)
+    # After answering the withdrawal toggle, the TUI reconfigures.
+    # Wait for the next question to appear.
+    time.sleep(0.8)
     nav.flush_output()
 
-    # ── Field 3: Account (vertical multiple choice) ─────────────────────
-    _mark("bank_account")
-    _select_vertical(nav, vals.account_index)
-    nav.flush_output()
+    if vals.is_withdrawal:
+        # ── Withdrawal flow: category is removed, withdrawal questions
+        # are injected after the toggle ──
 
-    # ── Field 4: Currency (vertical multiple choice) ────────────────────
-    _mark("currency")
-    _select_vertical(nav, vals.currency_index)
-    nav.flush_output()
+        # ── Withdrawal source account ───────────────────────────────
+        _mark("withdrawal_source")
+        _select_vertical(nav, vals.withdrawal_source_index)
+        nav.flush_output()
 
-    # ── Field 5: Amount paid ────────────────────────────────────────────
-    _mark("amount")
-    _fill_float(nav, vals.amount)
-    nav.flush_output()
+        # ── Source account currency ─────────────────────────────────
+        _mark("withdrawal_currency")
+        _select_vertical(nav, vals.withdrawal_currency_index)
+        nav.flush_output()
 
-    # ── Field 6: Change returned ────────────────────────────────────────
-    _mark("change")
-    _fill_float(nav, vals.change)
-    nav.flush_output()
+        # ── Amount debited from source ──────────────────────────────
+        _mark("withdrawal_amount")
+        _fill_float(nav, vals.withdrawal_amount)
+        nav.flush_output()
 
-    # ── Field 7: Add another account? (horizontal y/n) ─────────────────
+        # ── Destination account (wallet) ────────────────────────────
+        _mark("bank_account")
+        _select_vertical(nav, vals.account_index)
+        nav.flush_output()
+
+        # ── Currency ────────────────────────────────────────────────
+        _mark("currency")
+        _select_vertical(nav, vals.currency_index)
+        nav.flush_output()
+
+        # ── Change returned (amount received in wallet) ─────────────
+        # "Amount paid" is hidden for withdrawals; only change is shown.
+        _mark("change")
+        _fill_float(nav, vals.change)
+        nav.flush_output()
+    else:
+        # ── Non-withdrawal flow ──
+
+        # ── Field 3: Bookkeeping expense category ───────────────────
+        _mark("category")
+        _fill_text(nav, vals.category)
+        nav.flush_output()
+
+        # ── Field 4: Account (vertical multiple choice) ─────────────
+        _mark("bank_account")
+        _select_vertical(nav, vals.account_index)
+        nav.flush_output()
+
+        # ── Field 5: Currency (vertical multiple choice) ────────────
+        _mark("currency")
+        _select_vertical(nav, vals.currency_index)
+        nav.flush_output()
+
+        # ── Field 6: Amount paid ────────────────────────────────────
+        _mark("amount")
+        _fill_float(nav, vals.amount)
+        nav.flush_output()
+
+        # ── Field 7: Change returned ────────────────────────────────
+        _mark("change")
+        _fill_float(nav, vals.change)
+        nav.flush_output()
+
+    # ── Add another account? (horizontal y/n) ───────────────────────────
     nav.wait_for("another account", timeout=5, silent=True)
     time.sleep(0.3)
     if vals.add_another_account:
@@ -435,7 +518,24 @@ def _fill_receipt_fields(
         _select_horizontal_n(nav)  # "n"
     nav.flush_output()
 
-    # ── Field 8: Select Shop Address (vertical multiple choice) ─────────
+    if vals.is_withdrawal:
+        # ── Post-account withdrawal fields ──────────────────────────
+        # These are injected after "Add another account = n".
+        _mark("atm_fee")
+        _fill_float(nav, vals.atm_fee)
+        nav.flush_output()
+
+        _mark("bank_fee")
+        _fill_float(nav, vals.bank_fee)
+        nav.flush_output()
+
+        if vals.exchange_rate:
+            # Foreign withdrawal: exchange rate question appears
+            _mark("exchange_rate")
+            _fill_float(nav, vals.exchange_rate)
+            nav.flush_output()
+
+    # ── Select Shop Address (vertical multiple choice) ──────────────────
     _select_vertical(nav, vals.shop_index)
     nav.flush_output()
 
@@ -465,16 +565,16 @@ def _fill_receipt_fields(
         _fill_text(nav, vals.shop_country)
         nav.flush_output()
 
-    # ── Field 9: Subtotal (optional) ────────────────────────────────────
+    # ── Subtotal (optional) ─────────────────────────────────────────────
     _fill_float(nav, vals.subtotal)
     nav.flush_output()
 
-    # ── Field 10: Total tax (optional) ──────────────────────────────────
+    # ── Total tax (optional) ────────────────────────────────────────────
     _mark("tax")
     _fill_float(nav, vals.total_tax)
     nav.flush_output()
 
-    # ── Field 11: Done with this receipt? (horizontal, single "yes") ────
+    # ── Done with this receipt? (horizontal, single "yes") ──────────────
     _select_horizontal_first(nav)
     nav.flush_output()
 
@@ -663,7 +763,6 @@ def _write_tui_markers_json() -> None:
     ``nolbl_ekoplaza_card_eur`` structural marker emitted to both
     ``.cast`` and ``_tui_markers``).
     """
-    global _tui_markers
     if not _tui_markers:
         return
 

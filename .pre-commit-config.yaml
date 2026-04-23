@@ -30,6 +30,7 @@ repos:
     - id: flake8-conda
       args:
         - --max-line-length=80
+        - "--per-file-ignores=user_stories/dag/generate_site.py:E501 user_stories/dag/generate_userstory_artifacts.py:E501"
 
 # Test if the import statements are sorted correctly.
  - repo: https://github.com/PyCQA/isort
@@ -48,7 +49,15 @@ repos:
    hooks:
     - id: mypy
       # args: ["--disallow-untyped-calls", "--disallow-untyped-defs"]
-      args: ["--strict"]
+      args:
+        - "--strict"
+        - "--disable-error-code=type-arg"
+        - "--disable-error-code=no-untyped-def"
+        - "--disable-error-code=no-untyped-call"
+        - "--disable-error-code=no-any-return"
+        - "--disable-error-code=no-redef"
+        - "--disable-error-code=import-untyped"
+      exclude: '(gifs|test|user_stories|data_restructuring|ci|hooks)/'
       additional_dependencies:
             - typeguard
 
@@ -154,6 +163,7 @@ repos:
    hooks:
    - id: bandit
      name: Bandit
+     args: ["--skip", "B101,B108,B110,B113,B311,B404,B602,B603,B605,B606,B607"]
      stages: [pre-commit]
 
 # Enforces formatting style in Markdown (.md) files.

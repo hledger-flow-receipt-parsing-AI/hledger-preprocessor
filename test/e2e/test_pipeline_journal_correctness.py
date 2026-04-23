@@ -83,7 +83,9 @@ class TestReceiptDataIntegrity:
         )
         receipts = load_receipts_from_dir(config=cfg)
         for r in receipts:
-            if not (r.receipt_category and "ekoplaza" in r.receipt_category.lower()):
+            if not (
+                r.receipt_category and "ekoplaza" in r.receipt_category.lower()
+            ):
                 continue
             # Distinguish card receipt (Jan 15) from cash receipt (May 20)
             if r.the_date.month == 1 and r.the_date.day == 15:
@@ -135,13 +137,17 @@ class TestWorkingDirectoryStructure:
         )
         rules_file.parent.mkdir(parents=True, exist_ok=True)
         if not rules_file.exists():
-            rules_file.write_text(textwrap.dedent("""\
+            rules_file.write_text(
+                textwrap.dedent(
+                    """\
                 # hledger CSV import rules for triodos
                 skip 0
                 fields date, _, amount, _, payee, _, _, description, _
                 date-format %d-%m-%Y
                 currency EUR
                 account1 Assets:Checking:Triodos
-            """))
+            """
+                )
+            )
         content = rules_file.read_text()
         assert "account1" in content

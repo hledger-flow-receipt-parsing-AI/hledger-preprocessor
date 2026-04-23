@@ -27,7 +27,7 @@ from hledger_preprocessor.helper import get_images_in_folder
 from hledger_preprocessor.receipts_to_objects.edit_images.crop_image import (
     crop_images,
 )
-from hledger_preprocessor.receipts_to_objects.edit_images.rotate_all_images import (
+from hledger_preprocessor.receipts_to_objects.edit_images.rotate_all_images import (  # noqa: E501
     rotate_images,
 )
 
@@ -209,8 +209,6 @@ def create_tilted_receipt(
 
 def captured_imshow(window_name: str, image: np.ndarray) -> None:
     """Intercept cv2.imshow to capture frames."""
-    global _captured_frames, _rotation_frames, _crop_frames, _current_phase
-    global _captured_stdout, _last_key_pressed
     timestamp = time.time()
     frame_copy = image.copy()
     _captured_frames.append((frame_copy, timestamp, _current_phase))
@@ -221,7 +219,7 @@ def captured_imshow(window_name: str, image: np.ndarray) -> None:
         terminal_snapshot = _captured_stdout.getvalue().splitlines()
 
     # Also store in phase-specific lists
-    # Only capture frames from the "Image" window (rotation) and "Crop Image" window (crop)
+    # Only capture frames from the "Image" window (rotation) and "Crop Image" window (crop)  # noqa: E501
     # Filter by window name to avoid capturing frames from other windows
     if window_name == "Image" and _current_phase == "rotation":
         _rotation_frames.append(
@@ -237,7 +235,7 @@ def captured_imshow(window_name: str, image: np.ndarray) -> None:
 
 def captured_waitKey(delay: int = 0) -> int:
     """Intercept cv2.waitKey to automate keypresses."""
-    global _key_index, _automated_keys, _last_key_pressed
+    global _key_index, _last_key_pressed
 
     if delay == 0:
         # Wait for keypress - return next automated key
@@ -259,7 +257,7 @@ def captured_waitKey(delay: int = 0) -> int:
 
 def captured_waitKeyEx(delay: int = 0) -> int:
     """Intercept cv2.waitKeyEx to automate keypresses (for arrow keys)."""
-    global _key_index, _automated_keys, _last_key_pressed
+    global _key_index, _last_key_pressed
 
     if delay == 0:
         # Wait for keypress - return next automated key
@@ -337,7 +335,7 @@ def capture_opencv_windows(keys: List[int]):
 
 
 def setup_test_environment(config_path: str) -> Tuple[Config, str]:
-    """Set up a test environment with a single receipt image that starts horizontal."""
+    """Set up a test environment with a single receipt image that starts horizontal."""  # noqa: E501
     config: Config = load_config(
         config_path=config_path, pre_processed_output_dir=None
     )
@@ -549,7 +547,7 @@ def generate_workflow_gif(
     max_chars_per_line = 75  # Characters that fit in terminal panel
 
     # Find a consistent frame size for the image panel
-    # Use a fixed size that works well for all frames (66-33 ratio: terminal wider)
+    # Use a fixed size that works well for all frames (66-33 ratio: terminal wider)  # noqa: E501
     image_panel_width = 300
     image_panel_height = 400
 
@@ -702,13 +700,13 @@ def record_real_rotation_crop_workflow(
     print(f"Config: {config_path}")
     print(
         "Receipt to process:"
-        f" {raw_receipt_img_filepaths[0] if raw_receipt_img_filepaths else 'None'}"
+        f" {raw_receipt_img_filepaths[0] if raw_receipt_img_filepaths else 'None'}"  # noqa: E501
     )
     print()
 
     # Define automated keypresses for the workflow:
-    # Rotation: Image starts horizontal (90° in file), 'l' rotates counter-clockwise to upright (0°)
-    # Cropping: Keep top-left at (0.2, 0.2), only adjust bottom-right from (0.8, 0.8) to tighter crop
+    # Rotation: Image starts horizontal (90° in file), 'l' rotates counter-clockwise to upright (0°)  # noqa: E501
+    # Cropping: Keep top-left at (0.2, 0.2), only adjust bottom-right from (0.8, 0.8) to tighter crop  # noqa: E501
     # OpenCV arrow key codes: 0xFF51=Left, 0xFF52=Up, 0xFF53=Right, 0xFF54=Down
     automated_keys = [
         ord(
@@ -753,7 +751,7 @@ def record_real_rotation_crop_workflow(
     image_gif_path = os.path.join(output_dir, "2a_crop_receipt_image.gif")
     cli_gif_path = os.path.join(output_dir, "2a_crop_receipt_cli.gif")
 
-    print(f"\nCaptured frames:")
+    print("\nCaptured frames:")
     print(f"  Rotation frames: {len(_rotation_frames)}")
     print(f"  Crop frames: {len(_crop_frames)}")
     print(f"  Total terminal lines: {len(_terminal_output)}")
@@ -761,7 +759,7 @@ def record_real_rotation_crop_workflow(
     # Combine rotation and crop frames into one GIF
     all_image_frames = _rotation_frames + _crop_frames
     if all_image_frames:
-        # Generate workflow GIF (terminal + image side-by-side) - this is what the test expects
+        # Generate workflow GIF (terminal + image side-by-side) - this is what the test expects  # noqa: E501
         generate_workflow_gif(
             all_image_frames, _terminal_output, workflow_gif_path
         )
@@ -775,7 +773,7 @@ def record_real_rotation_crop_workflow(
         if _terminal_output:
             generate_terminal_only_gif(_terminal_output, cli_gif_path)
 
-        print(f"\nGenerated GIFs:")
+        print("\nGenerated GIFs:")
         print(f"  1. Workflow (terminal + image): {workflow_gif_path}")
         print(f"  2. Image only: {image_gif_path}")
         print(f"  3. CLI only: {cli_gif_path}")

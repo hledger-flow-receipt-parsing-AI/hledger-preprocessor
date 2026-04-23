@@ -334,6 +334,42 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
+### US-2b.9 — Date-range error feedback during receipt labelling
+
+**As a** user labelling a receipt dated 2025-03-15 for my Triodos checking account whose CSV only has transactions up to 2025-02-28,
+**I want to** the TUI to show a directional error message in the sidebar panel (e.g. "CSV ends at 2025-02-28, receipt date is 15 days later") and turn the account widget red,
+**so that** I know exactly whether to update the CSV or correct the receipt date, without having to wait until the matching step to discover the problem.
+
+**Acceptance criteria:**
+
+- When the receipt date is after the CSV's latest transaction, the sidebar shows "CSV ends at {max_date}. Receipt date is {N} day(s) later."
+- When the receipt date is before the CSV's earliest transaction, the sidebar shows "CSV starts at {min_date}. Receipt date is {N} day(s) earlier."
+- When the CSV has no transactions for the account, the sidebar shows "No CSV transactions for this account."
+- The account widget turns red on error and reverts to normal when the user corrects the date or selects a different account.
+- All subsequent questions remain visible (not removed) so the user can see what is ahead.
+- The user can navigate back to the date field, correct it, and have the validation re-run automatically on reconfiguration.
+
+______________________________________________________________________
+
+### US-2b.10 — Inline matching CLI when no unique CSV match
+
+**As a** user labelling a receipt whose amount does not uniquely match a CSV transaction (0 or more than 1 candidates),
+**I want to** the TUI to block forward progress and let me either correct the amounts/dates or launch the existing matching CLI inline (with options to widen date/amount range, add conversion rate, or pick from multiple candidates),
+**so that** I can resolve the mismatch immediately without finishing the receipt and coming back to fix it in a separate step 3 session.
+
+**Acceptance criteria:**
+
+- When the amount check finds 0 or >1 matches, a horizontal choice widget appears after "Add another account (y/n)?" with two options: "Correct amounts/dates" and "Enter matching CLI".
+- Choosing "Correct amounts/dates" removes the choice widget and returns focus to the amount field.
+- Choosing "Enter matching CLI" suspends urwid, runs the 5-option matching CLI (widen date, widen amount, add conversion rate, check receipt, check transactions), and resumes the TUI when done.
+- If the matching CLI resolves the match (unique match found after widening), the TUI resumes with green amount fields and the updated config margins.
+- If the user selects "Check receipt" in the matching CLI, they are returned to the active TUI (since the receipt does not yet fully exist).
+- For >1 candidates (ambiguous match), the matching CLI shows the numbered candidates so the user can pick one (existing `handle_few_matches` flow).
+- The choice widget is automatically removed when a unique match is found (e.g. after correcting a typo).
+- Calling the mismatch check multiple times does not inject duplicate choice widgets.
+
+______________________________________________________________________
+
 ## Step 3: Receipt-to-CSV Transaction Matching
 
 ### US-3.1 — Auto-match a simple same-currency receipt

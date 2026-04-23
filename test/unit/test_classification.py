@@ -53,7 +53,7 @@ onbekend: {}
     def test_classify_ekoplaza_groceries_from_description(
         self, category_namespace, wallet_account
     ):
-        """Test that transactions with 'groceries:ekoplaza' in description are classified."""
+        """Test that transactions with 'groceries:ekoplaza' in description are classified."""  # noqa: E501
         # Create a transaction similar to what the asset CSV would contain
         transaction = GenericCsvTransaction(
             account=wallet_account,

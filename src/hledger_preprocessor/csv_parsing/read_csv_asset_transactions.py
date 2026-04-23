@@ -48,7 +48,7 @@ def read_csv_to_asset_transactions(
     csv_encoding: str = "utf-8",
 ) -> List[ProcessedTransaction]:
     """
-    Reads transactions from a CSV file and converts them into a list of Transaction objects.
+    Reads transactions from a CSV file and converts them into a list of Transaction objects.  # noqa: E501
     """
     transactions: List[ProcessedTransaction] = []
 
@@ -142,7 +142,7 @@ def get_amounts(*, row: Dict[str, Any]) -> Tuple[float, float]:
                 raise ValueError(
                     "The hledger net transaction"
                     f" amount:{hledger_amount} should equal"
-                    f" tenderded_amount_out:{tenderded_amount_out}-change_returned:{change_returned}={tenderded_amount_out-change_returned}"
+                    f" tenderded_amount_out:{tenderded_amount_out}-change_returned:{change_returned}={tenderded_amount_out-change_returned}"  # noqa: E501
                 )
             else:
                 pass
@@ -160,7 +160,7 @@ def get_amounts(*, row: Dict[str, Any]) -> Tuple[float, float]:
         tenderded_amount_out = hledger_amount
         if "change_returned" in row.keys():
             raise KeyError(
-                "Did not expect change_returned withtout tendered amount"
+                "Did not expect change_returned without tendered amount"
                 " specified."
             )
         else:

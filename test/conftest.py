@@ -96,9 +96,9 @@ def temp_finance_root(tmp_path_factory):
     # ------------------------------------------------------------------
     # The triodos CSV must have 9 columns matching csv_column_mapping:
     # the_date, own_account_nr, tendered_amount_out, transaction_code,
-    # other_party_name, other_party_account_name, payment_code, description, balance
+    # other_party_name, other_party_account_name, payment_code, description, balance  # noqa: E501
     #
-    # Transaction on 2025-01-15 for -42.17 EUR matches groceries_ekoplaza_card.json
+    # Transaction on 2025-01-15 for -42.17 EUR matches groceries_ekoplaza_card.json  # noqa: E501
     create_dummy_file(
         root / "triodos_2025.csv",
         content=textwrap.dedent(

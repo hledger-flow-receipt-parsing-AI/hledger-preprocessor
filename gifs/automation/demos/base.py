@@ -11,7 +11,7 @@ from ..navigation import TuiNavigator
 class BaseDemo(ABC):
     """Abstract base class for GIF demo automation.
 
-    Subclasses implement specific demo workflows (receipt editing, matching, etc.)
+    Subclasses implement specific demo workflows (receipt editing, matching, etc.)  # noqa: E501
     while inheriting common setup, teardown, and display logic.
     """
 

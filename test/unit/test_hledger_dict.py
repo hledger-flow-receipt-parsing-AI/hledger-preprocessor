@@ -47,7 +47,7 @@ def test_to_hledger_dict_handles_none_csv_column_mapping(
 
     with pytest.raises(TypeCheckError):
         sample_transaction.to_hledger_dict(
-            csv_column_mapping=None  # type: ignore
+            csv_column_mapping=None  # type: ignore[arg-type]
         )
 
 

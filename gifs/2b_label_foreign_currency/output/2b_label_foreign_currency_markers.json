@@ -1,23 +1,14 @@
 {
   "markers": {
     "img_atm_gbp": 0.0,
-    "lbl_atm_100gbp": 53.5,
+    "lbl_atm_100gbp": 50.84,
     "nolbl_atm_100gbp": 2.15,
-    "tui_atm_100gbp": 10.94,
-    "tui_atm_100gbp__amount": 23.0,
-    "tui_atm_100gbp__bank_account": 20.86,
-    "tui_atm_100gbp__category": 15.31,
-    "tui_atm_100gbp__change": 24.44,
-    "tui_atm_100gbp__currency": 21.91,
-    "tui_atm_100gbp__date": 11.48,
-    "tui_atm_100gbp__shop_city": 41.89,
-    "tui_atm_100gbp__shop_country": 44.27,
-    "tui_atm_100gbp__shop_house_nr": 38.24,
-    "tui_atm_100gbp__shop_name": 30.53,
-    "tui_atm_100gbp__shop_street": 34.27,
-    "tui_atm_100gbp__shop_zipcode": 39.38,
-    "tui_atm_100gbp__tax": 48.58,
-    "tui_atm_100gbp__time": 11.48
+    "tui_atm_100gbp": 11.2,
+    "tui_atm_100gbp__bank_account": 36.7,
+    "tui_atm_100gbp__category": 17.18,
+    "tui_atm_100gbp__currency": 48.54,
+    "tui_atm_100gbp__date": 11.73,
+    "tui_atm_100gbp__time": 11.73
   },
-  "total_duration": 58.45
+  "total_duration": 59.09
 }
