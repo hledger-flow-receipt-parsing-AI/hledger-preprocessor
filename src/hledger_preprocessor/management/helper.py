@@ -41,7 +41,7 @@ def edit_receipt(*, config: Config, labelled_receipts: List[Receipt]) -> None:
     # List receipts that can be found.
     labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
 
-    # Show TUI that lists the receipt date, total amounts and raw_img_filepath and let user go through the list.
+    # Show TUI that lists the receipt date, total amounts and raw_img_filepath and let user go through the list.  # noqa: E501
     selected_receipt: Receipt = tui_select_receipt(receipts=labelled_receipts)
 
     # If user presses enter, that receipt is loaded by calling:
@@ -97,7 +97,7 @@ def preprocess_asset_csvs(
         # TODO: ensure the import directory is created.
         # TODO: re-enable
         # assert_dir_full_hierarchy_exists(
-        #     account=account_config.account, working_subdir=config.get_working_subdir_path(assert_exists=False)
+        #     account=account_config.account, working_subdir=config.get_working_subdir_path(assert_exists=False)  # noqa: E501
         # )
         pre_process_csvs(
             config=config,

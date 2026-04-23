@@ -217,7 +217,7 @@ def print_environment_info(paths: dict) -> None:
     print("Demo Environment Created")
     print("=" * 60)
     print(f"\nBase directory: {paths['root']}")
-    print(f"\nFiles created:")
+    print("\nFiles created:")
     for key, val in paths.items():
         if key != "root":
             print(f"  - {key}: {val}")

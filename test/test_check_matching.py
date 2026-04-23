@@ -185,7 +185,7 @@ class TestCheckMatchingUnmatched:
 def _get_account_transactions(receipt: Receipt):
     """Get all transactions from a receipt (both AccountTransaction and
     GenericCsvTransaction)."""
-    from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (
+    from hledger_preprocessor.receipt_transaction_matching.compare_transaction_to_receipt import (  # noqa: E501
         get_all_transactions_from_receipt,
     )
 

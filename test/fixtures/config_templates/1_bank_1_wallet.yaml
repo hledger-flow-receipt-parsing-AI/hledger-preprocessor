@@ -4,6 +4,7 @@ account_configs:
     account_holder: at
     bank: triodos
     account_type: checking
+    decimal_format: "dot"
     input_csv_filename: "triodos_2025.csv"  # RELATIVE to root_finance_path
     # Python field name and hledger field name.
     csv_column_mapping: [

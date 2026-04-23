@@ -1,0 +1,6 @@
+# Triodos Bank CSV Export
+# Account: NL123 — Checking (EUR)
+# Period: January 2025 (delayed posting)
+
+date,account_nr,amount,type,description,counterparty,method,memo,balance
+18-01-2025,NL123,"42,17",debit,Ekoplaza,NL456,IC,groceries payment,"957,83"

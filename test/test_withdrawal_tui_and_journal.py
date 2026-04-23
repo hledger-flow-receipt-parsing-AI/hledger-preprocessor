@@ -277,7 +277,7 @@ class TestProcessedTransactionWithdrawalDict:
         assert d["withdrawal_dest_amount"] == "100.0"
 
     def test_no_withdrawal_metadata_no_columns(self):
-        """A normal (non-withdrawal) receipt should not have withdrawal columns."""
+        """A normal (non-withdrawal) receipt should not have withdrawal columns."""  # noqa: E501
         dest_txn = _make_account_transaction(
             account=_make_account(bank="wallet", acct_type="physical"),
             amount=42.17,
@@ -483,8 +483,8 @@ class TestBackgroundWithdrawalMatch:
         return MockTUI()
 
     def test_match_prefills_amount(self):
-        """When exactly one CSV transaction matches, the amount is pre-filled."""
-        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (
+        """When exactly one CSV transaction matches, the amount is pre-filled."""  # noqa: E501
+        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (  # noqa: E501
             _try_background_withdrawal_match,
         )
 
@@ -523,7 +523,7 @@ class TestBackgroundWithdrawalMatch:
 
     def test_no_match_when_no_csv(self):
         """When no CSV transactions exist, nothing is pre-filled."""
-        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (
+        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (  # noqa: E501
             _try_background_withdrawal_match,
         )
 
@@ -547,7 +547,7 @@ class TestBackgroundWithdrawalMatch:
 
     def test_no_match_when_date_out_of_range(self):
         """CSV transaction too far in time should not match."""
-        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (
+        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (  # noqa: E501
             _try_background_withdrawal_match,
         )
 
@@ -586,7 +586,7 @@ class TestBackgroundWithdrawalMatch:
 
     def test_does_not_overwrite_existing_answer(self):
         """If the user already typed an amount, don't overwrite it."""
-        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (
+        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (  # noqa: E501
             _try_background_withdrawal_match,
         )
 
@@ -625,7 +625,7 @@ class TestBackgroundWithdrawalMatch:
 
     def test_picks_closest_when_multiple_matches(self):
         """When multiple CSV transactions match, pick the closest in time."""
-        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (
+        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (  # noqa: E501
             _try_background_withdrawal_match,
         )
 
@@ -668,7 +668,7 @@ class TestBackgroundWithdrawalMatch:
 
     def test_no_config_does_nothing(self):
         """When config is None, should not crash."""
-        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (
+        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (  # noqa: E501
             _try_background_withdrawal_match,
         )
 
@@ -688,7 +688,7 @@ class TestBackgroundWithdrawalMatch:
 
     def test_account_without_csv_skipped(self):
         """An account config without CSV should not match."""
-        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (
+        from tui_labeller.tuis.urwid.question_app.reconfiguration.reconfiguration import (  # noqa: E501
             _try_background_withdrawal_match,
         )
 

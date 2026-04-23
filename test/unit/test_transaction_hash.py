@@ -155,7 +155,7 @@ class TestAccountTransactionHash:
         )
         t1 = AccountTransaction(**kwargs)
         t2 = AccountTransaction(**kwargs)
-        # Use Transaction base hash (date + amounts) since AccountTransaction.get_hash
+        # Use Transaction base hash (date + amounts) since AccountTransaction.get_hash  # noqa: E501
         # expects description/other_party_name fields
         h1 = Transaction.get_hash(t1)
         h2 = Transaction.get_hash(t2)

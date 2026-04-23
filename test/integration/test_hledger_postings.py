@@ -1,4 +1,4 @@
-"""Tests whether hledger is able to import the csv files with multiple postings."""
+"""Tests whether hledger is able to import the csv files with multiple postings."""  # noqa: E501
 
 import subprocess
 import tempfile
@@ -20,7 +20,7 @@ from hledger_preprocessor.TransactionObjects.AccountTransaction import (
 
 
 class Test_hledger_import_postings(unittest.TestCase):
-    """Object used to test hledger is able to import the csv files with multiple postings as they are generated."""
+    """Object used to test hledger is able to import the csv files with multiple postings as they are generated."""  # noqa: E501
 
     # Initialize test object
     @typechecked
@@ -38,16 +38,16 @@ class Test_hledger_import_postings(unittest.TestCase):
     def assert_transaction_with_n_postings_can_be_parsed_by_hledger(
         self, n: int
     ) -> None:
-        account_holder: str = "some_holder"
-        bank_name: str = "some_bank"
-        account_type: str = "checking"
+        _account_holder: str = "some_holder"  # noqa: F841
+        _bank_name: str = "some_bank"  # noqa: F841
+        _account_type: str = "checking"  # noqa: F841
 
         # Verify the hledger command is available.
         assert_hledger_available()
 
         # Generate random transaction (object) with `n`` postings.
-        # Get the random categories (with only a-z and : without spaces) from an offline random text generator.
-        # Write the random transactions with the specified number of postings and amounts.
+        # Get the random categories (with only a-z and : without spaces) from an offline random text generator.  # noqa: E501
+        # Write the random transactions with the specified number of postings and amounts.  # noqa: E501
         # TODO: switch to generic AccountTransaction type object by including
         # convert_to_csv_filecontent in super/generic AccountTransaction object.
         transaction: AccountTransaction = (

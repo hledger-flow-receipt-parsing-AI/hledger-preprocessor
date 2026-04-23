@@ -68,7 +68,7 @@ class TestFixtureValidation:
         for label_file in label_files:
             with open(label_file) as f:
                 data = json.load(f)
-            # Identify by the card payment account type (checking, not physical wallet)
+            # Identify by the card payment account type (checking, not physical wallet)  # noqa: E501
             transactions = data.get("net_bought_items", {}).get(
                 "account_transactions", []
             )

@@ -1,6 +1,6 @@
 # Backward-compat re-export: moved to hledger-core
 from hledger_core.date_extractor import *  # noqa: F401,F403
-from hledger_core.date_extractor import (  # explicit for type checkers
+from hledger_core.date_extractor import (  # noqa: F401
     can_swap_day_and_month,
     extract_dates_times,
     get_date_from_bank_date_or_shop_date_description,

@@ -84,8 +84,14 @@ def load_data() -> Dict[str, Any]:
 
 
 def dag_stories(*, stories: List[Dict]) -> List[Dict]:
-    """Filter to stories that have DAG paths."""
-    return [s for s in stories if s.get("paths")]
+    """Filter to stories that have DAG paths or a no_dag_reason.
+
+    Stories with ``paths`` get a full DAG visualization.  Stories with
+    ``no_dag_reason`` (TUI enhancements, not-yet-implemented features)
+    are still included so they appear in the site navigation, but without
+    a DAG diagram.
+    """
+    return [s for s in stories if s.get("paths") or s.get("no_dag_reason")]
 
 
 def story_id_to_safe(*, story_id: str) -> str:
@@ -373,7 +379,7 @@ def discover_marker_json_files(
 
 
 def parse_marker_json(*, json_path: Path) -> Dict[str, float]:
-    """Read a sidecar markers JSON file and return {marker_id: timestamp_seconds}."""
+    """Read a sidecar markers JSON file and return {marker_id: timestamp_seconds}."""  # noqa: E501
     try:
         data = json.loads(json_path.read_text())
         return data.get("markers", {})
@@ -434,8 +440,10 @@ def generate_overview_svg_direct(
     visible_nodes: set = set()
     visible_edges: set = set()
     for s in stories:
-        visible_nodes.update(collect_nodes_from_paths(s["paths"]))
-        visible_edges.update(collect_edges_from_paths(s["paths"]))
+        paths = s.get("paths", [])
+        if paths:
+            visible_nodes.update(collect_nodes_from_paths(paths))
+            visible_edges.update(collect_edges_from_paths(paths))
 
     node_usage = count_node_usage(stories)
     edge_usage = count_edge_usage(stories)
@@ -499,7 +507,7 @@ def generate_overview_svg_direct(
         if layer_name in CONFIG_GROUP_LAYERS and config_y_start is None:
             y_cursor += CONFIG_GROUP_TOP
 
-        # Add space for the "Receipt Labelling" label above the first receipt layer
+        # Add space for the "Receipt Labelling" label above the first receipt layer  # noqa: E501
         if layer_name in RECEIPT_GROUP_LAYERS and receipt_y_start is None:
             y_cursor += RECEIPT_GROUP_TOP
 
@@ -675,7 +683,7 @@ def generate_overview_svg_direct(
                     f'<text x="{ncx:.1f}" y="{ncy + 4:.1f}"'
                     ' text-anchor="middle"'
                     ' font-family="DejaVu Sans,sans-serif"'
-                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'
+                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'  # noqa: E501
                 )
             else:
                 # Centre multiple lines vertically
@@ -703,7 +711,7 @@ def generate_overview_svg_direct(
 
     # Track how many edges use each "routing lane" (right-side column)
     # so we can spread them out horizontally to avoid overlap.
-    lane_counter: Dict[Tuple, int] = defaultdict(int)
+    _lane_counter: Dict[Tuple, int] = defaultdict(int)  # noqa: F841
 
     def edge_path(src: str, dst: str, lane_offset: float = 0) -> str:
         """Build an SVG path from src node bottom to dst node top.
@@ -809,6 +817,8 @@ def generate_overview_svg_direct(
 
     # Second pass: coloured edges per story
     for s in stories:
+        if not s.get("paths"):
+            continue
         story_edges = collect_edges_from_paths(s["paths"])
         colour = s.get("colour", "#7aa2f7")
         pattern = s.get("pattern", "solid")
@@ -901,7 +911,7 @@ def generate_story_svg_direct(
     LAYER_GAP = 8  # increased for arrow visibility
     CONFIG_GROUP_PAD = 3
     CONFIG_GROUP_TOP = 14
-    COL_GAP = 20  # horizontal gap between left and right columns
+    _COL_GAP = 20  # noqa: F841  # horizontal gap between left and right columns
     FONT_SIZE = 9
     LABEL_FONT_SIZE = 10
     MIN_CLUSTER_W = 132  # tight minimum cluster width (node=100 + 2*MARGIN)
@@ -1340,7 +1350,7 @@ def generate_story_svg_direct(
                     f'<text x="{ncx:.1f}" y="{ncy + 4:.1f}"'
                     ' text-anchor="middle"'
                     ' font-family="DejaVu Sans,sans-serif"'
-                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'
+                    f' font-size="{FONT_SIZE}">{html_escape(label_lines[0])}</text>'  # noqa: E501
                 )
             else:
                 total_text_h = len(label_lines) * (FONT_SIZE + 2)
@@ -1746,6 +1756,11 @@ a:hover { text-decoration: underline; }
 .video-dag-row .dag-section {
   grid-column: 2; grid-row: 1 / span 3;
   margin-bottom: 0;
+  align-self: start;
+}
+.video-dag-row .dag-section .dag-svg {
+  width: auto; max-width: 100%;
+  max-height: var(--left-col-height, 80vh);
 }
 .video-dag-row .below-row {
   grid-column: 1; grid-row: 2;
@@ -2893,7 +2908,7 @@ def _html_head(*, title: str) -> str:
 
 
 def _line_swatch_svg(*, colour: str, pattern: str) -> str:
-    """Return an inline SVG showing a short line with the story's colour and dash pattern."""
+    """Return an inline SVG showing a short line with the story's colour and dash pattern."""  # noqa: E501
     dash_map = {"dashed": "5,3", "dotted": "2,3", "bold": "", "solid": ""}
     da = dash_map.get(pattern, "")
     sw = "3.5" if pattern == "bold" else "2"
@@ -3595,9 +3610,26 @@ def generate_story_html(
             main += f'<span class="bdd-kw">so that</span> {_esc(so_that)}'
         main += "\n</div>\n"
 
+    # Acceptance criteria (shown for stories without DAG paths)
+    ac_list = story.get("acceptance_criteria", [])
+    if ac_list and not story.get("paths"):
+        main += '<div class="acceptance-criteria">\n'
+        main += "<h3>Acceptance Criteria</h3>\n<ul>\n"
+        for ac in ac_list:
+            main += f"<li>{_esc(ac)}</li>\n"
+        main += "</ul>\n</div>\n"
+
+    # No-DAG-reason note
+    no_dag = story.get("no_dag_reason", "")
+    if no_dag:
+        main += (
+            '<div class="no-dag-note">'
+            f"<em>No DAG diagram: {_esc(no_dag)}</em>"
+            "</div>\n"
+        )
+
     main += '<div style="clear:both"></div>\n'
     main += "</div>\n"
-    # (Acceptance criteria removed from page view per Issue 2)
 
     # Side-by-side video + DAG grid
     main += '<div class="video-dag-row">\n'
@@ -3631,17 +3663,22 @@ def generate_story_html(
     main += '<div class="dag-section zoom-pane" data-zoom-id="dag">\n'
     main += '<div class="zoom-pane-inner">\n'
     has_both_views = bool(svg_content and full_svg_content)
+    # Default to full-path view when the GIF demonstrates the full path
+    gif_video = story.get("gif_video", "")
+    default_full = "full_path" in gif_video if gif_video else False
     if has_both_views:
+        seg_active = "" if default_full else " active"
+        full_active = " active" if default_full else ""
         main += '<div class="dag-header">\n'
         main += "<h2>DAG Diagram</h2>\n"
         main += '<div class="dag-view-toggle">\n'
         main += (
-            '<button id="btn-segment-view" class="toggle-btn active"'
+            f'<button id="btn-segment-view" class="toggle-btn{seg_active}"'
             ' title="Show only this story\'s segment">'
             "Segment</button>\n"
         )
         main += (
-            '<button id="btn-full-view" class="toggle-btn"'
+            f'<button id="btn-full-view" class="toggle-btn{full_active}"'
             ' title="Show full end-to-end path">'
             "Full path</button>\n"
         )
@@ -3650,12 +3687,16 @@ def generate_story_html(
     else:
         main += "<h2>DAG Diagram</h2>\n"
 
+    seg_display = ' style="display:none"' if default_full else ""
+    full_display = "" if default_full else ' style="display:none"'
     if svg_content:
-        main += f'<div id="dag-segment-view">\n{svg_content}\n</div>\n'
+        main += (
+            f'<div id="dag-segment-view"{seg_display}>\n{svg_content}\n</div>\n'
+        )
     elif has_png_fallback:
         safe = story_id_to_safe(story_id=sid)
         main += (
-            '<div id="dag-segment-view">\n'
+            f'<div id="dag-segment-view"{seg_display}>\n'
             '<img class="dag-fallback-img" '
             f'src="../assets/images/isolated/{safe}.png" '
             f'alt="DAG for {_esc(sid)}">\n'
@@ -3663,7 +3704,7 @@ def generate_story_html(
         )
     if full_svg_content:
         main += (
-            '<div id="dag-full-view" style="display:none">\n'
+            f'<div id="dag-full-view"{full_display}>\n'
             f"{full_svg_content}\n</div>\n"
         )
     main += "</div>\n"  # close zoom-pane-inner
@@ -3720,6 +3761,25 @@ def generate_story_html(
         f"<script>\nconst TIMESTAMPS = {ts_json};\n</script>\n"
         f'<script src="../assets/js/dag-sync.js"></script>\n'
         f'<script src="../assets/js/zoom-pane.js"></script>\n'
+        "<script>\n"
+        "(function() {\n"
+        "  function matchLeftCol() {\n"
+        "    var grid = document.querySelector('.video-dag-row');\n"
+        "    if (!grid) return;\n"
+        "    var vid = grid.querySelector('.video-section');\n"
+        "    var below = grid.querySelector('.below-row');\n"
+        "    if (!vid) return;\n"
+        "    var h = vid.offsetHeight + (below ? below.offsetHeight : 0);\n"
+        "    if (h > 0) grid.style.setProperty('--left-col-height', h +"
+        " 'px');\n"
+        "  }\n"
+        "  matchLeftCol();\n"
+        "  window.addEventListener('load', matchLeftCol);\n"
+        "  window.addEventListener('resize', matchLeftCol);\n"
+        "  var vid = document.getElementById('demo-video');\n"
+        "  if (vid) vid.addEventListener('loadedmetadata', matchLeftCol);\n"
+        "})();\n"
+        "</script>\n"
     )
 
     return head + sidebar + main + js_block + "</body>\n</html>\n"

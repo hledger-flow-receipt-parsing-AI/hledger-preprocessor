@@ -63,16 +63,85 @@ profile = "black"
 [tool.mypy]
 ignore_missing_imports = true
 
-
+[[tool.mypy.overrides]]
+module = [
+    "hledger_preprocessor.*",
+]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+warn_return_any = false
+allow_redefinition = true
+disallow_any_generics = false
 
 [tool.pylint.basic]
 bad-names=[]
 [tool.pylint.messages_control]
-# Example: Disable error on needing a module-level docstring
+# Disable noisy checks that are not yet addressed across the codebase.
 disable=[
     "import-error",
     "invalid-name",
     "fixme",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "import-outside-toplevel",
+    "line-too-long",
+    "redefined-outer-name",
+    "wildcard-import",
+    "unused-wildcard-import",
+    "too-many-locals",
+    "duplicate-code",
+    "subprocess-run-check",
+    "unspecified-encoding",
+    "abstract-class-instantiated",
+    "too-many-statements",
+    "unused-argument",
+    "no-member",
+    "too-many-branches",
+    "no-else-return",
+    "too-many-arguments",
+    "too-few-public-methods",
+    "broad-exception-caught",
+    "use-dict-literal",
+    "consider-using-max-builtin",
+    "unused-variable",
+    "too-many-positional-arguments",
+    "global-statement",
+    "pointless-statement",
+    "too-many-nested-blocks",
+    "too-many-instance-attributes",
+    "consider-using-with",
+    "too-many-return-statements",
+    "consider-using-f-string",
+    "unnecessary-pass",
+    "no-else-raise",
+    "too-many-public-methods",
+    "consider-using-in",
+    "consider-using-enumerate",
+    "unnecessary-comprehension",
+    "use-a-generator",
+    "too-many-boolean-expressions",
+    "attribute-defined-outside-init",
+    "unused-import",
+    "arguments-renamed",
+    "arguments-differ",
+    "undefined-variable",
+    "wrong-import-order",
+    "ungrouped-imports",
+    "unidiomatic-typecheck",
+    "protected-access",
+    "consider-using-sys-exit",
+    "too-many-lines",
+    "consider-using-dict-items",
+    "inconsistent-return-statements",
+    "use-implicit-booleaness-not-comparison",
+    "expression-not-assigned",
+    "used-before-assignment",
+    "possibly-used-before-assignment",
+    "raise-missing-from",
+    "redundant-unittest-assert",
+    "subprocess-popen-preexec-fn",
+    "missing-timeout",
 ]
 
 

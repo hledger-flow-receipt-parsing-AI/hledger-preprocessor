@@ -55,7 +55,7 @@ def run_demo():
     print_header()
 
     # Show the command we're running
-    print(f"\033[33m$ nano config.yaml\033[0m")
+    print("\033[33m$ nano config.yaml\033[0m")
     print()
     time.sleep(1.5)
 

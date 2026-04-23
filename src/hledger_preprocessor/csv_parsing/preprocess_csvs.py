@@ -95,7 +95,7 @@ def pre_process_csvs(
                 transactions=transactions,
                 labelled_receipts=labelled_receipts,
                 ai_models_tnx_classification=ai_models_tnx_classification,
-                rule_based_models_tnx_classification=rule_based_models_tnx_classification,
+                rule_based_models_tnx_classification=rule_based_models_tnx_classification,  # noqa: E501
                 category_namespace=config.category_namespace,
                 category_overrides=category_overrides,
             )

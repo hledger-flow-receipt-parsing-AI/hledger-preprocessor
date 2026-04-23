@@ -21,7 +21,7 @@ def get_demo_env() -> dict:
     env["PYTHON"] = sys.executable
     # Skip conda/tool preflight checks in common.sh (test env has everything)
     env["SKIP_PREFLIGHT"] = "1"
-    # Generate only the default theme (not all 8) to keep test runtime reasonable
+    # Generate only the default theme (not all 8) to keep test runtime reasonable  # noqa: E501
     env["GIF_GENERATE_THEMED"] = "false"
     env["GIF_GENERATE_SHOWCASE"] = "false"
     # Skip the video stitching step (concatenating prerequisite videos)

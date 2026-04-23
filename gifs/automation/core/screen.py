@@ -27,7 +27,7 @@ def emit_node_marker(node_id: str) -> None:
 
 
 class StoryMarkerEmitter:
-    """Stateful emitter that walks through a story's YAML-declared marker sequence.
+    """Stateful emitter that walks through a story's YAML-declared marker sequence.  # noqa: E501
 
     Demo scripts use this instead of hardcoded ``emit_node_marker()`` calls.
     It guarantees markers appear in the cast file in the exact order

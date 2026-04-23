@@ -1,7 +1,7 @@
 """Integration tests for receipt-to-CSV auto-linking.
 
 Covers:
-  US-3.1: Auto-match same currency — receipt 42.17 EUR Jan 15 + CSV 42.17 EUR Jan 15 → 1 match
+  US-3.1: Auto-match same currency — receipt 42.17 EUR Jan 15 + CSV 42.17 EUR Jan 15 → 1 match  # noqa: E501
 """
 
 from datetime import datetime, timedelta
@@ -210,7 +210,7 @@ class TestAutoLinkCombined:
     ) -> None:
         """Wallet receipt with no CSV → date filter returns 0 from bank CSV."""
         # Wallet receipts have no CSV to match against
-        # This test verifies the skip logic: wallet AccountConfig.has_input_csv() == False
+        # This test verifies the skip logic: wallet AccountConfig.has_input_csv() == False  # noqa: E501
         wallet_account = Account(
             base_currency=Currency.EUR,
             account_holder="at",
