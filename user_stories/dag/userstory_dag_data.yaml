@@ -238,6 +238,11 @@ layers:
         desc: "Similar amount different day — ambiguous match candidate"
         used_by: [test]
 
+      - id: csv_ekoplaza_4217_jan18
+        label: "Triodos -42.17 EUR\n2025-01-18 Ekoplaza"
+        desc: "Same ekoplaza 42.17, bank posted 3 days late (receipt Jan 15)"
+        used_by: [test]
+
       - id: csv_delayed_jan18
         label: "Triodos -49.99 EUR\n2025-01-18 ShopX"
         desc: "Posted 3 days late (receipt dated Jan 15)"
@@ -626,6 +631,11 @@ layers:
       - id: out_widen_date
         label: "WIDEN DATE\n±2d -> ±5d"
         desc: "No match at ±2d, user widens to ±5d, finds match"
+        used_by: [test]
+
+      - id: out_tui_widen_date
+        label: "TUI WIDEN DATE\n±2d -> ±5d inline"
+        desc: "Mismatch in TUI, user widens date range via inline matching CLI"
         used_by: [test]
 
       - id: out_widen_amount
@@ -1479,6 +1489,103 @@ stories:
     no_dag_reason: >-
       Not yet implemented — once built, the data path will mirror US-2b.1
       but with AI-generated labels instead of manual entry.
+
+  - id: US-2b.9
+    title: "Date-range error feedback during receipt labelling"
+    section: "Step 2b: Receipt Labelling"
+    status: null
+    as_a: >-
+      user labelling a receipt dated 2025-03-15 for my Triodos checking account
+      whose CSV only has transactions up to 2025-02-28
+    i_want: >-
+      the TUI to show a directional error message in the sidebar panel
+      (e.g. "CSV ends at 2025-02-28, receipt date is 15 days later") and
+      turn the account widget red
+    so_that: >-
+      I know exactly whether to update the CSV or correct the receipt date,
+      without having to wait until the matching step to discover the problem.
+    acceptance_criteria:
+      - >-
+        When the receipt date is after the CSV's latest transaction, the sidebar
+        shows "CSV ends at {max_date}. Receipt date is {N} day(s) later."
+      - >-
+        When the receipt date is before the CSV's earliest transaction, the
+        sidebar shows "CSV starts at {min_date}. Receipt date is {N} day(s)
+        earlier."
+      - >-
+        When the CSV has no transactions for the account, the sidebar shows
+        "No CSV transactions for this account."
+      - >-
+        The account widget turns red on error and reverts to normal when the
+        user corrects the date or selects a different account.
+      - >-
+        All subsequent questions remain visible (not removed) so the user can
+        see what is ahead.
+      - >-
+        The user can navigate back to the date field, correct it, and have the
+        validation re-run automatically on reconfiguration.
+    label: "Date-range error in TUI"
+    colour: "#D32F2F"
+    pattern: solid
+    data_use: test
+    no_dag_reason: >-
+      TUI validation enhancement — shows a directional error in the sidebar
+      when the selected account's CSV does not cover the receipt date.
+      Same data path as US-2b.1.
+
+  - id: US-2b.10
+    title: "Inline matching CLI when no unique CSV match"
+    section: "Step 2b: Receipt Labelling"
+    status: null
+    as_a: >-
+      user labelling a receipt whose amount does not uniquely match a CSV
+      transaction (0 or more than 1 candidates)
+    i_want: >-
+      the TUI to block forward progress and let me either correct the
+      amounts/dates or launch the existing matching CLI inline (with options to
+      widen date/amount range, add conversion rate, or pick from multiple
+      candidates)
+    so_that: >-
+      I can resolve the mismatch immediately without finishing the receipt and
+      coming back to fix it in a separate step 3 session.
+    acceptance_criteria:
+      - >-
+        When the amount check finds 0 or >1 matches, a horizontal choice widget
+        appears after "Add another account (y/n)?" with two options:
+        "Correct amounts/dates" and "Enter matching CLI".
+      - >-
+        Choosing "Correct amounts/dates" removes the choice widget and returns
+        focus to the amount field.
+      - >-
+        Choosing "Enter matching CLI" suspends urwid, runs the 5-option matching
+        CLI (widen date, widen amount, add conversion rate, check receipt, check
+        transactions), and resumes the TUI when done.
+      - >-
+        If the matching CLI resolves the match (unique match found after widening),
+        the TUI resumes with green amount fields and the updated config margins.
+      - >-
+        If the user selects "Check receipt" in the matching CLI, they are returned
+        to the active TUI (since the receipt does not yet fully exist).
+      - >-
+        For >1 candidates (ambiguous match), the matching CLI shows the numbered
+        candidates so the user can pick one (existing `handle_few_matches` flow).
+      - >-
+        The choice widget is automatically removed when a unique match is found
+        (e.g. after correcting a typo).
+      - >-
+        Calling the mismatch check multiple times does not inject duplicate
+        choice widgets.
+    label: "Inline matching CLI in TUI"
+    colour: "#C62828"
+    pattern: solid
+    data_use: test
+    receipt_image: "ekoplaza_card.png"
+    gif_video: 2b10_full_path
+    paths:
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan18, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_tui_widen_date, jrnl_groceries_ekoplaza]
+    demo_paths:
+      - [acct_triodos_csv, acct_eur_wallet, dirp_default, fnames_default, catcfg_default, malgo_default, cat_basic, match_default, start_2024_1000eur, csv_ekoplaza_4217_jan18, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_tui_widen_date, jrnl_groceries_ekoplaza]
+    segment_nodes: [match_default, csv_ekoplaza_4217_jan18, img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur, out_tui_widen_date]
 
 
   # =========================================================================
