@@ -1,14 +1,14 @@
 {
   "markers": {
     "img_atm_gbp": 0.0,
-    "lbl_atm_100gbp": 50.39,
+    "lbl_atm_100gbp": 50.84,
     "nolbl_atm_100gbp": 2.15,
-    "tui_atm_100gbp": 11.05,
-    "tui_atm_100gbp__bank_account": 36.43,
-    "tui_atm_100gbp__category": 16.92,
-    "tui_atm_100gbp__currency": 48.27,
-    "tui_atm_100gbp__date": 11.59,
-    "tui_atm_100gbp__time": 11.59
+    "tui_atm_100gbp": 11.2,
+    "tui_atm_100gbp__bank_account": 36.7,
+    "tui_atm_100gbp__category": 17.18,
+    "tui_atm_100gbp__currency": 48.54,
+    "tui_atm_100gbp__date": 11.73,
+    "tui_atm_100gbp__time": 11.73
   },
-  "total_duration": 58.63
+  "total_duration": 59.09
 }

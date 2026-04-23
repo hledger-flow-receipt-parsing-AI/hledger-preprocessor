@@ -84,8 +84,14 @@ def load_data() -> Dict[str, Any]:
 
 
 def dag_stories(*, stories: List[Dict]) -> List[Dict]:
-    """Filter to stories that have DAG paths."""
-    return [s for s in stories if s.get("paths")]
+    """Filter to stories that have DAG paths or a no_dag_reason.
+
+    Stories with ``paths`` get a full DAG visualization.  Stories with
+    ``no_dag_reason`` (TUI enhancements, not-yet-implemented features)
+    are still included so they appear in the site navigation, but without
+    a DAG diagram.
+    """
+    return [s for s in stories if s.get("paths") or s.get("no_dag_reason")]
 
 
 def story_id_to_safe(*, story_id: str) -> str:
@@ -434,8 +440,10 @@ def generate_overview_svg_direct(
     visible_nodes: set = set()
     visible_edges: set = set()
     for s in stories:
-        visible_nodes.update(collect_nodes_from_paths(s["paths"]))
-        visible_edges.update(collect_edges_from_paths(s["paths"]))
+        paths = s.get("paths", [])
+        if paths:
+            visible_nodes.update(collect_nodes_from_paths(paths))
+            visible_edges.update(collect_edges_from_paths(paths))
 
     node_usage = count_node_usage(stories)
     edge_usage = count_edge_usage(stories)
@@ -809,6 +817,8 @@ def generate_overview_svg_direct(
 
     # Second pass: coloured edges per story
     for s in stories:
+        if not s.get("paths"):
+            continue
         story_edges = collect_edges_from_paths(s["paths"])
         colour = s.get("colour", "#7aa2f7")
         pattern = s.get("pattern", "solid")
@@ -3600,9 +3610,26 @@ def generate_story_html(
             main += f'<span class="bdd-kw">so that</span> {_esc(so_that)}'
         main += "\n</div>\n"
 
+    # Acceptance criteria (shown for stories without DAG paths)
+    ac_list = story.get("acceptance_criteria", [])
+    if ac_list and not story.get("paths"):
+        main += '<div class="acceptance-criteria">\n'
+        main += "<h3>Acceptance Criteria</h3>\n<ul>\n"
+        for ac in ac_list:
+            main += f"<li>{_esc(ac)}</li>\n"
+        main += "</ul>\n</div>\n"
+
+    # No-DAG-reason note
+    no_dag = story.get("no_dag_reason", "")
+    if no_dag:
+        main += (
+            '<div class="no-dag-note">'
+            f"<em>No DAG diagram: {_esc(no_dag)}</em>"
+            "</div>\n"
+        )
+
     main += '<div style="clear:both"></div>\n'
     main += "</div>\n"
-    # (Acceptance criteria removed from page view per Issue 2)
 
     # Side-by-side video + DAG grid
     main += '<div class="video-dag-row">\n'

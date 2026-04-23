@@ -106,6 +106,20 @@ python -m gifs.automation.yaml_typing_gif \
 convert_gif_to_mp4 "${OUTPUT_DIR}/journal_output.gif"
 
 # ---------------------------------------------------------------------------
+# bank_csv_ekoplaza_delayed: Ekoplaza CSV delayed posting for US-2b.10
+# ---------------------------------------------------------------------------
+log "Generating bank_csv_ekoplaza_delayed typing animation..."
+python -m gifs.automation.yaml_typing_gif \
+    --segments \
+        "${DATA_DIR}/csv_ekoplaza_4217_delayed.csv=csv_ekoplaza_4217_jan18" \
+    --output "${OUTPUT_DIR}/bank_csv_ekoplaza_delayed.gif" \
+    --markers-output "${OUTPUT_DIR}/bank_csv_ekoplaza_delayed_markers.json" \
+    --title "triodos-checking-2025.csv (delayed posting)" \
+    --rows 35 \
+    --cols 85
+convert_gif_to_mp4 "${OUTPUT_DIR}/bank_csv_ekoplaza_delayed.gif"
+
+# ---------------------------------------------------------------------------
 # bank_csv_atm_gbp: ATM GBP withdrawal CSV for US-2b.3
 # ---------------------------------------------------------------------------
 log "Generating bank_csv_atm_gbp typing animation..."

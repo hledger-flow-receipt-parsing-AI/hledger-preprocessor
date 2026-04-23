@@ -92,6 +92,7 @@ digraph userstory_dag {
     csv_delayed_jan18 [label="Triodos -49.99 EUR\n2025-01-18 ShopX", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Posted 3 days late (receipt dated Jan 15)"];
     csv_ekoplaza_4217_jan14 [label="Triodos -42.17 EUR\n2025-01-14 Ekoplaza", shape=cylinder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Same amount different day — ambiguous match candidate"];
     csv_ekoplaza_4217_jan15 [label="Triodos -42.17 EUR\n2025-01-15 Ekoplaza", shape=cylinder, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Debit card purchase at Ekoplaza, exact date match"];
+    csv_ekoplaza_4217_jan18 [label="Triodos -42.17 EUR\n2025-01-18 Ekoplaza", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Same ekoplaza 42.17, bank posted 3 days late (receipt Jan 15)"];
     csv_ekoplaza_4300_jan16 [label="Triodos -43.00 EUR\n2025-01-16 Ekoplaza", shape=cylinder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Similar amount different day — ambiguous match candidate"];
     csv_gold_dealer_580 [label="Triodos -580.00 EUR\n2025-01-20 GoldDealer", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="10g gold purchase at 58 EUR/g"];
     csv_rounded_5000 [label="Triodos -50.00 EUR\n2025-01-15 ShopX", shape=cylinder, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Bank rounded 49.99 to 50.00"];
@@ -182,6 +183,7 @@ digraph userstory_dag {
     out_skip_cash [label="SKIP\nno CSV for wallet", shape=diamond, penwidth=1.5, color="#CCCCCC", fontcolor="#999999", tooltip="Cash receipt, no bank CSV to match against"];
     out_swap_dd_mm [label="SWAP DD/MM\n01-05 -> 05-01", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Auto-retry with day/month swapped"];
     out_too_many_reduce [label="TOO MANY (15+)\nuser reduces scope", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="User tightens margins, retries"];
+    out_tui_widen_date [label="TUI WIDEN DATE\n±2d -> ±5d inline", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="Mismatch in TUI, user widens date range via inline matching CLI"];
     out_widen_amount [label="WIDEN AMOUNT\n0 -> ±0.02", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No match at exact, user widens to ±0.02, finds match"];
     out_widen_date [label="WIDEN DATE\n±2d -> ±5d", shape=diamond, penwidth=1.0, color="#CCCCCC", fontcolor="#999999", tooltip="No match at ±2d, user widens to ±5d, finds match"];
   }
@@ -246,6 +248,7 @@ digraph userstory_dag {
   csv_ekoplaza_4217_jan14 -> img_ekoplaza_card [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_ekoplaza_4217_jan15 -> img_ekoplaza_card [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_ekoplaza_4217_jan15 -> out_csv_only_classify [color="#DDDDDD", penwidth=1.0, style=solid];
+  csv_ekoplaza_4217_jan18 -> img_ekoplaza_card [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_ekoplaza_4300_jan16 -> img_ekoplaza_card [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_gold_dealer_580 -> img_gold [color="#DDDDDD", penwidth=1.0, style=solid];
   csv_rounded_5000 -> img_rounded_shop [color="#DDDDDD", penwidth=1.0, style=solid];
@@ -279,6 +282,7 @@ digraph userstory_dag {
   lbl_ekoplaza_card_eur -> out_disambiguate_3 [color="#DDDDDD", penwidth=1.0, style=solid];
   lbl_ekoplaza_card_eur -> out_duplicate_blocked [color="#DDDDDD", penwidth=1.0, style=solid];
   lbl_ekoplaza_card_eur -> out_too_many_reduce [color="#DDDDDD", penwidth=1.0, style=solid];
+  lbl_ekoplaza_card_eur -> out_tui_widen_date [color="#DDDDDD", penwidth=1.0, style=solid];
   lbl_gold_10g -> out_asset_convert [color="#DDDDDD", penwidth=1.0, style=solid];
   lbl_return_item -> out_auto_1hit [color="#DDDDDD", penwidth=1.0, style=solid];
   lbl_rounded_shop -> out_widen_amount [color="#DDDDDD", penwidth=1.0, style=solid];
@@ -316,6 +320,7 @@ digraph userstory_dag {
   out_skip_cash -> jrnl_dinner_split_cash [color="#DDDDDD", penwidth=1.0, style=solid];
   out_skip_cash -> jrnl_repairs_bike [color="#DDDDDD", penwidth=1.0, style=solid];
   out_swap_dd_mm -> jrnl_swapped_shop [color="#DDDDDD", penwidth=1.0, style=solid];
+  out_tui_widen_date -> jrnl_groceries_ekoplaza [color="#DDDDDD", penwidth=1.0, style=solid];
   out_widen_amount -> jrnl_rounded_shop [color="#DDDDDD", penwidth=1.0, style=solid];
   out_widen_date -> jrnl_delayed_shop [color="#DDDDDD", penwidth=1.0, style=solid];
   start_2024_1000eur -> csv_atm_gbp_11750 [color="#DDDDDD", penwidth=1.0, style=solid];
@@ -323,6 +328,7 @@ digraph userstory_dag {
   start_2024_1000eur -> csv_delayed_jan18 [color="#DDDDDD", penwidth=1.0, style=solid];
   start_2024_1000eur -> csv_ekoplaza_4217_jan14 [color="#DDDDDD", penwidth=1.0, style=solid];
   start_2024_1000eur -> csv_ekoplaza_4217_jan15 [color="#DDDDDD", penwidth=1.0, style=solid];
+  start_2024_1000eur -> csv_ekoplaza_4217_jan18 [color="#DDDDDD", penwidth=1.0, style=solid];
   start_2024_1000eur -> csv_ekoplaza_4300_jan16 [color="#DDDDDD", penwidth=1.0, style=solid];
   start_2024_1000eur -> csv_gold_dealer_580 [color="#DDDDDD", penwidth=1.0, style=solid];
   start_2024_1000eur -> csv_rounded_5000 [color="#DDDDDD", penwidth=1.0, style=solid];

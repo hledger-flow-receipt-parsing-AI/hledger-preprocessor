@@ -1,0 +1,157 @@
+@startdot
+digraph userstory_dag {
+  rankdir=TB;
+  fontname="DejaVu Sans";
+  node [fontname="DejaVu Sans", fontsize=10];
+  edge [fontname="DejaVu Sans", fontsize=8];
+  newrank=true;
+  compound=true;
+
+  subgraph cluster_config_group {
+    label="Configuration";
+    labeljust=l;
+    style="dashed"; color="#888888";
+    penwidth=1.5;
+    subgraph cluster_config_accounts {
+      label="Account Configuration";
+      style=filled; fillcolor="#E3F2FD";
+      rank=same;
+      acct_eur_wallet [label="EUR physical\nwallet", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="EUR cash wallet — no CSV import"];
+      acct_triodos_csv [label="Triodos checking\n(EUR CSV)", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos checking account — imports from CSV"];
+    }
+
+    subgraph cluster_config_dir_paths {
+      label="Directory Paths";
+      style=filled; fillcolor="#BBDEFB";
+      rank=same;
+      dirp_default [label="Default dir paths", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard directory layout: import/{holder}/{bank}/{type}/{year}/"];
+    }
+
+    subgraph cluster_config_file_names {
+      label="Filename Convention";
+      style=filled; fillcolor="#90CAF9";
+      rank=same;
+      fnames_default [label="Default filenames", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard filename conventions for CSV, rules, and journal files"];
+    }
+
+    subgraph cluster_config_categorisation {
+      label="Categorisation Config";
+      style=filled; fillcolor="#64B5F6";
+      rank=same;
+      catcfg_default [label="Default categorisation", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard categorisation settings from config.yaml"];
+    }
+
+    subgraph cluster_config_matching_algo {
+      label="Matching Algo Config";
+      style=filled; fillcolor="#42A5F5";
+      rank=same;
+      malgo_default [label="Default matching algo", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Standard matching algorithm settings from config.yaml"];
+    }
+
+  }
+
+  subgraph cluster_categories {
+    label="Categories";
+    style=filled; fillcolor="#E8F5E9";
+    rank=same;
+    cat_basic [label="basic categories", shape=box3d, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="groceries:{ekoplaza,supermarket}, repairs:{bike}, withdrawl:{euro:{pound}}"];
+  }
+
+  subgraph cluster_matching_cfg {
+    label="Matching Parameters";
+    style=filled; fillcolor="#FFF3E0";
+    rank=same;
+    match_default [label="default (±2d, exact)", shape=component, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="days:2, amount_range:0, days_month_swap:true"];
+  }
+
+  subgraph cluster_start_journal {
+    label="Starting Journal";
+    style=filled; fillcolor="#F3E5F5";
+    rank=same;
+    start_2024_1000eur [label="2024: 1000 EUR", shape=note, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Opening balance: Assets:Triodos:Checking 1000 EUR"];
+  }
+
+  subgraph cluster_csv_txn {
+    label="Bank CSV Transactions";
+    style=filled; fillcolor="#E0F7FA";
+    rank=same;
+    csv_ekoplaza_4217_jan18 [label="Triodos -42.17 EUR\n2025-01-18 Ekoplaza", shape=cylinder, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Same ekoplaza 42.17, bank posted 3 days late (receipt Jan 15)"];
+  }
+
+  subgraph cluster_receipt_img {
+    label="Receipt Images";
+    style=filled; fillcolor="#FBE9E7";
+    rank=same;
+    img_ekoplaza_card [label="ekoplaza_card.jpg", shape=folder, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Ekoplaza receipt, paid by card"];
+  }
+
+  subgraph cluster_receipt_lbl_before {
+    label="No label exists yet";
+    style=filled; fillcolor="#FFF0F3";
+    rank=same;
+    nolbl_ekoplaza_card_eur [label="ekoplaza_card\n(no label)", shape=tab, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="No receipt label JSON exists yet for ekoplaza card receipt"];
+  }
+
+  subgraph cluster_receipt_lbl_tui {
+    label="Label receipt in TUI";
+    style=filled; fillcolor="#FCE4EC";
+    rank=same;
+    tui_ekoplaza_card_eur [label="TUI label\nekoplaza_card", shape=tab, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Label ekoplaza card receipt via TUI based on image"];
+  }
+
+  subgraph cluster_receipt_lbl_after {
+    label="Receipt label output JSON";
+    style=filled; fillcolor="#F8BBD0";
+    rank=same;
+    lbl_ekoplaza_card_eur [label="ekoplaza_card\nEUR 42.17 card", shape=tab, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Triodos account, 2025-01-15, groceries:ekoplaza"];
+  }
+
+  subgraph cluster_matching_out {
+    label="Matching Outcome";
+    style=filled; fillcolor="#FFF8E1";
+    rank=same;
+    out_tui_widen_date [label="TUI WIDEN DATE\n±2d -> ±5d inline", shape=diamond, penwidth=1.0, color="#333333", fontcolor="#000000", tooltip="Mismatch in TUI, user widens date range via inline matching CLI"];
+  }
+
+  subgraph cluster_journal_out {
+    label="Journal Output";
+    style=filled; fillcolor="#E8EAF6";
+    rank=same;
+    jrnl_groceries_ekoplaza [label="Expenses:Groceries:\nEkoplaza 42.17 EUR", shape=box, penwidth=3.0, color="#333333", fontcolor="#000000", tooltip="Debit groceries, credit Triodos checking"];
+  }
+
+  _skip_visualization [label="Visualisation", shape=plaintext, fontsize=9, fontcolor="#AAAAAA"];
+
+  acct_eur_wallet -> dirp_default [style=invis];
+  dirp_default -> fnames_default [style=invis];
+  fnames_default -> catcfg_default [style=invis];
+  catcfg_default -> malgo_default [style=invis];
+  malgo_default -> cat_basic [style=invis];
+  cat_basic -> match_default [style=invis];
+  match_default -> start_2024_1000eur [style=invis];
+  start_2024_1000eur -> csv_ekoplaza_4217_jan18 [style=invis];
+  csv_ekoplaza_4217_jan18 -> img_ekoplaza_card [style=invis];
+  img_ekoplaza_card -> nolbl_ekoplaza_card_eur [style=invis];
+  nolbl_ekoplaza_card_eur -> tui_ekoplaza_card_eur [style=invis];
+  tui_ekoplaza_card_eur -> lbl_ekoplaza_card_eur [style=invis];
+  lbl_ekoplaza_card_eur -> out_tui_widen_date [style=invis];
+  out_tui_widen_date -> jrnl_groceries_ekoplaza [style=invis];
+  jrnl_groceries_ekoplaza -> _skip_visualization [style=dotted, color="#CCCCCC", arrowhead=none];
+
+  acct_eur_wallet -> dirp_default [color="#C62828", penwidth=2.5, style=solid];
+  acct_triodos_csv -> acct_eur_wallet [color="#C62828", penwidth=2.5, style=solid];
+  cat_basic -> match_default [color="#C62828", penwidth=2.5, style=solid];
+  catcfg_default -> malgo_default [color="#C62828", penwidth=2.5, style=solid];
+  csv_ekoplaza_4217_jan18 -> img_ekoplaza_card [color="#C62828", penwidth=2.5, style=solid];
+  dirp_default -> fnames_default [color="#C62828", penwidth=2.5, style=solid];
+  fnames_default -> catcfg_default [color="#C62828", penwidth=2.5, style=solid];
+  img_ekoplaza_card -> nolbl_ekoplaza_card_eur [color="#C62828", penwidth=2.5, style=solid];
+  lbl_ekoplaza_card_eur -> out_tui_widen_date [color="#C62828", penwidth=2.5, style=solid];
+  malgo_default -> cat_basic [color="#C62828", penwidth=2.5, style=solid];
+  match_default -> start_2024_1000eur [color="#C62828", penwidth=2.5, style=solid];
+  nolbl_ekoplaza_card_eur -> tui_ekoplaza_card_eur [color="#C62828", penwidth=2.5, style=solid];
+  out_tui_widen_date -> jrnl_groceries_ekoplaza [color="#C62828", penwidth=2.5, style=solid];
+  start_2024_1000eur -> csv_ekoplaza_4217_jan18 [color="#C62828", penwidth=2.5, style=solid];
+  tui_ekoplaza_card_eur -> lbl_ekoplaza_card_eur [color="#C62828", penwidth=2.5, style=solid];
+}
+@enddot

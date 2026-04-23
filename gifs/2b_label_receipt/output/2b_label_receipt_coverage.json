@@ -329,15 +329,15 @@
     "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/create_widgets.py": "626a94bacd53710735e98a860d846645be72e5a7f7a12591b23772113c6e6a2f",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/generator.py": "0613a654e7eb1fcab1029754db0e2ec3e54c127de9111254444a6ae541637ad0",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/get_answers.py": "306756386a0692193da5210d5b8b495e01d8a0aefdbf347568f2e2bb59f9d10e",
-    "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/palette.py": "fc53db64abfae0904c6449d491fa53569d742aeff0b3f4239b7e6daa7b20ebe7",
+    "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/palette.py": "1a0fdbfeb4be27e75aa3e3c465dac48f5a140b00ac0ba61262b20e355317cdfe",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/reconfiguration/__init__.py": "6f72d79ee7f9c7ad1c612897983aee859b8ff4ce74aed6615839ed41bc4bfe74",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/reconfiguration/adding_questions.py": "42daffb0773cf0197c24576a11cb491cce964dd9895be79fab3b99f5a75dfecb",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/reconfiguration/move_optionals_to_end.py": "e1edd9895a8e3960f78c3e8d664c92e419b9fb9ad40e2b09651ab5f987e45b52",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/reconfiguration/pre_filling_receipt_answers0.py": "18df55e42621cccf35bf8408154a77e4dfc4c117d07bdd9d005cb98df95bfb8f",
-    "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/reconfiguration/reconfiguration.py": "a6bf973cc420d3f3c129d298ef07b520f76fd36db5c7ea8e1f5be6aa653e00c6",
+    "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/reconfiguration/reconfiguration.py": "f96efce350136832936b2e683fea10049872e166bc1cd7f1644b860e0947a918",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/question_app/reconfiguration/removing_questions.py": "ed7293a79e3c078c6ece604d4c58f0dc791fd8c0f538c473f1e7844670b02893",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/question_data_classes.py": "26b01182e8ad63281a00144909839a96e09b8cde6ab83e68e4e9754240ac0ebc",
-    "tui-image-labeller/src/tui_labeller/tuis/urwid/receipts/AccountQuestions.py": "7f5cae262136da07353c33adfcea21bf98812d724729963be8b47524bebf56dd",
+    "tui-image-labeller/src/tui_labeller/tuis/urwid/receipts/AccountQuestions.py": "60898672cf1270e47d473bfa3a96796133cab77b07cac4ab20b4440810cfa82c",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/receipts/AnsweredQuestion.py": "63ae3145654d933e8e1ff2c6a8b2358fe1983b1a5921f8f65d97cea8ebcca141",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/receipts/BaseQuestions.py": "70196001511e806b67ebfb309f4aac08096b4a9b15eee735356fc59172656c3f",
     "tui-image-labeller/src/tui_labeller/tuis/urwid/receipts/CardPaymentQuestions.py": "09308168f389df76750a340589dddbddf46965f387ba3fcd3d211e988c784d6b",
@@ -704,6 +704,6 @@
     "tui-image-labeller/src/tui_labeller/tuis/urwid/receipts/receipt_helper.py"
   ],
   "gif": "2b_label_receipt",
-  "recorded_at": "2026-04-20T21:52:47.444754+00:00",
+  "recorded_at": "2026-04-21T22:18:15.927092+00:00",
   "type": "config-dependent"
 }
