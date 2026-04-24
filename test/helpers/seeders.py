@@ -268,7 +268,12 @@ def _seed_receipt_images(
             continue
 
         data = json.loads(src_path.read_text())
-        img_filename = Path(data["raw_img_filepath"]).name
+        # Support both old and new JSON key names.
+        _old_path = (
+            data.get("raw_img_filepath")
+            or data.get("raw_img_filepaths", [""])[0]
+        )
+        img_filename = Path(_old_path).name
         new_img_path = imgs_dir / img_filename
 
         # Create a realistic receipt image from the JSON data
@@ -318,13 +323,20 @@ def seed_receipts_into_root(
 
         # Load and update the JSON to point to the new temp root
         data = json.loads(src_path.read_text())
-        img_filename = Path(data["raw_img_filepath"]).name
+        # Support both old and new JSON key names.
+        _old_path = (
+            data.get("raw_img_filepath")
+            or data.get("raw_img_filepaths", [""])[0]
+        )
+        img_filename = Path(_old_path).name
         new_img_path = imgs_dir / img_filename
 
         # Create a realistic receipt image from the JSON data
         img = _create_receipt_image(data, i)
         img.save(new_img_path, "JPEG")
-        data["raw_img_filepath"] = str(new_img_path)
+        # Write new-format key; old labels normalized on load.
+        data.pop("raw_img_filepath", None)
+        data["raw_img_filepaths"] = [str(new_img_path)]
 
         # Also create the cropped/processed version of the image
         # The cropped filename is: {basename}_cropped.jpg
