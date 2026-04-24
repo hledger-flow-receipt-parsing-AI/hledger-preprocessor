@@ -235,7 +235,7 @@ def create_test_environment() -> Dict[str, Any]:
             "the_date": "2025-03-01T11:00:00",
             "unit_price": 25.0,
         },
-        "raw_img_filepath": str(img_path),
+        "raw_img_filepaths": [str(img_path)],
         "receipt_category": "clothing:store",
         "receipt_owner_address": None,
         "shop_identifier": {

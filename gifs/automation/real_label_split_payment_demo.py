@@ -223,7 +223,7 @@ def create_test_environment() -> Dict[str, Any]:
             "unit_price": None,
         },
         "net_returned_items": None,
-        "raw_img_filepath": str(img_path),
+        "raw_img_filepaths": [str(img_path)],
         "receipt_category": "food:restaurant",
         "receipt_owner_address": None,
         "shop_identifier": {
