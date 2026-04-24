@@ -56,7 +56,7 @@ def edit_receipt(*, config: Config, labelled_receipts: List[Receipt]) -> None:
     )
     modified_receipt: Receipt = make_receipt_label(
         config=config,
-        raw_receipt_img_filepath=selected_receipt.raw_img_filepath,
+        raw_receipt_img_filepaths=selected_receipt.raw_img_filepaths,
         cropped_receipt_img_filepath=cropped_receipt_img_filepath,
         hledger_account_infos=hledger_account_infos,
         csv_transactions_per_account=csv_transactions_per_account,

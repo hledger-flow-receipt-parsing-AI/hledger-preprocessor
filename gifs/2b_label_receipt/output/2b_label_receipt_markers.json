@@ -1,23 +1,7 @@
 {
   "markers": {
     "img_ekoplaza_card": 0.0,
-    "lbl_ekoplaza_card_eur": 47.9,
-    "nolbl_ekoplaza_card_eur": 2.16,
-    "tui_ekoplaza_card_eur": 11.14,
-    "tui_ekoplaza_card_eur__amount": 24.45,
-    "tui_ekoplaza_card_eur__bank_account": 22.55,
-    "tui_ekoplaza_card_eur__category": 18.4,
-    "tui_ekoplaza_card_eur__change": 26.18,
-    "tui_ekoplaza_card_eur__currency": 23.5,
-    "tui_ekoplaza_card_eur__date": 11.68,
-    "tui_ekoplaza_card_eur__shop_city": 39.65,
-    "tui_ekoplaza_card_eur__shop_country": 41.87,
-    "tui_ekoplaza_card_eur__shop_house_nr": 36.64,
-    "tui_ekoplaza_card_eur__shop_name": 32.08,
-    "tui_ekoplaza_card_eur__shop_street": 34.06,
-    "tui_ekoplaza_card_eur__shop_zipcode": 37.9,
-    "tui_ekoplaza_card_eur__tax": 43.61,
-    "tui_ekoplaza_card_eur__time": 11.68
+    "nolbl_ekoplaza_card_eur": 3.15
   },
-  "total_duration": 56.16
+  "total_duration": 11.41
 }
