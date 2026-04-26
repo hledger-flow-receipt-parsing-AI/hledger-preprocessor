@@ -110,11 +110,17 @@ hledger_preprocessor --run-pipeline --config config.yaml
 
 # Individual steps
 hledger_preprocessor --map-csv bank_export.csv          # Interactive CSV column mapping
-hledger_preprocessor --tui-label-receipts --config ...  # Receipt labelling TUI
+hledger_preprocessor --tui-label-receipts --config ...  # Receipt labelling TUI (with AI suggestions)
 hledger_preprocessor --match-receipts --config ...      # Batch receipt matching
 hledger_preprocessor --preprocess-csvs --config ...     # Process CSV transactions
 hledger_preprocessor --generate-rules --config ...      # Generate hledger rules
 hledger_preprocessor --check-categorisation --config ...# Validate categorisation
+
+# AI features (requires Ollama + hledger-ai)
+hledger_preprocessor --make-ai-labels --config ...      # Auto-label receipts via VLM
+hledger_preprocessor --train-models --config ...        # Train transaction classifiers
+hledger_preprocessor --train-models --model setfit ...  # Train only SetFit model
+hledger_preprocessor --train-models --force-retrain ... # Force retrain (skip hash check)
 
 # Non-interactive mode (for CI/CD)
 hledger_preprocessor --run-pipeline --config ... --non-interactive

@@ -201,6 +201,94 @@ def main() -> None:
             config=config,
         )
 
+    if args.train_models:
+        try:
+            from hledger_ai.training.train_runner import run_training
+
+            results = run_training(
+                labelled_receipts=labelled_receipts,
+                models_dir=(
+                    config.ai.models_dir
+                    if config.ai
+                    else "~/.hledger-ai/models"
+                ),
+                feedback_dir=(
+                    config.ai.feedback_dir
+                    if config.ai
+                    else "~/.hledger-ai/feedback"
+                ),
+                model_choice=args.model,
+                force_retrain=args.force_retrain,
+                ai_config=config.ai,
+            )
+            for model_name, result in results.items():
+                if result.get("trained"):
+                    print(
+                        f"  {model_name}: trained"
+                        f" ({result.get('num_examples', '?')} examples)"
+                    )
+                elif result.get("skipped"):
+                    print(f"  {model_name}: skipped ({result.get('reason')})")
+                else:
+                    print(
+                        f"  {model_name}:"
+                        f" {result.get('error', 'unknown error')}"
+                    )
+        except ImportError:
+            print(
+                "Error: hledger-ai is not installed. "
+                "Install it to use --train-models."
+            )
+            sys.exit(1)
+
+    if args.make_ai_labels:
+        try:
+            from hledger_ai.auto_labeller import AutoLabeller
+            from hledger_ai.get_models import build_extraction_pipeline
+
+            ai_cfg = config.ai
+            pipeline = build_extraction_pipeline(
+                ollama_url=(
+                    ai_cfg.ollama_url if ai_cfg else "http://localhost:11434"
+                ),
+                vlm_model=ai_cfg.vlm_model if ai_cfg else "qwen3-vl:2b",
+                text_model=ai_cfg.text_model if ai_cfg else "qwen3:0.6b",
+            )
+            labeller = AutoLabeller(
+                pipeline=pipeline,
+                auto_accept_threshold=(
+                    ai_cfg.auto_accept_threshold if ai_cfg else 0.9
+                ),
+            )
+
+            from hledger_preprocessor.helper import get_images_in_folder
+
+            image_dir = config.dir_paths.get_path(
+                "receipt_images_input_dir", absolute=True
+            )
+            label_dir = config.dir_paths.get_path(
+                "receipt_labels_dir", absolute=True
+            )
+            images = get_images_in_folder(folder_path=image_dir)
+            if not images:
+                print("No receipt images found to label.")
+            else:
+                result = labeller.label_batch(
+                    image_paths=images, output_dir=label_dir
+                )
+                print(
+                    f"AI labelling complete: {result['labelled']} labelled,"
+                    f" {result['skipped']} skipped,"
+                    f" {result['failed']} failed"
+                    f" (out of {result['total']} images)"
+                )
+        except ImportError:
+            print(
+                "Error: hledger-ai is not installed. "
+                "Install it to use --make-ai-labels."
+            )
+            sys.exit(1)
+
     if args.tui_label_receipts:
         manage_creating_receipt_img_labels_with_tui(
             config=config, labelled_receipts=labelled_receipts, verbose=False

@@ -159,11 +159,14 @@ hledger_preprocessor --config ~/finance/config.yaml <action>
 | `--preprocess-assets`             | `-s`  | Preprocess exported asset CSVs                                       |
 | `--generate-rules`                | `-r`  | Generate `.rules` file for hledger-flow                              |
 | `--tui-label-receipts`            | `-t`  | Label receipt images in the TUI                                      |
-| `--make-ai-labels`                | `-a`  | Use AI (Donut model) to label receipts                               |
+| `--make-ai-labels`                | `-a`  | Auto-label receipt images using the AI extraction pipeline           |
 | `--improve-manual-labels`         | `-i`  | Review/improve existing manual labels                                |
 | `--edit-receipt`                  | `-e`  | Edit a receipt (rotate/crop) in the TUI                              |
 | `--link-receipts-to-transactions` | `-l`  | Match receipts to bank transactions                                  |
 | `--quick-categorisation`          | `-q`  | Fast feedback on uncategorised transactions (requires `-o` and `-p`) |
+| `--train-models`                  |       | Train/retrain AI models on accumulated labelled data                 |
+| `--model <name>`                  |       | Which model to train: `setfit`, `qwen-lora`, or `all` (default)      |
+| `--force-retrain`                 |       | Force retraining even if the dataset hasn't changed                  |
 
 ______________________________________________________________________
 
@@ -272,16 +275,89 @@ For each receipt:
 
 ______________________________________________________________________
 
-## G. AI Model Installation (CUDA/NVIDIA)
+## G. Local AI Models
 
-Below are commands for setting up CUDA for the Donut receipt OCR model.
-These may be outdated — check NVIDIA's website for current versions.
+The `hledger-ai` package provides self-hosted AI features via
+[Ollama](https://ollama.com/):
+
+- **Receipt extraction** — VLM (Qwen3-VL-2B) extracts date, shop, items,
+  totals from receipt images and suggests them in the TUI.
+- **Transaction classification** — SetFit few-shot classifier + Qwen3-0.6B
+  zero-shot cascade assigns spending categories to bank CSV transactions.
+
+### G.1 Install Ollama and pull models
 
 ```sh
-sudo apt install build-essential gcc-12 g++-12
-conda install libgcc
-nvidia-smi
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
 
-# Download CUDA from: https://developer.nvidia.com/cuda-downloads
-# Follow the instructions for your OS/architecture
+# Pull the required models
+ollama pull qwen3-vl:2b    # Vision-language model for receipts
+ollama pull qwen3:0.6b     # Text model for classification/category
 ```
+
+### G.2 Configure AI in config.yaml
+
+Add an `ai:` section to your config:
+
+```yaml
+ai:
+  ollama_url: "http://localhost:11434"
+  models_dir: "~/.hledger-ai/models"
+  feedback_dir: "~/.hledger-ai/feedback"
+  vlm_model: "qwen3-vl:2b"
+  text_model: "qwen3:0.6b"
+  auto_accept_threshold: 0.9
+  suggest_threshold: 0.3
+```
+
+### G.3 AI-assisted receipt labelling
+
+When `ai:` is configured, `--tui-label-receipts` automatically runs the
+extraction pipeline on each receipt image and pre-populates TUI fields
+with AI suggestions (date, shop, items, totals, category). Suggestions
+appear in the sidebar — press **Alt+U** to accept an AI suggestion.
+
+### G.4 Auto-label receipts (non-interactive)
+
+```sh
+hledger_preprocessor --make-ai-labels --config config.yaml
+```
+
+Runs the extraction pipeline on all unlabelled receipt images and saves
+JSON labels. Already-labelled images are skipped.
+
+### G.5 Train AI models
+
+Train the transaction classifier on your accumulated labelled data:
+
+```sh
+# Train all eligible models (SetFit + Qwen LoRA)
+hledger_preprocessor --train-models --config config.yaml
+
+# Train only SetFit (fast, needs 8+ examples per category)
+hledger_preprocessor --train-models --model setfit --config config.yaml
+
+# Train only Qwen LoRA (needs 50+ examples, GPU recommended)
+hledger_preprocessor --train-models --model qwen-lora --config config.yaml
+
+# Force retrain even if the dataset hasn't changed
+hledger_preprocessor --train-models --force-retrain --config config.yaml
+```
+
+Training uses a SHA-256 hash of the sorted, deduplicated dataset to skip
+retraining when the data hasn't changed. Use `--force-retrain` to override.
+
+Optional dependencies for training:
+
+```sh
+pip install hledger-ai[setfit]     # SetFit few-shot classifier
+pip install hledger-ai[finetune]   # Qwen LoRA fine-tuning (requires GPU)
+```
+
+### G.6 Correction feedback loop
+
+When you override an AI suggestion in the TUI, the correction is logged
+to `~/.hledger-ai/feedback/corrections.jsonl`. These corrections are
+automatically included in the training dataset the next time you run
+`--train-models`, continuously improving accuracy.

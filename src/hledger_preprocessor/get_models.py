@@ -1,28 +1,27 @@
 """Model registry: assembles available classifiers.
 
-If hledger-ai is installed, AI models are included alongside rule-based.
-Otherwise, only rule-based models are available.
+If hledger-ai is installed, the new TransactionClassifier (SetFit +
+Qwen3 cascade) is used alongside rule-based.  Otherwise, only
+rule-based models are available.
 """
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from hledger_core.generics.enums import ClassifierType, LogicType
-from hledger_core.generics.ReceiptCategoryModel import (
-    ReceiptCategoryModel,
-)
-from hledger_core.generics.ReceiptImageToObjModel import (
-    ReceiptImageToObjModel,
-)
 from hledger_core.generics.TransactionCategoryModel import (
     TransactionCategoryModel,
 )
 from typeguard import typechecked
 
+log = logging.getLogger(__name__)
+
 try:
-    from hledger_ai.categorisation.ai_based.ai_eg0 import ExampleAIModel
-    from hledger_ai.receipts_to_objects.ai_based.donut import DonutAI
+    from hledger_ai.modules.transaction_classifier import (
+        TransactionClassifier,
+    )
 
     _ai_available = True
 except ImportError:
@@ -42,28 +41,11 @@ def get_models(
     *, quick_categorisation: bool
 ) -> dict[ClassifierType, dict[LogicType, Any]]:
 
-    if quick_categorisation:
-        classifiers: dict[ClassifierType, dict[LogicType, Any]] = {
-            ClassifierType.TRANSACTION_CATEGORY: (
-                get_transaction_classification_models()
-            ),
-        }
-    else:
-        classifiers: dict[ClassifierType, dict[LogicType, Any]] = {
-            ClassifierType.TRANSACTION_CATEGORY: (
-                get_transaction_classification_models()
-            ),
-        }
-        if _ai_available:
-            classifiers[ClassifierType.RECEIPT_IMAGE_TO_OBJ] = (
-                get_receipt_image_to_obj_models()
-            )
-            classifiers[ClassifierType.RECEIPT_IMG_CATEGORY] = (
-                get_receipt_img_classification_models()
-            )
-            classifiers[ClassifierType.RECEIPT_OBJ_CATEGORY] = (
-                get_receipt_obj_classification_models()
-            )
+    classifiers: dict[ClassifierType, dict[LogicType, Any]] = {
+        ClassifierType.TRANSACTION_CATEGORY: (
+            get_transaction_classification_models()
+        ),
+    }
     return classifiers
 
 
@@ -78,39 +60,12 @@ def get_transaction_classification_models() -> (
         LogicType.RULE_BASED: [rule_based_model_tnx_classification],
     }
     if _ai_available:
-        ai_model_tnx_classification: TransactionCategoryModel = ExampleAIModel()
-        result[LogicType.AI] = [ai_model_tnx_classification]
-    return result
-
-
-def get_receipt_image_to_obj_models() -> (
-    dict[str, list[ReceiptImageToObjModel]]
-):
-    ai_img_to_receipt_obj: ReceiptImageToObjModel = DonutAI()
-    return {
-        LogicType.AI: [ai_img_to_receipt_obj],
-    }
-
-
-def get_receipt_img_classification_models() -> (
-    dict[str, list[ReceiptCategoryModel]]
-):
-    ai_img_classifier: ReceiptCategoryModel = ExampleAIModel()
-    return {
-        LogicType.AI: [ai_img_classifier],
-    }
-
-
-def get_receipt_obj_classification_models() -> (
-    dict[str, list[ReceiptCategoryModel]]
-):
-    rule_based_receipt_obj_classifier: ReceiptCategoryModel = (
-        _get_rule_based_model()
-    )
-    result: dict[LogicType, list[ReceiptCategoryModel]] = {
-        LogicType.RULE_BASED: [rule_based_receipt_obj_classifier],
-    }
-    if _ai_available:
-        ai_receipt_obj_classifier: ReceiptCategoryModel = ExampleAIModel()
-        result[LogicType.AI] = [ai_receipt_obj_classifier]
+        try:
+            classifier = TransactionClassifier()
+            result[LogicType.AI] = [classifier]
+        except Exception:
+            log.warning(
+                "TransactionClassifier init failed; AI classification disabled",
+                exc_info=True,
+            )
     return result
