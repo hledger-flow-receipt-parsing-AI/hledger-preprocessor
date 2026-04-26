@@ -290,6 +290,8 @@ def main() -> None:
             sys.exit(1)
 
     if args.tui_label_receipts:
+        if args.skip_ai:
+            config._skip_ai = True
         manage_creating_receipt_img_labels_with_tui(
             config=config, labelled_receipts=labelled_receipts, verbose=False
         )
