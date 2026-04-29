@@ -290,10 +290,38 @@ def manage_creating_receipt_img_labels_with_tui(
         raw_receipt_img_filepaths=raw_receipt_img_filepaths, config=config
     )
 
+    # Step 3: Group duplicate images (optional)
+    image_groups: List[List[str]] = [
+        [fp] for fp in raw_receipt_img_filepaths
+    ]  # default: 1 image per group
+    if getattr(config, "_group_receipts", False):
+        from hledger_receipt_processing.receipts_to_objects.group_images import (  # noqa: E501
+            group_receipt_images,
+            load_image_grouping,
+        )
+
+        regroup = getattr(config, "_regroup", False)
+        if regroup:
+            image_groups = group_receipt_images(
+                config=config, image_paths=raw_receipt_img_filepaths
+            )
+        else:
+            saved = load_image_grouping(config=config)
+            if saved is not None:
+                print(
+                    f"Loaded existing grouping ({len(saved)} groups). "
+                    "Use --regroup to redo."
+                )
+                image_groups = saved
+            else:
+                image_groups = group_receipt_images(
+                    config=config, image_paths=raw_receipt_img_filepaths
+                )
+
     receipt_per_raw_img_filepath: Dict[str, Receipt] = (
         manually_make_receipt_labels(
             config=config,
-            raw_receipt_img_filepaths=raw_receipt_img_filepaths,
+            image_groups=image_groups,
             labelled_receipts=labelled_receipts,
             verbose=verbose,
         )

@@ -289,9 +289,48 @@ def main() -> None:
             )
             sys.exit(1)
 
+    if args.group_receipts and not args.tui_label_receipts:
+        # Standalone grouping: rotate, crop, then group only (no labelling).
+        from hledger_core.helper import get_images_in_folder
+        from hledger_receipt_processing.receipts_to_objects.edit_images.crop_image import (  # noqa: E501
+            crop_images,
+        )
+        from hledger_receipt_processing.receipts_to_objects.edit_images.rotate_all_images import (  # noqa: E501
+            rotate_images,
+        )
+        from hledger_receipt_processing.receipts_to_objects.group_images import (  # noqa: E501
+            group_receipt_images,
+            load_image_grouping,
+        )
+
+        raw_imgs = get_images_in_folder(
+            folder_path=config.dir_paths.get_path(
+                "receipt_images_input_dir", absolute=True
+            )
+        )
+        rotate_images(raw_receipt_img_filepaths=raw_imgs, config=config)
+        crop_images(raw_receipt_img_filepaths=raw_imgs, config=config)
+
+        if args.regroup:
+            group_receipt_images(config=config, image_paths=raw_imgs)
+        else:
+            saved = load_image_grouping(config=config)
+            if saved is not None:
+                print(
+                    "Loaded existing grouping"
+                    f" ({len(saved)} groups). "
+                    "Use --regroup to redo."
+                )
+            else:
+                group_receipt_images(config=config, image_paths=raw_imgs)
+
     if args.tui_label_receipts:
         if args.skip_ai:
             config._skip_ai = True
+        if args.group_receipts:
+            config._group_receipts = True
+        if args.regroup:
+            config._regroup = True
         manage_creating_receipt_img_labels_with_tui(
             config=config, labelled_receipts=labelled_receipts, verbose=False
         )
