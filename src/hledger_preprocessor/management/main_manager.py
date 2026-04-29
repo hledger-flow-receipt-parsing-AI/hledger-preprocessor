@@ -297,6 +297,7 @@ def manage_creating_receipt_img_labels_with_tui(
     from hledger_receipt_processing.receipts_to_objects.group_images import (  # noqa: E501
         group_receipt_images,
         load_image_grouping,
+        save_image_grouping,
     )
 
     image_groups: List[List[str]] = [
@@ -307,30 +308,43 @@ def manage_creating_receipt_img_labels_with_tui(
     wants_grouping = getattr(config, "_group_receipts", False)
 
     if regroup:
-        # --regroup: always run fresh interactive grouping
+        # --regroup: discard saved grouping and redo from scratch.
+        # group_receipt_images still skips images that have labels.
         image_groups = group_receipt_images(
             config=config, image_paths=raw_receipt_img_filepaths
         )
     else:
         saved = load_image_grouping(config=config)
         if saved is not None:
-            # Add any new images not covered by the saved grouping as
-            # singletons so they are not silently skipped.
             grouped_paths: set = {p for group in saved for p in group}
             new_images = [
                 fp
                 for fp in raw_receipt_img_filepaths
                 if fp not in grouped_paths
             ]
-            image_groups = saved + [[fp] for fp in new_images]
-            print(
-                f"Loaded existing grouping ({len(saved)} groups)."
-                + (
-                    f" {len(new_images)} new image(s) added as ungrouped."
-                    if new_images
-                    else ""
+            if new_images and wants_grouping:
+                # Group only the new images interactively, then merge.
+                print(
+                    f"\n{len(new_images)} new image(s) to group"
+                    f" ({len(saved)} existing groups kept)."
                 )
-            )
+                new_groups = group_receipt_images(
+                    config=config, image_paths=new_images
+                )
+                image_groups = saved + new_groups
+                save_image_grouping(config=config, groups=image_groups)
+            else:
+                # No --group-receipts or no new images: add new
+                # images as singletons.
+                image_groups = saved + [[fp] for fp in new_images]
+                print(
+                    f"Loaded existing grouping ({len(saved)} groups)."
+                    + (
+                        f" {len(new_images)} new image(s) added as ungrouped."
+                        if new_images
+                        else ""
+                    )
+                )
         elif wants_grouping:
             # --group-receipts but no saved state: run interactive
             image_groups = group_receipt_images(

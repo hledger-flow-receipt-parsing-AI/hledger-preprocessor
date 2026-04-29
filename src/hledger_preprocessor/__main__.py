@@ -301,6 +301,7 @@ def main() -> None:
         from hledger_receipt_processing.receipts_to_objects.group_images import (  # noqa: E501
             group_receipt_images,
             load_image_grouping,
+            save_image_grouping,
         )
 
         raw_imgs = get_images_in_folder(
@@ -316,11 +317,28 @@ def main() -> None:
         else:
             saved = load_image_grouping(config=config)
             if saved is not None:
-                print(
-                    "Loaded existing grouping"
-                    f" ({len(saved)} groups). "
-                    "Use --regroup to redo."
-                )
+                grouped_paths: set = {p for group in saved for p in group}
+                new_images = [fp for fp in raw_imgs if fp not in grouped_paths]
+                if new_images:
+                    print(
+                        f"\n{len(new_images)} new image(s) to group"
+                        f" ({len(saved)} existing groups kept)."
+                    )
+                    new_groups = group_receipt_images(
+                        config=config, image_paths=new_images
+                    )
+                    # Merge: saved groups + newly grouped images.
+                    # group_receipt_images already saved its own result;
+                    # overwrite with the merged version.
+                    merged = saved + new_groups
+                    save_image_grouping(config=config, groups=merged)
+                    print(f"Merged grouping: {len(merged)} total groups.")
+                else:
+                    print(
+                        "Loaded existing grouping"
+                        f" ({len(saved)} groups). "
+                        "No new images. Use --regroup to redo."
+                    )
             else:
                 group_receipt_images(config=config, image_paths=raw_imgs)
 
