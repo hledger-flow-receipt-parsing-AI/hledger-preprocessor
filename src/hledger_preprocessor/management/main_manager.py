@@ -314,8 +314,23 @@ def manage_creating_receipt_img_labels_with_tui(
     else:
         saved = load_image_grouping(config=config)
         if saved is not None:
-            print(f"Loaded existing grouping ({len(saved)} groups).")
-            image_groups = saved
+            # Add any new images not covered by the saved grouping as
+            # singletons so they are not silently skipped.
+            grouped_paths: set = {p for group in saved for p in group}
+            new_images = [
+                fp
+                for fp in raw_receipt_img_filepaths
+                if fp not in grouped_paths
+            ]
+            image_groups = saved + [[fp] for fp in new_images]
+            print(
+                f"Loaded existing grouping ({len(saved)} groups)."
+                + (
+                    f" {len(new_images)} new image(s) added as ungrouped."
+                    if new_images
+                    else ""
+                )
+            )
         elif wants_grouping:
             # --group-receipts but no saved state: run interactive
             image_groups = group_receipt_images(
