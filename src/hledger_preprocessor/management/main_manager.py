@@ -290,33 +290,38 @@ def manage_creating_receipt_img_labels_with_tui(
         raw_receipt_img_filepaths=raw_receipt_img_filepaths, config=config
     )
 
-    # Step 3: Group duplicate images (optional)
+    # Step 3: Apply image grouping.
+    # Always check for a saved grouping file so that a previous
+    # --group-receipts session is honoured even when only
+    # --tui-label-receipts is passed.
+    from hledger_receipt_processing.receipts_to_objects.group_images import (  # noqa: E501
+        group_receipt_images,
+        load_image_grouping,
+    )
+
     image_groups: List[List[str]] = [
         [fp] for fp in raw_receipt_img_filepaths
     ]  # default: 1 image per group
-    if getattr(config, "_group_receipts", False):
-        from hledger_receipt_processing.receipts_to_objects.group_images import (  # noqa: E501
-            group_receipt_images,
-            load_image_grouping,
-        )
 
-        regroup = getattr(config, "_regroup", False)
-        if regroup:
+    regroup = getattr(config, "_regroup", False)
+    wants_grouping = getattr(config, "_group_receipts", False)
+
+    if regroup:
+        # --regroup: always run fresh interactive grouping
+        image_groups = group_receipt_images(
+            config=config, image_paths=raw_receipt_img_filepaths
+        )
+    else:
+        saved = load_image_grouping(config=config)
+        if saved is not None:
+            print(f"Loaded existing grouping ({len(saved)} groups).")
+            image_groups = saved
+        elif wants_grouping:
+            # --group-receipts but no saved state: run interactive
             image_groups = group_receipt_images(
-                config=config, image_paths=raw_receipt_img_filepaths
+                config=config,
+                image_paths=raw_receipt_img_filepaths,
             )
-        else:
-            saved = load_image_grouping(config=config)
-            if saved is not None:
-                print(
-                    f"Loaded existing grouping ({len(saved)} groups). "
-                    "Use --regroup to redo."
-                )
-                image_groups = saved
-            else:
-                image_groups = group_receipt_images(
-                    config=config, image_paths=raw_receipt_img_filepaths
-                )
 
     receipt_per_raw_img_filepath: Dict[str, Receipt] = (
         manually_make_receipt_labels(
