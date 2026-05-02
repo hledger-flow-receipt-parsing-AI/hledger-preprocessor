@@ -731,33 +731,33 @@ def generate_overview_svg_direct(
         dst_idx = layer_idx.get(dst_layer, 0)
         layer_gap = abs(dst_idx - src_idx)
 
-        # Length of the straight vertical lead-in segment before the
-        # arrowhead so the visible line enters through the triangle's
-        # base centre regardless of the curve's approach angle.
-        ARROW_LEAD = 8
-
         if layer_gap == 0:
             # Same layer — arc above the cluster box so the curve
             # doesn't pass through sibling node boxes.
             _, cy, _, _ = cluster_box[src_layer]
             arc_y = cy - 10 - lane_offset  # above the cluster
-            # Curve to just above the target, then straight vertical
-            # lead-in to the arrowhead.
+            # Blend cp2 x toward source so arrowhead tilts to match
+            # the arc's approach direction.
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{sy - NODE_H/2:.1f}"
-                f" C{sx:.1f},{arc_y:.1f} {tx:.1f},{arc_y:.1f}"
-                f" {tx:.1f},{ty - NODE_H/2 - ARROW_LEAD:.1f}"
-                f" L{tx:.1f},{ty - NODE_H/2:.1f}"
+                f" C{sx:.1f},{arc_y:.1f} {cp2_x:.1f},{arc_y:.1f}"
+                f" {tx:.1f},{ty - NODE_H/2:.1f}"
             )
         elif layer_gap == 1:
-            # Adjacent layers — S-curve ending with a straight vertical
-            # lead-in segment so the arrowhead aligns with the line.
+            # Adjacent layers — S-curve.  The second control point is
+            # placed between src and dst x so the tangent at the endpoint
+            # matches the visual approach angle (making orient="auto"
+            # rotate the arrowhead correctly).
             mid_y = (s_bot + t_top) / 2
+            # Blend: 80% toward target x, 20% toward source x.  This
+            # keeps the S-shape but tilts the final tangent to match the
+            # line's approach direction when src and dst are offset.
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
-                f" C{sx:.1f},{mid_y:.1f} {tx:.1f},{mid_y:.1f}"
-                f" {tx:.1f},{t_top - ARROW_LEAD:.1f}"
-                f" L{tx:.1f},{t_top:.1f}"
+                f" C{sx:.1f},{mid_y:.1f} {cp2_x:.1f},{mid_y:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
             )
         else:
             # Non-adjacent: route just outside the local clusters between
@@ -776,6 +776,9 @@ def generate_overview_svg_direct(
             route_x = local_right + lane_step + lane_offset * (lane_step / 8)
             # Small radius for corners
             gap = LAYER_GAP / 2
+            # Blend the final control point so the tangent at the
+            # arrowhead tilts from the route_x direction, not straight down.
+            cp2_x = tx * 0.8 + route_x * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" L{sx:.1f},{s_bot + gap:.1f}"
@@ -784,9 +787,8 @@ def generate_overview_svg_direct(
                 f" {route_x:.1f},{s_bot + gap + 16:.1f}"
                 f" L{route_x:.1f},{t_top - gap - 16:.1f}"
                 f" C{route_x:.1f},{t_top - gap - 8:.1f}"
-                f" {tx:.1f},{t_top - gap - 8:.1f}"
-                f" {tx:.1f},{t_top - gap:.1f}"
-                f" L{tx:.1f},{t_top:.1f}"
+                f" {cp2_x:.1f},{t_top - gap - 8:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
             )
 
     # Collect all unique edges and assign lane offsets for long edges
@@ -1203,39 +1205,37 @@ def generate_story_svg_direct(
         layer_gap = abs(dst_li - src_li)
 
         # Length of the straight vertical lead-in before the arrowhead.
-        ARROW_LEAD = 8
-
         # Cross-column edge (left col -> right col)
         src_in_right = src_layer in right_layer_set
         dst_in_right = dst_layer in right_layer_set
         if use_two_columns and not src_in_right and dst_in_right:
-            # Route: go down from source, curve right, then straight
-            # vertical lead-in to the arrowhead.
-            (sx + tx) / 2
+            # Route: go down from source, curve right to target.
+            # Second control point blended so arrowhead tangent matches
+            # approach direction.
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" C{sx:.1f},{s_bot + 20:.1f}"
-                f" {tx:.1f},{t_top - 20:.1f}"
-                f" {tx:.1f},{t_top - ARROW_LEAD:.1f}"
-                f" L{tx:.1f},{t_top:.1f}"
+                f" {cp2_x:.1f},{t_top - 20:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
             )
 
         if layer_gap == 0:
             _, cy, _, _ = cluster_box[src_layer]
             arc_y = cy - 10 - lane_offset
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{sy - NODE_H/2:.1f}"
-                f" C{sx:.1f},{arc_y:.1f} {tx:.1f},{arc_y:.1f}"
-                f" {tx:.1f},{ty - NODE_H/2 - ARROW_LEAD:.1f}"
-                f" L{tx:.1f},{ty - NODE_H/2:.1f}"
+                f" C{sx:.1f},{arc_y:.1f} {cp2_x:.1f},{arc_y:.1f}"
+                f" {tx:.1f},{ty - NODE_H/2:.1f}"
             )
         elif layer_gap == 1:
             mid_y = (s_bot + t_top) / 2
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
-                f" C{sx:.1f},{mid_y:.1f} {tx:.1f},{mid_y:.1f}"
-                f" {tx:.1f},{t_top - ARROW_LEAD:.1f}"
-                f" L{tx:.1f},{t_top:.1f}"
+                f" C{sx:.1f},{mid_y:.1f} {cp2_x:.1f},{mid_y:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
             )
         else:
             # Non-adjacent: route just outside the local clusters between
@@ -1252,6 +1252,9 @@ def generate_story_svg_direct(
             lane_step = NODE_W * 0.15
             route_x = local_right + lane_step + lane_offset * (lane_step / 8)
             gap = LAYER_GAP / 2
+            # Blend the final control point so the tangent at the
+            # arrowhead tilts from the route_x direction, not straight down.
+            cp2_x = tx * 0.8 + route_x * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" L{sx:.1f},{s_bot + gap:.1f}"
@@ -1260,9 +1263,8 @@ def generate_story_svg_direct(
                 f" {route_x:.1f},{s_bot + gap + 16:.1f}"
                 f" L{route_x:.1f},{t_top - gap - 16:.1f}"
                 f" C{route_x:.1f},{t_top - gap - 8:.1f}"
-                f" {tx:.1f},{t_top - gap - 8:.1f}"
-                f" {tx:.1f},{t_top - gap:.1f}"
-                f" L{tx:.1f},{t_top:.1f}"
+                f" {cp2_x:.1f},{t_top - gap - 8:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
             )
 
     # --- Assign lane offsets ---
@@ -3263,10 +3265,13 @@ def generate_matching_flow_svg(
         marker = "mf-arrow-hl" if is_hl else "mf-arrow"
         opacity = "1" if is_hl else "0.4"
         if curved:
-            # S-curve from (x1,y1) to (x2,y2)
+            # S-curve from (x1,y1) to (x2,y2).  Blend cp2 x toward
+            # x1 so the arrowhead tilts to match the approach angle.
             mid_y = (y1 + y2) // 2
+            cp2_x = x2 * 0.8 + x1 * 0.2
             lines.append(
-                f'<path d="M{x1},{y1} C{x1},{mid_y} {x2},{mid_y} {x2},{y2}" '
+                f'<path d="M{x1},{y1} C{x1},{mid_y} {cp2_x},{mid_y}'
+                f' {x2},{y2}" '
                 f'fill="none" stroke="{stroke}" stroke-width="{sw}" '
                 f'opacity="{opacity}" marker-end="url(#{marker})"/>'
             )
