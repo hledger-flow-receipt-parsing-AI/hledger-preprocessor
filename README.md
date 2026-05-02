@@ -4,92 +4,14 @@
 [![License: AGPL v3][agpl3_badge]](https://www.gnu.org/licenses/agpl-3.0)
 [![Code Style: Black][black_badge]](https://github.com/ambv/black)
 
-Automate your double-entry bookkeeping. This CLI tool preprocesses bank CSV
+Uses TUI to label receipt to train self-hosted AIs to automate your
+double-entry bookkeeping. This CLI tool preprocesses bank CSV
 statements and receipt images into [hledger](https://hledger.org/) journals
 via [hledger-flow](https://github.com/a-t-0/hledger-flow) — categorising
 transactions, matching receipts to bank records, and generating balance
 reports and plots.
 
-## Workflow
-
-### 1. Configure accounts and categories
-
-Define your bank accounts and spending categories in YAML:
-
-![Configure accounts](gifs/1a_setup_config/output/cfg_1b.gif)
-
-![Add categories](gifs/1b_add_category/output/cat_basic.gif)
-
-### 2. Label receipts
-
-Crop receipt images, then use the TUI to enter date, shop, amount, and
-payment method:
-
-![Crop receipt](gifs/2a_crop_receipt/output/2a_crop_receipt_workflow.gif)
-
-![Label receipt](gifs/2b_label_receipt/output/2b_label_receipt.gif)
-
-<details>
-<summary>More receipt labelling demos</summary>
-
-**Cash receipt** (no bank CSV match):
-
-![Cash receipt](gifs/2b_label_cash_receipt/output/2b_label_cash_receipt.gif)
-
-**Foreign currency** (e.g. ATM withdrawal in GBP):
-
-![Foreign currency](gifs/2b_label_foreign_currency/output/2b_label_foreign_currency.gif)
-
-**Split payment** (multiple accounts for one purchase):
-
-![Split payment](gifs/2b_label_split_payment/output/2b_label_split_payment.gif)
-
-**Returned items** (negative line items):
-
-![Returned items](gifs/2b_label_returned_items/output/2b_label_returned_items.gif)
-
-</details>
-
-### 3. Match receipts to bank transactions
-
-Algorithmically link receipts to CSV transactions. A matching CLI resolves
-mismatches (date shifts, foreign currency fees, duplicate candidates):
-
-![Match receipt to CSV](gifs/3_match_receipt_to_csv/output/3_match_receipt_to_csv.gif)
-
-<details>
-<summary>More matching demos</summary>
-
-**Foreign currency matching** (conversion fees):
-
-![Foreign currency match](gifs/3b_foreign_currency_match/output/3b_foreign_currency_match.gif)
-
-**Widen date range** (bank processed days later):
-
-![Widen date match](gifs/3c_widen_date_match/output/3c_widen_date_match.gif)
-
-**Disambiguate** (multiple candidates for same amount):
-
-![Disambiguate match](gifs/3d_disambiguate_match/output/3d_disambiguate_match.gif)
-
-</details>
-
-### 4. Run the pipeline
-
-One command to preprocess, import, and generate reports:
-
-```bash
-hledger_preprocessor --run-pipeline --config /path/to/config.yaml
-```
-
-![Run pipeline](gifs/4_run_pipeline/output/4_run_pipeline.gif)
-
-### 5. Visualize your finances
-
-Interactive Sankey diagrams and treemap plots via
-[hledger-plot](https://github.com/a-t-0/hledger-plot):
-
-![Show plots](gifs/5_show_plots/output/5_show_plots.gif)
+See the userstories [in action](https://hledger-flow-receipt-parsing-ai.github.io/hledger-preprocessor/)!
 
 ## Installation
 
