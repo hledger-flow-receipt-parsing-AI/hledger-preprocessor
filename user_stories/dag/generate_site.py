@@ -607,7 +607,7 @@ def generate_overview_svg_direct(
         safe_id = re.sub(r"[^a-zA-Z0-9]", "", key)
         lines.append(
             f'<marker id="arrow_{safe_id}" viewBox="0 0 10 6"'
-            ' refX="10" refY="3" markerWidth="10" markerHeight="8"'
+            ' refX="10" refY="3" markerWidth="10" markerHeight="6"'
             ' orient="auto-start-reverse">'
             f'<path d="M0,0 L10,3 L0,6 Z" fill="{colour}"/>'
             "</marker>"
@@ -731,23 +731,33 @@ def generate_overview_svg_direct(
         dst_idx = layer_idx.get(dst_layer, 0)
         layer_gap = abs(dst_idx - src_idx)
 
+        # Length of the straight vertical lead-in segment before the
+        # arrowhead so the visible line enters through the triangle's
+        # base centre regardless of the curve's approach angle.
+        ARROW_LEAD = 8
+
         if layer_gap == 0:
             # Same layer — arc above the cluster box so the curve
             # doesn't pass through sibling node boxes.
             _, cy, _, _ = cluster_box[src_layer]
             arc_y = cy - 10 - lane_offset  # above the cluster
+            # Curve to just above the target, then straight vertical
+            # lead-in to the arrowhead.
             return (
                 f"M{sx:.1f},{sy - NODE_H/2:.1f}"
                 f" C{sx:.1f},{arc_y:.1f} {tx:.1f},{arc_y:.1f}"
-                f" {tx:.1f},{ty - NODE_H/2:.1f}"
+                f" {tx:.1f},{ty - NODE_H/2 - ARROW_LEAD:.1f}"
+                f" L{tx:.1f},{ty - NODE_H/2:.1f}"
             )
         elif layer_gap == 1:
-            # Adjacent layers — simple S-curve between the two nodes.
+            # Adjacent layers — S-curve ending with a straight vertical
+            # lead-in segment so the arrowhead aligns with the line.
             mid_y = (s_bot + t_top) / 2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" C{sx:.1f},{mid_y:.1f} {tx:.1f},{mid_y:.1f}"
-                f" {tx:.1f},{t_top:.1f}"
+                f" {tx:.1f},{t_top - ARROW_LEAD:.1f}"
+                f" L{tx:.1f},{t_top:.1f}"
             )
         else:
             # Non-adjacent: route just outside the local clusters between
@@ -1192,17 +1202,22 @@ def generate_story_svg_direct(
         dst_li = layer_idx.get(dst_layer, 0)
         layer_gap = abs(dst_li - src_li)
 
+        # Length of the straight vertical lead-in before the arrowhead.
+        ARROW_LEAD = 8
+
         # Cross-column edge (left col -> right col)
         src_in_right = src_layer in right_layer_set
         dst_in_right = dst_layer in right_layer_set
         if use_two_columns and not src_in_right and dst_in_right:
-            # Route: go down from source, curve right, go up to target
+            # Route: go down from source, curve right, then straight
+            # vertical lead-in to the arrowhead.
             (sx + tx) / 2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" C{sx:.1f},{s_bot + 20:.1f}"
                 f" {tx:.1f},{t_top - 20:.1f}"
-                f" {tx:.1f},{t_top:.1f}"
+                f" {tx:.1f},{t_top - ARROW_LEAD:.1f}"
+                f" L{tx:.1f},{t_top:.1f}"
             )
 
         if layer_gap == 0:
@@ -1211,14 +1226,16 @@ def generate_story_svg_direct(
             return (
                 f"M{sx:.1f},{sy - NODE_H/2:.1f}"
                 f" C{sx:.1f},{arc_y:.1f} {tx:.1f},{arc_y:.1f}"
-                f" {tx:.1f},{ty - NODE_H/2:.1f}"
+                f" {tx:.1f},{ty - NODE_H/2 - ARROW_LEAD:.1f}"
+                f" L{tx:.1f},{ty - NODE_H/2:.1f}"
             )
         elif layer_gap == 1:
             mid_y = (s_bot + t_top) / 2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" C{sx:.1f},{mid_y:.1f} {tx:.1f},{mid_y:.1f}"
-                f" {tx:.1f},{t_top:.1f}"
+                f" {tx:.1f},{t_top - ARROW_LEAD:.1f}"
+                f" L{tx:.1f},{t_top:.1f}"
             )
         else:
             # Non-adjacent: route just outside the local clusters between
@@ -1299,7 +1316,7 @@ def generate_story_svg_direct(
     lines.append("<defs>")
     lines.append(
         f'<marker id="{marker_id_base}" viewBox="0 0 10 6"'
-        ' refX="10" refY="3" markerWidth="10" markerHeight="8"'
+        ' refX="10" refY="3" markerWidth="10" markerHeight="6"'
         ' orient="auto-start-reverse">'
         f'<path d="M0,0 L10,3 L0,6 Z" fill="{story_colour}"/>'
         "</marker>"
