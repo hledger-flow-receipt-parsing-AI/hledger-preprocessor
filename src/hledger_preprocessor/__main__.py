@@ -19,6 +19,9 @@ from typeguard import typechecked
 from hledger_preprocessor.checks.check_categorisation import (
     check_categorisation,
 )
+from hledger_preprocessor.checks.check_categorisation_overlap import (
+    check_categorisation_overlap,
+)
 from hledger_preprocessor.checks.check_matching import check_matching
 
 # get_models uses try/except ImportError internally for optional hledger-ai
@@ -107,8 +110,35 @@ def main() -> None:
             labelled_receipts=labelled_receipts,
         )
 
+    if args.check_categorisation_overlap:
+        models_for_check_overlap: Dict[ClassifierType, Dict[LogicType, Any]] = (
+            get_models(quick_categorisation=True)
+        )
+        overlap_errors = check_categorisation_overlap(
+            config=config,
+            models=models_for_check_overlap,
+            labelled_receipts=labelled_receipts,
+        )
+        if overlap_errors:
+            print("")
+            print("=" * 60)
+            print(
+                f"  {len(overlap_errors)} transaction(s) match multiple rules"
+            )
+            print("=" * 60)
+            for err in overlap_errors:
+                print(str(err))
+            print("=" * 60)
+            sys.exit(1)
+        else:
+            print("All categorisation rules are one-hot (no overlaps).")
+
     # If only checks were requested, exit now.
-    if args.check_categorisation or args.check_matching:
+    if (
+        args.check_categorisation
+        or args.check_matching
+        or args.check_categorisation_overlap
+    ):
         if not any(
             [
                 args.preprocess_csvs,

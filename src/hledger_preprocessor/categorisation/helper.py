@@ -28,3 +28,14 @@ def dict_contains_all_of_the_strings(
         ):
             return False
     return True
+
+
+def dict_value_starts_with(d: Dict, prefix: str, case_sensitive: bool) -> bool:
+    """Check if any dict value starts with the given prefix."""
+    if case_sensitive:
+        return any(str(value).startswith(prefix) for value in d.values())
+    else:
+        prefix_lower = prefix.lower()
+        return any(
+            str(value).lower().startswith(prefix_lower) for value in d.values()
+        )
