@@ -1,0 +1,13 @@
+{
+  "frame_duration_ms": 40,
+  "markers": {
+    "acct_bitvavo_csv": 156.44,
+    "acct_kraken_csv": 0.0,
+    "acct_triodos_csv": 310.0,
+    "catcfg_default": 368.36,
+    "dirp_default": 335.56,
+    "fnames_default": 352.92,
+    "malgo_default": 371.08
+  },
+  "total_duration": 377.68
+}

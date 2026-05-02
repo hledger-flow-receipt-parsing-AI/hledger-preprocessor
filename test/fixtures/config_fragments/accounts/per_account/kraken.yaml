@@ -1,0 +1,76 @@
+  # Kraken exchange (multi-row CSV, spend+receive linked by refid)
+  - base_currency: EUR
+    account_holder: at
+    bank: kraken
+    account_type: trading
+    input_csv_filename: "kraken_2025.csv"
+    decimal_format: dot
+    split_column: 3
+    merge_column: 1
+    split_groups:
+      - values: [spend]
+        csv_column_mapping: [
+            ["", ""],                               # txid
+            ["description", "description"],         # refid
+            ["the_datetime", "date"],               # time
+            ["", ""],                               # type (split key)
+            ["", ""],                               # subtype
+            ["", ""],                               # aclass
+            ["", ""],                               # subclass
+            ["spend_currency", "base_currency"],    # asset
+            ["", ""],                               # wallet
+            ["spend_amount", "amount"],             # amount
+            ["fee_amount", "fee_amount"],           # fee
+            ["", ""],                               # balance
+          ]
+        tnx_date_columns: [["the_datetime", "date"]]
+      - values: [receive]
+        csv_column_mapping: [
+            ["", ""],                               # txid
+            ["description", "description"],         # refid
+            ["the_datetime", "date"],               # time
+            ["", ""],                               # type (split key)
+            ["", ""],                               # subtype
+            ["", ""],                               # aclass
+            ["", ""],                               # subclass
+            ["received_currency", ""],              # asset
+            ["", ""],                               # wallet
+            ["received_amount", ""],                # amount
+            ["", ""],                               # fee
+            ["", ""],                               # balance
+          ]
+        tnx_date_columns: [["the_datetime", "date"]]
+      - values: [deposit]
+        csv_column_mapping: [
+            ["", ""],                               # txid
+            ["description", "description"],         # refid
+            ["the_datetime", "date"],               # time
+            ["", ""],                               # type (split key)
+            ["", ""],                               # subtype
+            ["", ""],                               # aclass
+            ["", ""],                               # subclass
+            ["spend_currency", "base_currency"],    # asset
+            ["", ""],                               # wallet
+            ["spend_amount", "amount"],             # amount
+            ["fee_amount", "fee_amount"],           # fee
+            ["", ""],                               # balance
+          ]
+        tnx_date_columns: [["the_datetime", "date"]]
+      - values: [withdrawal]
+        csv_column_mapping: [
+            ["", ""],                               # txid
+            ["description", "description"],         # refid
+            ["the_datetime", "date"],               # time
+            ["", ""],                               # type (split key)
+            ["", ""],                               # subtype
+            ["", ""],                               # aclass
+            ["", ""],                               # subclass
+            ["spend_currency", "base_currency"],    # asset
+            ["", ""],                               # wallet
+            ["spend_amount", "amount"],             # amount
+            ["fee_amount", "fee_amount"],           # fee
+            ["", ""],                               # balance
+          ]
+        tnx_date_columns: [["the_datetime", "date"]]
+    csv_column_mapping: null
+    tnx_date_columns: null
