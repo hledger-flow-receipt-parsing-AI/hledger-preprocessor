@@ -717,7 +717,8 @@ def generate_overview_svg_direct(
         """Build an SVG path from src node bottom to dst node top.
 
         Adjacent layers: simple S-curve.
-        Non-adjacent: route right, then down, then left to avoid boxes.
+        Non-adjacent: route just outside the local clusters (src→dst),
+        not to the global right edge.
         """
         sx, sy = node_pos[src]
         tx, ty = node_pos[dst]
@@ -749,8 +750,20 @@ def generate_overview_svg_direct(
                 f" {tx:.1f},{t_top:.1f}"
             )
         else:
-            # Non-adjacent: route to the right side, go down, come back.
-            route_x = max_cluster_right + 20 + lane_offset
+            # Non-adjacent: route just outside the local clusters between
+            # src and dst layers, keeping edges close to the relevant nodes.
+            lo = min(src_idx, dst_idx)
+            hi = max(src_idx, dst_idx)
+            local_right = 0.0
+            for i, ln in enumerate(ordered_layers):
+                if lo <= layer_idx.get(ln, -1) <= hi and ln in cluster_box:
+                    bx, _, bw, _ = cluster_box[ln]
+                    local_right = max(local_right, bx + bw)
+            # Also consider the source and target node x positions
+            local_right = max(local_right, sx + NODE_W / 2, tx + NODE_W / 2)
+            # Route just outside: ~15% of NODE_W per lane
+            lane_step = NODE_W * 0.15
+            route_x = local_right + lane_step + lane_offset * (lane_step / 8)
             # Small radius for corners
             gap = LAYER_GAP / 2
             return (
@@ -794,9 +807,17 @@ def generate_overview_svg_direct(
             edge_lane[(src, dst)] = 0
     lane_count = long_lane_count
 
-    # Update total_w if long edges extend past the right side
+    # Update total_w if long edges extend past the right side.
+    # With local routing, edges only extend slightly beyond their local
+    # clusters, so we add a modest buffer for the lane offsets.
     if lane_count > 0:
-        needed_w = max_cluster_right + 20 + lane_count * 8 + MARGIN
+        lane_step = NODE_W * 0.15
+        needed_w = (
+            max_cluster_right
+            + lane_step * 2
+            + lane_count * (lane_step / 8)
+            + MARGIN
+        )
         if needed_w > total_w:
             total_w = needed_w
 
@@ -810,8 +831,7 @@ def generate_overview_svg_direct(
                 f'<g class="edge dag-edge" data-source="{src}"'
                 f' data-target="{dst}">'
                 f'<path d="{d}"'
-                f' fill="none" stroke="#CCC" stroke-width="{pw}"'
-                ' marker-end="url(#arrow_grey)"/>'
+                f' fill="none" stroke="#CCC" stroke-width="{pw}"/>'
                 "</g>"
             )
 
@@ -1201,7 +1221,19 @@ def generate_story_svg_direct(
                 f" {tx:.1f},{t_top:.1f}"
             )
         else:
-            route_x = max_cluster_right + 20 + lane_offset
+            # Non-adjacent: route just outside the local clusters between
+            # src and dst layers, keeping edges close to the relevant nodes.
+            lo = min(src_li, dst_li)
+            hi = max(src_li, dst_li)
+            local_right = 0.0
+            for ln in ordered_layers:
+                li = layer_idx.get(ln, -1)
+                if lo <= li <= hi and ln in cluster_box:
+                    bx, _, bw, _ = cluster_box[ln]
+                    local_right = max(local_right, bx + bw)
+            local_right = max(local_right, sx + NODE_W / 2, tx + NODE_W / 2)
+            lane_step = NODE_W * 0.15
+            route_x = local_right + lane_step + lane_offset * (lane_step / 8)
             gap = LAYER_GAP / 2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
@@ -1241,7 +1273,13 @@ def generate_story_svg_direct(
             edge_lane[(src, dst)] = 0
 
     if long_lane_count > 0:
-        needed_w = max_cluster_right + 20 + long_lane_count * 8 + MARGIN
+        lane_step = NODE_W * 0.15
+        needed_w = (
+            max_cluster_right
+            + lane_step * 2
+            + long_lane_count * (lane_step / 8)
+            + MARGIN
+        )
         if needed_w > total_w:
             total_w = needed_w
 
@@ -2373,7 +2411,15 @@ def generate_explorer_js() -> str:
         el.style.removeProperty('stroke');
       });
     });
-    allEdges.forEach(function(e) { e.classList.remove('dimmed'); });
+    allEdges.forEach(function(e) {
+      e.classList.remove('dimmed');
+      // Restore original stroke colours saved during highlighting
+      var path = e.querySelector('path');
+      if (path && path.hasAttribute('data-orig-stroke')) {
+        path.setAttribute('stroke', path.getAttribute('data-orig-stroke'));
+        path.removeAttribute('data-orig-stroke');
+      }
+    });
     clusters.forEach(function(c) { c.classList.remove('cluster-hl'); });
   }
 
@@ -2401,18 +2447,23 @@ def generate_explorer_js() -> str:
         n.classList.add('dimmed');
       }
     });
-    // Match edges by stroke colour — each story has a unique colour on its edges
+    // Match edges by stroke colour — each story has a unique colour on its edges.
+    // Non-matching edges are dimmed AND recoloured to grey so they become
+    // visually neutral instead of retaining their original colour at low opacity.
     var storyColour = story.colour.toLowerCase();
     allEdges.forEach(function(e) {
       var path = e.querySelector('path');
-      var poly = e.querySelector('polygon');
       var edgeColour = '';
       if (path) edgeColour = (path.getAttribute('stroke') || '').toLowerCase();
-      if (!edgeColour && poly) edgeColour = (poly.getAttribute('stroke') || '').toLowerCase();
       if (edgeColour === storyColour) {
         // This edge belongs to the current story — keep visible
       } else {
         e.classList.add('dimmed');
+        // Save original stroke and replace with neutral grey
+        if (path && edgeColour && edgeColour !== '#ccc') {
+          path.setAttribute('data-orig-stroke', path.getAttribute('stroke'));
+          path.setAttribute('stroke', '#555');
+        }
       }
     });
     clusters.forEach(function(c) {
