@@ -40,7 +40,6 @@ from .receipt_editor import (
     _fill_text,
     _precreate_rotation_and_crop_metadata,
     _select_horizontal_first,
-    _select_horizontal_n,
     _select_vertical,
     _tui_markers,
     _write_tui_markers_json,
@@ -266,7 +265,7 @@ def _fill_receipt_fields_with_mismatch(
     nav.wait_for("withdrawal", timeout=10, silent=True)
     _mark("is_withdrawal")
     time.sleep(0.5)
-    _select_horizontal_n(nav)  # not a withdrawal
+    _select_horizontal_first(nav)  # "n" (first option) — not a withdrawal
     nav.flush_output()
     time.sleep(0.8)
     nav.flush_output()
@@ -294,7 +293,7 @@ def _fill_receipt_fields_with_mismatch(
     # ── "Add another account? = n" ────────────────────────────────────
     nav.wait_for("another account", timeout=5, silent=True)
     time.sleep(0.3)
-    _select_horizontal_n(nav)
+    _select_horizontal_first(nav)  # "n" (first option)
     nav.flush_output()
 
     # ── Wait for the mismatch choice widget ───────────────────────────

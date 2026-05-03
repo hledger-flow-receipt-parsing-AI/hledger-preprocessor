@@ -207,24 +207,24 @@ def extract_field_markers_from_cast(events, raw_to_gif_fn):
     if amt_enter:
         result[f'{prefix}__change'] = raw_to_gif_fn(amt_enter)
 
-    # change Enter → (then Right + Enter for 'Done with receipt' → shop flow)
+    # change Enter → 'Add another account? n' (Enter) → shop address flow
     change_start = first_key_after('0', amt_enter) if amt_enter else None
     change_enter = first_enter_after(change_start) if change_start else None
-    # After change Enter: Right key + Enter to confirm 'Done with this receipt'
-    # Then shop_name field becomes active
+    # After change Enter the 'Add another account?' widget appears.
+    # 'n' is the first (pre-focused) option, so the next Enter confirms it.
+    # Then the shop address selection appears.
     if change_enter:
-        right_key = first_key_after('Right', change_enter)
-        done_enter = first_enter_after(right_key) if right_key else None
-        # After 'Done' confirmation, shop address selection appears
-        # The next keystroke selects 'new address' (0) + Enter, then shop_name
-        if done_enter:
-            shop_select = first_key_after('0', done_enter)
+        add_acct_enter = first_enter_after(change_enter + 0.3) if change_enter else None
+        # After 'Add another account = n', shop address selection appears.
+        # The next keystroke selects 'new address' (0) + Enter, then shop_name.
+        if add_acct_enter:
+            shop_select = first_key_after('0', add_acct_enter)
             shop_select_enter = first_enter_after(shop_select) if shop_select else None
             if shop_select_enter:
                 result[f'{prefix}__shop_name'] = raw_to_gif_fn(shop_select_enter)
                 prev_enter = shop_select_enter
             else:
-                prev_enter = done_enter
+                prev_enter = add_acct_enter
         else:
             prev_enter = change_enter
     else:
