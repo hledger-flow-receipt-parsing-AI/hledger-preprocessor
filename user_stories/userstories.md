@@ -12,7 +12,7 @@ functionality that does not yet exist in the codebase.
 *This file is auto-generated from `user_stories/dag/userstory_dag_data.yaml`.*
 *Edit the YAML, then run `python user_stories/dag/generate_userstory_artifacts.py -a`.*
 
-______________________________________________________________________
+---
 
 ## Step 1a: Account Configuration
 
@@ -27,7 +27,7 @@ ______________________________________________________________________
 - `config.yaml` contains an entry under `accounts:` with `account_holder`, `bank`, `account_type`, `input_csv_filename`, and `csv_column_mapping`.
 - Running `hledger_preprocessor --config config.yaml --new-setup` successfully parses the CSV and creates the hledger-flow import directory structure (`import/{account_holder}/{bank}/{account_type}/{year}/`).
 
-______________________________________________________________________
+---
 
 ### US-1a.2 — Configure multiple bank accounts
 
@@ -41,7 +41,7 @@ ______________________________________________________________________
 - Each account produces its own import subdirectory.
 - All accounts are included in the final `all-years.journal`.
 
-______________________________________________________________________
+---
 
 ### US-1a.3 — Configure a cash wallet (no CSV)
 
@@ -57,7 +57,7 @@ ______________________________________________________________________
 - Multiple wallets of the same type can be configured (e.g. a portemonnaie, a piggy bank, and a sock above the fireplace), each as a separate account entry in `config.yaml`.
 - During receipt labelling (Step 2b), the TUI presents all wallet accounts so the user can pick which physical wallet the cash came from.
 
-______________________________________________________________________
+---
 
 ### US-1a.4 — Configure a cryptocurrency exchange account
 
@@ -71,7 +71,7 @@ ______________________________________________________________________
 - Transactions are recorded in the correct commodity (e.g. BTC, ETH, XMR).
 - The journal balance report can show crypto holdings converted to a base currency (e.g. EUR) using exchange rates.
 
-______________________________________________________________________
+---
 
 ### US-1a.5 — Configure matching algorithm parameters
 
@@ -87,7 +87,7 @@ ______________________________________________________________________
 - `matching_algo.multiple_receipts_per_transaction` controls whether one CSV transaction can be linked to multiple receipts.
 - Per-account overrides: each account entry in `config.yaml` can optionally specify its own `matching_algo` section that overrides the global defaults (e.g. a bank that posts 3 days late gets `days: 4` while the default is 2). *[NOT YET IMPLEMENTED]*
 
-______________________________________________________________________
+---
 
 ### US-1a.6 — Configure base currency for reporting
 
@@ -100,7 +100,7 @@ ______________________________________________________________________
 - Each account has a `base_currency` field (e.g. `EUR`, `USD`, `GBP`).
 - The matching algorithm uses the base currency when comparing receipt amounts to CSV amounts.
 
-______________________________________________________________________
+---
 
 ### US-1a.7 — Configure multi-row CSV merging for exchanges with split transactions
 
@@ -121,7 +121,7 @@ ______________________________________________________________________
 - Single-row groups (deposits, withdrawals) pass through unchanged.
 - Existing single-row exchange imports (e.g. Bitvavo with `@` per-unit notation) are not affected — `@@` is only used when `merge_column` is configured.
 
-______________________________________________________________________
+---
 
 ## Step 1b: Category Configuration
 
@@ -137,7 +137,7 @@ ______________________________________________________________________
 - Category names are used as hledger account path segments.
 - The TUI receipt labeller shows these categories as suggestions.
 
-______________________________________________________________________
+---
 
 ### US-1b.2 — Add a new category after initial setup
 
@@ -150,7 +150,7 @@ ______________________________________________________________________
 - Adding a new leaf or branch to `categories.yaml` does not invalidate previously labelled receipts or classified transactions.
 - The new category appears in the TUI labeller and the rule-based classifier.
 
-______________________________________________________________________
+---
 
 ### US-1b.3 — Use categories for income as well as expenses
 
@@ -163,7 +163,7 @@ ______________________________________________________________________
 - The rule-based classifier distinguishes debit (expense) from credit (income) transactions and applies the correct category tree.
 - The journal contains both `Expenses:*` and `Income:*` postings.
 
-______________________________________________________________________
+---
 
 ## Step 2a: Receipt Image Processing
 
@@ -180,7 +180,7 @@ ______________________________________________________________________
 - Pressing `Enter` saves the rotated image and a metadata JSON with the rotation angle.
 - Pressing `q` skips the image without saving.
 
-______________________________________________________________________
+---
 
 ### US-2a.2 — Crop a receipt image
 
@@ -198,7 +198,7 @@ ______________________________________________________________________
 - Crop coordinates are stored as normalised [0-1] values.
 - The arrow key step size (default 10%) should be configurable in `config.yaml`. *[NOT YET IMPLEMENTED]*
 
-______________________________________________________________________
+---
 
 ### US-2a.3 — Process a batch of receipt images
 
@@ -212,7 +212,7 @@ ______________________________________________________________________
 - The user can go back to the previous image to re-do it.
 - Already-processed images are skipped (metadata file exists).
 
-______________________________________________________________________
+---
 
 ## Step 2b: Receipt Labelling
 
@@ -231,7 +231,7 @@ ______________________________________________________________________
 - Given a receipt label JSON, the system can locate the corresponding receipt photograph (via `raw_img_filepath`).
 - Given a receipt photograph, the system can locate any existing receipt label JSON that references it.
 
-______________________________________________________________________
+---
 
 ### US-2b.2 — Label a cash receipt
 
@@ -245,7 +245,7 @@ ______________________________________________________________________
 - The receipt JSON references the wallet account.
 - During matching (Step 3), receipts on wallet accounts are skipped (no CSV to match against).
 
-______________________________________________________________________
+---
 
 ### US-2b.3 — Label a foreign-currency receipt
 
@@ -259,7 +259,7 @@ ______________________________________________________________________
 - The receipt JSON has `currency: GBP` in the account transaction.
 - The account's `base_currency` (EUR) differs from the receipt currency (GBP), which triggers the alternate currency matching flow.
 
-______________________________________________________________________
+---
 
 ### US-2b.4 — Label a split-payment receipt (card + cash)
 
@@ -275,7 +275,7 @@ ______________________________________________________________________
 - During matching, only the card portion is matched to the bank CSV; the wallet portion is recorded directly.
 - The system can list/identify all receipts that used combined payments (i.e. receipts with 2+ account transactions), so the user can review split payments. *[NOT YET IMPLEMENTED]*
 
-______________________________________________________________________
+---
 
 ### US-2b.5 — Label a receipt with returned items
 
@@ -289,7 +289,7 @@ ______________________________________________________________________
 - The receipt JSON contains separate `net_bought_items` and `net_returned_items` ExchangedItem entries.
 - The net exchange amount used for matching is the difference between bought and returned.
 
-______________________________________________________________________
+---
 
 ### US-2b.6 — Use AI suggestions during manual labelling
 
@@ -304,7 +304,7 @@ ______________________________________________________________________
 - Pressing `Ctrl+U` applies the top history suggestion (from previously entered values).
 - Tab auto-completes if there is exactly one matching suggestion.
 
-______________________________________________________________________
+---
 
 ### US-2b.7 — Edit an existing receipt label
 
@@ -318,7 +318,7 @@ ______________________________________________________________________
 - Only changed fields are updated in the saved JSON.
 - The old receipt label is replaced (not duplicated).
 
-______________________________________________________________________
+---
 
 ### US-2b.8 — Fully automated AI receipt labelling *[NOT YET IMPLEMENTED]*
 
@@ -332,7 +332,7 @@ ______________________________________________________________________
 - The AI output is converted into a `Receipt` object.
 - A confidence threshold determines whether the result is auto-saved or flagged for human review.
 
-______________________________________________________________________
+---
 
 ### US-2b.9 — Date-range error feedback during receipt labelling
 
@@ -349,7 +349,7 @@ ______________________________________________________________________
 - All subsequent questions remain visible (not removed) so the user can see what is ahead.
 - The user can navigate back to the date field, correct it, and have the validation re-run automatically on reconfiguration.
 
-______________________________________________________________________
+---
 
 ### US-2b.10 — Inline matching CLI when no unique CSV match
 
@@ -368,7 +368,7 @@ ______________________________________________________________________
 - The choice widget is automatically removed when a unique match is found (e.g. after correcting a typo).
 - Calling the mismatch check multiple times does not inject duplicate choice widgets.
 
-______________________________________________________________________
+---
 
 ## Step 3: Receipt-to-CSV Transaction Matching
 
@@ -386,7 +386,7 @@ ______________________________________________________________________
 - The CSV transaction is updated with the receipt reference.
 - No TUI is shown (auto-link path: `len(matches) == 1`).
 
-______________________________________________________________________
+---
 
 ### US-3.2 — Match a foreign-currency withdrawal receipt to a bank CSV in a different currency
 
@@ -404,7 +404,7 @@ ______________________________________________________________________
 - The original CSV transaction (117.50 EUR from Triodos).
 - A foreign-currency asset transaction (100 GBP).
 
-______________________________________________________________________
+---
 
 ### US-3.3 — Match when no candidates are found (widen date range)
 
@@ -419,7 +419,7 @@ ______________________________________________________________________
 - The matcher re-searches with the wider window.
 - The transaction is found and linked.
 
-______________________________________________________________________
+---
 
 ### US-3.4 — Match when no candidates are found (widen amount range)
 
@@ -434,22 +434,22 @@ ______________________________________________________________________
 - The matcher re-searches with amount +/- 0.02.
 - The rounding-affected transaction is found and linked.
 
-______________________________________________________________________
+---
 
 ### US-3.5 — Match when DD-MM and MM-DD date formats are swapped
 
-**As a** user whose receipt has date 05-01-2025 but I accidentally entered it as January 5th instead of May 1st (or vice versa, because the day and month are both \<= 12),
+**As a** user whose receipt has date 05-01-2025 but I accidentally entered it as January 5th instead of May 1st (or vice versa, because the day and month are both <= 12),
 **I want to** matching algorithm to automatically try swapping day and month when no match is found on the original date,
 **so that** a common date format mistake does not prevent matching.
 
 **Acceptance criteria:**
 
 - The config option `matching_algo.days_month_swap: true` is set.
-- If no match is found on the original date and day \<= 12, the matcher retries with day and month swapped.
+- If no match is found on the original date and day <= 12, the matcher retries with day and month swapped.
 - Alternatively, the matching TUI presents option "6. Swap day and month" for manual activation.
 - The swap can only be applied as the first modification (before any other adjustments).
 
-______________________________________________________________________
+---
 
 ### US-3.6 — Disambiguate when multiple matches are found (2-14 candidates)
 
@@ -464,7 +464,7 @@ ______________________________________________________________________
 - The user selects one by number.
 - The selected transaction is linked; the others remain unlinked.
 
-______________________________________________________________________
+---
 
 ### US-3.7 — Reduce search scope when too many matches are found (15+)
 
@@ -478,7 +478,7 @@ ______________________________________________________________________
 - After adjustment, the matcher re-searches with tighter parameters.
 - The resulting candidate count is manageable (< 15).
 
-______________________________________________________________________
+---
 
 ### US-3.8 — Correct a receipt label during matching
 
@@ -492,7 +492,7 @@ ______________________________________________________________________
 - After saving corrections, the matcher retries with the updated receipt data.
 - The corrected receipt JSON is persisted.
 
-______________________________________________________________________
+---
 
 ### US-3.9 — Match a receipt for a direct asset purchase (e.g. gold)
 
@@ -506,7 +506,7 @@ ______________________________________________________________________
 - The matching algorithm supports physical assets (GOLD, SILVER, CASH) from `Currency` as a "from_currency" for the alternate currency conversion.
 - The journal contains a posting pair: debit `Assets:Gold` / credit `Assets:Bank:Triodos:Checking`.
 
-______________________________________________________________________
+---
 
 ### US-3.10 — Skip matching for cash-only receipts
 
@@ -519,7 +519,7 @@ ______________________________________________________________________
 - Receipts where all `account_transactions` reference accounts without `input_csv_filename` are skipped during matching.
 - These receipts are still included in the journal as wallet expenses.
 
-______________________________________________________________________
+---
 
 ### US-3.11 — Handle a receipt with withdrawal fees *[NOT YET IMPLEMENTED]*
 
@@ -533,7 +533,7 @@ ______________________________________________________________________
 - The matcher searches for the receipt amount * conversion rate + fee.
 - The journal posting splits the CSV debit into: the converted amount (to `Assets:Wallet:GBP`) and the fee (to `Expenses:BankFees`).
 
-______________________________________________________________________
+---
 
 ### US-3.12 — Handle multiple transactions on the same account in one receipt *[WONTFIX]*
 
@@ -550,7 +550,7 @@ ______________________________________________________________________
 - The system raises a clear error if a receipt has two `AccountTransaction` entries referencing the same account, guiding the user to split the receipt into two labels.
 - Currently raises `NotImplementedError("Did not yet support multiple transactions on single account for a receipt.")`.
 
-______________________________________________________________________
+---
 
 ### US-3.13 — Handle a foreign-currency receipt with returned items *[NOT YET IMPLEMENTED]*
 
@@ -564,7 +564,7 @@ ______________________________________________________________________
 - The matcher computes the net GBP amount, converts to EUR, and searches the CSV.
 - Currently raises `NotImplementedError("Do not yet know how to handle the scenario of multiple transacted items per receipt for foreign currency withdrawl receipts.")`.
 
-______________________________________________________________________
+---
 
 ### US-3.14 — Prevent linking the same CSV transaction to two receipts
 
@@ -579,7 +579,7 @@ ______________________________________________________________________
 - The user is informed which receipt already claims this transaction.
 - This covers both the case of genuinely different receipts and the case of duplicate photos of the same receipt being labelled separately.
 
-______________________________________________________________________
+---
 
 ### US-3.15 — Verify transaction data is up to date *[NOT YET IMPLEMENTED]*
 
@@ -592,7 +592,7 @@ ______________________________________________________________________
 - The TUI shows the date of the most recent transaction in the CSV for the relevant account.
 - Currently raises `NotImplementedError("Did not implement this yet.")`.
 
-______________________________________________________________________
+---
 
 ## Step 4: Pipeline Execution
 
@@ -609,7 +609,7 @@ ______________________________________________________________________
 - The starting position journal (`start_journal_filepath`) is included.
 - Plot SVGs are generated in the output directory.
 
-______________________________________________________________________
+---
 
 ### US-4.2 — Run the pipeline with randomised/scrambled data for demos
 
@@ -623,7 +623,7 @@ ______________________________________________________________________
 - The Sankey and Treemap plots use scrambled data.
 - The scrambled output is deterministic for the same seed (reproducible demos).
 
-______________________________________________________________________
+---
 
 ### US-4.3 — Generate hledger rules files for a bank
 
@@ -637,7 +637,7 @@ ______________________________________________________________________
 - The rules file maps CSV columns to hledger fields (date, amount, description).
 - The rules file includes categorisation logic (if rule-based classification is enabled).
 
-______________________________________________________________________
+---
 
 ### US-4.4 — Optional incremental pipeline runs *[NOT YET IMPLEMENTED]*
 
@@ -654,7 +654,7 @@ ______________________________________________________________________
 - The journal output is identical whether run incrementally or from scratch.
 - If a hash mismatch is detected (file changed), the pipeline re-processes that file and warns the user.
 
-______________________________________________________________________
+---
 
 ### US-4.5 — Include opening balances from a starting journal
 
@@ -667,7 +667,7 @@ ______________________________________________________________________
 - The starting journal is appended as an `include` directive in `all-years.journal`.
 - `hledger bal` shows the correct total balances including the opening position.
 
-______________________________________________________________________
+---
 
 ### US-4.6 — Detect uncategorised transactions before interactive matching
 
@@ -683,7 +683,7 @@ ______________________________________________________________________
 - Receipt-based `AccountTransaction`s are NOT checked (their category comes from the TUI label and is always present).
 - The check is fast: it only loads CSVs and runs classification — no file I/O or directory creation.
 
-______________________________________________________________________
+---
 
 ### US-4.7 — Report unmatched transactions before interactive matching
 
@@ -699,7 +699,7 @@ ______________________________________________________________________
 - The check is informational only — it does not block the pipeline (exits 0). The user proceeds into `--match-transactions` knowing what to expect.
 - Unmatched CSV-to-CSV transactions (e.g. a Triodos deposit into Kraken that has no matching Kraken row yet) are also listed.
 
-______________________________________________________________________
+---
 
 ### US-4.8 — Auto-check receipt matching after TUI labelling *[NOT YET IMPLEMENTED]*
 
@@ -715,7 +715,7 @@ ______________________________________________________________________
 - If exactly one match is found, the link is created automatically and the user is informed.
 - If zero or multiple matches are found, the user is informed but the pipeline continues (no blocking error).
 
-______________________________________________________________________
+---
 
 ## Step 5: Visualisation
 
@@ -732,7 +732,7 @@ ______________________________________________________________________
 - Flow widths are proportional to amounts.
 - The diagram is interactive (Plotly: hover shows amounts, links are clickable).
 
-______________________________________________________________________
+---
 
 ### US-5.2 — Generate a Treemap of spending by category
 
@@ -747,7 +747,7 @@ ______________________________________________________________________
 - Rectangle size = amount; colour = category group.
 - Hover shows exact amount and percentage.
 
-______________________________________________________________________
+---
 
 ### US-5.3 — Launch an interactive Dash dashboard
 
@@ -761,7 +761,7 @@ ______________________________________________________________________
 - The dashboard shows both Sankey and Treemap plots.
 - The `SKIP_DASH=true` environment variable disables the dashboard (for headless/test environments).
 
-______________________________________________________________________
+---
 
 ### US-5.4 — Filter visualisations by time period
 
@@ -775,7 +775,7 @@ ______________________________________________________________________
 - Only transactions within the selected period are included in the plots.
 - Changing the dropdown re-runs the pipeline and updates all plots.
 
-______________________________________________________________________
+---
 
 ### US-5.5 — Generate monthly/quarterly/yearly reports *[NOT YET IMPLEMENTED]*
 
@@ -789,7 +789,7 @@ ______________________________________________________________________
 - Time periods: monthly (last 6 months), quarterly (last year), yearly (last 5 years).
 - Reports show expenses as a percentage of income.
 
-______________________________________________________________________
+---
 
 ### US-5.6 — Calculate personal inflation rate *[NOT YET IMPLEMENTED]*
 
@@ -803,7 +803,7 @@ ______________________________________________________________________
 - Output shows percentage change per category per year.
 - Categories with insufficient data are excluded.
 
-______________________________________________________________________
+---
 
 ### US-5.7 — Show a correlation matrix of combined-account payments *[NOT YET IMPLEMENTED]*
 
@@ -819,7 +819,7 @@ ______________________________________________________________________
 - A fractional matrix variant shows the percentage of total spending per account (e.g. "for receipts involving both Triodos and Wallet, 65% came from Triodos and 35% from Wallet").
 - Diagonal cells show the total spent from each account across all receipts (including single-account payments).
 
-______________________________________________________________________
+---
 
 ### US-5.8 — Drill down from treemap to time-series chart
 
@@ -837,7 +837,7 @@ ______________________________________________________________________
 - The x-axis is a linear date timeline with at most 30 tick labels.
 - Signed amounts are preserved (asset outflows appear negative).
 
-______________________________________________________________________
+---
 
 ### US-5.9 — Sticky toolbar with keyboard shortcuts
 
@@ -852,7 +852,7 @@ ______________________________________________________________________
 - Pressing `Escape` clicks the "Back to Overview" button when it is visible.
 - Keyboard shortcuts are ignored when typing in input fields, textareas, or the dropdown search box.
 
-______________________________________________________________________
+---
 
 ### US-5.10 — Select period granularity (weekly / monthly / yearly)
 
@@ -868,7 +868,7 @@ ______________________________________________________________________
 - Weekly periods show ISO week boundaries (Monday to Sunday).
 - Yearly periods use a whole-year date range (`YYYY/1/1 to YYYY+1/1/1`).
 
-______________________________________________________________________
+---
 
 ### US-5.11 — Hierarchical legend with group toggle in drill-down *[IN PROGRESS]*
 
@@ -885,7 +885,7 @@ ______________________________________________________________________
 - Totals and Averages are each a group on the left legend with their own group toggle.
 - Categories at the same tree level are sorted together so the legend reads as a coherent hierarchy, not interleaved alphabetically.
 
-______________________________________________________________________
+---
 
 ## Transaction Classification
 
@@ -902,7 +902,7 @@ ______________________________________________________________________
 - Multiple rules can match (first match wins or most specific match wins).
 - Uncategorised transactions prompt the user for manual classification.
 
-______________________________________________________________________
+---
 
 ### US-C.2 — Classify transactions using a self-hosted AI *[NOT YET IMPLEMENTED]*
 
@@ -917,7 +917,7 @@ ______________________________________________________________________
 - The user can accept or override AI suggestions.
 - Multiple AI models can be configured and compared.
 
-______________________________________________________________________
+---
 
 ### US-C.3 — Train a classification model on my own categorised data *[NOT YET IMPLEMENTED]*
 
@@ -932,7 +932,7 @@ ______________________________________________________________________
 - The model can be retrained as more data accumulates.
 - Performance metrics (accuracy, precision, recall per category) are reported.
 
-______________________________________________________________________
+---
 
 ### US-C.4 — Classify receipt images by category using AI *[NOT YET IMPLEMENTED]*
 
@@ -946,7 +946,7 @@ ______________________________________________________________________
 - The prediction is shown as an AI suggestion in the labelling TUI.
 - The model runs locally (self-hosted).
 
-______________________________________________________________________
+---
 
 ## Cross-cutting Concerns
 
@@ -962,7 +962,7 @@ ______________________________________________________________________
 - AI models are downloaded once and cached locally.
 - The tool works fully offline after initial model download.
 
-______________________________________________________________________
+---
 
 ### US-X.2 — Reproducible pipeline output
 
@@ -976,7 +976,7 @@ ______________________________________________________________________
 - Transaction hashes are deterministic.
 - Journal file content is identical across runs with the same input.
 
-______________________________________________________________________
+---
 
 ### US-X.3 — Multi-bank, multi-currency support
 
@@ -990,7 +990,7 @@ ______________________________________________________________________
 - The journal contains postings in EUR, USD, and BTC.
 - `hledger bal -X EUR` converts all holdings to EUR using exchange rates.
 
-______________________________________________________________________
+---
 
 ### US-X.4 — Unique transaction hashes prevent duplicates
 
@@ -1004,7 +1004,7 @@ ______________________________________________________________________
 - Importing the same CSV twice does not create duplicate journal entries.
 - Duplicate detection works across both CSV transactions and receipt-linked transactions.
 
-______________________________________________________________________
+---
 
 ### US-X.5 — GIF demos are auto-generated from integration tests
 
@@ -1019,7 +1019,7 @@ ______________________________________________________________________
 - GIFs are generated via asciinema recordings converted with agg/gifsicle.
 - Themed variants (dracula, monokai, etc.) are generated from the same recording.
 
-______________________________________________________________________
+---
 
 ### US-X.6 — Enforce one receipt image per transaction
 
@@ -1034,4 +1034,4 @@ ______________________________________________________________________
 - If a user has multiple photos of the same receipt (e.g. front and back), they should crop/combine them into a single image before labelling, or label only the most complete photo.
 - For the edge case where a single purchase produces two card swipes (see US-3.12 WONTFIX), the user duplicates the photo and creates two separate receipt labels.
 
-______________________________________________________________________
+---

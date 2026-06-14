@@ -1,12 +1,12 @@
 {
-  "frame_duration_ms": 40,
   "markers": {
-    "acct_btc_wallet": 23.16,
     "acct_triodos_csv": 0.0,
-    "catcfg_default": 65.2,
+    "acct_btc_wallet": 23.16,
     "dirp_default": 32.52,
     "fnames_default": 49.76,
+    "catcfg_default": 65.2,
     "malgo_default": 67.92
   },
-  "total_duration": 74.52
+  "total_duration": 74.52,
+  "frame_duration_ms": 40
 }

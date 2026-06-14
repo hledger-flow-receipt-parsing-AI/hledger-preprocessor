@@ -148,3 +148,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+gifs/1a_setup_config/output/cfg_merge.gif

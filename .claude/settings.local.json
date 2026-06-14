@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m gifs.automation.real_link_receipts_demo:*)"
+    ]
+  }
+}
