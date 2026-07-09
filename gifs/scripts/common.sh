@@ -200,8 +200,11 @@ check_asciinema() {
 
 check_agg() {
     if ! command -v asciinema-agg >/dev/null 2>&1; then
-        log "Installing agg (asciinema → GIF converter)..."
-        pip install -q agg || { error "Failed to install agg"; return 1; }
+        error "asciinema-agg (agg) not found!"
+        warn "The renderer is the asciinema/agg binary, NOT the PyPI 'agg'."
+        warn "Install from https://github.com/asciinema/agg/releases and put it"
+        warn "on your PATH as 'asciinema-agg' (e.g. rename the downloaded binary)."
+        return 1
     fi
     return 0
 }

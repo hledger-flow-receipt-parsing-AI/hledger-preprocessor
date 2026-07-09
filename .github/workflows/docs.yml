@@ -46,9 +46,21 @@ jobs:
           sudo chmod +x /usr/local/bin/hledger-flow
 
       - name: Install project and test dependencies
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          # Internal deps are sibling repos (not on PyPI). Install via
+          # git+https: tokenless if public, or with a GH_PAT secret if private.
+          auth=""; [ -n "${GH_PAT:-}" ] && auth="x-access-token:${GH_PAT}@"
+          base="https://${auth}github.com/hledger-flow-receipt-parsing-AI"
+          pip install \
+            "git+${base}/hledger-core.git" \
+            "git+${base}/hledger-config.git" \
+            "git+${base}/hledger-csv-mapping.git" \
+            "git+${base}/hledger-receipt-processing.git" \
+            "git+${base}/hledger-rules.git" \
+            "git+${base}/hledger-plot.git"
           pip install -e .
-          pip install "git+https://github.com/hledger-flow-receipt-parsing-AI/hledger-plot.git"
           pip install pytest pyyaml Pillow numpy chardet iso8601 \
                       python-dateutil urwid screeninfo plotly pandas \
                       pexpect pyte dash requests matplotlib
@@ -61,6 +73,7 @@ jobs:
   gifs:
     needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,14 +96,37 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y asciinema gifsicle ffmpeg plantuml
+          sudo apt-get install -y asciinema gifsicle ffmpeg plantuml hledger
+
+      - name: Install hledger-flow
+        run: |
+          curl -sL https://github.com/apauley/hledger-flow/releases/download/v0.16.2/hledger-flow-linux-x64.tar.gz \
+            | sudo tar xz -C /usr/local/bin
+          sudo chmod +x /usr/local/bin/hledger-flow
+
+      - name: Install asciinema-agg (cast -> GIF renderer)
+        run: |
+          # The real renderer is the asciinema/agg binary, NOT the PyPI "agg".
+          curl -sL https://github.com/asciinema/agg/releases/download/v1.9.0/agg-x86_64-unknown-linux-gnu -o agg
+          sudo install -m 0755 agg /usr/local/bin/asciinema-agg
 
       - name: Install Python dependencies
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          auth=""; [ -n "${GH_PAT:-}" ] && auth="x-access-token:${GH_PAT}@"
+          base="https://${auth}github.com/hledger-flow-receipt-parsing-AI"
+          pip install \
+            "git+${base}/hledger-core.git" \
+            "git+${base}/hledger-config.git" \
+            "git+${base}/hledger-csv-mapping.git" \
+            "git+${base}/hledger-receipt-processing.git" \
+            "git+${base}/hledger-rules.git" \
+            "git+${base}/hledger-plot.git"
           pip install -e .
           pip install pyyaml Pillow numpy chardet iso8601 \
                       python-dateutil urwid screeninfo plotly pandas \
-                      pexpect pyte agg
+                      pexpect pyte
 
       - name: Generate GIFs
         env:
