@@ -63,7 +63,8 @@ jobs:
           pip install -e .
           pip install pytest pyyaml Pillow numpy chardet iso8601 \
                       python-dateutil urwid screeninfo plotly pandas \
-                      pexpect pyte dash requests matplotlib
+                      pexpect pyte dash requests matplotlib \
+                      opencv-python-headless kaleido==0.2.1
 
       - name: Run tests
         env:
@@ -126,7 +127,7 @@ jobs:
           pip install -e .
           pip install pyyaml Pillow numpy chardet iso8601 \
                       python-dateutil urwid screeninfo plotly pandas \
-                      pexpect pyte
+                      pexpect pyte opencv-python-headless kaleido==0.2.1
 
       - name: Generate GIFs
         env:
