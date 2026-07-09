@@ -1,0 +1,165 @@
+"""CI stub for check_categorisation_overlap.
+
+The real ``check_categorisation_overlap.py`` is gitignored because it
+contains user-specific categorisation rules (real payees, IBANs, and
+account relationships).  This stub preserves the public interface — the
+``check_categorisation_overlap`` function plus the ``DEBIT_RULES`` /
+``CREDIT_RULES`` structure — using only generic demo data so that tests
+and GIF demos run in CI.
+
+Keep the function body in sync with the real module; only the rule lists
+differ (they are intentionally free of private data here).
+"""
+
+import os
+from typing import Any, Callable, Dict, List, Tuple
+
+from typeguard import typechecked
+
+from hledger_preprocessor.categorisation.helper import (
+    dict_contains_all_of_the_strings,
+    dict_contains_any_of_the_strings,
+    dict_contains_string,
+    dict_value_starts_with,
+)
+from hledger_preprocessor.categorisation.MultipleMatchError import (
+    MultipleMatchError,
+)
+from hledger_preprocessor.config.Config import Config
+from hledger_preprocessor.csv_parsing.csv_to_transactions import (
+    load_csv_transactions_from_file_per_year,
+)
+from hledger_preprocessor.generics.enums import ClassifierType, LogicType
+from hledger_preprocessor.generics.GenericTransactionWithCsv import (
+    GenericCsvTransaction,
+)
+from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
+from hledger_preprocessor.TransactionObjects.Receipt import Receipt
+
+
+def _s(substr, case_sensitive=False):
+    """Shorthand: returns a condition function for dict_contains_string."""
+    return lambda d, t: dict_contains_string(
+        d=d, substr=substr, case_sensitive=case_sensitive
+    )
+
+
+def _s_any(substrings, case_sensitive=False):
+    """Shorthand: returns a condition for dict_contains_any_of_the_strings."""
+    return lambda d, t: dict_contains_any_of_the_strings(
+        d=d, substrings=substrings, case_sensitive=case_sensitive
+    )
+
+
+def _s_all(substrings, case_sensitive=False):
+    """Shorthand: returns a condition for dict_contains_all_of_the_strings."""
+    return lambda d, t: dict_contains_all_of_the_strings(
+        d=d, substrings=substrings, case_sensitive=case_sensitive
+    )
+
+
+def _sw(prefix, case_sensitive=False):
+    """Shorthand: returns a condition for dict_value_starts_with."""
+    return lambda d, t: dict_value_starts_with(
+        d=d, prefix=prefix, case_sensitive=case_sensitive
+    )
+
+
+def _acct(txn_str):
+    """Condition: transaction.account.to_string() == txn_str."""
+    return lambda d, t: t.account.to_string() == txn_str
+
+
+# ---------------------------------------------------------------------------
+# Generic demo rules only.  The real, user-specific rules (real payees,
+# IBANs, account relationships) live in the gitignored real module.
+# ---------------------------------------------------------------------------
+
+DEBIT_RULES: List[Tuple[str, Callable, str]] = [
+    ("ekoplaza", _s("ekoplaza"), "groceries.ekoplaza"),
+    ("Albert Heijn", _s("Albert Heijn"), "groceries.ah"),
+]
+
+CREDIT_RULES: List[Tuple[str, Callable, str]] = []
+
+
+@typechecked
+def check_categorisation_overlap(
+    *,
+    config: Config,
+    models: Dict[ClassifierType, Dict[LogicType, Any]],
+    labelled_receipts: List[Receipt],
+) -> List[MultipleMatchError]:
+    """Check all transactions for multiple matching categorisation rules.
+
+    Returns a list of MultipleMatchError for transactions where more than
+    one rule matches.  An empty list means all checked rules are one-hot.
+
+    Note: This checks the rules defined in DEBIT_RULES and CREDIT_RULES.
+    These must be kept in sync with the actual rules in private_logic.py.
+    Not all rules need to be included — focus on broad substring matches
+    that could plausibly overlap.
+    """
+    errors: List[MultipleMatchError] = []
+
+    for account_config in config.accounts:
+        if not account_config.has_input_csv():
+            continue
+
+        abs_csv_filepath: str = account_config.get_abs_csv_filepath(
+            dir_paths_config=config.dir_paths
+        )
+        if not os.path.isfile(abs_csv_filepath):
+            continue
+
+        transactions_per_year = load_csv_transactions_from_file_per_year(
+            config=config,
+            labelled_receipts=labelled_receipts,
+            abs_csv_filepath=abs_csv_filepath,
+            account_config=account_config,
+            csv_encoding=config.csv_encoding,
+        )
+
+        for _year, transactions in transactions_per_year.items():
+            for txn in transactions:
+                if not isinstance(txn, GenericCsvTransaction):
+                    continue
+
+                tnx_dict = txn.to_dict_without_classification()
+
+                # Determine debit/credit
+                if txn.transaction_code is not None:
+                    code = TransactionCode.normalize_transaction_code(
+                        transaction_code=txn.transaction_code
+                    )
+                else:
+                    code = txn.get_transaction_code()
+
+                if code == TransactionCode.DEBIT:
+                    rules = DEBIT_RULES
+                    transaction_type = "expense"
+                elif code == TransactionCode.CREDIT:
+                    rules = CREDIT_RULES
+                    transaction_type = "income"
+                else:
+                    continue
+
+                # Evaluate ALL rules, collect matches
+                matches: List[Tuple[str, str]] = []
+                for label, condition_fn, category_path in rules:
+                    try:
+                        if condition_fn(tnx_dict, txn):
+                            matches.append((label, category_path))
+                    except Exception:
+                        pass
+
+                if len(matches) > 1:
+                    errors.append(
+                        MultipleMatchError(
+                            transaction=txn,
+                            transaction_type=transaction_type,
+                            matches=matches,
+                        )
+                    )
+
+    return errors

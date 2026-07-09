@@ -177,5 +177,17 @@ generate_gif cfg_1b1w \
     "${SHARED}/categorisation.yaml=catcfg_default" \
     "${SHARED}/matching_algo.yaml=malgo_default"
 
+# ---------------------------------------------------------------------------
+# cfg_merge: Kraken (multi-row merge) + Bitvavo (atomic) + Triodos
+# ---------------------------------------------------------------------------
+generate_gif cfg_merge \
+    "${ACCTS}/kraken.yaml=acct_kraken_csv" \
+    "${ACCTS}/bitvavo.yaml=acct_bitvavo_csv" \
+    "${ACCTS}/triodos.yaml=acct_triodos_csv" \
+    "${SHARED}/dir_paths.yaml=dirp_default" \
+    "${SHARED}/file_names.yaml=fnames_default" \
+    "${SHARED}/categorisation.yaml=catcfg_default" \
+    "${SHARED}/matching_algo.yaml=malgo_default"
+
 log "All config GIFs generated!"
 exit 0

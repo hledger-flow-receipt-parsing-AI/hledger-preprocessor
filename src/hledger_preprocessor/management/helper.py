@@ -106,7 +106,7 @@ def preprocess_asset_csvs(
             transactions_per_year=transactions_per_year_per_account,
             ai_models_tnx_classification=models[
                 ClassifierType.TRANSACTION_CATEGORY
-            ][LogicType.AI],
+            ].get(LogicType.AI, []),
             rule_based_models_tnx_classification=models[
                 ClassifierType.TRANSACTION_CATEGORY
             ][LogicType.RULE_BASED],
@@ -269,7 +269,7 @@ def preprocess_generic_csvs(
                 transactions_per_year=transactions_per_year_per_account,
                 ai_models_tnx_classification=models[
                     ClassifierType.TRANSACTION_CATEGORY
-                ][LogicType.AI],
+                ].get(LogicType.AI, []),
                 rule_based_models_tnx_classification=models[
                     ClassifierType.TRANSACTION_CATEGORY
                 ][LogicType.RULE_BASED],
@@ -303,7 +303,7 @@ def preprocess_generic_csvs(
                     transactions_per_year=transactions_per_year_per_account,
                     ai_models_tnx_classification=models[
                         ClassifierType.TRANSACTION_CATEGORY
-                    ][LogicType.AI],
+                    ].get(LogicType.AI, []),
                     rule_based_models_tnx_classification=models[
                         ClassifierType.TRANSACTION_CATEGORY
                     ][LogicType.RULE_BASED],

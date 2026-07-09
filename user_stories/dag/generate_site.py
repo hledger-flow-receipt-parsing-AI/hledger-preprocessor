@@ -607,7 +607,7 @@ def generate_overview_svg_direct(
         safe_id = re.sub(r"[^a-zA-Z0-9]", "", key)
         lines.append(
             f'<marker id="arrow_{safe_id}" viewBox="0 0 10 6"'
-            ' refX="10" refY="3" markerWidth="10" markerHeight="8"'
+            ' refX="10" refY="3" markerWidth="10" markerHeight="6"'
             ' orient="auto-start-reverse">'
             f'<path d="M0,0 L10,3 L0,6 Z" fill="{colour}"/>'
             "</marker>"
@@ -717,7 +717,8 @@ def generate_overview_svg_direct(
         """Build an SVG path from src node bottom to dst node top.
 
         Adjacent layers: simple S-curve.
-        Non-adjacent: route right, then down, then left to avoid boxes.
+        Non-adjacent: route just outside the local clusters (src→dst),
+        not to the global right edge.
         """
         sx, sy = node_pos[src]
         tx, ty = node_pos[dst]
@@ -735,24 +736,49 @@ def generate_overview_svg_direct(
             # doesn't pass through sibling node boxes.
             _, cy, _, _ = cluster_box[src_layer]
             arc_y = cy - 10 - lane_offset  # above the cluster
+            # Blend cp2 x toward source so arrowhead tilts to match
+            # the arc's approach direction.
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{sy - NODE_H/2:.1f}"
-                f" C{sx:.1f},{arc_y:.1f} {tx:.1f},{arc_y:.1f}"
+                f" C{sx:.1f},{arc_y:.1f} {cp2_x:.1f},{arc_y:.1f}"
                 f" {tx:.1f},{ty - NODE_H/2:.1f}"
             )
         elif layer_gap == 1:
-            # Adjacent layers — simple S-curve between the two nodes.
+            # Adjacent layers — S-curve.  The second control point is
+            # placed between src and dst x so the tangent at the endpoint
+            # matches the visual approach angle (making orient="auto"
+            # rotate the arrowhead correctly).
             mid_y = (s_bot + t_top) / 2
+            # Blend: 80% toward target x, 20% toward source x.  This
+            # keeps the S-shape but tilts the final tangent to match the
+            # line's approach direction when src and dst are offset.
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
-                f" C{sx:.1f},{mid_y:.1f} {tx:.1f},{mid_y:.1f}"
+                f" C{sx:.1f},{mid_y:.1f} {cp2_x:.1f},{mid_y:.1f}"
                 f" {tx:.1f},{t_top:.1f}"
             )
         else:
-            # Non-adjacent: route to the right side, go down, come back.
-            route_x = max_cluster_right + 20 + lane_offset
+            # Non-adjacent: route just outside the local clusters between
+            # src and dst layers, keeping edges close to the relevant nodes.
+            lo = min(src_idx, dst_idx)
+            hi = max(src_idx, dst_idx)
+            local_right = 0.0
+            for i, ln in enumerate(ordered_layers):
+                if lo <= layer_idx.get(ln, -1) <= hi and ln in cluster_box:
+                    bx, _, bw, _ = cluster_box[ln]
+                    local_right = max(local_right, bx + bw)
+            # Also consider the source and target node x positions
+            local_right = max(local_right, sx + NODE_W / 2, tx + NODE_W / 2)
+            # Route just outside: ~15% of NODE_W per lane
+            lane_step = NODE_W * 0.15
+            route_x = local_right + lane_step + lane_offset * (lane_step / 8)
             # Small radius for corners
             gap = LAYER_GAP / 2
+            # Blend the final control point so the tangent at the
+            # arrowhead tilts from the route_x direction, not straight down.
+            cp2_x = tx * 0.8 + route_x * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" L{sx:.1f},{s_bot + gap:.1f}"
@@ -761,9 +787,8 @@ def generate_overview_svg_direct(
                 f" {route_x:.1f},{s_bot + gap + 16:.1f}"
                 f" L{route_x:.1f},{t_top - gap - 16:.1f}"
                 f" C{route_x:.1f},{t_top - gap - 8:.1f}"
-                f" {tx:.1f},{t_top - gap - 8:.1f}"
-                f" {tx:.1f},{t_top - gap:.1f}"
-                f" L{tx:.1f},{t_top:.1f}"
+                f" {cp2_x:.1f},{t_top - gap - 8:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
             )
 
     # Collect all unique edges and assign lane offsets for long edges
@@ -794,9 +819,17 @@ def generate_overview_svg_direct(
             edge_lane[(src, dst)] = 0
     lane_count = long_lane_count
 
-    # Update total_w if long edges extend past the right side
+    # Update total_w if long edges extend past the right side.
+    # With local routing, edges only extend slightly beyond their local
+    # clusters, so we add a modest buffer for the lane offsets.
     if lane_count > 0:
-        needed_w = max_cluster_right + 20 + lane_count * 8 + MARGIN
+        lane_step = NODE_W * 0.15
+        needed_w = (
+            max_cluster_right
+            + lane_step * 2
+            + lane_count * (lane_step / 8)
+            + MARGIN
+        )
         if needed_w > total_w:
             total_w = needed_w
 
@@ -810,8 +843,7 @@ def generate_overview_svg_direct(
                 f'<g class="edge dag-edge" data-source="{src}"'
                 f' data-target="{dst}">'
                 f'<path d="{d}"'
-                f' fill="none" stroke="#CCC" stroke-width="{pw}"'
-                ' marker-end="url(#arrow_grey)"/>'
+                f' fill="none" stroke="#CCC" stroke-width="{pw}"/>'
                 "</g>"
             )
 
@@ -1172,37 +1204,57 @@ def generate_story_svg_direct(
         dst_li = layer_idx.get(dst_layer, 0)
         layer_gap = abs(dst_li - src_li)
 
+        # Length of the straight vertical lead-in before the arrowhead.
         # Cross-column edge (left col -> right col)
         src_in_right = src_layer in right_layer_set
         dst_in_right = dst_layer in right_layer_set
         if use_two_columns and not src_in_right and dst_in_right:
-            # Route: go down from source, curve right, go up to target
-            (sx + tx) / 2
+            # Route: go down from source, curve right to target.
+            # Second control point blended so arrowhead tangent matches
+            # approach direction.
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" C{sx:.1f},{s_bot + 20:.1f}"
-                f" {tx:.1f},{t_top - 20:.1f}"
+                f" {cp2_x:.1f},{t_top - 20:.1f}"
                 f" {tx:.1f},{t_top:.1f}"
             )
 
         if layer_gap == 0:
             _, cy, _, _ = cluster_box[src_layer]
             arc_y = cy - 10 - lane_offset
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{sy - NODE_H/2:.1f}"
-                f" C{sx:.1f},{arc_y:.1f} {tx:.1f},{arc_y:.1f}"
+                f" C{sx:.1f},{arc_y:.1f} {cp2_x:.1f},{arc_y:.1f}"
                 f" {tx:.1f},{ty - NODE_H/2:.1f}"
             )
         elif layer_gap == 1:
             mid_y = (s_bot + t_top) / 2
+            cp2_x = tx * 0.8 + sx * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
-                f" C{sx:.1f},{mid_y:.1f} {tx:.1f},{mid_y:.1f}"
+                f" C{sx:.1f},{mid_y:.1f} {cp2_x:.1f},{mid_y:.1f}"
                 f" {tx:.1f},{t_top:.1f}"
             )
         else:
-            route_x = max_cluster_right + 20 + lane_offset
+            # Non-adjacent: route just outside the local clusters between
+            # src and dst layers, keeping edges close to the relevant nodes.
+            lo = min(src_li, dst_li)
+            hi = max(src_li, dst_li)
+            local_right = 0.0
+            for ln in ordered_layers:
+                li = layer_idx.get(ln, -1)
+                if lo <= li <= hi and ln in cluster_box:
+                    bx, _, bw, _ = cluster_box[ln]
+                    local_right = max(local_right, bx + bw)
+            local_right = max(local_right, sx + NODE_W / 2, tx + NODE_W / 2)
+            lane_step = NODE_W * 0.15
+            route_x = local_right + lane_step + lane_offset * (lane_step / 8)
             gap = LAYER_GAP / 2
+            # Blend the final control point so the tangent at the
+            # arrowhead tilts from the route_x direction, not straight down.
+            cp2_x = tx * 0.8 + route_x * 0.2
             return (
                 f"M{sx:.1f},{s_bot:.1f}"
                 f" L{sx:.1f},{s_bot + gap:.1f}"
@@ -1211,9 +1263,8 @@ def generate_story_svg_direct(
                 f" {route_x:.1f},{s_bot + gap + 16:.1f}"
                 f" L{route_x:.1f},{t_top - gap - 16:.1f}"
                 f" C{route_x:.1f},{t_top - gap - 8:.1f}"
-                f" {tx:.1f},{t_top - gap - 8:.1f}"
-                f" {tx:.1f},{t_top - gap:.1f}"
-                f" L{tx:.1f},{t_top:.1f}"
+                f" {cp2_x:.1f},{t_top - gap - 8:.1f}"
+                f" {tx:.1f},{t_top:.1f}"
             )
 
     # --- Assign lane offsets ---
@@ -1241,7 +1292,13 @@ def generate_story_svg_direct(
             edge_lane[(src, dst)] = 0
 
     if long_lane_count > 0:
-        needed_w = max_cluster_right + 20 + long_lane_count * 8 + MARGIN
+        lane_step = NODE_W * 0.15
+        needed_w = (
+            max_cluster_right
+            + lane_step * 2
+            + long_lane_count * (lane_step / 8)
+            + MARGIN
+        )
         if needed_w > total_w:
             total_w = needed_w
 
@@ -1261,7 +1318,7 @@ def generate_story_svg_direct(
     lines.append("<defs>")
     lines.append(
         f'<marker id="{marker_id_base}" viewBox="0 0 10 6"'
-        ' refX="10" refY="3" markerWidth="10" markerHeight="8"'
+        ' refX="10" refY="3" markerWidth="10" markerHeight="6"'
         ' orient="auto-start-reverse">'
         f'<path d="M0,0 L10,3 L0,6 Z" fill="{story_colour}"/>'
         "</marker>"
@@ -2373,7 +2430,15 @@ def generate_explorer_js() -> str:
         el.style.removeProperty('stroke');
       });
     });
-    allEdges.forEach(function(e) { e.classList.remove('dimmed'); });
+    allEdges.forEach(function(e) {
+      e.classList.remove('dimmed');
+      // Restore original stroke colours saved during highlighting
+      var path = e.querySelector('path');
+      if (path && path.hasAttribute('data-orig-stroke')) {
+        path.setAttribute('stroke', path.getAttribute('data-orig-stroke'));
+        path.removeAttribute('data-orig-stroke');
+      }
+    });
     clusters.forEach(function(c) { c.classList.remove('cluster-hl'); });
   }
 
@@ -2401,18 +2466,23 @@ def generate_explorer_js() -> str:
         n.classList.add('dimmed');
       }
     });
-    // Match edges by stroke colour — each story has a unique colour on its edges
+    // Match edges by stroke colour — each story has a unique colour on its edges.
+    // Non-matching edges are dimmed AND recoloured to grey so they become
+    // visually neutral instead of retaining their original colour at low opacity.
     var storyColour = story.colour.toLowerCase();
     allEdges.forEach(function(e) {
       var path = e.querySelector('path');
-      var poly = e.querySelector('polygon');
       var edgeColour = '';
       if (path) edgeColour = (path.getAttribute('stroke') || '').toLowerCase();
-      if (!edgeColour && poly) edgeColour = (poly.getAttribute('stroke') || '').toLowerCase();
       if (edgeColour === storyColour) {
         // This edge belongs to the current story — keep visible
       } else {
         e.classList.add('dimmed');
+        // Save original stroke and replace with neutral grey
+        if (path && edgeColour && edgeColour !== '#ccc') {
+          path.setAttribute('data-orig-stroke', path.getAttribute('stroke'));
+          path.setAttribute('stroke', '#555');
+        }
       }
     });
     clusters.forEach(function(c) {
@@ -3195,10 +3265,13 @@ def generate_matching_flow_svg(
         marker = "mf-arrow-hl" if is_hl else "mf-arrow"
         opacity = "1" if is_hl else "0.4"
         if curved:
-            # S-curve from (x1,y1) to (x2,y2)
+            # S-curve from (x1,y1) to (x2,y2).  Blend cp2 x toward
+            # x1 so the arrowhead tilts to match the approach angle.
             mid_y = (y1 + y2) // 2
+            cp2_x = x2 * 0.8 + x1 * 0.2
             lines.append(
-                f'<path d="M{x1},{y1} C{x1},{mid_y} {x2},{mid_y} {x2},{y2}" '
+                f'<path d="M{x1},{y1} C{x1},{mid_y} {cp2_x},{mid_y}'
+                f' {x2},{y2}" '
                 f'fill="none" stroke="{stroke}" stroke-width="{sw}" '
                 f'opacity="{opacity}" marker-end="url(#{marker})"/>'
             )

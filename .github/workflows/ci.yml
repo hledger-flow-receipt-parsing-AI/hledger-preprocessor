@@ -16,12 +16,15 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install CI stub for private_logic
+      - name: Install CI stubs
         run: |
-          target=src/hledger_preprocessor/categorisation/rule_based/private_logic.py
-          if [ ! -f "$target" ]; then
-            cp "${target}.ci_stub" "$target"
-          fi
+          for target in \
+            src/hledger_preprocessor/categorisation/rule_based/private_logic.py \
+            src/hledger_preprocessor/checks/check_categorisation_overlap.py; do
+            if [ ! -f "$target" ]; then
+              cp "${target}.ci_stub" "$target"
+            fi
+          done
 
       - name: Install system dependencies
         run: |
@@ -35,12 +38,25 @@ jobs:
           sudo chmod +x /usr/local/bin/hledger-flow
 
       - name: Install project and test dependencies
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          # Internal deps are sibling repos (not on PyPI). Install via
+          # git+https: tokenless if public, or with a GH_PAT secret if private.
+          auth=""; [ -n "${GH_PAT:-}" ] && auth="x-access-token:${GH_PAT}@"
+          base="https://${auth}github.com/hledger-flow-receipt-parsing-AI"
+          pip install \
+            "git+${base}/hledger-core.git" \
+            "git+${base}/hledger-config.git" \
+            "git+${base}/hledger-csv-mapping.git" \
+            "git+${base}/hledger-receipt-processing.git" \
+            "git+${base}/hledger-rules.git" \
+            "git+${base}/hledger-plot.git"
           pip install -e .
-          pip install "git+https://github.com/hledger-flow-receipt-parsing-AI/hledger-plot.git"
           pip install pytest pyyaml Pillow numpy chardet iso8601 \
                       python-dateutil urwid screeninfo plotly pandas \
-                      pexpect pyte dash requests matplotlib
+                      pexpect pyte dash requests matplotlib \
+                      opencv-python-headless kaleido==0.2.1
 
       - name: Run tests
         env:

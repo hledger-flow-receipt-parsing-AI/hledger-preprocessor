@@ -1,0 +1,68 @@
+  # Bitvavo exchange (single-row atomic trades)
+  - base_currency: EUR
+    account_holder: at
+    bank: bitvavo
+    account_type: trading
+    input_csv_filename: "bitvavo_2025.csv"
+    decimal_format: dot
+    split_column: 3
+    split_groups:
+      - values: [sell]
+        csv_column_mapping: [
+            ["", ""],                               # Timezone
+            ["the_date_only", "date"],              # Date
+            ["the_time_only", "time"],              # Time
+            ["", ""],                               # Type (split key)
+            ["spend_currency", "base_currency"],    # Currency
+            ["spend_amount", "amount"],             # Amount
+            ["received_currency", ""],              # Quote Currency
+            ["quote_price", ""],                    # Quote Price
+            ["", ""],                               # Received / Paid Currency
+            ["received_amount", ""],                # Received / Paid Amount
+            ["fee_currency", ""],                   # Fee currency
+            ["fee_amount", "fee_amount"],           # Fee amount
+            ["", ""],                               # Status
+            ["description", "description"],         # Transaction ID
+            ["other_party_name", ""],               # Address
+          ]
+        tnx_date_columns: [["the_date_only", "date"]]
+      - values: [buy]
+        csv_column_mapping: [
+            ["", ""],                               # Timezone
+            ["the_date_only", "date"],              # Date
+            ["the_time_only", "time"],              # Time
+            ["", ""],                               # Type (split key)
+            ["received_currency", ""],              # Currency
+            ["received_amount", ""],                # Amount
+            ["spend_currency", "base_currency"],    # Quote Currency
+            ["quote_price", ""],                    # Quote Price
+            ["", ""],                               # Received / Paid Currency
+            ["spend_amount", "amount"],             # Received / Paid Amount
+            ["fee_currency", ""],                   # Fee currency
+            ["fee_amount", "fee_amount"],           # Fee amount
+            ["", ""],                               # Status
+            ["description", "description"],         # Transaction ID
+            ["other_party_name", ""],               # Address
+          ]
+        tnx_date_columns: [["the_date_only", "date"]]
+      - values: [deposit]
+        csv_column_mapping: [
+            ["", ""],                               # Timezone
+            ["the_date_only", "date"],              # Date
+            ["the_time_only", "time"],              # Time
+            ["", ""],                               # Type (split key)
+            ["spend_currency", "base_currency"],    # Currency
+            ["spend_amount", "amount"],             # Amount
+            ["", ""],                               # Quote Currency
+            ["", ""],                               # Quote Price
+            ["", ""],                               # Received / Paid Currency
+            ["", ""],                               # Received / Paid Amount
+            ["", ""],                               # Fee currency
+            ["", ""],                               # Fee amount
+            ["", ""],                               # Status
+            ["description", "description"],         # Transaction ID
+            ["other_party_name", ""],               # Address
+          ]
+        tnx_date_columns: [["the_date_only", "date"]]
+    csv_column_mapping: null
+    tnx_date_columns: null

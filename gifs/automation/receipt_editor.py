@@ -42,7 +42,7 @@ class ReceiptDemoValues:
 
     TUI field sequence (in order):
       1. date_digits       – Overwrite the datetime field digit-by-digit
-      2. is_withdrawal     – "y" or "n" horizontal choice
+      2. is_withdrawal     – "n" or "y" horizontal choice (n first)
       3. category          – Expense category (not withdrawal)
       -- withdrawal-only fields (if is_withdrawal = True) --
       3w. withdrawal_source_index – Withdrawal source account (0-based)
@@ -53,7 +53,7 @@ class ReceiptDemoValues:
       5. currency_index    – Currency selection (0-based, see Currency enum)
       6. amount            – Amount paid from account (not for withdrawals)
       7. change            – Change returned to account (float as string)
-      8. add_another_acct  – "y" or "n" (horizontal choice)
+      8. add_another_acct  – "n" or "y" (horizontal choice, n first)
       -- withdrawal post-account fields (if is_withdrawal = True) --
       8w. atm_fee          – ATM operator fee (default "0")
       9w. bank_fee         – Bank fee (default "0")
@@ -74,7 +74,7 @@ class ReceiptDemoValues:
     # "YYYY-MM-DD HH:MM" (separators are auto-skipped by the widget).
     date_digits: str = "202501151030"
 
-    # Field 2 – Is this a withdrawal? (horizontal y/n choice)
+    # Field 2 – Is this a withdrawal? (horizontal n/y choice; "n" first)
     is_withdrawal: bool = False
 
     # Field 3 – Bookkeeping expense category (skipped for withdrawals)
@@ -97,7 +97,7 @@ class ReceiptDemoValues:
     # Field 7 – Change returned
     change: str = "0"
 
-    # Field 8 – Add another account? 0 = "y", 1 = "n"
+    # Field 8 – Add another account? (horizontal n/y choice; "n" first)
     add_another_account: bool = False
 
     # ── Withdrawal post-account fields ──
@@ -353,24 +353,23 @@ def _select_vertical(nav: TuiNavigator, index: str) -> None:
     nav.flush_output()
 
 
-def _select_horizontal_n(nav: TuiNavigator) -> None:
-    """Select the second option ("n") in a y/n horizontal choice.
+def _select_horizontal_second(nav: TuiNavigator) -> None:
+    """Select the second option in a horizontal choice (arrow-right + Enter).
 
-    Cursor visibly pauses on ( ) y first, then moves right to ( ) n,
-    pauses so the viewer sees the selection, then presses Enter to
-    fill (x) n and advance to the next question.
+    Cursor visibly pauses on the first option, then moves right to the
+    second, pauses so the viewer sees the selection, then presses Enter.
     """
     # Let the TUI fully render the horizontal choice widget
     nav.flush_output()
     time.sleep(0.3)
-    # Pause on ( ) y so the viewer sees the cursor start there
+    # Pause on first option so the viewer sees the cursor start there
     time.sleep(0.8)
-    # Move right to ( ) n
+    # Move right to second option
     nav.send(Keys.RIGHT, pause=0.3)
     nav.flush_output()
-    # Pause on ( ) n so the viewer sees the cursor there
+    # Pause on second option so the viewer sees the cursor there
     time.sleep(0.8)
-    # Press Enter to confirm ( ) n → (x) n
+    # Press Enter to confirm
     nav.press_enter(pause=_BETWEEN)
     nav.flush_output()
 
@@ -409,14 +408,15 @@ def _fill_receipt_fields(
     # auto-advances to the next question after the last digit is typed.
     # A stray Enter would land on the withdrawal toggle and select "y".
 
-    # ── Field 2: Is this a withdrawal? (horizontal y/n) ─────────────────
+    # ── Field 2: Is this a withdrawal? (horizontal n/y) ─────────────────
+    # TUI choices are ["n", "y"] — "n" is first, "y" is second.
     nav.wait_for("withdrawal", timeout=10, silent=True)
     _mark("is_withdrawal")
     time.sleep(0.5)
     if vals.is_withdrawal:
-        _select_horizontal_first(nav)  # "y" (first option)
+        _select_horizontal_second(nav)  # "y" (second option)
     else:
-        _select_horizontal_n(nav)  # "n" (second option)
+        _select_horizontal_first(nav)  # "n" (first option)
     nav.flush_output()
 
     # After answering the withdrawal toggle, the TUI reconfigures.
@@ -486,11 +486,12 @@ def _fill_receipt_fields(
         _fill_float(nav, vals.change)
         nav.flush_output()
 
-    # ── Add another account? (horizontal y/n) ───────────────────────────
+    # ── Add another account? (horizontal n/y) ───────────────────────────
+    # TUI choices are ["n", "y"] — "n" is first, "y" is second.
     nav.wait_for("another account", timeout=5, silent=True)
     time.sleep(0.3)
     if vals.add_another_account:
-        _select_horizontal_first(nav)  # "y"
+        _select_horizontal_second(nav)  # "y" (second option)
         nav.flush_output()
 
         # ── Second account loop ──────────────────────────────────────
@@ -513,9 +514,9 @@ def _fill_receipt_fields(
         # Second "Add another account?" — always "n"
         nav.wait_for("another account", timeout=5, silent=True)
         time.sleep(0.3)
-        _select_horizontal_n(nav)
+        _select_horizontal_first(nav)  # "n" (first option)
     else:
-        _select_horizontal_n(nav)  # "n"
+        _select_horizontal_first(nav)  # "n" (first option)
     nav.flush_output()
 
     if vals.is_withdrawal:

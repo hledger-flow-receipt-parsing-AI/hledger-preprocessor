@@ -207,7 +207,7 @@ def manage_preprocessing_assets(
                         txn=receipt_account_transaction,
                         ai_models_tnx_classification=models[
                             ClassifierType.TRANSACTION_CATEGORY
-                        ][LogicType.AI],
+                        ].get(LogicType.AI, []),
                         rule_based_models_tnx_classification=models[
                             ClassifierType.TRANSACTION_CATEGORY
                         ][LogicType.RULE_BASED],
