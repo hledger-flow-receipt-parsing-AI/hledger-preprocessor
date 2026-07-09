@@ -37,6 +37,12 @@ GIFS_ROOT = PROJECT_ROOT / "gifs"
 RECEIPTS_ROOT = GIFS_ROOT / "assets" / "receipts"
 OUTPUT_DIR_DEFAULT = SCRIPT_DIR / "site"
 
+# Base URL/path for demo video <src>.  Default (None) => copy videos into the
+# site and reference them relatively.  When set (e.g. a GitHub Release download
+# base), videos are referenced by absolute URL and NOT copied into the site, so
+# the deploy needs no local media.  Set from --media-base-url in main().
+MEDIA_BASE_URL: Optional[str] = None
+
 # Map story sections to GIF directories and cast file directories.
 SECTION_TO_GIF_DIR: Dict[str, Optional[str]] = {
     "Step 1a: Account Configuration": "1a_setup_config",
@@ -3711,15 +3717,16 @@ def generate_story_html(
     main += '<div class="video-section zoom-pane" data-zoom-id="video">\n'
     main += '<div class="zoom-pane-inner">\n'
     if video_filename:
+        _vbase = MEDIA_BASE_URL or "../assets/videos"
         if is_gif:
             main += (
-                f'<img src="../assets/videos/{video_filename}" '
+                f'<img src="{_vbase}/{video_filename}" '
                 f'alt="Demo: {_esc(story["title"])}">\n'
             )
         else:
             main += (
                 '<video id="demo-video" controls loop preload="metadata">\n'
-                f'<source src="../assets/videos/{video_filename}" '
+                f'<source src="{_vbase}/{video_filename}" '
                 'type="video/mp4">\n'
                 "</video>\n"
             )
@@ -3897,20 +3904,22 @@ def copy_assets(
         for png in iso_src.glob("*.png"):
             shutil.copy2(png, iso_dir / png.name)
 
-    # Copy all per-story videos
-    copied: set = set()
-    for _dir_name, stem_map in all_videos.items():
-        for _stem, vid_path in stem_map.items():
-            if vid_path.name not in copied:
-                shutil.copy2(vid_path, vid_dir / vid_path.name)
-                copied.add(vid_path.name)
+    # Copy per-story + section videos into the site, UNLESS media is hosted
+    # externally (MEDIA_BASE_URL set) — then the site references them by URL.
+    if not MEDIA_BASE_URL:
+        copied: set = set()
+        for _dir_name, stem_map in all_videos.items():
+            for _stem, vid_path in stem_map.items():
+                if vid_path.name not in copied:
+                    shutil.copy2(vid_path, vid_dir / vid_path.name)
+                    copied.add(vid_path.name)
 
-    # Also copy section-level videos (for sections without per-story GIFs)
-    for section in sections:
-        vid = get_video_for_section(section=section, video_map=video_map)
-        if vid and vid.name not in copied:
-            shutil.copy2(vid, vid_dir / vid.name)
-            copied.add(vid.name)
+        # Also copy section-level videos (sections without per-story GIFs)
+        for section in sections:
+            vid = get_video_for_section(section=section, video_map=video_map)
+            if vid and vid.name not in copied:
+                shutil.copy2(vid, vid_dir / vid.name)
+                copied.add(vid.name)
 
     # Copy receipt images
     receipt_dir = output_dir / "assets" / "receipts"
@@ -3954,8 +3963,23 @@ def main() -> None:
             " 0.18)"
         ),
     )
+    parser.add_argument(
+        "--media-base-url",
+        type=str,
+        default=None,
+        help=(
+            "Base URL for demo videos (e.g. a GitHub Release download base)."
+            " When set, videos are referenced by this URL and NOT copied into"
+            " the site."
+        ),
+    )
     args = parser.parse_args()
     output_dir = args.output
+
+    global MEDIA_BASE_URL
+    if args.media_base_url:
+        MEDIA_BASE_URL = args.media_base_url.rstrip("/")
+        print(f"Media hosted externally at: {MEDIA_BASE_URL}")
 
     print(f"Loading data from {DATA_FILE}...")
     data = load_data()

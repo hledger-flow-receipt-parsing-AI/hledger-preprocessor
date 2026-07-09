@@ -71,84 +71,11 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/ci/gpt4all_stub
         run: python -m pytest
 
-  gifs:
+  site:
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: true
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install CI stubs
-        run: |
-          for target in \
-            src/hledger_preprocessor/categorisation/rule_based/private_logic.py \
-            src/hledger_preprocessor/checks/check_categorisation_overlap.py; do
-            if [ ! -f "$target" ]; then
-              cp "${target}.ci_stub" "$target"
-            fi
-          done
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y asciinema gifsicle ffmpeg plantuml hledger
-
-      - name: Install hledger-flow
-        run: |
-          curl -sL https://github.com/apauley/hledger-flow/releases/download/v0.16.2/hledger-flow-linux-x64.tar.gz \
-            | sudo tar xz -C /usr/local/bin
-          sudo chmod +x /usr/local/bin/hledger-flow
-
-      - name: Install asciinema-agg (cast -> GIF renderer)
-        run: |
-          # The real renderer is the asciinema/agg binary, NOT the PyPI "agg".
-          curl -sL https://github.com/asciinema/agg/releases/download/v1.9.0/agg-x86_64-unknown-linux-gnu -o agg
-          sudo install -m 0755 agg /usr/local/bin/asciinema-agg
-
-      - name: Install Python dependencies
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          auth=""; [ -n "${GH_PAT:-}" ] && auth="x-access-token:${GH_PAT}@"
-          base="https://${auth}github.com/hledger-flow-receipt-parsing-AI"
-          pip install \
-            "git+${base}/hledger-core.git" \
-            "git+${base}/hledger-config.git" \
-            "git+${base}/hledger-csv-mapping.git" \
-            "git+${base}/hledger-receipt-processing.git" \
-            "git+${base}/hledger-rules.git" \
-            "git+${base}/hledger-plot.git"
-          pip install -e .
-          pip install pyyaml Pillow numpy chardet iso8601 \
-                      python-dateutil urwid screeninfo plotly pandas \
-                      pexpect pyte opencv-python-headless kaleido==0.2.1
-
-      - name: Generate GIFs
-        env:
-          SKIP_PREFLIGHT: '1'
-        run: |
-          ./build_userstories.sh --gifs-standalone --gifs-config --no-render
-
-      - name: Upload GIF output
-        uses: actions/upload-artifact@v4
-        with:
-          name: gifs
-          path: gifs/*/output/
-          retention-days: 1
-
-  site:
-    needs: gifs
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          lfs: true
 
       - uses: actions/setup-python@v5
         with:
@@ -159,14 +86,12 @@ jobs:
           pip install pyyaml
           sudo apt-get install -y plantuml || true
 
-      - name: Download GIF artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: gifs
-          path: gifs/
-
+      # Demo videos are hosted as assets on the GitHub Release tagged
+      # "site-media" (generated locally, uploaded there) — not built in CI.
       - name: Generate site
-        run: python user_stories/dag/generate_site.py --output site/
+        run: |
+          python user_stories/dag/generate_site.py --output site/ \
+            --media-base-url "https://github.com/${{ github.repository }}/releases/download/site-media"
 
       - uses: actions/upload-pages-artifact@v3
         with:
