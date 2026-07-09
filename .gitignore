@@ -6,6 +6,9 @@ list.txt
 issues/*
 
 *private_logic.py
+# User-specific categorisation rules (real payees, IBANs, account
+# relationships).  Only the sanitized *.ci_stub is committed.
+*check_categorisation_overlap.py
 
 # something to Git(Hub/Lab) using the program GIT.
 docs/source/test/
