@@ -93,7 +93,17 @@ def build_facts(label: dict[str, Any]) -> dict[str, Any]:
 
 
 def run(manifest: Manifest, base_dir: str | None = None) -> dict[str, Any]:
-    """Materialise, run the real TUI, and return the run record dict."""
+    """Materialise, run the real TUI, and return the run record dict.
+
+    The TUI is driven over a pexpect PTY (the same engine that records the demo
+    GIF).  That drive is timing-sensitive: on a slow/loaded machine a keystroke
+    can race the urwid re-render, or the child can be reaped before it flushes
+    the label JSON — so an individual attempt occasionally produces no label.
+    The label CONTENT is deterministic, so we retry the whole run (fresh
+    materialise) until a label appears.  If every attempt fails, the run is
+    genuinely broken and we raise — preserving drift enforcement.  Tune with
+    SCENARIO_RUN_ATTEMPTS (default 3).
+    """
     from gifs.automation.receipt_editor import run_label_receipt_demo
 
     _prepare_env()
@@ -103,24 +113,42 @@ def run(manifest: Manifest, base_dir: str | None = None) -> dict[str, Any]:
             tempfile.gettempdir(), f"hledger_scenario_{manifest.slug}"
         )
 
-    paths = materialize(manifest, base_dir)
-    config_path = paths["config"]
-
-    demo_values = to_demo_values(manifest, config_path)
     keep = manifest.fixtures.get("receipt_image_stem")
-
-    run_label_receipt_demo(config_path, demo_values, keep_image=keep)
-
+    attempts = int(os.environ.get("SCENARIO_RUN_ATTEMPTS", "3"))
     labels_dir = os.path.join(base_dir, "receipt_labels")
-    label_path = _find_label_json(labels_dir)
-    if not label_path:
-        raise RuntimeError(
-            f"No label JSON produced under {labels_dir} — the TUI run failed. "
-            "Check that hledger is on PATH and the conda env has "
-            "tui_labeller + pexpect installed."
+
+    label = None
+    for attempt in range(1, attempts + 1):
+        # Fresh materialise each attempt so the receipt starts unlabelled.
+        paths = materialize(manifest, base_dir)
+        demo_values = to_demo_values(manifest, paths["config"])
+        try:
+            run_label_receipt_demo(
+                paths["config"], demo_values, keep_image=keep
+            )
+        except Exception as e:  # pragma: no cover - transient TUI drive error
+            print(
+                f"  scenario {manifest.id}: attempt {attempt}/{attempts} "
+                f"raised {type(e).__name__}: {e}",
+                file=sys.stderr,
+            )
+        label_path = _find_label_json(labels_dir)
+        if label_path:
+            with open(label_path) as f:
+                label = json.load(f)
+            break
+        print(
+            f"  scenario {manifest.id}: attempt {attempt}/{attempts} produced "
+            "no label; retrying" if attempt < attempts else "",
+            file=sys.stderr,
         )
-    with open(label_path) as f:
-        label = json.load(f)
+
+    if label is None:
+        raise RuntimeError(
+            f"No label JSON produced under {labels_dir} after {attempts} "
+            "attempts — the TUI run failed. Check that hledger is on PATH and "
+            "that tui_labeller + pexpect are installed."
+        )
 
     label_norm = _normalise_paths(label, base_dir)
     facts = build_facts(label)
