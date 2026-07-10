@@ -1,0 +1,198 @@
+{
+  "facts": {
+    "account_bank": "wallet",
+    "account_type": "physical",
+    "amount": "20",
+    "category": "food:coffee",
+    "category_title": "Food:Coffee",
+    "change": "15",
+    "currency": "EUR",
+    "date": "2025-02-10",
+    "image_stem": "coffee_cash",
+    "shop_name": "KoffieLeute",
+    "tax": "0.87",
+    "the_date": "2025-02-10T08:15:00"
+  },
+  "gif_video": "2b2_full_path",
+  "label": {
+    "ai_receipt_categorisation": null,
+    "config": {
+      "accounts": [
+        {
+          "account": {
+            "account_holder": "at",
+            "account_type": "checking",
+            "bank": "triodos",
+            "base_currency": "EUR"
+          },
+          "csv_column_mapping": {
+            "csv_column_mapping": [
+              [
+                "the_date",
+                "date"
+              ],
+              [
+                "",
+                ""
+              ],
+              [
+                "tendered_amount_out",
+                "amount"
+              ],
+              [
+                "transaction_code",
+                ""
+              ],
+              [
+                "other_party_name",
+                ""
+              ],
+              [
+                "other_party_account_name",
+                ""
+              ],
+              [
+                "",
+                ""
+              ],
+              [
+                "description",
+                "description"
+              ],
+              [
+                "",
+                ""
+              ]
+            ]
+          },
+          "date_format": null,
+          "decimal_format": "dot",
+          "input_csv_filename": "triodos_2025.csv",
+          "is_crypto": false,
+          "linked_accounts": null,
+          "merge_column": null,
+          "split_column": null,
+          "split_groups": null,
+          "tnx_date_columns": {
+            "csv_column_mapping": [
+              [
+                "the_date",
+                "date"
+              ],
+              [
+                "description",
+                "description"
+              ]
+            ]
+          }
+        },
+        {
+          "account": {
+            "account_holder": "at",
+            "account_type": "physical",
+            "bank": "wallet",
+            "base_currency": "EUR"
+          },
+          "csv_column_mapping": {
+            "csv_column_mapping": null
+          },
+          "date_format": null,
+          "decimal_format": null,
+          "input_csv_filename": null,
+          "is_crypto": false,
+          "linked_accounts": null,
+          "merge_column": null,
+          "split_column": null,
+          "split_groups": null,
+          "tnx_date_columns": {
+            "csv_column_mapping": null
+          }
+        }
+      ],
+      "ai": null,
+      "categorisation": {
+        "quick": false
+      },
+      "csv_encoding": "utf-8",
+      "dir_paths": {
+        "asset_transaction_csvs_dir": "asset_transaction_csvs",
+        "hledger_plot_dir": "hledger_plots",
+        "pre_processed_output_dir": null,
+        "receipt_images_input_dir": "receipt_images_input",
+        "receipt_images_processed_dir": "receipt_images_processed",
+        "receipt_labels_dir": "receipt_labels",
+        "root_finance_path": "<ROOT>",
+        "working_subdir": "test_working_dir"
+      },
+      "file_names": {
+        "categories_filename": "categories.yaml",
+        "receipt_img": {
+          "crop": "_cropped",
+          "crop_ext": ".jpg",
+          "processing_metadata_ext": ".json",
+          "rotate": "_rotated",
+          "rotate_ext": ".jpg"
+        },
+        "root_journal_filename": "all-years.journal",
+        "start_journal_filepath": "<ROOT>/start_pos/2024_complete.journal",
+        "tui_label_filename": "receipt_image_to_obj_label"
+      },
+      "matching_algo": {
+        "amount_range": 0,
+        "days": 2,
+        "days_month_swap": true,
+        "multiple_receipts_per_transaction": false
+      }
+    },
+    "net_bought_items": {
+      "account_transactions": [
+        {
+          "account": {
+            "account_holder": "at",
+            "account_type": "physical",
+            "bank": "wallet",
+            "base_currency": "EUR"
+          },
+          "change_returned": 15.0,
+          "currency": "EUR",
+          "original_transaction": null,
+          "parent_receipt_category": null,
+          "tendered_amount_out": 20.0,
+          "the_date": "2025-02-10T08:15:00"
+        }
+      ],
+      "category": null,
+      "description": "food:coffee",
+      "group_discount": 0,
+      "quantity": 1,
+      "round_amount": null,
+      "tax_per_unit": 0,
+      "the_date": "2025-02-10T08:15:00",
+      "unit_price": null
+    },
+    "net_returned_items": null,
+    "raw_img_filepaths": [
+      "<ROOT>/receipt_images_input/coffee_cash.jpg"
+    ],
+    "receipt_category": "food:coffee",
+    "receipt_owner_address": null,
+    "shop_identifier": {
+      "address": {
+        "city": "Utrecht",
+        "country": "Netherlands",
+        "house_nr": "12",
+        "street": "Oudegracht",
+        "zipcode": "3511AB"
+      },
+      "name": "KoffieLeute",
+      "shop_account_nr": null
+    },
+    "subtotal": null,
+    "the_date": "2025-02-10T08:15:00",
+    "total_tax": 0.87,
+    "transaction_hash": null,
+    "withdrawal_metadata": null
+  },
+  "scenario": "US-2b.2",
+  "title": "Label a cash receipt"
+}

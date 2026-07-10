@@ -31,6 +31,10 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 DATA_FILE = Path(__file__).parent / "userstory_dag_data.yaml"
+# Generated overlay: DAG node label/desc derived from real scenario run
+# records (see scenarios/harness/derive_dag.py).  Kept separate so the
+# hand-authored base YAML (with its comments and anchors) is never rewritten.
+DERIVED_FILE = Path(__file__).parent / "userstory_dag_derived.yaml"
 
 
 def load_dag_data(*, data_file: Path = DATA_FILE) -> Dict[str, Any]:
@@ -39,16 +43,35 @@ def load_dag_data(*, data_file: Path = DATA_FILE) -> Dict[str, Any]:
         return yaml.safe_load(f)
 
 
+def load_derived_overlay(
+    *, derived_file: Path = DERIVED_FILE
+) -> Dict[str, Dict]:
+    """Load the generated ``{node_id: {label, desc}}`` overlay, or {}."""
+    if not derived_file.exists():
+        return {}
+    with open(derived_file) as f:
+        overlay = yaml.safe_load(f) or {}
+    return overlay.get("nodes", {}) or {}
+
+
 def build_node_index(*, data: Dict[str, Any]) -> Dict[str, Dict]:
-    """Build ``{node_id: {layer, layer_label, label, desc, components}}``."""
+    """Build ``{node_id: {layer, layer_label, label, desc, components}}``.
+
+    Node label/desc are overridden by the derived overlay when present, so the
+    rendered DAG reflects the real scenario run output rather than any
+    hand-authored value that may have drifted.
+    """
+    overlay = load_derived_overlay()
     idx: Dict[str, Dict] = {}
     for layer in data.get("layers", []):
         for node in layer.get("nodes", []):
-            idx[node["id"]] = {
+            node_id = node["id"]
+            derived = overlay.get(node_id, {})
+            idx[node_id] = {
                 "layer": layer["name"],
                 "layer_label": layer["label"],
-                "label": node["label"],
-                "desc": node.get("desc", ""),
+                "label": derived.get("label", node["label"]),
+                "desc": derived.get("desc", node.get("desc", "")),
                 "components": node.get("components", []),
             }
     return idx

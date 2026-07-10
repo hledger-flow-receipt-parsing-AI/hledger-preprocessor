@@ -1,0 +1,113 @@
+# =============================================================================
+# Scenario manifest — US-2b.1 "Label a simple same-currency card receipt"
+# -----------------------------------------------------------------------------
+# This file is the SINGLE SOURCE OF TRUTH for the scenario.  From it, one real
+# scripted run of `hledger_preprocessor --tui-label-receipts` is driven against
+# real fixtures; that run's output then feeds THREE consumers with no drift:
+#
+#   1. pytest       (test/scenarios/test_us_2b_1.py) — asserts the real run
+#                    reproduces the facts declared in `expect:` + a golden snapshot.
+#   2. the DAG       (scenarios/harness/derive_dag.py) — regenerates the node
+#                    labels/descs in userstory_dag_derived.yaml from the run output.
+#   3. the demo GIF  (gifs/2b_label_receipt/generate.sh) — records the SAME run.
+#
+# Change the code or the fixtures/answers here, re-run the harness, and all
+# three update together to reflect the real new behaviour on real test data.
+# See scenarios/README.md for the full design.
+# =============================================================================
+
+id: US-2b.1
+title: "Label a simple same-currency card receipt"
+section: "Step 2b: Receipt Labelling"
+gif_video: 2b1_full_path
+
+# ── Fixtures: the real inputs, declared ONCE (were duplicated across
+#    conftest.py, setup_test_environment.py and the demo scripts) ──
+fixtures:
+  # Config template under test/fixtures/config_templates/ (root_finance_path is
+  # patched to the materialised temp root at runtime).
+  config_template: 1_bank_1_wallet.yaml
+
+  # Bookkeeping category tree written to categories.yaml.
+  categories:
+    groceries: {ekoplaza: {}, supermarket: {}}
+    food: {coffee: {}, restaurant: {}}
+    repairs: {bike: {}}
+    abonnement:
+      monthly: {phone: {}, rent: {}}
+
+  # Opening-balance journal (start_2024_1000eur DAG node).
+  starting_journal: |
+    2024/01/01 Opening Balances
+        Assets:Checking          €1000.00
+        Equity:Opening Balances
+
+  # Bank CSV (csv_ekoplaza_4217_jan15 DAG node) — the row that a later
+  # matching step would link this receipt to.
+  bank_csv:
+    filename: triodos_2025.csv
+    header: "date,account_nr,amount,type,payee,counter_account,code,description,balance"
+    rows:
+      - "15-01-2025,NL79 TRIO 0379 2834 09,-42.17,debit,Ekoplaza,NL456,IC,groceries:ekoplaza,1000.00"
+
+  # Source label JSON in test/fixtures/receipts/ — its raw_img_filepaths give
+  # the receipt image that gets seeded (unlabelled) into the input dir.  The
+  # run then RE-creates the label from scratch via the TUI.
+  receipt_label_seed: groceries_ekoplaza_card.json
+  receipt_image_stem: example_card
+
+# ── Scripted TUI answers: the ONE place these live (semantic, not positional).
+#    resolve.py maps `account`/`currency` to the concrete TUI indices. ──
+script:
+  date: "2025-01-15"
+  time: "10:30"
+  is_withdrawal: false
+  category: "groceries:ekoplaza"
+  account: {bank: triodos, account_type: checking}
+  currency: EUR
+  amount: "42.17"
+  change: "0"
+  add_another_account: false
+  shop:
+    name: Ekoplaza
+    street: Groenerstraat
+    house_nr: "89"
+    zipcode: "7898BA"
+    city: Timboektoe
+    country: Belgie
+  subtotal: ""
+  total_tax: "7.35"
+
+# ── Expectations asserted against the REAL produced label JSON.  These mirror
+#    the `script:` answers; the point of the test is to prove the real run
+#    actually produces them (catches TUI regressions the fixture test could not). ──
+expect:
+  the_date: "2025-01-15T10:30:00"
+  receipt_category: "groceries:ekoplaza"
+  shop_name: "Ekoplaza"
+  account: {bank: triodos, account_type: checking}
+  currency: EUR
+  tendered_amount_out: 42.17
+  change_returned: 0.0
+  total_tax: 7.35
+
+# ── DAG wiring: how run-output facts populate each node's label/desc.
+#    Templates are filled from the `facts` dict derived from the run record
+#    (see derive_dag.py: image_stem, currency, amount, date, category,
+#    account_bank, account_type, shop_name, tax, change). ──
+dag:
+  segment_nodes:
+    [img_ekoplaza_card, nolbl_ekoplaza_card_eur, tui_ekoplaza_card_eur, lbl_ekoplaza_card_eur]
+  node_bindings:
+    img_ekoplaza_card:
+      label: "{image_stem}.jpg"
+      desc: "Ekoplaza receipt, paid by card"
+    nolbl_ekoplaza_card_eur:
+      label: "{image_stem}\n(no label)"
+      desc: "No receipt label JSON exists yet for the {image_stem} receipt"
+    lbl_ekoplaza_card_eur:
+      label: "{image_stem}\n{currency} {amount} card"
+      desc: "{account_bank} account, {date}, {category}"
+    jrnl_groceries_ekoplaza:
+      label: "Expenses:{category_title}\n{amount} {currency}"
+      desc: "Debit {category}, credit {account_bank} checking"
