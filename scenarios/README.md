@@ -79,9 +79,12 @@ Runs are headless (`MPLBACKEND=Agg`, `HLEDGER_PREPROCESSOR_HEADLESS=1`).
 
 ## How the three consumers stay in sync
 
-- **Tests** — `test/scenarios/test_us_2b_1.py` runs the real run and asserts it
-  matches `expect:` **and** the committed golden `scenarios/_runs/<id>.run.json`.
-  If code changes what the run produces, the test fails until you re-run
+- **Tests** — `test/scenarios/test_scenarios.py` (parametrised over every
+  manifest) runs the real run and asserts it matches `expect:` **and** the
+  committed golden `scenarios/_runs/<slug>.run.json`. `test/scenarios/test_dag_sync.py`
+  (fast, always runs) asserts the committed DAG overlay equals `derive()` from
+  the committed run records, and that every manifest has a golden. If code
+  changes what the run produces, the tests fail until you re-run
   `regenerate.sh` and commit the new golden + overlay. That failure is what
   makes "update the code → the GIF and DAG update" an enforced build property.
 - **DAG** — `build_node_index` (in `user_stories/dag/story_components.py`)
@@ -91,9 +94,10 @@ Runs are headless (`MPLBACKEND=Agg`, `HLEDGER_PREPROCESSOR_HEADLESS=1`).
 - **GIF** — `gifs/automation/receipt_editor.py::main()` derives the recording's
   answers from the manifest (env `SCENARIO_ID`, default `US-2b.1`), and
   `setup_test_environment.py` materialises the demo fixtures from the manifest.
-  So the recorded TUI segment uses exactly the tested values. (Making the
-  config/CSV/journal *segments* real — showing the materialised files instead of
-  PIL-typed fakes — is the remaining GIF-side step; see "Remaining work".)
+  So the recorded TUI segment uses exactly the tested values. By design, the
+  surrounding config/CSV/journal *segments* stay PIL-typed static displays (real
+  file dumps flash by and are hard to read); only the TUI interaction is a real
+  recording.
 
 ## Adding a new scenario (templating)
 
@@ -104,8 +108,9 @@ Runs are headless (`MPLBACKEND=Agg`, `HLEDGER_PREPROCESSOR_HEADLESS=1`).
 1. `python -m scenarios.harness.run_scenario <id> --update` to produce the
    golden record. Confirm the printed `facts` are what you expect.
 1. `python -m scenarios.harness.derive_dag` to refresh the overlay.
-1. Add `test/scenarios/test_<slug>.py` (copy the US-2b.1 test; it is generic
-   apart from the scenario id and a couple of node-id assertions).
+1. No new test file is needed — `test/scenarios/test_scenarios.py` is
+   parametrised over every manifest, so the new scenario is covered
+   automatically once its golden record + overlay are committed.
 1. For a demo, point the recording at it via `SCENARIO_ID=<id>` (the
    `ReceiptDemoValues` schema already covers cash / foreign / split / returns —
    see the other `*_RECEIPT` constants in `receipt_editor.py` for the answer
@@ -116,10 +121,10 @@ need only YAML.
 
 ## Remaining work / caveats
 
-- **Real config/CSV/journal GIF segments.** The TUI segment is a real recording;
-  the surrounding segments are still PIL-typed fakes stitched by
-  `stitch_full_path.py`. Next step: replace them by `cat`-ing the *materialised*
-  fixture files (same files the run used) so the whole GIF is real. GIF tooling
+- **Config/CSV/journal GIF segments stay PIL-typed — by design.** Only the TUI
+  interaction is a real recording; the surrounding data-file segments remain
+  static PIL-typed displays (stitched by `stitch_full_path.py`) because dumping
+  the real files flashes them past too fast to read. GIF tooling
   (asciinema/agg/ffmpeg) is not installed locally, so recording is done in the
   GIF environment / by the user.
 - **`--no-svg` builds show stale DAG.** The PlantUML PNG pre-render
