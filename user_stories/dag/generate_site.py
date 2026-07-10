@@ -293,6 +293,12 @@ def get_video_for_story(
         for _dir_name, dir_videos in all_videos.items():
             if gif_video in dir_videos:
                 return dir_videos[gif_video]
+        # Release-hosted mode: the demo videos are gitignored build artefacts
+        # and are absent from the deploy checkout, so local discovery finds
+        # nothing.  Emit the release URL directly from the gif_video stem
+        # (asset name convention: "<stem>.mp4").
+        if MEDIA_BASE_URL:
+            return Path(f"{gif_video}.mp4")
     # Fallback to section-level default
     return get_video_for_section(section=section, video_map=video_map)
 
