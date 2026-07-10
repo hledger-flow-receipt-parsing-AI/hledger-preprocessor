@@ -51,7 +51,8 @@ jobs:
             "git+${base}/hledger-csv-mapping.git" \
             "git+${base}/hledger-receipt-processing.git" \
             "git+${base}/hledger-rules.git" \
-            "git+${base}/hledger-plot.git"
+            "git+${base}/hledger-plot.git" \
+            "git+${base}/tui-image-labeller.git"
           pip install -e .
           pip install pytest pyyaml Pillow numpy chardet iso8601 \
                       python-dateutil urwid screeninfo plotly pandas \

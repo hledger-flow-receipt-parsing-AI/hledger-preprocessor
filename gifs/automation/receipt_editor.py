@@ -129,7 +129,12 @@ class ReceiptDemoValues:
     total_tax: str = "7.35"
 
 
-# Pre-built demo values for the card receipt (US-2b.1)
+# Pre-built demo values for the card receipt (US-2b.1).
+#
+# NOTE: the scenario manifest ``scenarios/us_2b_1.yaml`` is the source of truth
+# for these values.  ``main()`` below derives the recording's answers from that
+# manifest; CARD_RECEIPT is kept as a config-independent fallback and is locked
+# to the manifest by ``test/scenarios/test_us_2b_1.py`` so the two cannot drift.
 CARD_RECEIPT = ReceiptDemoValues()
 
 # Pre-built demo values for the cash receipt (US-2b.2)
@@ -676,11 +681,24 @@ def run_label_receipt_demo(
     time.sleep(0.5)
 
     # ── Spawn the real TUI ──────────────────────────────────────────────
-    cmd = (
-        f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && "
-        "conda activate hledger_preprocessor && "
-        f"hledger_preprocessor --config {config_path} --tui-label-receipts'"
+    # Launch via conda when it is available (local recording), otherwise run
+    # the CLI directly, relying on the inherited PATH (e.g. a CI pip venv,
+    # where conda is absent).  ``hledger_preprocessor`` is on PATH in both
+    # cases; the child inherits HLEDGER_PREPROCESSOR_HEADLESS / MPLBACKEND from
+    # this process.
+    run_cli = (
+        f"hledger_preprocessor --config {config_path} --tui-label-receipts"
     )
+    if conda_base and not os.environ.get("HLEDGER_SCENARIO_DIRECT_LAUNCH"):
+        conda_env = os.environ.get(
+            "HLEDGER_PREPROCESSOR_CONDA_ENV", "hledger_preprocessor"
+        )
+        cmd = (
+            f"bash -c 'source {conda_base}/etc/profile.d/conda.sh && "
+            f"conda activate {conda_env} && {run_cli}'"
+        )
+    else:
+        cmd = f"bash -c '{run_cli}'"
     nav = TuiNavigator(cmd, dimensions=(50, 120), timeout=60)
 
     try:
@@ -774,6 +792,32 @@ def _write_tui_markers_json() -> None:
     print(f"  TUI field markers ({len(_tui_markers)}) → {out_path}", flush=True)
 
 
+def _demo_values_from_manifest(config_path: str) -> ReceiptDemoValues:
+    """Derive the recording's answers from the scenario manifest.
+
+    Falls back to CARD_RECEIPT if the scenarios package is unavailable, so a
+    partial checkout can still record the legacy demo.
+    """
+    scenario = os.environ.get("SCENARIO_ID", "US-2b.1")
+    try:
+        import sys
+        from pathlib import Path
+
+        repo_root = str(Path(__file__).resolve().parent.parent.parent)
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from scenarios.harness import load_manifest
+        from scenarios.harness.resolve import to_demo_values
+
+        return to_demo_values(load_manifest(scenario), config_path)
+    except Exception as e:  # pragma: no cover - defensive fallback
+        print(
+            f"{Colors.BOLD_RED}Warning: could not load scenario {scenario!r}"
+            f" ({e}); using built-in CARD_RECEIPT.{Colors.RESET}"
+        )
+        return CARD_RECEIPT
+
+
 def main() -> None:
     """Main entry point when run as a script."""
     config_path = os.environ.get("CONFIG_FILEPATH")
@@ -784,7 +828,8 @@ def main() -> None:
         )
         return
 
-    run_label_receipt_demo(config_path)
+    receipt = _demo_values_from_manifest(config_path)
+    run_label_receipt_demo(config_path, receipt)
     _write_tui_markers_json()
 
 

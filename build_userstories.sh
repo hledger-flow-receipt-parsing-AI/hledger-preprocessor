@@ -254,9 +254,16 @@ run_site() {
     log "Running: generate_site.py ${flags[*]}"
 
     if [[ -n "$DRY_RUN" ]]; then
-        warn "[dry-run] Would run: python3 $DAG_DIR/generate_site.py ${flags[*]}"
+        warn "[dry-run] Would run: derive_dag + generate_site.py ${flags[*]}"
         return
     fi
+
+    # Refresh the derived DAG overlay from the committed scenario run records
+    # (fast: reads scenarios/_runs/*.run.json, no TUI run).  This keeps the DAG
+    # node labels/descs in step with the real scenario output.
+    log "Refreshing derived DAG overlay from scenario run records..."
+    ( cd "$SCRIPT_DIR" && python3 -m scenarios.harness.derive_dag ) || \
+        warn "derive_dag failed; site will use committed overlay / base YAML"
 
     cd "$DAG_DIR"
     python3 generate_site.py "${flags[@]}"
