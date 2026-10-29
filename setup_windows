@@ -55,6 +55,7 @@ EXTRA_DEPS = [
     "numpy",
     "Pillow",
 ]
+MSVC_URL = "https://visualstudio.microsoft.com/visual-cpp-build-tools/"
 # Gitignored real files that are imported at startup; CI swaps in stubs.
 CI_STUBS = [
     "src/hledger_preprocessor/categorisation/rule_based/private_logic.py",
@@ -108,6 +109,62 @@ def check_python() -> None:
         )
     if sys.platform != "win32":
         print("    (not Windows; continuing anyway for testing)")
+
+
+def has_msvc() -> bool:
+    if shutil.which("cl"):
+        return True
+    # vswhere ships with every Visual Studio / Build Tools 2017+ install.
+    vswhere = (
+        Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"))
+        / "Microsoft Visual Studio"
+        / "Installer"
+        / "vswhere.exe"
+    )
+    if not vswhere.exists():
+        return False
+    result = subprocess.run(
+        [
+            str(vswhere),
+            "-latest",
+            "-products",
+            "*",
+            "-requires",
+            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            "-property",
+            "installationPath",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    return bool(result.stdout.strip())
+
+
+def check_msvc() -> None:
+    """Pip needs MSVC >= 14.0 for any dependency without a Windows wheel."""
+    if sys.platform != "win32":
+        return
+    step("Checking for Microsoft C++ Build Tools")
+    while not has_msvc():
+        print(
+            "    Microsoft Visual C++ 14.0 or greater was not found. Some\n"
+            "    packages may need it to install. Download it from:\n\n"
+            f"        {MSVC_URL}\n\n"
+            "    In the installer, tick 'Desktop development with C++'.\n"
+            "    Installing needs admin rights: on a managed laptop look\n"
+            "    for 'Visual Studio Build Tools' in Software Center, or\n"
+            "    ask IT.\n"
+        )
+        try:
+            answer = input(
+                "    Press Enter once installed to re-check, or type 'skip'"
+                " to try without it: "
+            )
+        except EOFError:
+            fail(f"Install Microsoft C++ Build Tools from {MSVC_URL}")
+        if answer.strip().lower() == "skip":
+            return
+    print("    found")
 
 
 def download_sources(ref: str, src_dir: Path) -> dict:
@@ -216,6 +273,7 @@ def main() -> None:
     install_dir.mkdir(parents=True, exist_ok=True)
 
     check_python()
+    check_msvc()
     sources = download_sources(args.ref, install_dir / "src")
     install_ci_stubs(sources["hledger-preprocessor"])
 
@@ -227,10 +285,20 @@ def main() -> None:
     pip_install(python, user, ["--upgrade", "pip"])
     # One resolver run so hledger-preprocessor's 'hledger-core>=0.1.0' etc.
     # are satisfied by the local sources instead of being looked up on PyPI.
+    # --prefer-binary picks an older release with a Windows wheel over
+    # compiling the newest one from source, so MSVC is rarely needed.
     if not pip_install(
-        python, user, [str(sources[r]) for r in REPOS] + EXTRA_DEPS
+        python,
+        user,
+        ["--prefer-binary"] + [str(sources[r]) for r in REPOS] + EXTRA_DEPS,
     ):
-        fail("pip install failed; see the output above.")
+        hint = ""
+        if sys.platform == "win32" and not has_msvc():
+            hint = (
+                " If it says 'Microsoft Visual C++ 14.0 or greater is "
+                f"required', install it from {MSVC_URL} and re-run."
+            )
+        fail("pip install failed; see the output above." + hint)
 
     smoke_test(python)
     launcher = write_launcher(install_dir, python, args.with_ai)
