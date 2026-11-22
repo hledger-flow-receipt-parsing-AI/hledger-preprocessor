@@ -40,6 +40,38 @@ from hledger_preprocessor.management.main_manager import (
 
 
 @typechecked
+def _exit_if_receipt_image_windows_cannot_open(
+    *, config: Config, grouping: bool
+) -> None:
+    """Exit with fix instructions if the receipt image windows cannot open.
+
+    Rotating/cropping unprocessed images needs a GUI build of OpenCV and a
+    display; grouping needs an interactive matplotlib backend.
+    """
+    from hledger_core.helper import get_images_in_folder
+    from hledger_receipt_processing.receipts_to_objects.edit_images.gui_environment import (  # noqa: E501
+        GuiEnvironmentError,
+        assert_grouping_environment,
+        assert_image_editing_environment,
+    )
+
+    raw_imgs = get_images_in_folder(
+        folder_path=config.dir_paths.get_path(
+            "receipt_images_input_dir", absolute=True
+        )
+    )
+    try:
+        assert_image_editing_environment(
+            raw_receipt_img_filepaths=raw_imgs, config=config
+        )
+        if grouping:
+            assert_grouping_environment()
+    except GuiEnvironmentError as error:
+        print(f"Error: {error}", file=sys.stderr)
+        sys.exit(1)
+
+
+@typechecked
 def main() -> None:
     # Parse input arguments
     parser = create_arg_parser()
@@ -79,6 +111,12 @@ def main() -> None:
         config_path=args.config,
         pre_processed_output_dir=args.pre_processed_output_dir,
     )
+
+    # Fail before any work if the rotate/crop/grouping windows cannot open.
+    if args.tui_label_receipts or args.group_receipts:
+        _exit_if_receipt_image_windows_cannot_open(
+            config=config, grouping=args.group_receipts or args.regroup
+        )
 
     labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
 
@@ -339,8 +377,14 @@ def main() -> None:
                 "receipt_images_input_dir", absolute=True
             )
         )
-        rotate_images(raw_receipt_img_filepaths=raw_imgs, config=config)
-        crop_images(raw_receipt_img_filepaths=raw_imgs, config=config)
+        from hledger_receipt_processing.receipts_to_objects.edit_images.receipt_window import (  # noqa: E501
+            receipt_window_session,
+        )
+
+        # One window for both steps: it keeps its place and focus.
+        with receipt_window_session():
+            rotate_images(raw_receipt_img_filepaths=raw_imgs, config=config)
+            crop_images(raw_receipt_img_filepaths=raw_imgs, config=config)
 
         if args.regroup:
             group_receipt_images(config=config, image_paths=raw_imgs)

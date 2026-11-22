@@ -18,6 +18,9 @@ from typing import List, Tuple
 
 import cv2
 import numpy as np
+from hledger_receipt_processing.receipts_to_objects.edit_images.receipt_window import (  # noqa: E501
+    WINDOW_NAME as RECEIPT_WINDOW_NAME,
+)
 from PIL import Image
 
 # Import actual source code functions
@@ -219,13 +222,13 @@ def captured_imshow(window_name: str, image: np.ndarray) -> None:
         terminal_snapshot = _captured_stdout.getvalue().splitlines()
 
     # Also store in phase-specific lists
-    # Only capture frames from the "Image" window (rotation) and "Crop Image" window (crop)  # noqa: E501
+    # Rotation and crop share one receipt window; the phase tells them apart.
     # Filter by window name to avoid capturing frames from other windows
-    if window_name == "Image" and _current_phase == "rotation":
+    if window_name == RECEIPT_WINDOW_NAME and _current_phase == "rotation":
         _rotation_frames.append(
             (frame_copy, timestamp, terminal_snapshot, _last_key_pressed)
         )
-    elif window_name == "Crop Image" and _current_phase == "crop":
+    elif window_name == RECEIPT_WINDOW_NAME and _current_phase == "crop":
         _crop_frames.append(
             (frame_copy, timestamp, terminal_snapshot, _last_key_pressed)
         )

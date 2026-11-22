@@ -3,6 +3,9 @@ import os
 import shutil
 from typing import Any, Dict, List, Tuple
 
+from hledger_receipt_processing.receipts_to_objects.edit_images.receipt_window import (  # noqa: E501
+    receipt_window_session,
+)
 from typeguard import typechecked
 
 from hledger_preprocessor.categorisation.categoriser import classify_transaction
@@ -280,15 +283,18 @@ def manage_creating_receipt_img_labels_with_tui(
         )
     )
 
-    # Step 1: Rotate all images
-    rotate_images(
-        raw_receipt_img_filepaths=raw_receipt_img_filepaths, config=config
-    )
+    # One window for rotating and cropping, so it keeps its place and focus
+    # from the first image to the last.
+    with receipt_window_session():
+        # Step 1: Rotate all images
+        rotate_images(
+            raw_receipt_img_filepaths=raw_receipt_img_filepaths, config=config
+        )
 
-    # Step 2: Crop all images
-    crop_images(
-        raw_receipt_img_filepaths=raw_receipt_img_filepaths, config=config
-    )
+        # Step 2: Crop all images
+        crop_images(
+            raw_receipt_img_filepaths=raw_receipt_img_filepaths, config=config
+        )
 
     # Step 3: Apply image grouping.
     # Always check for a saved grouping file so that a previous
