@@ -231,6 +231,17 @@ def main() -> None:
             config=config,
         )
 
+    if args.train is not None:
+        # Receipt suggestion models of hledger-ai (its requirements TR-2 and
+        # TR-3): the one command lives here, the work in hledger-ai.
+        from hledger_preprocessor.ai_training import train_receipt_models
+
+        exit_code = train_receipt_models(
+            config=config, names=args.train, force=args.force_retrain
+        )
+        if exit_code != 0:
+            sys.exit(exit_code)
+
     if args.train_models:
         try:
             from hledger_ai.training.train_runner import run_training
