@@ -249,6 +249,27 @@ def manage_generating_rules(*, config: Config) -> None:
 
 
 @typechecked
+def manage_generating_csv_account_rules(*, config: Config) -> None:
+    """Write the hledger-flow .rules file for each CSV-input account.
+
+    Asset accounts (wallets) are skipped: --preprocess-assets writes theirs,
+    and their import directory does not exist yet at this point.
+    """
+    for account_config in config.accounts:
+        if not account_config.has_input_csv():
+            continue
+        assert_dir_full_hierarchy_exists(
+            config=config,
+            account=account_config.account,
+            working_subdir=config.get_working_subdir_path(assert_exists=False),
+        )
+        generate_rules_file(
+            config=config,
+            account_config=account_config,
+        )
+
+
+@typechecked
 def manage_creating_receipt_img_labels_with_tui(
     *, config: Config, labelled_receipts: List[Receipt], verbose: bool
 ) -> Dict[str, Receipt]:

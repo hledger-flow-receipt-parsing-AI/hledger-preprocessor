@@ -36,6 +36,7 @@ from hledger_preprocessor.get_models import get_models
 from hledger_preprocessor.management.main_manager import (
     manage_batch_match_receipts,
     manage_creating_new_setup,
+    manage_generating_csv_account_rules,
     manage_match_csv_to_csv,
     manage_matching_manual_receipt_objs_to_account_transactions,
     manage_preprocessing_assets,
@@ -79,6 +80,9 @@ def run_pipeline(
         config=config,
         labelled_receipts=labelled_receipts,
     )
+    # hledger-flow will not import a CSV without its account's .rules file.
+    # Asset accounts get theirs from manage_preprocessing_assets below.
+    manage_generating_csv_account_rules(config=config)
 
     models: dict[ClassifierType, dict[LogicType, Any]] = get_models(
         quick_categorisation=True
@@ -224,8 +228,9 @@ def run_pipeline(
             print("Error: hledger_plot failed.")
             sys.exit(1)
     else:
-        # Generate balance report
-        result = subprocess.run(  # type: ignore[assignment]
+        # Generate balance report.  Captured, because on a terminal hledger
+        # pipes long reports through a pager that waits for the user.
+        result = subprocess.run(
             [
                 "hledger",
                 "bal",
@@ -234,8 +239,12 @@ def run_pipeline(
                 "-f",
                 all_years_journal,
             ],
+            capture_output=True,
+            text=True,
         )
+        print(result.stdout, end="")
         if result.returncode != 0:
+            print(result.stderr, end="", file=sys.stderr)
             print("Error: hledger balance report failed.")
             sys.exit(1)
 
