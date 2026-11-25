@@ -78,9 +78,10 @@ def test_crop_refuses_without_display(config, no_display) -> None:
 
 
 def test_grouping_refuses_without_display(config, no_display) -> None:
+    # Two images: a single one is its own receipt and opens no window.
     with pytest.raises(GuiEnvironmentError, match="matplotlib window"):
         interactive_group_images(
-            config=config, image_paths=[_unprocessed_image(config)]
+            config=config, image_paths=[_unprocessed_image(config)] * 2
         )
 
 
