@@ -390,6 +390,9 @@ def main() -> None:
             config._group_receipts = True
         if args.regroup:
             config._regroup = True
+        if args.no_receipt_highlights:
+            # Read by hledger-receipt-processing's make_receipt_label.
+            config._receipt_highlights = False
         manage_creating_receipt_img_labels_with_tui(
             config=config, labelled_receipts=labelled_receipts, verbose=False
         )
