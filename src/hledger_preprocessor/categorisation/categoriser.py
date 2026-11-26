@@ -3,6 +3,11 @@ from typing import Dict, List, Optional
 from typeguard import typechecked
 
 from hledger_preprocessor.categorisation.Categories import CategoryNamespace
+from hledger_preprocessor.categorisation.journal_tags import (
+    ReceiptLinks,
+    csv_account_names,
+    receipt_journal_comment,
+)
 from hledger_preprocessor.csv_parsing.get_asset_tnx_from_receipt import (
     get_receipt_that_contain_asset_txn,
 )
@@ -55,10 +60,23 @@ def classify_transactions(
     category_overrides: Optional[Dict[str, str]] = None,
 ) -> List[ProcessedTransaction]:
     processed_txns: List[ProcessedTransaction] = []
+    # Receipts that paid by card: their statement row, by account, day and
+    # amount (the stored link to the row is lost when labels are read).
+    receipt_links = ReceiptLinks(
+        receipts=labelled_receipts,
+        rows=[t for t in transactions if isinstance(t, GenericCsvTransaction)],
+    )
+    csv_accounts = (
+        csv_account_names(config=getattr(labelled_receipts[0], "config", None))
+        if labelled_receipts
+        else set()
+    )
     for txn in transactions:
 
         # Determine the parent_receipt for this specific transaction.
         txn_parent_receipt = parent_receipt
+        # The receipt whose tags the transaction carries into the journal.
+        tags_receipt: Optional[Receipt] = parent_receipt
 
         if isinstance(txn, AccountTransaction):
             matching_receipt: Receipt = get_receipt_that_contain_asset_txn(
@@ -69,6 +87,7 @@ def classify_transactions(
             txn.set_parent_receipt_category(
                 parent_receipt_category=matching_receipt.receipt_category
             )
+            tags_receipt = matching_receipt
         elif isinstance(txn, GenericCsvTransaction):
             # Look up whether a labelled receipt links to this CSV row.
             # If found and the receipt has withdrawal_metadata, use it as
@@ -80,6 +99,9 @@ def classify_transactions(
             )
             if linked_receipt is not None:
                 txn_parent_receipt = linked_receipt
+                tags_receipt = linked_receipt
+            else:
+                tags_receipt = receipt_links.receipt_of(row=txn)
 
         processed_txn: ProcessedTransaction = classify_transaction(
             txn=txn,
@@ -88,6 +110,13 @@ def classify_transactions(
             category_namespace=category_namespace,
             parent_receipt=txn_parent_receipt,
             category_overrides=category_overrides,
+            tags_comment=(
+                receipt_journal_comment(
+                    receipt=tags_receipt, csv_accounts=csv_accounts
+                )
+                if tags_receipt is not None
+                else ""
+            ),
         )
         processed_txns.append(processed_txn)
     return processed_txns
@@ -102,7 +131,20 @@ def classify_transaction(
     category_namespace: CategoryNamespace,
     parent_receipt: Optional["Receipt"] = None,
     category_overrides: Optional[Dict[str, str]] = None,
+    # The journal comment (receipt tags); None: from *parent_receipt*.
+    tags_comment: Optional[str] = None,
 ) -> ProcessedTransaction:
+    if tags_comment is None:
+        tags_comment = (
+            receipt_journal_comment(
+                receipt=parent_receipt,
+                csv_accounts=csv_account_names(
+                    config=getattr(parent_receipt, "config", None)
+                ),
+            )
+            if parent_receipt is not None
+            else ""
+        )
     ai_classifications: Dict[str, str] = {}
     for ai_model in ai_models_tnx_classification:
         # AI-based classification (replace `ai_model.predict` with your actual model logic)  # noqa: E501
@@ -157,5 +199,6 @@ def classify_transaction(
         ai_classifications=ai_classifications,
         logic_classifications=logic_classifications,
         parent_receipt=parent_receipt,
+        tags_comment=tags_comment,
     )
     return processed_tnx

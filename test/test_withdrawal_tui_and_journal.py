@@ -276,8 +276,12 @@ class TestProcessedTransactionWithdrawalDict:
         assert d["withdrawal_atm_fee"] == "2.5"
         assert d["withdrawal_dest_amount"] == "100.0"
 
-    def test_no_withdrawal_metadata_no_columns(self):
-        """A normal (non-withdrawal) receipt should not have withdrawal columns."""  # noqa: E501
+    def test_no_withdrawal_metadata_empty_columns(self):
+        """A normal (non-withdrawal) receipt has empty withdrawal columns.
+
+        Every row has them, in the order of the rules file: hledger reads
+        CSV columns by position.
+        """
         dest_txn = _make_account_transaction(
             account=_make_account(bank="wallet", acct_type="physical"),
             amount=42.17,
@@ -295,7 +299,15 @@ class TestProcessedTransactionWithdrawalDict:
         )
         d = pt.to_hledger_dict()
 
-        assert "withdrawal_source_account" not in d
+        from hledger_core.TransactionObjects.ProcessedTransaction import (
+            WITHDRAWAL_COLUMNS,
+        )
+
+        assert all(d[column] == "" for column in WITHDRAWAL_COLUMNS)
+        keys = list(d)
+        tail = ["ExampleRuleBasedModel", "ExampleAIModel", "tags"]
+        tail += list(WITHDRAWAL_COLUMNS) + ["receipt_link"]
+        assert keys[-len(tail) :] == tail
 
 
 # ---------------------------------------------------------------

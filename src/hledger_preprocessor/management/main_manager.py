@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Tuple
 from typeguard import typechecked
 
 from hledger_preprocessor.categorisation.categoriser import classify_transaction
+from hledger_preprocessor.categorisation.journal_tags import later_duplicates
 from hledger_preprocessor.config.AccountConfig import AccountConfig
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.create_start import (
@@ -179,8 +180,22 @@ def manage_preprocessing_assets(
     for account_config in config.get_account_configs_without_csv():
         non_input_csv_transactions[account_config] = []
 
+    # Two photos of one receipt labelled separately: its cash payments
+    # count once (the first label), not once per label.
+    repeats = later_duplicates(receipts=labelled_receipts)
+    for labelled_receipt in labelled_receipts:
+        first = repeats.get(id(labelled_receipt))
+        if first is not None:
+            print(
+                "WARNING: skipping a second label of the receipt of"
+                f" {labelled_receipt.the_date}"
+                f" ({labelled_receipt.raw_img_filepath}); its payments are"
+                f" already booked from {first.raw_img_filepath}."
+            )
     # relevant_transactions:Dict[Receipt,List[Transaction]]={}
     for labelled_receipt in labelled_receipts:
+        if id(labelled_receipt) in repeats:
+            continue
         # for net_bought_item in labelled_receipt.net_bought_items:
         all_account_transactions: List[AccountTransaction] = (
             collect_non_csv_transactions(receipt=labelled_receipt)
