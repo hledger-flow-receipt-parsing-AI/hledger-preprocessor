@@ -5,6 +5,9 @@ CSV transactions without producing any file output.
 """
 
 from hledger_preprocessor.categorisation.Categories import CategoryNamespace
+from hledger_preprocessor.categorisation.rule_based.demo_rules import (
+    write_demo_rules_for_root,
+)
 from hledger_preprocessor.checks.check_categorisation import (
     check_categorisation,
 )
@@ -58,7 +61,7 @@ class TestCheckCategorisationIntegration:
             pre_processed_output_dir=None,
         )
         labelled_receipts = load_receipts_from_dir(config=config)
-        models = get_models(quick_categorisation=True)
+        models = get_models(config=config)
 
         errors = check_categorisation(
             config=config,
@@ -113,6 +116,7 @@ class TestCheckCategorisationWithUnknown:
         # Categories file.
         categories = temp_finance_root["root"] / "categories.yaml"
         (root / "categories.yaml").write_text(categories.read_text())
+        write_demo_rules_for_root(root_dir=str(root))
 
         # Start journal.
         (root / "start_pos" / "2024_complete.journal").write_text(
@@ -133,7 +137,7 @@ class TestCheckCategorisationWithUnknown:
             pre_processed_output_dir=None,
         )
         labelled_receipts = load_receipts_from_dir(config=config)
-        models = get_models(quick_categorisation=True)
+        models = get_models(config=config)
 
         errors = check_categorisation(
             config=config,
@@ -178,12 +182,12 @@ class TestCheckCategorisationWithUnknown:
 
         categories = temp_finance_root["root"] / "categories.yaml"
         (root / "categories.yaml").write_text(categories.read_text())
+        write_demo_rules_for_root(root_dir=str(root))
         (root / "start_pos" / "2024_complete.journal").write_text(
             "2024/01/01 Opening\n    Assets  EUR 1000\n    Equity\n"
         )
 
         # CSV with a known debit + an unknown credit.
-        # Need 2+ rows so has_header0() doesn't skip the only data row.
         csv_content = (
             "15-01-2025,NL123,-42.17,debit,Ekoplaza,NL456,IC,"
             "groceries:ekoplaza,1000.00\n"
@@ -197,7 +201,7 @@ class TestCheckCategorisationWithUnknown:
             pre_processed_output_dir=None,
         )
         labelled_receipts = load_receipts_from_dir(config=config)
-        models = get_models(quick_categorisation=True)
+        models = get_models(config=config)
 
         errors = check_categorisation(
             config=config,
@@ -252,6 +256,7 @@ class TestCheckCategorisationWithUnknown:
             "  furniture:\n"
             "    ikea: {}\n"
         )
+        write_demo_rules_for_root(root_dir=str(root))
         (root / "start_pos" / "2024_complete.journal").write_text(
             "2024/01/01 Opening\n    Assets  EUR 1000\n    Equity\n"
         )
@@ -273,7 +278,7 @@ class TestCheckCategorisationWithUnknown:
             pre_processed_output_dir=None,
         )
         labelled_receipts = load_receipts_from_dir(config=config)
-        models = get_models(quick_categorisation=True)
+        models = get_models(config=config)
 
         errors = check_categorisation(
             config=config,

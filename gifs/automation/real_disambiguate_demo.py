@@ -142,6 +142,11 @@ def create_test_environment() -> Dict[str, Any]:
     # Create categories.yaml
     categories = {"groceries": {"ekoplaza": {}}}
     (root / "categories.yaml").write_text(yaml.safe_dump(categories))
+    from hledger_preprocessor.categorisation.rule_based.demo_rules import (
+        write_demo_rules,
+    )
+
+    write_demo_rules(root_dir=str(root), categories=categories)
 
     # Create bank CSV — 3 similar Ekoplaza transactions within ±2 days
     csv_content = (

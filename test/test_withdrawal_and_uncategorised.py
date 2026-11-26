@@ -17,10 +17,11 @@ from pathlib import Path
 
 import pytest
 import yaml
+from hledger_core.categorisation.rules import Condition, Rule, RuleStore
 
 from hledger_preprocessor.categorisation.Categories import CategoryNamespace
 from hledger_preprocessor.categorisation.rule_based.rule_based_eg0 import (
-    ExampleRuleBasedModel,
+    RuleBasedModel,
 )
 from hledger_preprocessor.categorisation.UncategorisedTransactionError import (
     UncategorisedTransactionError,
@@ -42,6 +43,28 @@ from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
 def _create_file(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content.strip() + "\n")
+
+
+def _rule(rule_id: int, direction: str, value: str, target: str) -> Rule:
+    return Rule(
+        id=rule_id,
+        direction=direction,
+        match=(Condition(field="text", op="contains", value=value),),
+        target=target,
+    )
+
+
+def ExampleRuleBasedModel() -> RuleBasedModel:
+    """The classifier with the invented rules these tests rely on."""
+    return RuleBasedModel(
+        store=RuleStore(
+            rules=[
+                _rule(1, "debit", "ATM Withdrawal", "withdrawl:euro:gbp"),
+                _rule(2, "debit", "ekoplaza", "groceries:ekoplaza"),
+                _rule(3, "debit", "IKEA BV", "house:furniture:ikea"),
+            ]
+        )
+    )
 
 
 def _build_category_namespace() -> CategoryNamespace:
@@ -262,7 +285,7 @@ class TestUncategorisedTransactionError:
         error_msg = str(exc_info.value)
         assert "UNCATEGORISED TRANSACTION" in error_msg
         assert "expense" in error_msg
-        assert "private_logic.py" in error_msg
+        assert "--categorise-transactions" in error_msg
 
     def test_unknown_credit_raises_uncategorised_error(self):
         """An unknown credit transaction should raise
@@ -292,7 +315,7 @@ class TestUncategorisedTransactionError:
         error_msg = str(exc_info.value)
         assert "UNCATEGORISED TRANSACTION" in error_msg
         assert "income" in error_msg
-        assert "private_logic.py" in error_msg
+        assert "--categorise-transactions" in error_msg
 
     def test_no_eoferror_on_uncategorised_transaction(self):
         """Ensure that uncategorised transactions do NOT cause EOFError.

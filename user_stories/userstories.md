@@ -897,10 +897,58 @@ ______________________________________________________________________
 
 **Acceptance criteria:**
 
-- Rule-based classification checks transaction description, other_party_name, and amount.
-- Classification is case-insensitive.
-- Multiple rules can match (first match wins or most specific match wins).
-- Uncategorised transactions prompt the user for manual classification.
+- Rule-based classification checks the payee, description, counter account, own account, amount and date of a transaction.
+- Classification is case-insensitive unless a condition says otherwise.
+- Rules are data (`categorisation_rules.yaml` in the finance root), never Python.
+- Every transaction must satisfy exactly one rule; the order of the rules never matters (US-C.5).
+- Uncategorised transactions are categorised in the TUI (US-C.6).
+
+______________________________________________________________________
+
+### US-C.5 — One rule per transaction, in any order
+
+**As a** user with hundreds of categorisation rules,
+**I want to** every bank transaction to satisfy exactly one rule, whatever the order of the rules,
+**so that** a transaction never changes category because a rule moved, and an ambiguity is an error I see instead of a silent first-match.
+
+**Acceptance criteria:**
+
+- All rules are evaluated on every transaction; a transaction matching no rule raises `UncategorisedTransactionError`, one matching several raises `MultipleMatchError` naming the rules (issue #25).
+- Two rules with the same category still count as a conflict.
+- `--check-categorisation` and the pipeline pre-flight report both kinds for every row of every CSV.
+- A rule can carry `unless` groups: it does not fire when such a group holds completely, which is how one rule is made to win over a broader one.
+- An old `private_logic.py` converts into the rules file with every classification kept (the converter verifies it row by row).
+
+______________________________________________________________________
+
+### US-C.6 — Categorise uncategorised transactions in a TUI
+
+**As a** user with uncategorised bank transactions,
+**I want to** a screen that shows them group by group (same payee, else description, else counter account) with a draft rule and a category field,
+**so that** one Enter per group adds a rule and I never write Python.
+
+**Acceptance criteria:**
+
+- `hledger_preprocessor --categorise-transactions` (`-q`) opens the screen; largest groups first.
+- The draft rule is probed against every row of the root while typing; a draft that also matches a row another rule covers cannot be saved as it is: Alt+w narrows those rules with an `unless` so the draft wins, Alt+y gives the draft the `unless` so it yields.
+- Categories are chosen from `categories.yaml` with filtering; Tab completes the typed text to what the matching categories share (then walks the matches); the category tree (Alt+n) creates new ones.
+- Each saved rule is written to `categorisation_rules.yaml` at once; Esc quits at any time.
+- The best AI suggestion is prefilled when a model is trained; Alt+a.. take the n-th suggestion.
+
+______________________________________________________________________
+
+### US-C.7 — A local model drafts the rules of a new CSV
+
+**As a** user starting the bookkeeping of a new account or finance root,
+**I want to** a locally trained model to propose the category of every uncategorised group, and a root without rules to borrow the model of my own root,
+**so that** categorising a new CSV is confirming drafts instead of deciding from scratch.
+
+**Acceptance criteria:**
+
+- `csv-linear` is part of hledger-ai's catalogue, `--train`, `--status`, `--models` and dataset registry, and runs on any laptop (no GPU, no network).
+- `draft_rules()` turns every uncategorised group into a rule with the model's ranked categories and the probe result against the store.
+- `ai: transaction_model_root` in `config.yaml` makes a root use another root's model.
+- The AI column of the preprocessed CSVs holds the model's top category.
 
 ______________________________________________________________________
 
@@ -919,7 +967,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-### US-C.3 — Train a classification model on my own categorised data *[NOT YET IMPLEMENTED]*
+### US-C.3 — Train a classification model on my own categorised data
 
 **As a** user who has manually categorised hundreds of transactions over time,
 **I want to** use my categorised transaction history as training data for a custom finetuned classification model,
@@ -927,10 +975,10 @@ ______________________________________________________________________
 
 **Acceptance criteria:**
 
-- A training dataset is generated from previously classified transactions.
-- The finetuned model is stored locally.
-- The model can be retrained as more data accumulates.
-- Performance metrics (accuracy, precision, recall per category) are reported.
+- A training dataset is generated from previously classified transactions (every bank row the rule store categorises, label = its rule's target).
+- The model (`csv-linear`, hledger-ai) is stored locally in the root's private AI folder.
+- `--train` retrains when the rules or rows changed (dataset hash) and does nothing otherwise.
+- Accuracy on unseen transactions is measured on time-ordered folds against the most-frequent-category baseline and shown by `--status`.
 
 ______________________________________________________________________
 

@@ -4,12 +4,17 @@ from typeguard import typechecked
 
 from hledger_preprocessor.generics.Transaction import Transaction
 
+TUI_HINT = (
+    "Add a rule for it in the TUI:\n"
+    "  hledger_preprocessor --categorise-transactions --config config.yaml\n"
+)
+
 
 class UncategorisedTransactionError(Exception):
-    """Raised when a transaction cannot be categorised by any rule.
+    """Raised when no categorisation rule matches a transaction.
 
-    Instead of blocking on input(), this error propagates up so that
-    start.sh (or any caller) can display it clearly to the user.
+    Instead of blocking on input(), this error propagates up so that the
+    pipeline (or any caller) can display it clearly to the user.
     """
 
     @typechecked
@@ -23,10 +28,8 @@ class UncategorisedTransactionError(Exception):
             f"{'='*60}\n"
             f"{tnx_repr}\n"
             f"{'='*60}\n"
-            f"Please add a categorisation rule for this {transaction_type} "
-            "transaction in:\n"
-            "  src/hledger_preprocessor/categorisation/rule_based/"
-            "private_logic.py\n"
-            "Then run ./start.sh again.\n"
+            f"No categorisation rule matches this {transaction_type}"
+            " transaction.\n"
+            f"{TUI_HINT}"
             f"{'='*60}"
         )

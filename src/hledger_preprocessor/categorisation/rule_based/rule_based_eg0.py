@@ -1,15 +1,24 @@
-from typing import Union
+"""The rule-based transaction classifier: the one-hot rule store applied
+to bank transactions, receipt transactions keep their receipt's category.
+"""
 
+from __future__ import annotations
+
+from typing import Any
+
+from hledger_core.categorisation.Categories import Category, CategoryNamespace
+from hledger_core.categorisation.rules import (
+    RowView,
+    Rule,
+    RuleStore,
+    RuleStoreError,
+    Verdict,
+    verdict,
+)
 from typeguard import typechecked
 
-from hledger_preprocessor.categorisation.Categories import (
-    Category,
-    CategoryNamespace,
-)
-from hledger_preprocessor.categorisation.helper import dict_contains_string
-from hledger_preprocessor.categorisation.rule_based.private_logic import (
-    private_credit_classification,
-    private_debit_classification,
+from hledger_preprocessor.categorisation.MultipleMatchError import (
+    MultipleMatchError,
 )
 from hledger_preprocessor.categorisation.UncategorisedTransactionError import (
     UncategorisedTransactionError,
@@ -18,17 +27,74 @@ from hledger_preprocessor.generics.GenericTransactionWithCsv import (
     GenericCsvTransaction,
 )
 from hledger_preprocessor.generics.Transaction import Transaction
-from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.AccountTransaction import (
     AccountTransaction,
 )
-from hledger_preprocessor.TransactionObjects.Posting import (
-    TransactionCode,
-)
 
 
-class ExampleRuleBasedModel:
+@typechecked
+def transaction_type_of(*, row: RowView) -> str:
+    """The word the error messages use for a direction."""
+    return "expense" if row.direction == "debit" else "income"
+
+
+@typechecked
+def unknown_targets(
+    *, rules: tuple[Rule, ...], category_namespace: CategoryNamespace
+) -> list[tuple[Rule, str]]:
+    """Rules whose category is not in categories.yaml, with the reason."""
+    missing: list[tuple[Rule, str]] = []
+    for rule in rules:
+        if rule.is_account_target:
+            continue
+        try:
+            Category(rule.target, category_namespace._hierarchy)
+        except ValueError as error:
+            missing.append((rule, str(error).splitlines()[0]))
+    return missing
+
+
+class RuleBasedModel:
+    # The generated hledger ``.rules`` files address the classification
+    # column of the preprocessed CSVs by this name: it must not change.
     name = "ExampleRuleBasedModel"
+
+    @typechecked
+    def __init__(
+        self,
+        *,
+        store: RuleStore | None = None,
+        category_namespace: CategoryNamespace | None = None,
+    ) -> None:
+        self.store: RuleStore = store if store is not None else RuleStore()
+        if category_namespace is not None:
+            missing = unknown_targets(
+                rules=self.store.rules, category_namespace=category_namespace
+            )
+            if missing:
+                lines = "\n".join(
+                    f"  rule #{rule.id} -> {rule.target}: {reason}"
+                    for rule, reason in missing
+                )
+                raise RuleStoreError(
+                    f"{len(missing)} rule(s) in {self.store.path} point to"
+                    f" categories that are not in categories.yaml:\n{lines}"
+                )
+
+    @staticmethod
+    @typechecked
+    def from_config(config: Any) -> RuleBasedModel:
+        """The store of the finance root in *config* (hledger-config)."""
+        return RuleBasedModel(
+            store=RuleStore.load(path=config.categorisation_rules_path()),
+            category_namespace=config.category_namespace,
+        )
+
+    @typechecked
+    def verdict(self, *, transaction: GenericCsvTransaction) -> Verdict:
+        return verdict(
+            store=self.store, row=RowView.from_transaction(transaction)
+        )
 
     @typechecked
     def classify(
@@ -36,122 +102,27 @@ class ExampleRuleBasedModel:
         transaction: Transaction,
         category_namespace: CategoryNamespace,
     ) -> str:
-        classification: Union[str, Category, Account] = (
-            self._get_classification(
-                transaction=transaction, category_namespace=category_namespace
-            )
-        )
-        if isinstance(classification, Account):
-            return classification.to_string()
-        if isinstance(classification, Category):
-            return classification._str
-        if isinstance(classification, str):
-            return classification
-        else:
-            raise TypeError(
-                f"Did not expected type:{type(classification)} for:"
-                f" {classification}"
-            )
-
-    @typechecked
-    def _get_classification(
-        self,
-        transaction: Transaction,
-        category_namespace: CategoryNamespace,
-    ) -> Union[str, Category, Account]:
-        if transaction is None:
-            raise ValueError("Transaction cannot be None.")
-        if isinstance(transaction, GenericCsvTransaction):
-            # Use explicit transaction_code if available, otherwise
-            # derive from amount sign (covers CSVs without a
-            # transaction_code column).
-            if transaction.transaction_code is not None:
-                code = TransactionCode.normalize_transaction_code(
-                    transaction_code=transaction.transaction_code
-                )
-            else:
-                code = transaction.get_transaction_code()
-            if code == TransactionCode.DEBIT:
-                return self._classify_debit(
-                    transaction=transaction,
-                    category_namespace=category_namespace,
-                )
-            elif code == TransactionCode.CREDIT:
-                return self._classify_credit(
-                    transaction=transaction,
-                    category_namespace=category_namespace,
-                )
-            else:
-                raise ValueError(
-                    f"Unknown transaction_code for transaction:{transaction}"
-                )
-        elif isinstance(transaction, AccountTransaction):
-            # return parent_receipt.receipt_category
+        if isinstance(transaction, AccountTransaction):
             return transaction.parent_receipt_category
-        else:
+        if not isinstance(transaction, GenericCsvTransaction):
             raise TypeError(
                 f"Unsupported transaction type:{type(transaction)} for"
                 f" {transaction}"
             )
-
-    @typechecked
-    def _classify_debit(
-        self, transaction: Transaction, category_namespace: CategoryNamespace
-    ) -> Union[Category, Account]:
-
-        tnx_dict = transaction.to_dict_without_classification()
-        if dict_contains_string(
-            d=tnx_dict, substr="IKEA BV", case_sensitive=False
-        ):
-            return category_namespace.house.furniture.ikea
-        if dict_contains_string(
-            d=tnx_dict, substr="Eko Plaza", case_sensitive=False
-        ):
-            return category_namespace.groceries.ekoplaza
-
-        if (
-            private_debit_classification(
-                transaction=transaction,
-                tnx_dict=tnx_dict,
-                category_namespace=category_namespace,
-            )
-            is not None
-        ):
-            return private_debit_classification(
-                transaction=transaction,
-                tnx_dict=tnx_dict,
-                category_namespace=category_namespace,
-            )
-        else:
+        result = self.verdict(transaction=transaction)
+        if result.is_categorised:
+            return result.result
+        transaction_type = transaction_type_of(row=result.row)
+        if result.is_uncategorised:
             raise UncategorisedTransactionError(
-                transaction=transaction,
-                transaction_type="expense",
+                transaction=transaction, transaction_type=transaction_type
             )
+        raise MultipleMatchError(
+            transaction=transaction,
+            transaction_type=transaction_type,
+            matches=[(rule.describe(), rule.target) for rule in result.matches],
+        )
 
-    @typechecked
-    def _classify_credit(
-        self, transaction: Transaction, category_namespace: CategoryNamespace
-    ) -> Union[Category, Account]:
-        tnx_dict = transaction.to_dict_without_classification()
-        if dict_contains_string(
-            d=tnx_dict, substr="IKEA BV", case_sensitive=False
-        ):
-            return "refund:furniture:Ikea"
-        if (
-            private_credit_classification(
-                transaction=transaction,
-                tnx_dict=tnx_dict,
-                category_namespace=category_namespace,
-            )
-            is not None
-        ):
-            return private_credit_classification(
-                transaction=transaction,
-                tnx_dict=tnx_dict,
-                category_namespace=category_namespace,
-            )
-        else:
-            raise UncategorisedTransactionError(
-                transaction=transaction,
-                transaction_type="income",
-            )
+
+# The name the rest of the code base used for the if/return version.
+ExampleRuleBasedModel = RuleBasedModel

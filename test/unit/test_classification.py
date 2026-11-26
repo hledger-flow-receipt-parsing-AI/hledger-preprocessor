@@ -3,13 +3,13 @@
 from datetime import datetime
 
 import pytest
+from hledger_core.categorisation.rules import Condition, Rule, RuleStore
 
-from hledger_preprocessor.categorisation.helper import dict_contains_string
 from hledger_preprocessor.categorisation.load_categories import (
     load_categories_from_yaml,
 )
-from hledger_preprocessor.categorisation.rule_based.private_logic import (
-    private_debit_classification,
+from hledger_preprocessor.categorisation.rule_based.rule_based_eg0 import (
+    RuleBasedModel,
 )
 from hledger_preprocessor.Currency import Currency
 from hledger_preprocessor.generics.GenericTransactionWithCsv import (
@@ -19,8 +19,8 @@ from hledger_preprocessor.TransactionObjects.Account import Account
 from hledger_preprocessor.TransactionObjects.Posting import TransactionCode
 
 
-class TestPrivateDebitClassification:
-    """Test private_debit_classification for test data scenarios."""
+class TestRuleBasedClassification:
+    """The rule-based classifier on invented test data."""
 
     @pytest.fixture
     def test_categories_yaml(self, tmp_path):
@@ -64,29 +64,31 @@ onbekend: {}
             transaction_code=TransactionCode.DEBIT,
         )
 
-        tnx_dict = transaction.to_dict_without_classification()
-        print(f"\ntnx_dict contents: {tnx_dict}")
-
-        # Check that description contains the expected text
-        assert dict_contains_string(
-            d=tnx_dict, substr="ekoplaza", case_sensitive=False
-        )
-        assert dict_contains_string(
-            d=tnx_dict, substr="groceries", case_sensitive=False
-        )
-
-        # Test classification
-        result = private_debit_classification(
-            transaction=transaction,
-            tnx_dict=tnx_dict,
+        model = RuleBasedModel(
+            store=RuleStore(
+                rules=[
+                    Rule(
+                        id=1,
+                        direction="debit",
+                        match=(
+                            Condition(
+                                field="description",
+                                op="contains",
+                                value="ekoplaza",
+                            ),
+                        ),
+                        target="groceries:ekoplaza",
+                    )
+                ]
+            ),
             category_namespace=category_namespace,
         )
 
-        assert result is not None
-        assert (
-            "ekoplaza" in str(result).lower()
-            or "groceries" in str(result).lower()
+        result = model.classify(
+            transaction=transaction, category_namespace=category_namespace
         )
+
+        assert result == "groceries:ekoplaza"
 
     def test_tnx_dict_structure(self, wallet_account):
         """Debug test to understand tnx_dict structure."""

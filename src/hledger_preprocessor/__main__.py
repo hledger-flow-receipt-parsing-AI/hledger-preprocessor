@@ -18,9 +18,7 @@ from typeguard import typechecked
 
 from hledger_preprocessor.checks.check_categorisation import (
     check_categorisation,
-)
-from hledger_preprocessor.checks.check_categorisation_overlap import (
-    check_categorisation_overlap,
+    summarise,
 )
 from hledger_preprocessor.checks.check_matching import check_matching
 
@@ -82,10 +80,22 @@ def main() -> None:
 
     labelled_receipts: List[Receipt] = load_receipts_from_dir(config=config)
 
+    # --- The categorisation TUI (issue #25: one rule per transaction) ---
+    if args.categorise_transactions:
+        from hledger_preprocessor.categorisation.tui_runner import (
+            run_categorisation_tui,
+        )
+
+        sys.exit(
+            run_categorisation_tui(
+                config=config, labelled_receipts=labelled_receipts
+            )
+        )
+
     # --- Pre-flight checks (US-4.6 and US-4.7) ---
     if args.check_categorisation:
         models_for_check: Dict[ClassifierType, Dict[LogicType, Any]] = (
-            get_models(quick_categorisation=True)
+            get_models(config=config)
         )
         errors = check_categorisation(
             config=config,
@@ -95,14 +105,14 @@ def main() -> None:
         if errors:
             print("")
             print("=" * 60)
-            print(f"  {len(errors)} uncategorised transaction(s) found")
+            print(f"  {summarise(errors=errors)}")
             print("=" * 60)
             for err in errors:
                 print(str(err))
             print("=" * 60)
             sys.exit(1)
         else:
-            print("All CSV transactions can be categorised.")
+            print("All CSV transactions are categorised by exactly one rule.")
 
     if args.check_matching:
         check_matching(
@@ -110,35 +120,8 @@ def main() -> None:
             labelled_receipts=labelled_receipts,
         )
 
-    if args.check_categorisation_overlap:
-        models_for_check_overlap: Dict[ClassifierType, Dict[LogicType, Any]] = (
-            get_models(quick_categorisation=True)
-        )
-        overlap_errors = check_categorisation_overlap(
-            config=config,
-            models=models_for_check_overlap,
-            labelled_receipts=labelled_receipts,
-        )
-        if overlap_errors:
-            print("")
-            print("=" * 60)
-            print(
-                f"  {len(overlap_errors)} transaction(s) match multiple rules"
-            )
-            print("=" * 60)
-            for err in overlap_errors:
-                print(str(err))
-            print("=" * 60)
-            sys.exit(1)
-        else:
-            print("All categorisation rules are one-hot (no overlaps).")
-
     # If only checks were requested, exit now.
-    if (
-        args.check_categorisation
-        or args.check_matching
-        or args.check_categorisation_overlap
-    ):
+    if args.check_categorisation or args.check_matching:
         if not any(
             [
                 args.preprocess_csvs,
@@ -168,7 +151,7 @@ def main() -> None:
         or args.match_csv_to_csv
     ):
         models: Dict[ClassifierType, Dict[LogicType, Any]] = get_models(
-            quick_categorisation=args.quick_categorisation
+            config=config
         )
 
         # Batch-match receipts to CSV transactions BEFORE preprocessing,

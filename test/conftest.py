@@ -6,6 +6,9 @@ from typing import List
 import pytest
 import yaml
 
+from hledger_preprocessor.categorisation.rule_based.demo_rules import (
+    write_demo_rules_for_root,
+)
 from hledger_preprocessor.config.Config import Config
 from hledger_preprocessor.config.load_config import load_config
 
@@ -90,6 +93,8 @@ def temp_finance_root(tmp_path_factory):
         """
         ),
     )
+    # The one-hot rules for the invented merchants of the fixture CSVs.
+    write_demo_rules_for_root(root_dir=str(root))
 
     # ------------------------------------------------------------------
     # 4. Create Triodos bank CSV with transactions matching receipts

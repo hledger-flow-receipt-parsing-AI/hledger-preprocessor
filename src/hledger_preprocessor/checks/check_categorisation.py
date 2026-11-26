@@ -1,15 +1,20 @@
-"""Dry-run categorisation check (US-4.6).
+"""Dry-run categorisation check (US-4.6, issue #25).
 
 Loads all bank CSV transactions and runs the rule-based classifier on each
-one.  Collects any UncategorisedTransactionError instances and returns them
-so the caller can report all failures at once before exiting.
+one.  Collects every transaction that no rule matches
+(UncategorisedTransactionError) and every transaction that several rules
+match (MultipleMatchError), so the caller can report all failures at once
+before exiting.
 """
 
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from typeguard import typechecked
 
+from hledger_preprocessor.categorisation.MultipleMatchError import (
+    MultipleMatchError,
+)
 from hledger_preprocessor.categorisation.UncategorisedTransactionError import (
     UncategorisedTransactionError,
 )
@@ -24,6 +29,8 @@ from hledger_preprocessor.generics.GenericTransactionWithCsv import (
 from hledger_preprocessor.generics.Transaction import Transaction
 from hledger_preprocessor.TransactionObjects.Receipt import Receipt
 
+CategorisationError = Union[UncategorisedTransactionError, MultipleMatchError]
+
 
 @typechecked
 def check_categorisation(
@@ -31,14 +38,14 @@ def check_categorisation(
     config: Config,
     models: Dict[ClassifierType, Dict[LogicType, Any]],
     labelled_receipts: List[Receipt],
-) -> List[UncategorisedTransactionError]:
+) -> List[CategorisationError]:
     """Dry-run the rule-based classifier on every bank CSV transaction.
 
-    Returns a list of UncategorisedTransactionError for transactions that
-    have no matching categorisation rule.  An empty list means all
-    transactions can be categorised.
+    Returns the transactions that have no matching rule or more than one.
+    An empty list means every transaction is categorised by exactly one
+    rule, whatever the order of the rules.
     """
-    errors: List[UncategorisedTransactionError] = []
+    errors: List[CategorisationError] = []
     rule_based_models = models[ClassifierType.TRANSACTION_CATEGORY][
         LogicType.RULE_BASED
     ]
@@ -73,7 +80,25 @@ def check_categorisation(
                             transaction=txn,
                             category_namespace=config.category_namespace,
                         )
-                    except UncategorisedTransactionError as e:
+                    except (
+                        UncategorisedTransactionError,
+                        MultipleMatchError,
+                    ) as e:
                         errors.append(e)
 
     return errors
+
+
+@typechecked
+def summarise(*, errors: List[CategorisationError]) -> str:
+    """One line for the terminal: how many of each kind."""
+    uncategorised = sum(
+        1 for e in errors if isinstance(e, UncategorisedTransactionError)
+    )
+    conflicts = len(errors) - uncategorised
+    parts = []
+    if uncategorised:
+        parts.append(f"{uncategorised} uncategorised transaction(s)")
+    if conflicts:
+        parts.append(f"{conflicts} transaction(s) matching several rules")
+    return " and ".join(parts) or "no categorisation problems"

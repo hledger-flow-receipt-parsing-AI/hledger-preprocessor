@@ -30,6 +30,7 @@ from typeguard import typechecked
 
 from hledger_preprocessor.checks.check_categorisation import (
     check_categorisation,
+    summarise,
 )
 from hledger_preprocessor.checks.check_matching import check_matching
 from hledger_preprocessor.get_models import get_models
@@ -81,7 +82,7 @@ def run_pipeline(
     )
 
     models: dict[ClassifierType, dict[LogicType, Any]] = get_models(
-        quick_categorisation=True
+        config=config
     )
 
     # Link receipts to transactions (asset prerequisites).
@@ -104,12 +105,16 @@ def run_pipeline(
     if errors:
         print("")
         print("=" * 60)
-        print(f"  {len(errors)} uncategorised transaction(s) found")
+        print(f"  {summarise(errors=errors)}")
         print("=" * 60)
         for err in errors:
             print(str(err))
         print("=" * 60)
-        print("Fix the uncategorised transactions above, then re-run.")
+        print(
+            "Add or narrow the rules in the TUI"
+            " (hledger_preprocessor --categorise-transactions --config"
+            f" {config_path}), then re-run."
+        )
         sys.exit(1)
     print("")
 

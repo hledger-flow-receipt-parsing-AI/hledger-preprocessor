@@ -1,4 +1,5 @@
-"""``--train``: train the receipt suggestion models of hledger-ai.
+"""``--train``: train the receipt suggestion models and the bank
+transaction model of hledger-ai.
 
 The training itself lives in hledger-ai (requirements TR-2 and TR-3 in
 ``hledger-ai/ai_strategy_requirements.md``); this module only makes the one
@@ -20,6 +21,7 @@ def train_receipt_models(
     try:
         from hledger_ai.cli import build_parser, run
         from hledger_ai.paths import AiPaths, FinancePaths
+        from hledger_ai.transactions.dataset import load_transaction_data
     except ImportError:
         print("Error: hledger-ai is not installed. Install it to use --train.")
         return 1
@@ -31,4 +33,5 @@ def train_receipt_models(
         finance=FinancePaths.from_config(config=config),
         ai=AiPaths.from_config(config=config),
         out=print,
+        transactions=lambda: load_transaction_data(config=config),
     )

@@ -30,6 +30,23 @@ def _write_categories(root: Path, categories: dict) -> Path:
     return path
 
 
+def _write_rules(root: Path, fixtures: dict) -> Path:
+    """The one-hot categorisation rules: the demo rules of the merchants
+    in the fixture CSVs plus the manifest's own ``fixtures.rules``."""
+    from hledger_core.categorisation.rules import Rule
+
+    from hledger_preprocessor.categorisation.rule_based.demo_rules import (
+        write_demo_rules,
+    )
+
+    extra = [Rule.from_dict(r) for r in fixtures.get("rules") or []]
+    return Path(
+        write_demo_rules(
+            root_dir=str(root), categories=fixtures["categories"], extra=extra
+        )
+    )
+
+
 def _write_bank_csv(root: Path, bank_csv: dict) -> Path:
     path = root / bank_csv["filename"]
     lines = [bank_csv["header"], *bank_csv.get("rows", [])]
@@ -144,6 +161,7 @@ def materialize(manifest: Manifest, base_dir: str) -> dict[str, str]:
 
     # 2. Categories, CSV, starting journal — all from the manifest.
     categories_path = _write_categories(root, fixtures["categories"])
+    _write_rules(root, fixtures)
     csv_path = _write_bank_csv(root, fixtures["bank_csv"])
     journal_path = _write_start_journal(root, fixtures["starting_journal"])
 

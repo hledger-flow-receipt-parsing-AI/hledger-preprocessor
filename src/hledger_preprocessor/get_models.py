@@ -1,8 +1,8 @@
 """Model registry: assembles available classifiers.
 
-If hledger-ai is installed, the new TransactionClassifier (SetFit +
-Qwen3 cascade) is used alongside rule-based.  Otherwise, only
-rule-based models are available.
+The rule-based classifier reads the one-hot rule store of the finance
+root.  If hledger-ai is installed, its transaction model is used alongside
+it; otherwise only the rule-based model is available.
 """
 
 from __future__ import annotations
@@ -28,40 +28,36 @@ except ImportError:
     _ai_available = False
 
 
-def _get_rule_based_model():
+@typechecked
+def _get_rule_based_model(*, config: Any) -> TransactionCategoryModel:
     """Deferred import of the rule-based model from the orchestrator."""
     from hledger_preprocessor.categorisation.rule_based.rule_based_eg0 import (
-        ExampleRuleBasedModel,
+        RuleBasedModel,
     )
 
-    return ExampleRuleBasedModel()
+    return RuleBasedModel.from_config(config)
 
 
-def get_models(
-    *, quick_categorisation: bool
-) -> dict[ClassifierType, dict[LogicType, Any]]:
-
+def get_models(*, config: Any) -> dict[ClassifierType, dict[LogicType, Any]]:
+    """The classifiers of the finance root in *config* (hledger-config)."""
     classifiers: dict[ClassifierType, dict[LogicType, Any]] = {
         ClassifierType.TRANSACTION_CATEGORY: (
-            get_transaction_classification_models()
+            get_transaction_classification_models(config=config)
         ),
     }
     return classifiers
 
 
 @typechecked
-def get_transaction_classification_models() -> (
-    dict[LogicType, list[TransactionCategoryModel]]
-):
-    rule_based_model_tnx_classification: TransactionCategoryModel = (
-        _get_rule_based_model()
-    )
+def get_transaction_classification_models(
+    *, config: Any
+) -> dict[LogicType, list[TransactionCategoryModel]]:
     result: dict[LogicType, list[TransactionCategoryModel]] = {
-        LogicType.RULE_BASED: [rule_based_model_tnx_classification],
+        LogicType.RULE_BASED: [_get_rule_based_model(config=config)],
     }
     if _ai_available:
         try:
-            classifier = TransactionClassifier()
+            classifier = TransactionClassifier.from_config(config)
             result[LogicType.AI] = [classifier]
         except Exception:
             log.warning(

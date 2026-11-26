@@ -67,7 +67,7 @@ The config has these sections:
   receipt directories, asset CSVs, plot output
 - **file_names** — start journal, root journal, categories file, receipt image
   naming conventions
-- **categorisation** — `quick: true/false`
+- **categorisation** — `quick: true/false` (unused); the rules live in `categorisation_rules.yaml` (section H)
 - **csv_encoding** — e.g. `utf-8`
 - **matching_algo** — controls how receipts are matched to bank transactions
   (date window, amount range, month/day swap)
@@ -163,10 +163,105 @@ hledger_preprocessor --config ~/finance/config.yaml <action>
 | `--improve-manual-labels`         | `-i`  | Review/improve existing manual labels                                |
 | `--edit-receipt`                  | `-e`  | Edit a receipt (rotate/crop) in the TUI                              |
 | `--link-receipts-to-transactions` | `-l`  | Match receipts to bank transactions                                  |
-| `--quick-categorisation`          | `-q`  | Fast feedback on uncategorised transactions (requires `-o` and `-p`) |
+| `--categorise-transactions`       | `-q`  | TUI: one rule per uncategorised bank transaction group (see H)       |
+| `--check-categorisation`          |       | Report rows no rule matches and rows several rules match             |
+| `--train [names]`                 |       | Train hledger-ai models, incl. `csv-linear` (transaction categories) |
 | `--train-models`                  |       | Train/retrain AI models on accumulated labelled data                 |
 | `--model <name>`                  |       | Which model to train: `setfit`, `qwen-lora`, or `all` (default)      |
 | `--force-retrain`                 |       | Force retraining even if the dataset hasn't changed                  |
+
+______________________________________________________________________
+
+## H. Categorisation Rules
+
+Every bank transaction must satisfy **exactly one** rule, whatever the order
+of the rules (issue #25). The rules are data, not Python:
+`categorisation_rules.yaml` in the finance root, next to `categories.yaml`.
+
+```yaml
+version: 1
+rules:
+- id: 12
+  direction: debit            # debit | credit
+  match:                      # every condition must hold
+  - {field: payee, op: contains, value: VOORBEELD SUPERMARKT}
+  unless:                     # the rule does not fire when a group holds
+  - - {field: description, op: contains, value: TO GO}
+  target: groceries:voorbeeld # a category path, or account:<holder:bank:type>
+  source: tui
+```
+
+Fields: `payee`, `description`, `counter_account`, `own_account`, `amount`
+(the float as Python prints it, e.g. `42.17`), `date`
+(`YYYY-MM-DD-HH-MM-SS`), `text` (any of the three text fields). Ops:
+`contains`, `starts_with`, `equals`, `any_of` (a list). Matching is case-
+insensitive unless `case_sensitive: true`.
+
+### H.1 Adding rules: the TUI
+
+```bash
+hledger_preprocessor --categorise-transactions --config config.yaml   # or -q
+```
+
+Uncategorised rows are grouped by payee (else description, else counter
+account), largest group first. For each group the screen shows the rows, a
+draft rule (field, op, value: editable), what the draft would do to every
+row of the root, the category field (with the category tree behind Alt+n)
+and the AI suggestions of the `csv-linear` model when one is trained.
+
+| Key             | Action                                                                     |
+| --------------- | -------------------------------------------------------------------------- |
+| Enter           | Save the rule (the file is written at once) and show the next              |
+| Tab             | Complete the category: the common start of the matches, else               |
+|                 | the highlighted (or first) match (`groceries:s` → `groceries:supermarket`) |
+| Shift+Tab       | Switch between the value and the category                                  |
+| ↑ / ↓           | Highlight a match (Enter takes it)                                         |
+| Alt+a, Alt+b, … | Take the 1st, 2nd, … AI suggestion and save                                |
+| Alt+n           | Category tree: pick or create a category                                   |
+| Alt+f / Alt+o   | Change the field / the op of the draft                                     |
+| Alt+s           | Skip this group (it comes back at the end)                                 |
+| Alt+w           | This rule wins: the conflicting rules get an `unless`                      |
+| Alt+y           | This rule yields: it gets an `unless` per conflicting rule                 |
+| Alt+p           | Previous group                                                             |
+| Esc             | Quit                                                                       |
+
+A draft that also matches a row another rule already covers is refused:
+the store stays one-hot by construction. Alt+w resolves it the way "most
+specific wins" would when the draft is the specific one; Alt+y when the
+existing rule is (a broad `payee contains X` next to an existing
+`payee contains X via Y`). Both are data, never order.
+
+### H.2 Checking
+
+`--check-categorisation` (and the pipeline pre-flight) lists every row no
+rule matches (`UncategorisedTransactionError`) and every row several rules
+match (`MultipleMatchError`). Hand edits of the YAML are caught here.
+
+### H.3 Converting an old `private_logic.py`
+
+```bash
+python -m hledger_preprocessor.categorisation.rule_based.convert_private_logic \
+    --config config.yaml [--private-logic path] [--keep]
+```
+
+Keeps every classification of the if/return code (the first matching block
+used to win: later rules get an `unless` with the winner's conditions), gives
+conditions that only ever matched the amount or the date that field, verifies
+every row, and moves the Python file to `<finance root>/backup/`.
+
+### H.4 The transaction model
+
+`hledger_preprocessor --train csv-linear --config config.yaml` trains a light
+text model on the rows the rules categorise (per finance root, private, in
+`~/.hledger-ai/<root>-<hash>/`), evaluated on time-ordered folds against the
+most-frequent-category baseline; `python -m hledger_ai --config config.yaml --status` shows it next to the receipt models. The TUI prefills the best
+category per group with it, and the AI column of the preprocessed CSVs holds
+its top category. A root without rules yet can borrow another root's model:
+
+```yaml
+ai:
+  transaction_model_root: /home/you/finance
+```
 
 ______________________________________________________________________
 

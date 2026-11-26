@@ -5,9 +5,13 @@ sankey.csv
 list.txt
 issues/*
 
+# Private categorisation code (real payees, IBANs): the if/return rules of
+# before 2026-11 and the hand-copied overlap checker.  Rules now live in
+# <finance root>/categorisation_rules.yaml.  Only the converter of the old
+# file and its test (invented data) are tracked.
 *private_logic.py
-# User-specific categorisation rules (real payees, IBANs, account
-# relationships).  Only the sanitized *.ci_stub is committed.
+!convert_private_logic.py
+!test_convert_private_logic.py
 *check_categorisation_overlap.py
 
 # something to Git(Hub/Lab) using the program GIT.

@@ -105,26 +105,17 @@ def classify_transaction(
 ) -> ProcessedTransaction:
     ai_classifications: Dict[str, str] = {}
     for ai_model in ai_models_tnx_classification:
-        # AI-based classification (replace `ai_model.predict` with your actual model logic)  # noqa: E501
-        # ai_classification = ai_model.classify(
-        #     {
-        #         "bank": txn.bank,
-        #         "account_type": txn.account_type,
-        #         "date": txn.the_date.strftime("%Y-%m-%d-%H-%M-%S"),
-        #         "account_nr": txn.account0,
-        #         "amount": txn.amount,
-        #         "transaction_code": txn.transaction_code,
-        #         "other_account": txn.account1,
-        #         "other_party": txn.other_party_name,
-        #         "BIC": txn.BIC,
-        #         "description": txn.description,
-        #     }
-        # )
-        # txn.ai_classification = {ai_model.name: ai_classification}
-        # txn.ai_classification = {ai_model.name: "filler"}
-        ai_classifications[ai_model.name] = "filler"
-    # object.__setattr__(txn, "ai_classification", ai_classifications)
-    # TODO: change attr from ai_classification to ai_classifications.
+        # The AI column of the preprocessed CSV: the model's best category
+        # for a bank row; "filler" keeps the column when there is none.
+        answer = ""
+        if isinstance(txn, GenericCsvTransaction):
+            try:
+                answer = ai_model.classify(
+                    transaction=txn, category_namespace=category_namespace
+                )
+            except Exception:  # a model failure never stops the pipeline
+                answer = ""
+        ai_classifications[ai_model.name] = answer or "filler"
 
     logic_classifications: Dict[str, str] = {}
     for rule_based_model in rule_based_models_tnx_classification:
